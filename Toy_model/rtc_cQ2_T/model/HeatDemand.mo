@@ -1,7 +1,7 @@
 block HeatDemand
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
-  // TODO: remove parameters T_supply/T_return and corresponding equations
+  // TODO: remove parameters T_supply/T_return and corresponding equations. Be careful with dT
   parameter Real T_supply = 75.0;
   parameter Real T_return = 45.0;
   parameter Real dT = T_supply - T_return;
