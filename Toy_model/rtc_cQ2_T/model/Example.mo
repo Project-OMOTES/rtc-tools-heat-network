@@ -5,65 +5,65 @@ model Example
   parameter Real theta;
 
   //Heatsource min en max in [W]
-  HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6));
-  HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6));
+  HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta);
+  HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta);
 
-  Pipe pipe1aC(length = 170.365, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe1bC(length = 309.635, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe4aC(length = 5, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe4bC(length = 15, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe5C(length = 126, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe7C(length = 60, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe9C(length = 70, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe15C(length = 129, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe25C(length = 150, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe26C(length = 30, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe27C(length = 55, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe29C(length = 134, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe30C(length = 60, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe31C(length = 60, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe32C(length = 50, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe52_inC(length = 10, diameter  = 0.164, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe52_outC(length = 10, diameter  = 0.164, temperature=45.0, Q(nominal=Q_nominal), theta = theta);
+  Pipe pipe1aC(length = 170.365, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe1bC(length = 309.635, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe4aC(length = 5, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe4bC(length = 15, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe5C(length = 126, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe7C(length = 60, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe9C(length = 70, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe15C(length = 129, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe25C(length = 150, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe26C(length = 30, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe27C(length = 55, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe29C(length = 134, diameter  = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe30C(length = 60, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe31C(length = 60, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe32C(length = 50, diameter  = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe52_inC(length = 10, diameter  = 0.164, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), dH(min=-1.0), theta = theta, sign_dT=-1.0);
+  Pipe pipe52_outC(length = 10, diameter  = 0.164, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=40.0, max=50.0), QTHOut.T(min=40.0, max=50.0), dH(min=-1.0), theta = theta, sign_dT=-1.0);
 
-  HeatDemand demand7;
-  HeatDemand demand91;
-  HeatDemand demand92;
+  HeatDemand demand7(theta = theta);
+  HeatDemand demand91(theta = theta);
+  HeatDemand demand92(theta = theta);
   
-  HeatBuffer buffer1; 
+  HeatBuffer buffer1(theta = theta);
 
-  Pipe pipe1aH(length = 170.365, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe1bH(length = 309.635, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe4aH(length = 5, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe4bH(length = 15, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe5H(length = 126, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe7H(length = 60, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe9H(length = 70, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe15H(length = 129, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe25H(length = 150, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe26H(length = 30, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe27H(length = 55, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe29H(length = 134, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe30H(length = 60, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe31H(length = 60, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe32H(length = 50, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe52_inH(length = 10, diameter  = 0.164, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
-  Pipe pipe52_outH(length = 10, diameter  = 0.164, temperature=75.0, Q(nominal=Q_nominal), theta = theta);
+  Pipe pipe1aH(length = 170.365, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe1bH(length = 309.635, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe4aH(length = 5, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe4bH(length = 15, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe5H(length = 126, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe7H(length = 60, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe9H(length = 70, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe15H(length = 129, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe25H(length = 150, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe26H(length = 30, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe27H(length = 55, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe29H(length = 134, diameter  = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe30H(length = 60, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe31H(length = 60, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe32H(length = 50, diameter  = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), theta = theta, sign_dT=1.0);
+  Pipe pipe52_inH(length = 10, diameter  = 0.164, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), dH(min=-1.0), theta = theta, sign_dT=1.0);
+  Pipe pipe52_outH(length = 10, diameter  = 0.164, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=70.0, max=80.0), QTHOut.T(min=70.0, max=80.0), dH(min=-1.0), theta = theta, sign_dT=1.0);
 
 
-  NodeQTHPort nodeS2H(nin=2, nout=1); 
-  NodeQTHPort nodeD7H(nin=1, nout=2); 
-  NodeQTHPort nodeD92H(nin=1, nout=2); 
-  NodeQTHPort nodeB1H(nin=2, nout=2); 
+  NodeQTHPort nodeS2H(nin=2, nout=1, theta = theta);
+  NodeQTHPort nodeD7H(nin=1, nout=2, theta = theta);
+  NodeQTHPort nodeD92H(nin=1, nout=2, theta = theta);
+  NodeQTHPort nodeB1H(nin=2, nout=2, theta = theta);
  
-  NodeQTHPort nodeS2C(nin=1, nout=2); 
-  NodeQTHPort nodeD7C(nin=2, nout=1); 
-  NodeQTHPort nodeD92C(nin=2, nout=1); 
-  NodeQTHPort nodeB1C(nin=2, nout=2); 
+  NodeQTHPort nodeS2C(nin=1, nout=2, theta = theta);
+  NodeQTHPort nodeD7C(nin=2, nout=1, theta = theta);
+  NodeQTHPort nodeD92C(nin=2, nout=1, theta = theta);
+  NodeQTHPort nodeB1C(nin=2, nout=2, theta = theta);
 
   //Q in [m^3/s] and H in [m]
-  Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));
-  Pump pump2(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));   
+  Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
+  Pump pump2(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));
 
   // Define Input/Output Variables and set them equal to model variables.   
   //Heatdemand min en max in [W]  

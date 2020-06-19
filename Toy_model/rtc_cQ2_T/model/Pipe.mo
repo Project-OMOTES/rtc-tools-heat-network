@@ -5,48 +5,33 @@ block Pipe
   parameter Real diameter = 1.0;
   parameter Real temperature = 50.0;
   parameter Real cp = 4200.0;
+  parameter Real rho = 988.0;
 
-  // TODO: add the parameters R_g/R_iso etc (or U1/U2). plus cp and rho
-
-  // e.g. parameter Real dT = 30.0;
-  // TODO: in the example.mo file we can modify cp with the value that depends on the nominal temperature. 
-  // I.e., No assumption that is always 4200 anymore. This can be done also for the other components.
-  Modelica.SIunits.VolumeFlowRate Q(min=0.0);
-  Modelica.SIunits.Level dH(max=0.0);
-  // TODO: add U1, U2 (they are variables depending on the Rs)
-  // e.g.
-  // Real U_1;
+  //For a PUR-PE pipe estimated based on 1m deep 150mm pipe with 75mm PUR and 15mm PE and distance of 2x centre to centre
+  parameter Real U_1 = 0.397;
+  parameter Real U_2 = 0.0185;
+  parameter Real T_supply = 75.0;
+  parameter Real T_return = 45.0;
+  parameter Real dT = T_supply - T_return;
+  // T_g = ground temperature
+  parameter Real T_g = 10.0;
+  // sign_dT = 1.0 if supply pipe, else sign_dT = -1.0
+  parameter Real sign_dT = 1.0;
 
   // Homotopic parameter
   parameter Real theta;
 
+  Modelica.SIunits.VolumeFlowRate Q(min=0.0);
+  Modelica.SIunits.Level dH(max=0.0);
+
 equation
+  // Flow is constant
   QTHOut.Q = Q;
   QTHOut.Q = QTHIn.Q;
   dH = QTHOut.H - QTHIn.H;
 
-  // TODO: remove the following once the heat loss equation is implemented
-  QTHOut.T = QTHIn.T;
-
-
-  // Heat Loss equation
-  // TODO: vary cp depending whether is hot/cold pipe?
-
-  // High level idea
-  // HeatLoss = l*(U1-U2)*(T_h - T_g)+ L*(U2)*(T_h - T_c)
-  // Assumption: dT = T_h - T_c
-
-  // HeatLoss = length*(U_1-U_2)*(QTHIn.T - QTHOut.T)/2 + constant (TODO:specify constant through the correct dependencies)
-  // Heat_out = Heat_in - HeatLoss
-  // Heat = T * Q * cp * rho
-  // (T_out-T_in)*cp*rho*Q + length*(U_1-U_2)*(T_in - T_out)/2 + constant = 0
-
-  // Equations to be added:
-  // U_1 = dependency on R...
-  // U_2 = 
-  // Homotopy HeatLoss equation: (1- theta)*Linear_approximation + theta*(Nonlinear_function) = 0.0
-  // (1-theta)*(QTHOut.T - QTHIn.T) + theta*(T_out*cp*rho*Q - T_in*cp*rho*Q + length*(U_1*U_2)*(T_in - T_out)/2 + constant)= 0.0
-
-  // TODO: Teresa add if else statement to flip the sign of dT
+  // Heat loss estimate assuming constant ground temparature and constant dT at demand
+  //positive negative dT depending on hot/coldpipe
+  (1-theta)*(QTHOut.T - QTHIn.T) + theta*(QTHOut.T*cp*rho*Q - QTHIn.T*cp*rho*Q + length*(U_1-U_2)*(QTHIn.T + QTHOut.T)/2 -(length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT))) = 0.0;
 
  end Pipe;

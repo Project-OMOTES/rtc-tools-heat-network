@@ -4,6 +4,7 @@ from datetime import datetime
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import logging
+import time
 
 from rtctools.optimization.collocated_integrated_optimization_problem \
     import CollocatedIntegratedOptimizationProblem
@@ -99,6 +100,34 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         'pipe52_outH'
         ]
 
+    pipe_profile_hot = [
+        'pipe1aH',
+        'pipe1bH',
+        'pipe5H',
+        'pipe7H',
+        'pipe9H',
+        'pipe15H',
+        'pipe25H',
+        'pipe27H',
+        'pipe29H',
+        'pipe31H',
+        'pipe32H',
+        ]
+
+    pipe_profile_cold = [
+        'pipe32C',
+        'pipe31C',
+        'pipe29C',
+        'pipe27C',
+        'pipe25C',
+        'pipe15C',
+        'pipe9C',
+        'pipe7C',
+        'pipe5C',
+        'pipe1bC',
+        'pipe1aC',
+    ]
+
     # List of structures
     demands = [
         'demand7',
@@ -173,6 +202,23 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
                 self.state(d+'.QTHIn.H') - self.state(d+'.QTHOut.H'), 10.0, np.inf
             ))
 
+        # # Optional constraint: At each demand node, dT should be exactly 30.0
+        # for d in self.demands:
+        #     constraints.append((
+        #         self.state(d+'.QTHIn.T') - self.state(d+'.QTHOut.T'), 30.0, 30.0
+        #         ))
+
+        # In the linear model, fix the temperature in the pipes.
+        # (I.e., supply and returns lines have respective temperatures 75 and 45.)
+        if self.h_th == 0.0:
+            for s in self.sources:
+                constraints.append((
+                    self.state(s+'.QTHIn.T') - self.parameters(0)[s+'.T_return'], 0.0, 0.0
+                    ))
+                constraints.append((
+                    self.state(s+'.QTHOut.T') - self.parameters(0)[s+'.T_supply'], 0.0, 0.0
+                    ))
+
         return constraints
 
     def constraints(self, ensemble_member):
@@ -183,7 +229,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # Amount of heat stored in the buffer at the beginning of the time horizon is set to 0.0
         t0 = self.times()[0]
         constraints.append((
-            self.state_at('buffer1.Stored_heat', t0), 0.0, 0.0
+            self.state_at('buffer1.Stored_heat', t0)/self.variable_nominal('buffer1.Stored_heat'), 0.0, 0.0
             ))
 
         return constraints
@@ -235,12 +281,17 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # Minimize the usage of source2
         goals.append(RangeGoal(self, state='source2.Heat', target_max=0.0, target_min=np.nan, state_bounds=(0.0, 1.5e6), priority=3, order=2))
 
-        # Drag dH to match cQ^2 for each pipe
-        for pipe in self.pipes:
-            goals.append(MaximizeGoal(self, state=pipe+'.dH',priority=4))
+        # TODO: dH minimization in post-processing
+        # # Drag dH to match cQ^2 for each pipe
+        # for pipe in self.pipes:
+        #     goals.append(MaximizeGoal(self, state=pipe+'.dH',priority=4))
 
         return goals
 
+    # Store the homotopy parameter
+    @property
+    def h_th(self):
+        return self.parameters(0)['theta']
 
     def post(self):
         times = self.times()
@@ -252,21 +303,23 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         ### RESULTS ANALYSIS ###
 
-        # Check that for each pipe |dH| ~=c*Q^2 (i.e., check that results are physically feasible)
-        tol = 1e-4
-        for pipe in self.pipes:
-            gravitational_constant = 9.81
-            friction_factor = 0.04
-            diameter = self.parameters(0)[pipe+'.diameter']            
-            length = self.parameters(0)[pipe+'.length']
-            #calculate constant
-            c = length * friction_factor / ((2 * gravitational_constant) * diameter)
-            area = math.pi * diameter**2 / 4
-            dH = results[pipe+'.dH']
-            Q = results[pipe+'.Q']
-            diff = -dH - c/area**2*Q**2
-            if np.any(np.abs(diff) > tol):
-                logger.error("dH != cQ^2 for pipe {} by {}".format(pipe[4:], max(np.abs(diff))))
+        # # TODO (Teresa): add post-processing step to compute dH.
+
+        # # Check that for each pipe |dH| ~=c*Q^2 (i.e., check that results are physically feasible)
+        # tol = 1e-4
+        # for pipe in self.pipes:
+        #     gravitational_constant = 9.81
+        #     friction_factor = 0.04
+        #     diameter = self.parameters(0)[pipe+'.diameter']
+        #     length = self.parameters(0)[pipe+'.length']
+        #     #calculate constant
+        #     c = length * friction_factor / ((2 * gravitational_constant) * diameter)
+        #     area = math.pi * diameter**2 / 4
+        #     dH = results[pipe+'.dH']
+        #     Q = results[pipe+'.Q']
+        #     diff = -dH - c/area**2*Q**2
+        #     if np.any(np.abs(diff) > tol):
+        #         logger.error("dH != cQ^2 for pipe {} by {}".format(pipe[4:], max(np.abs(diff))))
 
         # # (Possibly) Useful info for debugging purposes
         # print('Pumps')
@@ -282,24 +335,72 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         #     print("dH")
         #     print(np.mean(results[d+'.QTHOut.H']-results[d+'.QTHIn.H']))
 
-
+        # print("STATS PIPES")
+        # tot_pipe_heat_loss = 0.0
         # for p in self.pipes:
         #     print(p)
         #     print('dH')
         #     print(np.mean(results[p+'.dH']))
+        #     print('T in')
+        #     print(np.mean(results[p+'.QTHIn.T']))
+        #     print('T out')
+        #     print(np.mean(results[p+'.QTHOut.T']))
+        #     t_out = results[p+'.QTHOut.T']
+        #     t_in = results[p+'.QTHIn.T']
+        #     q = results[p+'.Q']
+        #     cp = self.parameters(0)[p+'.cp']
+        #     rho = self.parameters(0)[p+'.rho']
+        #     length = self.parameters(0)[p+'.length']
+        #     U_1 = self.parameters(0)[p+'.U_1']
+        #     U_2 = self.parameters(0)[p+'.U_2']
+        #     T_g = self.parameters(0)[p+'.T_g']
+        #     sign_dT = self.parameters(0)[p+'.sign_dT']
+        #     dT = self.parameters(0)[p+'.T_supply'] - self.parameters(0)[p+'.T_return']
+        #     heat_loss = length*(U_1-U_2)*(t_in + t_out)/2 -(length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT))
+        #     temp_loss = heat_loss/(cp*rho*q)
+        #     print("Avg heat loss")
+        #     print(np.mean(heat_loss))
+        #     tot_pipe_heat_loss += np.mean(heat_loss)
+        #     print("Avg temperature loss")
+        #     print(np.mean(temp_loss))
+        #     print()
 
+        # print("STATS SYSTEM WIDE")
+        # # Heat
+        # heat_sources = np.mean(results['source1.Heat']) + np.mean(results['source2.Heat'])
+        # heat_demands = 0.0
+        # for d in self.demands:
+        #     k = d[6:]
+        #     heat_demands += np.mean(self.get_timeseries('Heat_demand_'+k).values)
+        # print("Avg tot heat sources")
+        # print(heat_sources)
+        # print("Avg tot heat demand")
+        # print(heat_demands)
+        # print("Avg tot heat loss in pipes")
+        # print(tot_pipe_heat_loss)
+        # print("Differences in total conservation of heat")
+        # print(heat_sources - (heat_demands+tot_pipe_heat_loss))
+        # # Temperatures
+        # t_supply = []
+        # for p in self.pipe_profile_hot:
+        #     t_supply_avg = (np.mean(results[p+'.QTHIn.T'])+np.mean(results[p+'.QTHOut.T']))/2
+        #     t_supply.append((t_supply_avg))
+        # print("Avg supply temperature system profile")
+        # print(t_supply)
+        # t_return = []
+        # for p in self.pipe_profile_cold:
+        #     t_return_avg = (np.mean(results[p+'.QTHIn.T'])+np.mean(results[p+'.QTHOut.T']))/2
+        #     t_return.append((t_return_avg))
+        # print("Avg supply temperature system profile")
+        # print(t_return)
 
 
         ### PLOTS ###
-
-        self.set_timeseries('Heat_buffer', Timeseries(self.times(), results['buffer1.Q']*30*4200*988))
 
         sum_demands = np.full_like(self.times(), 0.0)
         for d in self.demands:
             k = d[6:]
             sum_demands +=self.get_timeseries('Heat_demand_'+k).values
-        buff_pos_heat = self.get_timeseries('Heat_buffer').values
-        buff_pos_heat[buff_pos_heat < 0.0] = 0.0
 
         # Generate Heat Plot
         # This plot illustrates: 
@@ -325,7 +426,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         )
         axarr[0].plot(
             times,
-            self.get_timeseries('Heat_buffer').values,
+            results["buffer1.Heat"],
             label="buffer",
             linewidth=2,
             color="g",
@@ -424,4 +525,9 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
 
 # Run
+start_time = time.time()
+
 run_optimization_problem(Example)
+
+# Output runtime
+print("Execution time: " + time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time)))
