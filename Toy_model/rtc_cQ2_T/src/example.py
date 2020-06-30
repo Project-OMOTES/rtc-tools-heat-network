@@ -303,6 +303,18 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
     def h_th(self):
         return self.parameters(0)['theta']
 
+    # Overwrite default solver options
+    def solver_options(self):
+        options = super().solver_options()
+        solver = options['solver']
+        options[solver]['nlp_scaling_method'] = 'none'
+        options[solver]['linear_system_scaling'] = 'none'
+        options[solver]['linear_scaling_on_demand'] = 'no'
+        options[solver]['max_iter'] = 1000
+        options[solver]['tol'] = 1e-5
+        options[solver]['acceptable_tol'] = 1e-5
+        return options
+
     def post(self):
         times = self.times()
         results = self.extract_results()
