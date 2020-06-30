@@ -322,26 +322,25 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # This function is called after the optimization run. Thus can be used to do analysis of the results, make plots etc.
         # To get the results of the optimization for a certain variable use: results[name_variable]
 
+        # Compute dH for each pipe.
+        # (When Temperature is fixed throughout, computing dH can be easily done via an optimization goal.
+        # However, the minimization of the head loss implies a minimization of Q which is problematic as Heat = Q*Temperature.
+        # Thus, we compute dH is post-processing. To compute H also the pipe profile needs to be taken into acocunt. This is doable, but unnecessary for now.)
+        for pipe in self.pipes:
+            gravitational_constant = 9.81
+            friction_factor = 0.04
+            diameter = self.parameters(0)[pipe+'.diameter']
+            length = self.parameters(0)[pipe+'.length']
+            # Compute c_v constant (where |dH| ~ c_v*v^2)
+            c_v = length * friction_factor / (2 * gravitational_constant) / diameter
+            area = math.pi * diameter**2 / 4
+            q = results[pipe+'.QTHOut.Q']
+            v = q/area
+            dH = -c_v*v**2
+            # Overwrite dH
+            results[pipe+'.dH'] = dH
 
         ### RESULTS ANALYSIS ###
-
-        # # TODO (Teresa): add post-processing step to compute dH.
-
-        # # Check that for each pipe |dH| ~=c*Q^2 (i.e., check that results are physically feasible)
-        # tol = 1e-4
-        # for pipe in self.pipes:
-        #     gravitational_constant = 9.81
-        #     friction_factor = 0.04
-        #     diameter = self.parameters(0)[pipe+'.diameter']
-        #     length = self.parameters(0)[pipe+'.length']
-        #     #calculate constant
-        #     c = length * friction_factor / ((2 * gravitational_constant) * diameter)
-        #     area = math.pi * diameter**2 / 4
-        #     dH = results[pipe+'.dH']
-        #     Q = results[pipe+'.Q']
-        #     diff = -dH - c/area**2*Q**2
-        #     if np.any(np.abs(diff) > tol):
-        #         logger.error("dH != cQ^2 for pipe {} by {}".format(pipe[4:], max(np.abs(diff))))
 
         # # (Possibly) Useful info for debugging purposes
         # print('Pumps')
@@ -475,73 +474,6 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         # Output Plot
         plt.show()
-
-
-        # # Plot 2: for a random pipe, info regarding the dH, Q relationship        
-        # pipe = 'pipe25H'
-        # diameter = self.parameters(0)[f'{pipe}.diameter']
-        # area = math.pi * diameter**2 / 4
-        # length = self.parameters(0)[f'{pipe}.length']
-        # temperature = self.parameters(0)[f'{pipe}.temperature']
-        # wall_roughness = 2E-3
-        # n_lines=10
-        # q_max = 0.01111*2            
-        # v_max = q_max/area
-        # q_points = np.linspace(0.0, q_max, 1000)
-        # v_points = np.linspace(0.0, v_max, 1000)
-        
-        # # Linear coefficients#1 for Q-H relationship
-        # gravitational_constant = 9.81
-        # friction_factor = 0.04
-        # c = length * friction_factor / (2 * gravitational_constant) / diameter
-
-        # # Darcy Weisbach
-        # dH_dw = np.full_like(q_points, 0.0)
-        # for i in range(len(q_points)):
-        #     dH_dw[i] = head_loss(v_points[i], diameter, length, wall_roughness, temperature)
-        
-        # # Plot2         
-        # n_subplots = 3
-        # fig, axarr = plt.subplots(n_subplots, sharex=False, figsize=(8, 3 * n_subplots))
-        
-        # #Plot2 Upper subplot: Q vs dH for DW and cQ^2
-        # axarr[0].set_title("cQ2 vs Darcy Weisbach")
-        # # axarr[0].set_xlabel("Discharge Q [m3/s]")
-        # axarr[0].set_ylabel("dH [m]")      
-        
-        # axarr[0].plot(q_points, dH_dw, linewidth=2, color="r", linestyle="--", label="D-W")
-        # axarr[0].plot(q_points, c*v_points**2, linewidth=2, color="b", label="cQ^2")    
-        
-        # #Plot2 Middle subplot: Q vs dH for  cv^2
-        # # axarr[1].set_title("dH >= c*Q^2")
-        # # axarr[1].set_xlabel("Discharge Q [m3/s]")
-        # axarr[1].set_ylabel("dH [m]")
-        # q_opt = results[pipe+'.Q']
-        # dH_opt = -results[pipe+'.dH']
-        # axarr[1].plot(q_points, c*v_points**2, linewidth=2, color="b", label="cQ^2")
-        # axarr[1].plot(q_opt, dH_opt, linewidth=2, color="r", linestyle=":", label="opt") 
-
-        # #Plot2 Lower subplot: Q vs dH for DW
-        # # axarr[2].set_title("DW vs opt results")
-        # axarr[2].set_xlabel("Discharge Q [m3/s]")
-        # axarr[2].set_ylabel("dH [m]")
-        # q_opt = results[pipe+'.Q']
-        # dH_opt = -results[pipe+'.dH']
-        # q_points_zoom = np.linspace(0.0, 0.01, 1000)
-        # v_points_zoom = q_points_zoom/area
-        #         # Darcy Weisbach
-        # dH_dw_zoom = np.full_like(q_points_zoom, 0.0)
-        # for i in range(len(q_points_zoom)):
-        #     dH_dw_zoom[i] = head_loss(v_points_zoom[i], diameter, length, wall_roughness, temperature)
-        # axarr[2].plot(q_points_zoom, dH_dw_zoom, linewidth=2, color="b", label="D-W")
-        # axarr[2].plot(q_opt, dH_opt, linewidth=2, color="r", linestyle=":", label="opt") 
-
-        # # Shrink each axis and put a legend to the right of the axis
-        # for i in range(n_subplots):
-        #     box = axarr[i].get_position()
-        #     axarr[i].set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        #     axarr[i].legend(loc="center left", bbox_to_anchor=(1, 0.5), frameon=False)
-        # plt.show()
 
         super().post()
 
