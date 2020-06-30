@@ -128,6 +128,17 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         'pipe1aC',
     ]
 
+    nodes = [
+    'nodeS2H',
+    'nodeD7H',
+    'nodeD92H',
+    'nodeB1H',
+    'nodeS2C',
+    'nodeD7C',
+    'nodeD92C',
+    'nodeB1C',
+    ]
+
     # List of structures
     demands = [
         'demand7',
@@ -200,13 +211,13 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         for d in self.demands:
             constraints.append((
                 self.state(d+'.QTHIn.H') - self.state(d+'.QTHOut.H'), 10.0, np.inf
-            ))
+                ))
 
-        # # Optional constraint: At each demand node, dT should be exactly 30.0
-        # for d in self.demands:
-        #     constraints.append((
-        #         self.state(d+'.QTHIn.T') - self.state(d+'.QTHOut.T'), 30.0, 30.0
-        #         ))
+        # As temperatures are variables, need to fix dT at demand nodes. Set dT to be exactly 30.0.
+        for d in self.demands:
+            constraints.append((
+                self.state(d+'.QTHIn.T') - self.state(d+'.QTHOut.T'), 30.0, 30.0
+                ))
 
         # In the linear model, fix the temperature in the pipes.
         # (I.e., supply and returns lines have respective temperatures 75 and 45.)
@@ -218,6 +229,12 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
                 constraints.append((
                     self.state(s+'.QTHOut.T') - self.parameters(0)[s+'.T_supply'], 0.0, 0.0
                     ))
+
+        # Ensure that buffer does not extract heat from the return line. For this, we impose that the nonnegative temperature jump in the return line when it 'intersect' the buffer.
+        constraints.append((
+            self.state('pipe9C.QTHIn.T') - self.state('pipe15C.QTHOut.T'), 0.0, np.inf
+            ))
+
 
         return constraints
 
@@ -257,8 +274,6 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # * priority 1: match the Heat demand
         # * priority 2: extract a certain (constant) heat from source1
         # * priority 3: minimize the usage of source2
-        # * priority 4: ensure in each pipe |dh| ~ cQ^2. This is done by maximizing dH.
-
 
         # Match the demand target heat
         for d in self.demands:
@@ -280,11 +295,6 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         # Minimize the usage of source2
         goals.append(RangeGoal(self, state='source2.Heat', target_max=0.0, target_min=np.nan, state_bounds=(0.0, 1.5e6), priority=3, order=2))
-
-        # TODO: dH minimization in post-processing
-        # # Drag dH to match cQ^2 for each pipe
-        # for pipe in self.pipes:
-        #     goals.append(MaximizeGoal(self, state=pipe+'.dH',priority=4))
 
         return goals
 
@@ -358,10 +368,10 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         #     dT = self.parameters(0)[p+'.T_supply'] - self.parameters(0)[p+'.T_return']
         #     heat_loss = length*(U_1-U_2)*(t_in + t_out)/2 -(length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT))
         #     temp_loss = heat_loss/(cp*rho*q)
-        #     print("Avg heat loss")
+        #     print("Avg heat loss in pipe")
         #     print(np.mean(heat_loss))
         #     tot_pipe_heat_loss += np.mean(heat_loss)
-        #     print("Avg temperature loss")
+        #     print("Avg temperature loss in pipe")
         #     print(np.mean(temp_loss))
         #     print()
 
@@ -372,13 +382,13 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # for d in self.demands:
         #     k = d[6:]
         #     heat_demands += np.mean(self.get_timeseries('Heat_demand_'+k).values)
-        # print("Avg tot heat sources")
+        # print("Avg tot heat from sources")
         # print(heat_sources)
         # print("Avg tot heat demand")
         # print(heat_demands)
         # print("Avg tot heat loss in pipes")
         # print(tot_pipe_heat_loss)
-        # print("Differences in total conservation of heat")
+        # print("Differences in (total) conservation of heat")
         # print(heat_sources - (heat_demands+tot_pipe_heat_loss))
         # # Temperatures
         # t_supply = []
@@ -391,7 +401,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # for p in self.pipe_profile_cold:
         #     t_return_avg = (np.mean(results[p+'.QTHIn.T'])+np.mean(results[p+'.QTHOut.T']))/2
         #     t_return.append((t_return_avg))
-        # print("Avg supply temperature system profile")
+        # print("Avg return temperature system profile")
         # print(t_return)
 
 
