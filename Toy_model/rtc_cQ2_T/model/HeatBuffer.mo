@@ -14,8 +14,8 @@ block HeatBuffer
 
   // Heat variables
   Modelica.SIunits.Heat Heat(nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_extracted(nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_added(nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_extracted(max = 0.0, nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_added(min = 0.0, nominal=cp * rho * dT);
   Real Stored_heat(min=0.0, nominal=cp * rho * dT * 3600.0);
 
 equation
