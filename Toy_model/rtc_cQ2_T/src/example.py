@@ -146,13 +146,28 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         'demand92',
         ]
 
+    demand_connections =[
+    'pipe27H',
+    'pipe31H',
+    'demand91',
+    ]
+
     sources = [
         'source1',
         'source2',
         ]
 
+    source_connections = [
+        'pipe1aH',
+        'pipe5H'
+        ]
+
     buffers = [
         'buffer1'
+        ]
+
+    buffer_connections = [
+    'pipe15H'
         ]
 
     pumps = [
@@ -474,6 +489,119 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         # Output Plot
         plt.show()
+
+
+        # Generate Route Plots
+        # This plot illustrates:
+        # * upper plot - Temperature from source to demand and back to source;
+        # * middle plot - Heat from source to demand (with buffer in between);
+        # * lower plot - Discharge from source to demand with buffer in middle of network;
+
+        # generate x-axis (length network)
+        network_length=[]
+        length = 0
+        for pipe in self.pipe_profile_hot:
+            #route (x coordinate for T_in en T_out)
+            network_length.append(length)
+            length += self.parameters(0)[pipe+'.length']
+            network_length.append(length)
+
+        #Temperature in feed line
+        T_route_feed = []
+        for pipe in self.pipe_profile_hot:
+            T_pipe_hot_in = np.mean(results[pipe+'.QTHIn.T'])
+            T_route_feed.append((T_pipe_hot_in))
+            T_pipe_hot_out = np.mean(results[pipe+'.QTHOut.T'])
+            T_route_feed.append((T_pipe_hot_out))
+        
+        #Heat in feed line
+        heat_route_feed = []
+        for pipe in self.pipe_profile_hot:
+            q = np.mean(results[pipe+'.Q'])
+            cp = self.parameters(0)[pipe+'.cp']
+            rho = self.parameters(0)[pipe+'.rho']
+            T_pipe_hot_in = np.mean(results[pipe+'.QTHIn.T'])
+            heat_in = q * cp * rho * T_pipe_hot_in
+            heat_route_feed.append(heat_in)
+            T_pipe_hot_out = np.mean(results[pipe+'.QTHOut.T'])
+            heat_out = q * cp * rho * T_pipe_hot_out
+            heat_route_feed.append(heat_out)
+
+        #Heat in return line
+        heat_route_return = []
+        #route same as hot, from source to demand
+        #temperature along route (cold is reversed)
+        for pipe in list(reversed(self.pipe_profile_cold)):
+            q = np.mean(results[pipe+'.Q'])
+            cp = self.parameters(0)[pipe+'.cp']
+            rho = self.parameters(0)[pipe+'.rho']
+            T_pipe_cold_out = np.mean(results[pipe+'.QTHOut.T'])
+            heat_out = q * cp * rho * T_pipe_cold_out
+            heat_route_return.append(heat_out)
+            T_pipe_cold_in = np.mean(results[pipe+'.QTHIn.T'])
+            heat_in = q * cp * rho * T_pipe_cold_in
+            heat_route_return.append(heat_in)
+
+        #Temperature in retour line
+        T_route_return = []
+        for pipe in list(reversed(self.pipe_profile_cold)):
+            #route same as hot, from source to demand
+            #temperature along route (cold is reversed)
+            T_pipe_cold_out = np.mean(results[pipe+'.QTHOut.T'])
+            T_route_return.append((T_pipe_cold_out))
+            T_pipe_cold_in = np.mean(results[pipe+'.QTHIn.T'])
+            T_route_return.append((T_pipe_cold_in))
+
+        # Locations for components (sources, demands and buffers)
+        components = [self.source_connections,self.demand_connections,self.buffer_connections]
+        comp_locations = []
+        for comp in components:
+            locations = []
+            for con in comp:
+                position = 0.0
+                for pipe in self.pipe_profile_hot:
+                    if pipe == con:
+                        break;
+                    position += self.parameters(0)[pipe+'.length']
+                locations.append(position)
+            comp_locations.append(locations)
+
+
+        n_subplots = 3
+        fig, axarr = plt.subplots(n_subplots, sharex=True, figsize=(8, 3 * n_subplots))
+        axarr[0].set_title("Route")
+        
+         # Upper subplot
+        axarr[0].set_ylabel("Temperature [degC]")
+        axarr[0].ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
+        axarr[0].plot(network_length, T_route_feed,label="Feed T", linewidth=2, color="r")
+
+        color = ["k", "g", "y"]
+        types = ["source", "demand", "buffer"]
+        for i in range(len(comp_locations)):
+            print(types[i], comp_locations[i])
+            for xc in comp_locations[i]:
+                axarr[0].axvline(x=xc, color=color[i], label=types[i], linestyle="--")
+                axarr[1].axvline(x=xc, color=color[i], label=types[i], linestyle="--")
+                axarr[2].axvline(x=xc, color=color[i], label=types[i], linestyle="--")
+        
+        # Middle subplot
+        axarr[1].set_ylabel("Temperature [degC]")
+        axarr[1].plot(network_length, T_route_return,label="Retour T", linewidth=2, color="b")
+
+        # Lower subplot
+        axarr[2].set_ylabel("Heat")
+        axarr[2].plot(network_length, heat_route_feed,label="heat feed", linewidth=2, color="r")
+        axarr[2].plot(network_length, heat_route_return,label="heat return", linewidth=2, color="b")
+        axarr[2].set_xlabel('Route [m]')
+
+        # Shrink each axis and put a legend to the right of the axis
+        for i in range(n_subplots):
+            box = axarr[i].get_position()
+            axarr[i].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            axarr[i].legend(loc="center left", bbox_to_anchor=(1, 0.5), frameon=False)
+        plt.show()
+
 
         super().post()
 
