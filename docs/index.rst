@@ -6,11 +6,15 @@
 Welcome to RTC-Tools Heat Network's documentation!
 ==================================================
 
+Contents:
+=========
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Documentation
 
-
+   getting-started
+   support
 
 Indices and tables
 ==================
