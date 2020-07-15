@@ -1,0 +1,37 @@
+image: python:3.6
+
+before_script:
+  - pip install tox
+
+stages:
+  - style
+  - build
+  - test
+
+# style
+style:
+  stage: style
+  image: python:3.6
+  script:
+    - tox -vv
+  variables:
+    TOXENV: flake8,black
+
+# build
+build:
+  stage: build
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+# test
+py36:linux:
+  stage: test
+  script:
+    - tox -vv
+  image: python:3.6
+  variables:
+    TOXENV: py36
