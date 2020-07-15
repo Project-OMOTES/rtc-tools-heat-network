@@ -42,16 +42,12 @@ setup(
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    install_requires=[
-        'rtc-tools >= 2.4.0',
-    ],
+    install_requires=["rtc-tools >= 2.4.0",],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
     python_requires=">=3.6",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
-        'rtctools.libraries.modelica': [
-            'library_folder = rtctools_heat_network:modelica',
-        ]
+        "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica",]
     },
 )
