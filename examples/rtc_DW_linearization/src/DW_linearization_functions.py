@@ -23,19 +23,38 @@ def _kinematic_viscosity(temperature):
     ```
     """
     if temperature < 20 or temperature > 130:
-        raise Exception("Temperature should be in the range 20 - 130 C. Note that we use Celcius, not Kelvin.")
+        raise Exception(
+            "Temperature should be in the range 20 - 130 C. Note that we use Celcius, not Kelvin."
+        )
 
-    return np.polyval([7.53943453e-15, -3.01485854e-12,  4.75924986e-10, -3.79135487e-08, 1.58737429e-06], temperature)
+    return np.polyval(
+        [7.53943453e-15, -3.01485854e-12, 4.75924986e-10, -3.79135487e-08, 1.58737429e-06],
+        temperature,
+    )
 
 
 def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
     for _ in range(1000):
         friction_factor_old = friction_factor
 
-        reynolds_star = 1 / math.sqrt(8.0) * reynolds * math.sqrt(friction_factor) * relative_roughness
-        friction_factor = 1.0 / (-2.0 * math.log10(2.51 / reynolds / math.sqrt(friction_factor) * (1 + reynolds_star / 3.3)))**2
+        reynolds_star = (
+            1 / math.sqrt(8.0) * reynolds * math.sqrt(friction_factor) * relative_roughness
+        )
+        friction_factor = (
+            1.0
+            / (
+                -2.0
+                * math.log10(
+                    2.51 / reynolds / math.sqrt(friction_factor) * (1 + reynolds_star / 3.3)
+                )
+            )
+            ** 2
+        )
 
-        if abs(friction_factor - friction_factor_old) / max(friction_factor, friction_factor_old) < 1E-6:
+        if (
+            abs(friction_factor - friction_factor_old) / max(friction_factor, friction_factor_old)
+            < 1e-6
+        ):
             return friction_factor
     else:
         raise Exception("Did not converge")
@@ -63,18 +82,22 @@ def head_loss(velocity, diameter, length, wall_roughness, temperature):
         w = (reynolds - 2000.0) / 2000.0
         friction_factor = w * fac_turb + (1 - w) * fac_laminar
 
-    return length * friction_factor / (2 * GRAVITATIONAL_CONSTANT) * velocity**2 / diameter
+    return length * friction_factor / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
 
 
-def get_linear_pipe_dh_vs_q_fit(diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.0):
-    area = math.pi * diameter**2 / 4
+def get_linear_pipe_dh_vs_q_fit(
+    diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.0
+):
+    area = math.pi * diameter ** 2 / 4
 
     v_points = np.linspace(0.0, v_max, n_lines + 1)
     q_points = v_points * area
 
-    h_points = np.array([head_loss(v, diameter, length, wall_roughness, temperature) for v in v_points])
+    h_points = np.array(
+        [head_loss(v, diameter, length, wall_roughness, temperature) for v in v_points]
+    )
 
     a = np.diff(h_points) / np.diff(q_points)
     b = h_points[1:] - a * q_points[1:]
 
-    return a,  b
+    return a, b

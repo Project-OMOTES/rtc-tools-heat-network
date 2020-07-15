@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import logging
 import time
 
-from rtctools.optimization.collocated_integrated_optimization_problem \
-    import CollocatedIntegratedOptimizationProblem
+from rtctools.optimization.collocated_integrated_optimization_problem import (
+    CollocatedIntegratedOptimizationProblem,
+)
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin \
-    import Goal, GoalProgrammingMixin, StateGoal
+from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin, StateGoal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
@@ -22,7 +22,17 @@ logger = logging.getLogger("rtctools")
 
 
 class RangeGoal(Goal):
-    def __init__(self, optimization_problem, state, state_bounds, target_min, target_max, priority, weight=1.0, order=2):
+    def __init__(
+        self,
+        optimization_problem,
+        state,
+        state_bounds,
+        target_min,
+        target_max,
+        priority,
+        weight=1.0,
+        order=2,
+    ):
         self.state = state
         self.target_min = target_min
         self.target_max = target_max
@@ -44,7 +54,7 @@ class MinimizeGoal(Goal):
         self.order = order
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(self.state)/self.function_nominal
+        return optimization_problem.state(self.state) / self.function_nominal
 
 
 class MaximizeGoal(Goal):
@@ -55,11 +65,16 @@ class MaximizeGoal(Goal):
         self.order = order
 
     def function(self, optimization_problem, ensemble_member):
-        return -optimization_problem.state(self.state)/self.function_nominal
+        return -optimization_problem.state(self.state) / self.function_nominal
 
 
-class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
-              CollocatedIntegratedOptimizationProblem):
+class Example(
+    HomotopyMixin,
+    GoalProgrammingMixin,
+    CSVMixin,
+    ModelicaMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
 
     # Set whether flow in/out the buffer should be bidirectional
     bidirectional_flow_buffer = True
@@ -71,117 +86,109 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
     # List of pipe names
     pipes = [
-        'pipe1aC',
-        'pipe1bC',
-        'pipe4aC',
-        'pipe4bC',
-        'pipe5C',
-        'pipe7C',
-        'pipe9C',
-        'pipe15C',
-        'pipe25C',
-        'pipe26C',
-        'pipe27C',
-        'pipe29C',
-        'pipe30C',
-        'pipe31C',
-        'pipe32C',
-        'pipe52_inC',
-        'pipe52_outC',
-        'pipe1aH',
-        'pipe1bH',
-        'pipe4aH',
-        'pipe4bH',
-        'pipe5H',
-        'pipe7H',
-        'pipe9H',
-        'pipe15H',
-        'pipe25H',
-        'pipe26H',
-        'pipe27H',
-        'pipe29H',
-        'pipe30H',
-        'pipe31H',
-        'pipe32H',
-        'pipe52_inH',
-        'pipe52_outH'
-        ]
+        "pipe1aC",
+        "pipe1bC",
+        "pipe4aC",
+        "pipe4bC",
+        "pipe5C",
+        "pipe7C",
+        "pipe9C",
+        "pipe15C",
+        "pipe25C",
+        "pipe26C",
+        "pipe27C",
+        "pipe29C",
+        "pipe30C",
+        "pipe31C",
+        "pipe32C",
+        "pipe52_inC",
+        "pipe52_outC",
+        "pipe1aH",
+        "pipe1bH",
+        "pipe4aH",
+        "pipe4bH",
+        "pipe5H",
+        "pipe7H",
+        "pipe9H",
+        "pipe15H",
+        "pipe25H",
+        "pipe26H",
+        "pipe27H",
+        "pipe29H",
+        "pipe30H",
+        "pipe31H",
+        "pipe32H",
+        "pipe52_inH",
+        "pipe52_outH",
+    ]
 
     pipe_profile_hot = [
-        'pipe1aH',
-        'pipe1bH',
-        'pipe5H',
-        'pipe7H',
-        'pipe9H',
-        'pipe15H',
-        'pipe25H',
-        'pipe27H',
-        'pipe29H',
-        'pipe31H',
-        'pipe32H',
-        ]
+        "pipe1aH",
+        "pipe1bH",
+        "pipe5H",
+        "pipe7H",
+        "pipe9H",
+        "pipe15H",
+        "pipe25H",
+        "pipe27H",
+        "pipe29H",
+        "pipe31H",
+        "pipe32H",
+    ]
 
     pipe_profile_cold = [
-        'pipe32C',
-        'pipe31C',
-        'pipe29C',
-        'pipe27C',
-        'pipe25C',
-        'pipe15C',
-        'pipe9C',
-        'pipe7C',
-        'pipe5C',
-        'pipe1bC',
-        'pipe1aC',
+        "pipe32C",
+        "pipe31C",
+        "pipe29C",
+        "pipe27C",
+        "pipe25C",
+        "pipe15C",
+        "pipe9C",
+        "pipe7C",
+        "pipe5C",
+        "pipe1bC",
+        "pipe1aC",
     ]
 
     nodes = [
-    'nodeS2H',
-    'nodeD7H',
-    'nodeD92H',
-    'nodeB1H',
-    'nodeS2C',
-    'nodeD7C',
-    'nodeD92C',
-    'nodeB1C',
+        "nodeS2H",
+        "nodeD7H",
+        "nodeD92H",
+        "nodeB1H",
+        "nodeS2C",
+        "nodeD7C",
+        "nodeD92C",
+        "nodeB1C",
     ]
 
     # List of structures
     demands = [
-        'demand7',
-        'demand91',
-        'demand92',
-        ]
+        "demand7",
+        "demand91",
+        "demand92",
+    ]
 
-    demand_connections =[
-    'pipe27H',
-    'pipe31H',
-    'demand91',
+    demand_connections = [
+        "pipe27H",
+        "pipe31H",
+        "demand91",
     ]
 
     sources = [
-        'source1',
-        'source2',
-        ]
+        "source1",
+        "source2",
+    ]
 
-    source_connections = [
-        'pipe1aH',
-        'pipe5H'
-        ]
+    source_connections = ["pipe1aH", "pipe5H"]
 
-    buffers = [
-        'buffer1'
-        ]
+    buffers = ["buffer1"]
 
-    buffer_connections = [
-    'pipe15H'
-        ]
+    buffer_connections = ["pipe15H"]
 
     pumps = [
-        'pump1',
-        'pump2',
-        ]
-
+        "pump1",
+        "pump2",
+    ]
 
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(0)
@@ -207,56 +214,59 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         for pipe in self.pipes:
             gravitational_constant = 9.81
             friction_factor = 0.04
-            diameter = self.parameters(0)[pipe+'.diameter']
-            length = self.parameters(0)[pipe+'.length']
+            diameter = self.parameters(0)[pipe + ".diameter"]
+            length = self.parameters(0)[pipe + ".length"]
             # Compute c_v constant (where |dH| ~ c_v*v^2)
             c_v = length * friction_factor / (2 * gravitational_constant) / diameter
-            area = math.pi * diameter**2 / 4
-            v = self.state(pipe+'.QTHOut.Q')/area
-            constraints.append((
-                -self.state(pipe+'.dH') - c_v*v**2, 0.0, np.inf
-                ))
+            area = math.pi * diameter ** 2 / 4
+            v = self.state(pipe + ".QTHOut.Q") / area
+            constraints.append((-self.state(pipe + ".dH") - c_v * v ** 2, 0.0, np.inf))
 
         # Head loss in sources
         for s in self.sources:
-            c = self.parameters(0)[s+'.head_loss']
+            c = self.parameters(0)[s + ".head_loss"]
             if c == 0.0:
-                constraints.append((
-                    self.state(s+'.QTHIn.H') - self.state(s+'.QTHOut.H'), 0.0, 0.0
-                    ))
+                constraints.append(
+                    (self.state(s + ".QTHIn.H") - self.state(s + ".QTHOut.H"), 0.0, 0.0)
+                )
             else:
-                constraints.append((
-                    self.state(s+'.QTHIn.H') - self.state(s+'.QTHOut.H') - c*self.state(s+'.QTHOut.Q')**2, 0.0, np.inf
-                    ))
+                constraints.append(
+                    (
+                        self.state(s + ".QTHIn.H")
+                        - self.state(s + ".QTHOut.H")
+                        - c * self.state(s + ".QTHOut.Q") ** 2,
+                        0.0,
+                        np.inf,
+                    )
+                )
 
         # For each demand components the head loss is at least 1 bar
         for d in self.demands:
-            constraints.append((
-                self.state(d+'.QTHIn.H') - self.state(d+'.QTHOut.H'), 10.0, np.inf
-                ))
+            constraints.append(
+                (self.state(d + ".QTHIn.H") - self.state(d + ".QTHOut.H"), 10.0, np.inf)
+            )
 
         # As temperatures are variables, need to fix dT at demand nodes. Set dT to be exactly 30.0.
         for d in self.demands:
-            constraints.append((
-                self.state(d+'.QTHIn.T') - self.state(d+'.QTHOut.T'), 30.0, 30.0
-                ))
+            constraints.append(
+                (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), 30.0, 30.0)
+            )
 
         # In the linear model, fix the temperature in the pipes.
         # (I.e., supply and returns lines have respective temperatures 75 and 45.)
         if self.h_th == 0.0:
             for s in self.sources:
-                constraints.append((
-                    self.state(s+'.QTHIn.T') - self.parameters(0)[s+'.T_return'], 0.0, 0.0
-                    ))
-                constraints.append((
-                    self.state(s+'.QTHOut.T') - self.parameters(0)[s+'.T_supply'], 0.0, 0.0
-                    ))
+                constraints.append(
+                    (self.state(s + ".QTHIn.T") - self.parameters(0)[s + ".T_return"], 0.0, 0.0)
+                )
+                constraints.append(
+                    (self.state(s + ".QTHOut.T") - self.parameters(0)[s + ".T_supply"], 0.0, 0.0)
+                )
 
         # Ensure that buffer does not extract heat from the return line. For this, we impose that the nonnegative temperature jump in the return line when it 'intersect' the buffer.
-        constraints.append((
-            self.state('pipe9C.QTHIn.T') - self.state('pipe15C.QTHOut.T'), 0.0, np.inf
-            ))
-
+        constraints.append(
+            (self.state("pipe9C.QTHIn.T") - self.state("pipe15C.QTHOut.T"), 0.0, np.inf)
+        )
 
         return constraints
 
@@ -267,12 +277,16 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
         # Amount of heat stored in the buffer at the beginning of the time horizon is set to 0.0
         t0 = self.times()[0]
-        constraints.append((
-            self.state_at('buffer1.Stored_heat', t0)/self.variable_nominal('buffer1.Stored_heat'), 0.0, 0.0
-            ))
+        constraints.append(
+            (
+                self.state_at("buffer1.Stored_heat", t0)
+                / self.variable_nominal("buffer1.Stored_heat"),
+                0.0,
+                0.0,
+            )
+        )
 
         return constraints
-
 
     def path_goals(self):
         goals = super().path_goals()
@@ -286,7 +300,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # RangeGoal: sets a minimum and/or a maximum target on a certain state.
         # One has to provide the state, the target_min and target_max (set np.nan if it doesn't apply),
         # state_bounds which are the physical lower and upper bounds to the variable, the priority of the goal
-        # and (optionally) the order. Order=2 means that target violations will be punished quadratically. 
+        # and (optionally) the order. Order=2 means that target violations will be punished quadratically.
         # Order=1 means that violations are punished linearly.
         # (If you play around with the order of the goal at priority 3 you will see the effect kicking in.)
 
@@ -300,55 +314,95 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # Match the demand target heat
         for d in self.demands:
             k = d[6:]
-            var = d+'.Heat'
-            target_heat = self.get_timeseries('Heat_demand_'+k)
+            var = d + ".Heat"
+            target_heat = self.get_timeseries("Heat_demand_" + k)
             # Note: with the self.get_timeseries function you can extract the timeseries that are
             # in the timeseries_import file in the input folder.
             # Timeseries objects have (times, values) as property.
             target_heat_val = target_heat.values
 
             target_heat_ts = Timeseries(self.times(), target_heat_val)
-            lb = min(target_heat_ts.values)*0.9
-            ub = max(target_heat_ts.values)*1.1
-            goals.append(RangeGoal(self, state=var, target_min=target_heat_ts, target_max=target_heat_ts, state_bounds=(lb,ub), priority=1, order=1))
+            lb = min(target_heat_ts.values) * 0.9
+            ub = max(target_heat_ts.values) * 1.1
+            goals.append(
+                RangeGoal(
+                    self,
+                    state=var,
+                    target_min=target_heat_ts,
+                    target_max=target_heat_ts,
+                    state_bounds=(lb, ub),
+                    priority=1,
+                    order=1,
+                )
+            )
 
         # Extract certain heat from source1
-        goals.append(RangeGoal(self, state='source1.Heat', target_min=1e5, target_max=1e5, state_bounds=(0.0, 1.5e6), priority=2, order=2))
+        goals.append(
+            RangeGoal(
+                self,
+                state="source1.Heat",
+                target_min=1e5,
+                target_max=1e5,
+                state_bounds=(0.0, 1.5e6),
+                priority=2,
+                order=2,
+            )
+        )
 
         # Minimize the usage of source2
-        goals.append(RangeGoal(self, state='source2.Heat', target_max=0.0, target_min=np.nan, state_bounds=(0.0, 1.5e6), priority=3, order=2))
+        goals.append(
+            RangeGoal(
+                self,
+                state="source2.Heat",
+                target_max=0.0,
+                target_min=np.nan,
+                state_bounds=(0.0, 1.5e6),
+                priority=3,
+                order=2,
+            )
+        )
 
         # In/out pipes to and from the buffer should have bidirectional flow
         if self.bidirectional_flow_buffer:
             for p in self.pipes:
-                if 'in' in p:
-                    goals.append(RangeGoal(self, state=p+'.Q', target_min=np.nan, target_max=0.0, state_bounds=(0.0, 0.023), priority=4, weight=1.0, order=1))
+                if "in" in p:
+                    goals.append(
+                        RangeGoal(
+                            self,
+                            state=p + ".Q",
+                            target_min=np.nan,
+                            target_max=0.0,
+                            state_bounds=(0.0, 0.023),
+                            priority=4,
+                            weight=1.0,
+                            order=1,
+                        )
+                    )
 
         return goals
 
     # Store the homotopy parameter
     @property
     def h_th(self):
-        return self.parameters(0)['theta']
+        return self.parameters(0)["theta"]
 
     def goal_programming_options(self):
         options = super().goal_programming_options()
         if self.bidirectional_flow_buffer:
             # To ensure bidirectional flow, need to introduce some slack
-            options['constraint_relaxation'] = 1e-5
+            options["constraint_relaxation"] = 1e-5
         return options
-
 
     # Overwrite default solver options
     def solver_options(self):
         options = super().solver_options()
-        solver = options['solver']
-        options[solver]['nlp_scaling_method'] = 'none'
-        options[solver]['linear_system_scaling'] = 'none'
-        options[solver]['linear_scaling_on_demand'] = 'no'
-        options[solver]['max_iter'] = 1000
-        options[solver]['tol'] = 1e-5
-        options[solver]['acceptable_tol'] = 1e-5
+        solver = options["solver"]
+        options[solver]["nlp_scaling_method"] = "none"
+        options[solver]["linear_system_scaling"] = "none"
+        options[solver]["linear_scaling_on_demand"] = "no"
+        options[solver]["max_iter"] = 1000
+        options[solver]["tol"] = 1e-5
+        options[solver]["acceptable_tol"] = 1e-5
         return options
 
     def post(self):
@@ -365,16 +419,16 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         for pipe in self.pipes:
             gravitational_constant = 9.81
             friction_factor = 0.04
-            diameter = self.parameters(0)[pipe+'.diameter']
-            length = self.parameters(0)[pipe+'.length']
+            diameter = self.parameters(0)[pipe + ".diameter"]
+            length = self.parameters(0)[pipe + ".length"]
             # Compute c_v constant (where |dH| ~ c_v*v^2)
             c_v = length * friction_factor / (2 * gravitational_constant) / diameter
-            area = math.pi * diameter**2 / 4
-            q = results[pipe+'.QTHOut.Q']
-            v = q/area
-            dH = -c_v*v**2
+            area = math.pi * diameter ** 2 / 4
+            q = results[pipe + ".QTHOut.Q"]
+            v = q / area
+            dH = -c_v * v ** 2
             # Overwrite dH
-            results[pipe+'.dH'] = dH
+            results[pipe + ".dH"] = dH
 
         ### RESULTS ANALYSIS ###
 
@@ -453,7 +507,6 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
         # print("Avg return temperature system profile")
         # print(t_return)
 
-
         ### PLOTS ###
 
         if self.plots:
@@ -461,7 +514,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
             sum_demands = np.full_like(self.times(), 0.0)
             for d in self.demands:
                 k = d[6:]
-                sum_demands +=self.get_timeseries('Heat_demand_'+k).values
+                sum_demands += self.get_timeseries("Heat_demand_" + k).values
 
             # Generate Heat Plot
             # This plot illustrates:
@@ -476,7 +529,14 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
             # Upper subplot
             axarr[0].set_ylabel("Heat Sources")
             axarr[0].ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
-            axarr[0].plot(times, results["source1.Heat"], label="source1", linewidth=2, color="b", linestyle="--",)
+            axarr[0].plot(
+                times,
+                results["source1.Heat"],
+                label="source1",
+                linewidth=2,
+                color="b",
+                linestyle="--",
+            )
             axarr[0].plot(
                 times,
                 results["source2.Heat"],
@@ -496,15 +556,54 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
             # Middle Subplot
             axarr[1].set_ylabel("Stored Heat Buffer")
-            axarr[1].plot(times, results['StoredHeat_buffer']/3600.0, label="Stored heat buffer", linewidth=2, color="g")
+            axarr[1].plot(
+                times,
+                results["StoredHeat_buffer"] / 3600.0,
+                label="Stored heat buffer",
+                linewidth=2,
+                color="g",
+            )
 
             # Lower Subplot
             axarr[2].set_ylabel("Demand")
-            axarr[2].plot(times, self.get_timeseries('Heat_demand_7').values, label="demand7 req", linewidth=2, color="r")
-            axarr[2].plot(times, results['demand7.Heat'], label="demand7 opt", linewidth=2, color="g", linestyle="--")
-            axarr[2].plot(times, self.get_timeseries('Heat_demand_91').values, label="demand91&92 req", linewidth=2, color="r")
-            axarr[2].plot(times, results['demand91.Heat'], label="demand91 opt", linewidth=2, color="g", linestyle="--")
-            axarr[2].plot(times, results['demand92.Heat'], label="demand92 opt", linewidth=2, color="g", linestyle="--")
+            axarr[2].plot(
+                times,
+                self.get_timeseries("Heat_demand_7").values,
+                label="demand7 req",
+                linewidth=2,
+                color="r",
+            )
+            axarr[2].plot(
+                times,
+                results["demand7.Heat"],
+                label="demand7 opt",
+                linewidth=2,
+                color="g",
+                linestyle="--",
+            )
+            axarr[2].plot(
+                times,
+                self.get_timeseries("Heat_demand_91").values,
+                label="demand91&92 req",
+                linewidth=2,
+                color="r",
+            )
+            axarr[2].plot(
+                times,
+                results["demand91.Heat"],
+                label="demand91 opt",
+                linewidth=2,
+                color="g",
+                linestyle="--",
+            )
+            axarr[2].plot(
+                times,
+                results["demand92.Heat"],
+                label="demand92 opt",
+                linewidth=2,
+                color="g",
+                linestyle="--",
+            )
 
             # Shrink each axis and put a legend to the right of the axis
             for i in range(n_subplots):
@@ -515,7 +614,6 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
             # Output Plot
             plt.show()
 
-
             # Generate Route Plots
             # This plot illustrates:
             # * upper plot - Temperature from source to demand and back to source;
@@ -523,62 +621,62 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
             # * lower plot - Discharge from source to demand with buffer in middle of network;
 
             # generate x-axis (length network)
-            network_length=[]
+            network_length = []
             length = 0
             for pipe in self.pipe_profile_hot:
-                #route (x coordinate for T_in en T_out)
+                # route (x coordinate for T_in en T_out)
                 network_length.append(length)
-                length += self.parameters(0)[pipe+'.length']
+                length += self.parameters(0)[pipe + ".length"]
                 network_length.append(length)
 
-            #Temperature in feed line
+            # Temperature in feed line
             T_route_feed = []
             for pipe in self.pipe_profile_hot:
-                T_pipe_hot_in = np.mean(results[pipe+'.QTHIn.T'])
+                T_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
                 T_route_feed.append((T_pipe_hot_in))
-                T_pipe_hot_out = np.mean(results[pipe+'.QTHOut.T'])
+                T_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
                 T_route_feed.append((T_pipe_hot_out))
 
-            #Heat in feed line
+            # Heat in feed line
             heat_route_feed = []
             for pipe in self.pipe_profile_hot:
-                q = np.mean(results[pipe+'.Q'])
-                cp = self.parameters(0)[pipe+'.cp']
-                rho = self.parameters(0)[pipe+'.rho']
-                T_pipe_hot_in = np.mean(results[pipe+'.QTHIn.T'])
+                q = np.mean(results[pipe + ".Q"])
+                cp = self.parameters(0)[pipe + ".cp"]
+                rho = self.parameters(0)[pipe + ".rho"]
+                T_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
                 heat_in = q * cp * rho * T_pipe_hot_in
                 heat_route_feed.append(heat_in)
-                T_pipe_hot_out = np.mean(results[pipe+'.QTHOut.T'])
+                T_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
                 heat_out = q * cp * rho * T_pipe_hot_out
                 heat_route_feed.append(heat_out)
 
-            #Heat in return line
+            # Heat in return line
             heat_route_return = []
-            #route same as hot, from source to demand
-            #temperature along route (cold is reversed)
+            # route same as hot, from source to demand
+            # temperature along route (cold is reversed)
             for pipe in list(reversed(self.pipe_profile_cold)):
-                q = np.mean(results[pipe+'.Q'])
-                cp = self.parameters(0)[pipe+'.cp']
-                rho = self.parameters(0)[pipe+'.rho']
-                T_pipe_cold_out = np.mean(results[pipe+'.QTHOut.T'])
+                q = np.mean(results[pipe + ".Q"])
+                cp = self.parameters(0)[pipe + ".cp"]
+                rho = self.parameters(0)[pipe + ".rho"]
+                T_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
                 heat_out = q * cp * rho * T_pipe_cold_out
                 heat_route_return.append(heat_out)
-                T_pipe_cold_in = np.mean(results[pipe+'.QTHIn.T'])
+                T_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
                 heat_in = q * cp * rho * T_pipe_cold_in
                 heat_route_return.append(heat_in)
 
-            #Temperature in retour line
+            # Temperature in retour line
             T_route_return = []
             for pipe in list(reversed(self.pipe_profile_cold)):
-                #route same as hot, from source to demand
-                #temperature along route (cold is reversed)
-                T_pipe_cold_out = np.mean(results[pipe+'.QTHOut.T'])
+                # route same as hot, from source to demand
+                # temperature along route (cold is reversed)
+                T_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
                 T_route_return.append((T_pipe_cold_out))
-                T_pipe_cold_in = np.mean(results[pipe+'.QTHIn.T'])
+                T_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
                 T_route_return.append((T_pipe_cold_in))
 
             # Locations for components (sources, demands and buffers)
-            components = [self.source_connections,self.demand_connections,self.buffer_connections]
+            components = [self.source_connections, self.demand_connections, self.buffer_connections]
             comp_locations = []
             for comp in components:
                 locations = []
@@ -586,20 +684,19 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
                     position = 0.0
                     for pipe in self.pipe_profile_hot:
                         if pipe == con:
-                            break;
-                        position += self.parameters(0)[pipe+'.length']
+                            break
+                        position += self.parameters(0)[pipe + ".length"]
                     locations.append(position)
                 comp_locations.append(locations)
-
 
             n_subplots = 3
             fig, axarr = plt.subplots(n_subplots, sharex=True, figsize=(8, 3 * n_subplots))
             axarr[0].set_title("Route")
 
-             # Upper subplot
+            # Upper subplot
             axarr[0].set_ylabel("Temperature [degC]")
             axarr[0].ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-            axarr[0].plot(network_length, T_route_feed,label="Feed T", linewidth=2, color="r")
+            axarr[0].plot(network_length, T_route_feed, label="Feed T", linewidth=2, color="r")
 
             color = ["k", "g", "y"]
             types = ["source", "demand", "buffer"]
@@ -612,13 +709,17 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
             # Middle subplot
             axarr[1].set_ylabel("Temperature [degC]")
-            axarr[1].plot(network_length, T_route_return,label="Retour T", linewidth=2, color="b")
+            axarr[1].plot(network_length, T_route_return, label="Retour T", linewidth=2, color="b")
 
             # Lower subplot
             axarr[2].set_ylabel("Heat")
-            axarr[2].plot(network_length, heat_route_feed,label="heat feed", linewidth=2, color="r")
-            axarr[2].plot(network_length, heat_route_return,label="heat return", linewidth=2, color="b")
-            axarr[2].set_xlabel('Route [m]')
+            axarr[2].plot(
+                network_length, heat_route_feed, label="heat feed", linewidth=2, color="r"
+            )
+            axarr[2].plot(
+                network_length, heat_route_return, label="heat return", linewidth=2, color="b"
+            )
+            axarr[2].set_xlabel("Route [m]")
 
             # Shrink each axis and put a legend to the right of the axis
             for i in range(n_subplots):
