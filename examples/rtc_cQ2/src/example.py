@@ -58,6 +58,9 @@ class MaximizeGoal(Goal):
 class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
               CollocatedIntegratedOptimizationProblem):
 
+    # Set whether show plots or not
+    plots = False
+
     # Create useful lists
 
     # List of pipe names
@@ -242,6 +245,9 @@ class Example(GoalProgrammingMixin, CSVMixin, ModelicaMixin,
 
 
     def post(self):
+        if not self.plots:
+            return super().post()
+
         times = self.times()
         results = self.extract_results()
 

@@ -65,7 +65,7 @@ class Example(HomotopyMixin, GoalProgrammingMixin, CSVMixin, ModelicaMixin,
     bidirectional_flow_buffer = True
 
     # Set whether show plots or not
-    plots = True
+    plots = False
 
     # Create useful lists
 
