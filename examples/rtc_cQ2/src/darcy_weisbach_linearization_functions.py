@@ -1,4 +1,5 @@
 import math
+
 import numpy as np
 
 GRAVITATIONAL_CONSTANT = 9.81
@@ -10,7 +11,8 @@ def _kinematic_viscosity(temperature):
     using the `iapws` package, which implements the IAPWS standard. The valid range of temperatures
     is 20 - 130 C.
 
-    Below the snippet of code used to get the polynomial coefficients (possibly useful when refitting):
+    Below the snippet of code used to get the polynomial coefficients (possibly useful when
+    refitting):
     ```
     from iapws import IAPWS95
 

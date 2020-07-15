@@ -1,21 +1,23 @@
-import numpy as np
-import math
-from datetime import datetime
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import logging
+import math
+
 import casadi as ca
+
+from darcy_weisbach_linearization_functions import get_linear_pipe_dh_vs_q_fit
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin, StateGoal
+from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from DW_linearization_functions import head_loss, get_linear_pipe_dh_vs_q_fit
 
 logger = logging.getLogger("rtctools")
 
@@ -159,9 +161,10 @@ class Example(
         # A constraint has the shape: ((f(x), lb, ub)) meaning that lb <= f(x) <= ub.
         # The naming of the variables is: name_of_components+.+(Q/H/Heat/dH etc.)
         # The naming of the components comes from the Modelica model Example.mo (in model folder).
-        # The names of the variables come from the different component and Port modelica models. The variables are in Modelica SIUnits.
-        # Say you want to constraint the heat of source1, the naming will then be 'source1.Heat'.
-        # To set a constraint on a variable, one has to use: self.state(name_variable)
+        # The names of the variables come from the different component and Port modelica models. The
+        # variables are in Modelica SIUnits. Say you want to constraint the heat of source1, the
+        # naming will then be 'source1.Heat'. To set a constraint on a variable, one has to use:
+        # self.state(name_variable)
 
         # For this model, we have the following constraints:
         # * head loss relationship for pipes (e.g., dH >= cQ^2)
@@ -172,8 +175,10 @@ class Example(
         parameters = self.parameters(0)
 
         # Head loss in pipes
-        # Use linearization of the Darcy-Weisbach equation. The linearization function is in the DW_linearization_functions script.
-        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the optimization problem one needs to maximize dH.)
+        # Use linearization of the Darcy-Weisbach equation. The linearization function is in the
+        # DW_linearization_functions script.
+        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the
+        # (optimization problem one needs to maximize dH.)
         for pipe in self.pipes:
             diameter = parameters[f"{pipe}.diameter"]
             area = math.pi * diameter ** 2 / 4
@@ -185,7 +190,8 @@ class Example(
                 n_lines = 10
                 v_max = 1.0
             else:
-                # For the network pipes, compute the max velocity using the max flow the two pumps can create
+                # For the network pipes, compute the max velocity using the max flow the two pumps
+                # can create
                 n_lines = 10
                 q_max = 0.01111 * 2
                 v_max = q_max / area
@@ -201,14 +207,15 @@ class Example(
             )
 
             # Vectorize state
-            # (To gain backend speed, it is possible to define vectorize constraints.
-            # Instead of defining a single constraint at the time, multiple constaints are set at once.)
-            dH = ca.repmat(self.state(f"{pipe}.dH"), len(a))
-            Q = ca.repmat(self.state(f"{pipe}.Q"), len(a))
+            # (To gain backend speed, it is possible to define vectorize constraints. Instead of
+            # defining a single constraint at the time, multiple constaints are set at once.)
+            dh = ca.repmat(self.state(f"{pipe}.dH"), len(a))
+            q = ca.repmat(self.state(f"{pipe}.Q"), len(a))
 
             # Vectorize constraints
-            # (Note that a and b are arrays of size n_lines. Similarly dH and Q are CasaDi symbols of size n_lines.)
-            constraints.append((-dH - (a * Q + b), 0.0, np.inf))
+            # (Note that a and b are arrays of size n_lines. Similarly dH and Q are CasaDi symbols
+            # of size n_lines.)
+            constraints.append((-dh - (a * q + b), 0.0, np.inf))
 
         # Head loss in sources
         for s in self.sources:
@@ -249,7 +256,8 @@ class Example(
 
     def path_goals(self):
         goals = super().path_goals()
-        # Similarly to path_constraints, path goals are goals that will be applied at every time step.
+        # Similarly to path_constraints, path goals are goals that will be applied at every time
+        # step.
 
         # There are two types of goals in rtc-tools:
         # * set a minimum and(/or) maximum target
@@ -257,11 +265,11 @@ class Example(
 
         # You can see the goals classes in the beginning of this code.
         # RangeGoal: sets a minimum and/or a maximum target on a certain state.
-        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't apply),
-        # state_bounds which are the physical lower and upper bounds to the variable, the priority of the goal
-        # and (optionally) the order. Order=2 means that target violations will be punished quadratically.
-        # Order=1 means that violations are punished linearly.
-        # (If you play around with the order of the goal at priority 3 you will see the effect kicking in.)
+        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't
+        # apply), state_bounds which are the physical lower and upper bounds to the variable, the
+        # priority of the goal and (optionally) the order. Order=2 means that target violations will
+        # be punished quadratically. Order=1 means that violations are punished linearly. (If you
+        # play around with the order of the goal at priority 3 you will see the effect kicking in.)
 
         # MaximizeGoal: maximizes the given state.
 
@@ -334,10 +342,11 @@ class Example(
         times = self.times()
         results = self.extract_results()
 
-        # This function is called after the optimization run. Thus can be used to do analysis of the results, make plots etc.
-        # To get the results of the optimization for a certain variable use: results[name_variable]
+        # This function is called after the optimization run. Thus can be used to do analysis of the
+        # results, make plots etc. To get the results of the optimization for a certain variable
+        # use: results[name_variable]
 
-        ### RESULTS ANALYSIS ###
+        # ****** RESULTS ANALYSIS ******
 
         # # (Possibly) Useful info for debugging purposes
         # print('Pumps')
@@ -358,7 +367,7 @@ class Example(
         #     print('dH')
         #     print(np.mean(results[p+'.dH']))
 
-        ### PLOTS ###
+        # ****** PLOTS ******
 
         self.set_timeseries(
             "Heat_buffer", Timeseries(self.times(), results["buffer1.Q"] * 30 * 4200 * 988)
@@ -477,7 +486,9 @@ class Example(
         # friction_factor = 0.04
         # c = length * friction_factor / (2 * gravitational_constant) / diameter
         # # Linear coefficients#2 for Q-H relationship
-        # a, b = get_linear_pipe_dh_vs_q_fit(diameter, length, wall_roughness, temperature=temperature, n_lines=n_lines, v_max=v_max)
+        # a, b = get_linear_pipe_dh_vs_q_fit(
+        #            diameter, length, wall_roughness, temperature=temperature,
+        #            n_lines=n_lines, v_max=v_max)
 
         # # Darcy Weisbach
         # dH_dw = np.full_like(q_points, 0.0)
@@ -494,7 +505,11 @@ class Example(
         # axarr[0].set_ylabel("dH [m]")
 
         # for a_coeff, b_coeff in zip(a, b):
-        #     axarr[0].plot(q_points, (a_coeff * q_points + b_coeff), linewidth=1, color="r", linestyle="--")
+        #     axarr[0].plot(q_points,
+        #                   (a_coeff * q_points + b_coeff),
+        #                   linewidth=1,
+        #                   color="r",
+        #                   linestyle="--")
         # axarr[0].plot(q_points, dH_dw, linewidth=2, color="b", label="D-W")
 
         # #Plot2 Middle subplot: Q vs dH for DW and opt
@@ -517,7 +532,8 @@ class Example(
         #         # Darcy Weisbach
         # dH_dw_zoom = np.full_like(q_points_zoom, 0.0)
         # for i in range(len(q_points_zoom)):
-        #     dH_dw_zoom[i] = head_loss(v_points_zoom[i], diameter, length, wall_roughness, temperature)
+        #     dH_dw_zoom[i] = head_loss(
+        #                         v_points_zoom[i], diameter, length, wall_roughness, temperature)
         # axarr[2].plot(q_points_zoom, dH_dw_zoom, linewidth=2, color="b", label="D-W")
         # axarr[2].plot(q_opt, dH_opt, linewidth=2, color="r", linestyle=":", label="opt")
 

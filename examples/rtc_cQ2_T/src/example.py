@@ -1,22 +1,22 @@
-import numpy as np
-import math
-from datetime import datetime
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import logging
+import math
 import time
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin, StateGoal
+from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from DW_linearization_functions import friction_factor_plot, head_loss
+# from darcy_weisbach_linearization_functions import friction_factor_plot, head_loss
 
 logger = logging.getLogger("rtctools")
 
@@ -199,9 +199,10 @@ class Example(
         # A constraint has the shape: ((f(x), lb, ub)) meaning that lb <= f(x) <= ub.
         # The naming of the variables is: name_of_components+.+(Q/H/Heat/dH etc.)
         # The naming of the components comes from the Modelica model Example.mo (in model folder).
-        # The names of the variables come from the different component and Port modelica models. The variables are in Modelica SIUnits.
-        # Say you want to constraint the heat of source1, the naming will then be 'source1.Heat'.
-        # To set a constraint on a variable, one has to use: self.state(name_variable)
+        # The names of the variables come from the different component and Port modelica models. The
+        # variables are in Modelica SIUnits. Say you want to constraint the heat of source1, the
+        # naming will then be 'source1.Heat'. To set a constraint on a variable, one has to use:
+        # self.state(name_variable)
 
         # For this model, we have the following constraints:
         # * head loss relationship for pipes (e.g., dH >= cQ^2)
@@ -209,8 +210,11 @@ class Example(
         # * pressure of at least 1 bar at the demand
 
         # Head loss in pipes
-        # To model the relationship |dH| = cQ^2: impose the constraint |dH| >= cQ^2 and the optimize such that |dH| is dragged down.
-        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the optimization problem one needs to maximize dH.)
+        # To model the relationship |dH| = cQ^2: impose the constraint |dH| >= cQ^2 and the optimize
+        # such that |dH| is dragged down.
+        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the
+        # (optimization problem one needs to maximize dH.)
+
         for pipe in self.pipes:
             gravitational_constant = 9.81
             friction_factor = 0.04
@@ -263,7 +267,8 @@ class Example(
                     (self.state(s + ".QTHOut.T") - self.parameters(0)[s + ".T_supply"], 0.0, 0.0)
                 )
 
-        # Ensure that buffer does not extract heat from the return line. For this, we impose that the nonnegative temperature jump in the return line when it 'intersect' the buffer.
+        # Ensure that buffer does not extract heat from the return line. For this, we impose that
+        # the nonnegative temperature jump in the return line when it 'intersect' the buffer.
         constraints.append(
             (self.state("pipe9C.QTHIn.T") - self.state("pipe15C.QTHOut.T"), 0.0, np.inf)
         )
@@ -290,7 +295,8 @@ class Example(
 
     def path_goals(self):
         goals = super().path_goals()
-        # Similarly to path_constraints, path goals are goals that will be applied at every time step.
+        # Similarly to path_constraints, path goals are goals that will be applied at every time
+        # step.
 
         # There are two types of goals in rtc-tools:
         # * set a minimum and(/or) maximum target
@@ -298,11 +304,11 @@ class Example(
 
         # You can see the goals classes in the beginning of this code.
         # RangeGoal: sets a minimum and/or a maximum target on a certain state.
-        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't apply),
-        # state_bounds which are the physical lower and upper bounds to the variable, the priority of the goal
-        # and (optionally) the order. Order=2 means that target violations will be punished quadratically.
-        # Order=1 means that violations are punished linearly.
-        # (If you play around with the order of the goal at priority 3 you will see the effect kicking in.)
+        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't
+        # apply), state_bounds which are the physical lower and upper bounds to the variable, the
+        # priority of the goal and (optionally) the order. Order=2 means that target violations will
+        # be punished quadratically. Order=1 means that violations are punished linearly. (If you
+        # play around with the order of the goal at priority 3 you will see the effect kicking in.)
 
         # MaximizeGoal: maximizes the given state.
 
@@ -409,13 +415,17 @@ class Example(
         times = self.times()
         results = self.extract_results()
 
-        # This function is called after the optimization run. Thus can be used to do analysis of the results, make plots etc.
-        # To get the results of the optimization for a certain variable use: results[name_variable]
+        # This function is called after the optimization run. Thus can be used to do analysis of the
+        # results, make plots etc. To get the results of the optimization for a certain variable
+        # use: results[name_variable]
 
         # Compute dH for each pipe.
-        # (When Temperature is fixed throughout, computing dH can be easily done via an optimization goal.
-        # However, the minimization of the head loss implies a minimization of Q which is problematic as Heat = Q*Temperature.
-        # Thus, we compute dH is post-processing. To compute H also the pipe profile needs to be taken into acocunt. This is doable, but unnecessary for now.)
+        # (When Temperature is fixed throughout, computing dH can be easily done via an optimization
+        # goal. However, the minimization of the head loss implies a minimization of Q which is
+        # problematic as Heat = Q*Temperature. Thus, we compute dH is post-processing. To compute H
+        # also the pipe profile needs to be taken into acocunt. This is doable, but unnecessary for
+        # now.)
+
         for pipe in self.pipes:
             gravitational_constant = 9.81
             friction_factor = 0.04
@@ -426,11 +436,11 @@ class Example(
             area = math.pi * diameter ** 2 / 4
             q = results[pipe + ".QTHOut.Q"]
             v = q / area
-            dH = -c_v * v ** 2
+            dh = -c_v * v ** 2
             # Overwrite dH
-            results[pipe + ".dH"] = dH
+            results[pipe + ".dH"] = dh
 
-        ### RESULTS ANALYSIS ###
+        # ****** RESULTS ANALYSIS ******
 
         # # (Possibly) Useful info for debugging purposes
         # print('Pumps')
@@ -469,7 +479,8 @@ class Example(
         #     T_g = self.parameters(0)[p+'.T_g']
         #     sign_dT = self.parameters(0)[p+'.sign_dT']
         #     dT = self.parameters(0)[p+'.T_supply'] - self.parameters(0)[p+'.T_return']
-        #     heat_loss = length*(U_1-U_2)*(t_in + t_out)/2 -(length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT))
+        #     heat_loss = (length*(U_1-U_2)*(t_in + t_out)/2 -
+        #                     (length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT)))
         #     temp_loss = heat_loss/(cp*rho*q)
         #     print("Avg heat loss in pipe")
         #     print(np.mean(heat_loss))
@@ -507,7 +518,7 @@ class Example(
         # print("Avg return temperature system profile")
         # print(t_return)
 
-        ### PLOTS ###
+        # ****** PLOTS ******
 
         if self.plots:
 
@@ -630,12 +641,12 @@ class Example(
                 network_length.append(length)
 
             # Temperature in feed line
-            T_route_feed = []
+            temperature_route_feed = []
             for pipe in self.pipe_profile_hot:
-                T_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
-                T_route_feed.append((T_pipe_hot_in))
-                T_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
-                T_route_feed.append((T_pipe_hot_out))
+                temperature_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
+                temperature_route_feed.append((temperature_pipe_hot_in))
+                temperature_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
+                temperature_route_feed.append((temperature_pipe_hot_out))
 
             # Heat in feed line
             heat_route_feed = []
@@ -643,11 +654,11 @@ class Example(
                 q = np.mean(results[pipe + ".Q"])
                 cp = self.parameters(0)[pipe + ".cp"]
                 rho = self.parameters(0)[pipe + ".rho"]
-                T_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
-                heat_in = q * cp * rho * T_pipe_hot_in
+                temperature_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
+                heat_in = q * cp * rho * temperature_pipe_hot_in
                 heat_route_feed.append(heat_in)
-                T_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
-                heat_out = q * cp * rho * T_pipe_hot_out
+                temperature_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
+                heat_out = q * cp * rho * temperature_pipe_hot_out
                 heat_route_feed.append(heat_out)
 
             # Heat in return line
@@ -658,22 +669,22 @@ class Example(
                 q = np.mean(results[pipe + ".Q"])
                 cp = self.parameters(0)[pipe + ".cp"]
                 rho = self.parameters(0)[pipe + ".rho"]
-                T_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
-                heat_out = q * cp * rho * T_pipe_cold_out
+                temperature_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
+                heat_out = q * cp * rho * temperature_pipe_cold_out
                 heat_route_return.append(heat_out)
-                T_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
-                heat_in = q * cp * rho * T_pipe_cold_in
+                temperature_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
+                heat_in = q * cp * rho * temperature_pipe_cold_in
                 heat_route_return.append(heat_in)
 
             # Temperature in retour line
-            T_route_return = []
+            temperature_route_return = []
             for pipe in list(reversed(self.pipe_profile_cold)):
                 # route same as hot, from source to demand
                 # temperature along route (cold is reversed)
-                T_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
-                T_route_return.append((T_pipe_cold_out))
-                T_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
-                T_route_return.append((T_pipe_cold_in))
+                temperature_pipe_cold_out = np.mean(results[pipe + ".QTHOut.T"])
+                temperature_route_return.append((temperature_pipe_cold_out))
+                temperature_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
+                temperature_route_return.append((temperature_pipe_cold_in))
 
             # Locations for components (sources, demands and buffers)
             components = [self.source_connections, self.demand_connections, self.buffer_connections]
@@ -696,7 +707,9 @@ class Example(
             # Upper subplot
             axarr[0].set_ylabel("Temperature [degC]")
             axarr[0].ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-            axarr[0].plot(network_length, T_route_feed, label="Feed T", linewidth=2, color="r")
+            axarr[0].plot(
+                network_length, temperature_route_feed, label="Feed T", linewidth=2, color="r"
+            )
 
             color = ["k", "g", "y"]
             types = ["source", "demand", "buffer"]
@@ -709,7 +722,9 @@ class Example(
 
             # Middle subplot
             axarr[1].set_ylabel("Temperature [degC]")
-            axarr[1].plot(network_length, T_route_return, label="Retour T", linewidth=2, color="b")
+            axarr[1].plot(
+                network_length, temperature_route_return, label="Retour T", linewidth=2, color="b"
+            )
 
             # Lower subplot
             axarr[2].set_ylabel("Heat")

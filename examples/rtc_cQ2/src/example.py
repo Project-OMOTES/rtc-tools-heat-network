@@ -1,20 +1,20 @@
-import numpy as np
-import math
-from datetime import datetime
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import logging
+import math
+
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin, StateGoal
+from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from DW_linearization_functions import friction_factor_plot, head_loss
+# from darcy_weisbach_linearization_functions import friction_factor_plot, head_loss
 
 logger = logging.getLogger("rtctools")
 
@@ -132,9 +132,10 @@ class Example(
         # A constraint has the shape: ((f(x), lb, ub)) meaning that lb <= f(x) <= ub.
         # The naming of the variables is: name_of_components+.+(Q/H/Heat/dH etc.)
         # The naming of the components comes from the Modelica model Example.mo (in model folder).
-        # The names of the variables come from the different component and Port modelica models. The variables are in Modelica SIUnits.
-        # Say you want to constraint the heat of source1, the naming will then be 'source1.Heat'.
-        # To set a constraint on a variable, one has to use: self.state(name_variable)
+        # The names of the variables come from the different component and Port modelica models. The
+        # variables are in Modelica SIUnits. Say you want to constraint the heat of source1, the
+        # naming will then be 'source1.Heat'. To set a constraint on a variable, one has to use:
+        # self.state(name_variable)
 
         # For this model, we have the following constraints:
         # * head loss relationship for pipes (e.g., dH >= cQ^2)
@@ -142,8 +143,10 @@ class Example(
         # * pressure of at least 1 bar at the demand
 
         # Head loss in pipes
-        # To model the relationship |dH| = cQ^2: impose the constraint |dH| >= cQ^2 and the optimize such that |dH| is dragged down.
-        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the optimization problem one needs to maximize dH.)
+        # To model the relationship |dH| = cQ^2: impose the constraint |dH| >= cQ^2 and the optimize
+        # such that |dH| is dragged down.
+        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the
+        # (optimization problem one needs to maximize dH.)
         for pipe in self.pipes:
             gravitational_constant = 9.81
             friction_factor = 0.04
@@ -194,7 +197,8 @@ class Example(
 
     def path_goals(self):
         goals = super().path_goals()
-        # Similarly to path_constraints, path goals are goals that will be applied at every time step.
+        # Similarly to path_constraints, path goals are goals that will be applied at every time
+        # step.
 
         # There are two types of goals in rtc-tools:
         # * set a minimum and(/or) maximum target
@@ -202,11 +206,11 @@ class Example(
 
         # You can see the goals classes in the beginning of this code.
         # RangeGoal: sets a minimum and/or a maximum target on a certain state.
-        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't apply),
-        # state_bounds which are the physical lower and upper bounds to the variable, the priority of the goal
-        # and (optionally) the order. Order=2 means that target violations will be punished quadratically.
-        # Order=1 means that violations are punished linearly.
-        # (If you play around with the order of the goal at priority 3 you will see the effect kicking in.)
+        # One has to provide the state, the target_min and target_max (set np.nan if it doesn't
+        # apply), state_bounds which are the physical lower and upper bounds to the variable, the
+        # priority of the goal and (optionally) the order. Order=2 means that target violations will
+        # be punished quadratically. Order=1 means that violations are punished linearly. (If you
+        # play around with the order of the goal at priority 3 you will see the effect kicking in.)
 
         # MaximizeGoal: maximizes the given state.
 
@@ -280,10 +284,11 @@ class Example(
         times = self.times()
         results = self.extract_results()
 
-        # This function is called after the optimization run. Thus can be used to do analysis of the results, make plots etc.
-        # To get the results of the optimization for a certain variable use: results[name_variable]
+        # This function is called after the optimization run. Thus can be used to do analysis of the
+        # results, make plots etc. To get the results of the optimization for a certain variable
+        # use: results[name_variable]
 
-        ### RESULTS ANALYSIS ###
+        # ****** RESULTS ANALYSIS *****
 
         # Check that for each pipe |dH| ~=c*Q^2 (i.e., check that results are physically feasible)
         tol = 1e-4
@@ -295,9 +300,9 @@ class Example(
             # calculate constant
             c = length * friction_factor / ((2 * gravitational_constant) * diameter)
             area = math.pi * diameter ** 2 / 4
-            dH = results[pipe + ".dH"]
-            Q = results[pipe + ".Q"]
-            diff = -dH - c / area ** 2 * Q ** 2
+            dh = results[pipe + ".dH"]
+            q = results[pipe + ".Q"]
+            diff = -dh - c / area ** 2 * q ** 2
             if np.any(np.abs(diff) > tol):
                 logger.error("dH != cQ^2 for pipe {} by {}".format(pipe[4:], max(np.abs(diff))))
 
@@ -320,7 +325,7 @@ class Example(
         #     print('dH')
         #     print(np.mean(results[p+'.dH']))
 
-        ### PLOTS ###
+        # ****** PLOTS ******
 
         self.set_timeseries(
             "Heat_buffer", Timeseries(self.times(), results["buffer1.Q"] * 30 * 4200 * 988)
@@ -476,7 +481,8 @@ class Example(
         #         # Darcy Weisbach
         # dH_dw_zoom = np.full_like(q_points_zoom, 0.0)
         # for i in range(len(q_points_zoom)):
-        #     dH_dw_zoom[i] = head_loss(v_points_zoom[i], diameter, length, wall_roughness, temperature)
+        #     dH_dw_zoom[i] = head_loss(
+        #                         v_points_zoom[i], diameter, length, wall_roughness, temperature)
         # axarr[2].plot(q_points_zoom, dH_dw_zoom, linewidth=2, color="b", label="D-W")
         # axarr[2].plot(q_opt, dH_opt, linewidth=2, color="r", linestyle=":", label="opt")
 
