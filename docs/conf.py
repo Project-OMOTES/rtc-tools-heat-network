@@ -10,16 +10,20 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 
+from rtctools_heat_network._version import get_versions
+
+import sphinx_rtd_theme
+
+sys.path.insert(0, os.path.abspath('../src'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'RTC-Tools Heat Network'
-copyright = '2020, Teresa Piovesan'
-author = 'Teresa Piovesan'
+copyright = '2020, Teresa Piovesan et al.'
+author = 'Teresa Piovesan, et al.'
 
 
 # -- General configuration ---------------------------------------------------
@@ -27,8 +31,12 @@ author = 'Teresa Piovesan'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-]
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -38,15 +46,29 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+
+# The full version, including alpha/beta/rc tags.
+release = get_versions()['version']
+del get_versions
+
+# The short X.Y version.
+version = '.'.join(release.split('.')[:2])
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Intersphinx: refer to the RTC-Tools standard library.
+intersphinx_mapping = {'rtctools': ('http://rtc-tools.readthedocs.io/en/latest/', None)}

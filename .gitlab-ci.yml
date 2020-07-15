@@ -7,6 +7,7 @@ stages:
   - style
   - build
   - test
+  - documentation
 
 # style
 style:
@@ -35,3 +36,21 @@ py36:linux:
   image: python:3.6
   variables:
     TOXENV: py36
+
+# documentation
+pages:
+  stage: documentation
+  before_script:
+    - echo "documentation"
+  script:
+    - pip install -e .
+    - cd docs
+    - pip install -r requirements.txt
+    - make html
+    - mv _build/html ../public
+    - cd ..
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
