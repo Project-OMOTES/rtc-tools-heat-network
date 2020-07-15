@@ -2,8 +2,6 @@ import logging
 import math
 import time
 
-import matplotlib.pyplot as plt
-
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -521,6 +519,8 @@ class Example(
         # ****** PLOTS ******
 
         if self.plots:
+
+            import matplotlib.pyplot as plt
 
             sum_demands = np.full_like(self.times(), 0.0)
             for d in self.demands:

@@ -1,8 +1,6 @@
 import logging
 import math
 
-import matplotlib.pyplot as plt
-
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -280,6 +278,8 @@ class Example(
     def post(self):
         if not self.plots:
             return super().post()
+
+        import matplotlib.pyplot as plt
 
         times = self.times()
         results = self.extract_results()
