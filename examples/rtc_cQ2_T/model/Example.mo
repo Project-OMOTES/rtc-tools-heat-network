@@ -4,14 +4,18 @@ model Example
   parameter Real Q_nominal = 0.001;
   parameter Real theta;
   parameter Real t_supply_max = 110.0;
-  parameter Real t_supply_min = 70.0;
+  parameter Real t_supply_min = 10.0;
   parameter Real t_return_max = 110.0;
   parameter Real t_return_min = 10.0;
 
+  parameter Real t_source1_min = 65.0;
+  parameter Real t_source1_max = 85.0;
+  parameter Real t_source2_min = 65.0;
+  parameter Real t_source2_max = 90.0;
 
   //Heatsource min en max in [W]
-  HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta);
-  HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta);
+  HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
+  HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
 
   Pipe pipe1aC(length = 170.365, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
   Pipe pipe1bC(length = 309.635, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
