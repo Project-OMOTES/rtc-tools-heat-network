@@ -224,6 +224,9 @@ class Example(
             v = self.state(pipe + ".QTHOut.Q") / area
             constraints.append((-self.state(pipe + ".dH") - c_v * v ** 2, 0.0, np.inf))
 
+            dtemp_dt = self.der(pipe + ".QTHIn.T") * 3600  # per hour
+            constraints.append((dtemp_dt, -1.5, 1.5))
+
         # Head loss in sources
         for s in self.sources:
             c = self.parameters(0)[s + ".head_loss"]
