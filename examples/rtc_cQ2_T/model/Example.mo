@@ -13,6 +13,8 @@ model Example
   parameter Real t_source2_min = 65.0;
   parameter Real t_source2_max = 90.0;
 
+  parameter Real t_demand_min = 70;
+
   //Heatsource min en max in [W]
   HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
   HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
@@ -35,9 +37,9 @@ model Example
   Pipe pipe52_inC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
   Pipe pipe52_outC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
 
-  HeatDemand demand7(theta = theta);
-  HeatDemand demand91(theta = theta);
-  HeatDemand demand92(theta = theta);
+  HeatDemand demand7(theta = theta, QTHIn.T(min=t_demand_min));
+  HeatDemand demand91(theta = theta, QTHIn.T(min=t_demand_min));
+  HeatDemand demand92(theta = theta, QTHIn.T(min=t_demand_min));
   
   HeatBuffer buffer1(theta = theta);
 
