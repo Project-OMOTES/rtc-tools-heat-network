@@ -75,7 +75,7 @@ class Example(
 ):
 
     # Set whether flow in/out the buffer should be bidirectional
-    bidirectional_flow_buffer = True
+    bidirectional_flow_buffer = False
 
     # Set whether show plots or not
     plots = False
