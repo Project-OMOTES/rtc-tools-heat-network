@@ -1,2 +1,3 @@
+recursive-include src/rtctools_heat_network/modelica/WarmingUp *
 include versioneer.py
 include src/rtctools_heat_network/_version.py
