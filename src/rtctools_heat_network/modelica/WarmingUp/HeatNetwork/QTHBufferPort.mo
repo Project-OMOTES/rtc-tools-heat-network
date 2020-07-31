@@ -1,3 +1,5 @@
+within WarmingUp.HeatNetwork;
+
 partial model QTHBufferPort
   QTHPort QTHHotIn;
   QTHPort QTHHotOut;

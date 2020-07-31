@@ -1,4 +1,6 @@
-block HeatSource
+within WarmingUp.HeatNetwork;
+
+block HeatDemand
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
 
@@ -7,7 +9,6 @@ block HeatSource
   parameter Real dT = T_supply - T_return;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
-  parameter Real head_loss = 0.0;
 
   // Homotopic parameter
   parameter Real theta;
@@ -16,6 +17,6 @@ block HeatSource
 
 equation
   QTHOut.Q = QTHIn.Q;
-  (Heat - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(-QTHIn.T + QTHOut.T)))/(cp* rho * dT) = 0.0;
+  (Heat - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(QTHIn.T - QTHOut.T)))/(cp* rho * dT) = 0.0;
 
- end HeatSource;
+ end HeatDemand;

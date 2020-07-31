@@ -1,3 +1,5 @@
+within WarmingUp.HeatNetwork;
+
 block Pipe
   import SI = Modelica.SIunits;
   extends QTHTwoPort;

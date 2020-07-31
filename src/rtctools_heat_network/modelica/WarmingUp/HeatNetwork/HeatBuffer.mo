@@ -1,3 +1,5 @@
+within WarmingUp.HeatNetwork;
+
 block HeatBuffer
   import SI = Modelica.SIunits;
   extends QTHBufferPort;

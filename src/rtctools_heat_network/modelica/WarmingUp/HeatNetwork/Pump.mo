@@ -1,3 +1,5 @@
+within WarmingUp.HeatNetwork;
+
 model Pump "Pump"
   extends QTHTwoPort;
   input Modelica.SIunits.VolumeFlowRate Q(min=0.0);
