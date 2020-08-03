@@ -2,31 +2,34 @@ import math
 
 import numpy as np
 
-GRAVITATIONAL_CONSTANT = 9.81
+from .constants import GRAVITATIONAL_CONSTANT
 
 
 def _kinematic_viscosity(temperature):
     """
-    The kinematic viscosity barely changes with pressure. The below polynomial fit has been deduced
-    using the `iapws` package, which implements the IAPWS standard. The valid range of temperatures
-    is 20 - 130 C.
+    The kinematic viscosity barely changes with pressure. The below polynomial
+    fit has been deduced using the `iapws` package, which implements the IAPWS
+    standard. The valid range of temperatures is 20 - 130 C.
 
-    Below the snippet of code used to get the polynomial coefficients (possibly useful when
-    refitting):
-    ```
-    from iapws import IAPWS95
+    Below the snippet of code used to get the polynomial coefficients
+    (possibly useful when refitting):
 
-    import numpy as np
+    .. code-block:: python
 
-    res = []
-    for t in np.linspace(20, 130, 1000):
-        res.append((t, IAPWS95(T=273.15 + t, P=0.5).nu))
-    print(np.polyfit(*zip(*res), 4))
-    ```
+        from iapws import IAPWS95
+
+        import numpy as np
+
+        res = []
+        for t in np.linspace(20, 130, 1000):
+            res.append((t, IAPWS95(T=273.15 + t, P=0.5).nu))
+        print(np.polyfit(*zip(*res), 4))
     """
+
     if temperature < 20 or temperature > 130:
         raise Exception(
-            "Temperature should be in the range 20 - 130 C. Note that we use Celcius, not Kelvin."
+            "Temperature should be in the range 20 - 130 °C.\n"
+            "Note that we use Celcius as the unit, not Kelvin."
         )
 
     return np.polyval(
@@ -36,6 +39,7 @@ def _kinematic_viscosity(temperature):
 
 
 def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
+
     for _ in range(1000):
         friction_factor_old = friction_factor
 
@@ -59,37 +63,13 @@ def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
         ):
             return friction_factor
     else:
-        raise Exception("Did not converge")
+        raise Exception("Colebrook-White did not converge")
 
 
-def head_loss(velocity, diameter, length, wall_roughness, temperature):
+def friction_factor(velocity, diameter, length, wall_roughness, temperature):
     """
-    Head loss per meter for a circular pipe.
-    """
-
-    kinematic_viscosity = _kinematic_viscosity(temperature)
-    reynolds = velocity * diameter / kinematic_viscosity
-
-    assert np.all(velocity >= 0)
-
-    if np.all(velocity == 0.0):
-        return 0.0
-    elif reynolds <= 2000.0:
-        friction_factor = 64.0 / reynolds
-    elif reynolds >= 4000.0:
-        friction_factor = _colebrook_white(reynolds, wall_roughness / diameter)
-    else:
-        fac_turb = _colebrook_white(4000.0, wall_roughness / diameter)
-        fac_laminar = 64.0 / 2000.0
-        w = (reynolds - 2000.0) / 2000.0
-        friction_factor = w * fac_turb + (1 - w) * fac_laminar
-
-    return length * friction_factor / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
-
-
-def friction_factor_plot(velocity, diameter, length, wall_roughness, temperature):
-    """
-    Friction_factor check
+    Darcy-weisbach friction factor calculation from both laminar and turbulent
+    flow.
     """
 
     kinematic_viscosity = _kinematic_viscosity(temperature)
@@ -109,7 +89,17 @@ def friction_factor_plot(velocity, diameter, length, wall_roughness, temperature
         w = (reynolds - 2000.0) / 2000.0
         friction_factor = w * fac_turb + (1 - w) * fac_laminar
 
-    return friction_factor, reynolds
+    return friction_factor
+
+
+def head_loss(velocity, diameter, length, wall_roughness, temperature):
+    """
+    Head loss per meter for a circular pipe.
+    """
+
+    f = friction_factor(velocity, diameter, length, wall_roughness, temperature)
+
+    return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
 
 
 def get_linear_pipe_dh_vs_q_fit(

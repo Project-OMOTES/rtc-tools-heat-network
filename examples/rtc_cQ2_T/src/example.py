@@ -14,7 +14,7 @@ from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-# from darcy_weisbach_linearization_functions import friction_factor_plot, head_loss
+from rtctools_heat_network.heat_network_mixin import HeatNetworkMixin
 
 logger = logging.getLogger("rtctools")
 
@@ -67,6 +67,7 @@ class MaximizeGoal(Goal):
 
 
 class Example(
+    HeatNetworkMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -82,44 +83,7 @@ class Example(
 
     # Create useful lists
 
-    # List of pipe names
-    pipes = [
-        "pipe1aC",
-        "pipe1bC",
-        "pipe4aC",
-        "pipe4bC",
-        "pipe5C",
-        "pipe7C",
-        "pipe9C",
-        "pipe15C",
-        "pipe25C",
-        "pipe26C",
-        "pipe27C",
-        "pipe29C",
-        "pipe30C",
-        "pipe31C",
-        "pipe32C",
-        "pipe52_inC",
-        "pipe52_outC",
-        "pipe1aH",
-        "pipe1bH",
-        "pipe4aH",
-        "pipe4bH",
-        "pipe5H",
-        "pipe7H",
-        "pipe9H",
-        "pipe15H",
-        "pipe25H",
-        "pipe26H",
-        "pipe27H",
-        "pipe29H",
-        "pipe30H",
-        "pipe31H",
-        "pipe32H",
-        "pipe52_inH",
-        "pipe52_outH",
-    ]
-
+    # list of pipe-routes for plots
     pipe_profile_hot = [
         "pipe1aH",
         "pipe1bH",
@@ -148,138 +112,18 @@ class Example(
         "pipe1aC",
     ]
 
-    nodes = [
-        "nodeS2H",
-        "nodeD7H",
-        "nodeD92H",
-        "nodeB1H",
-        "nodeS2C",
-        "nodeD7C",
-        "nodeD92C",
-        "nodeB1C",
-    ]
-
-    # List of structures
-    demands = [
-        "demand7",
-        "demand91",
-        "demand92",
-    ]
-
     demand_connections = [
         "pipe27H",
         "pipe31H",
         "demand91",
     ]
 
-    sources = [
-        "source1",
-        "source2",
-    ]
-
     source_connections = ["pipe1aH", "pipe5H"]
-
-    buffers = ["buffer1"]
 
     buffer_connections = ["pipe15H"]
 
-    pumps = [
-        "pump1",
-        "pump2",
-    ]
-
-    def path_constraints(self, ensemble_member):
-        constraints = super().path_constraints(0)
-        # Path constraints are constraints that must be applied at every time step.
-        # (Rtc-tools in the backend will collocate these constraints in time.)
-
-        # A couple of things about rtc-tools conventions:
-        # A constraint has the shape: ((f(x), lb, ub)) meaning that lb <= f(x) <= ub.
-        # The naming of the variables is: name_of_components+.+(Q/H/Heat/dH etc.)
-        # The naming of the components comes from the Modelica model Example.mo (in model folder).
-        # The names of the variables come from the different component and Port modelica models. The
-        # variables are in Modelica SIUnits. Say you want to constraint the heat of source1, the
-        # naming will then be 'source1.Heat'. To set a constraint on a variable, one has to use:
-        # self.state(name_variable)
-
-        # For this model, we have the following constraints:
-        # * head loss relationship for pipes (e.g., dH >= cQ^2)
-        # * head_loss relationship for sources
-        # * pressure of at least 1 bar at the demand
-
-        # Head loss in pipes
-        # To model the relationship |dH| = cQ^2: impose the constraint |dH| >= cQ^2 and the optimize
-        # such that |dH| is dragged down.
-        # (Note that in the model of a pipe dH = Out.H - In.H and thus dH <= 0.0. Thus in the
-        # (optimization problem one needs to maximize dH.)
-
-        for pipe in self.pipes:
-            gravitational_constant = 9.81
-            friction_factor = 0.04
-            diameter = self.parameters(0)[pipe + ".diameter"]
-            length = self.parameters(0)[pipe + ".length"]
-            # Compute c_v constant (where |dH| ~ c_v*v^2)
-            c_v = length * friction_factor / (2 * gravitational_constant) / diameter
-            area = math.pi * diameter ** 2 / 4
-            v = self.state(pipe + ".QTHOut.Q") / area
-            constraints.append((-self.state(pipe + ".dH") - c_v * v ** 2, 0.0, np.inf))
-
-            dtemp_dt = self.der(pipe + ".QTHIn.T") * 3600  # per hour
-            constraints.append((dtemp_dt, -1.5, 1.5))
-
-        # Head loss in sources
-        for s in self.sources:
-            c = self.parameters(0)[s + ".head_loss"]
-            if c == 0.0:
-                constraints.append(
-                    (self.state(s + ".QTHIn.H") - self.state(s + ".QTHOut.H"), 0.0, 0.0)
-                )
-            else:
-                constraints.append(
-                    (
-                        self.state(s + ".QTHIn.H")
-                        - self.state(s + ".QTHOut.H")
-                        - c * self.state(s + ".QTHOut.Q") ** 2,
-                        0.0,
-                        np.inf,
-                    )
-                )
-
-        # For each demand components the head loss is at least 1 bar
-        for d in self.demands:
-            constraints.append(
-                (self.state(d + ".QTHIn.H") - self.state(d + ".QTHOut.H"), 10.0, np.inf)
-            )
-
-        # As temperatures are variables, need to fix dT at demand nodes. Set dT to be exactly 30.0.
-        for d in self.demands:
-            constraints.append(
-                (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), 30.0, 30.0)
-            )
-
-        # In the linear model, fix the temperature in the pipes.
-        # (I.e., supply and returns lines have respective temperatures 75 and 45.)
-        if self.h_th == 0.0:
-            for s in self.sources:
-                constraints.append(
-                    (self.state(s + ".QTHIn.T") - self.parameters(0)[s + ".T_return"], 0.0, 0.0)
-                )
-                constraints.append(
-                    (self.state(s + ".QTHOut.T") - self.parameters(0)[s + ".T_supply"], 0.0, 0.0)
-                )
-
-        # Ensure that buffer does not extract heat from the return line. For this, we impose that
-        # the nonnegative temperature jump in the return line when it 'intersect' the buffer.
-        constraints.append(
-            (self.state("pipe9C.QTHIn.T") - self.state("pipe15C.QTHOut.T"), 0.0, np.inf)
-        )
-
-        return constraints
-
     def constraints(self, ensemble_member):
-        constraints = super().constraints(0)
-        # Constraints are used to set a constraint in a particular timestep.
-        # Needs the construction self.state_at(variable_name, timestep)
+        constraints = super().constraints(ensemble_member)
 
         # Amount of heat stored in the buffer at the beginning of the time horizon is set to 0.0
         t0 = self.times()[0]
@@ -387,11 +231,6 @@ class Example(
                     )
 
         return goals
-
-    # Store the homotopy parameter
-    @property
-    def h_th(self):
-        return self.parameters(0)["theta"]
 
     def goal_programming_options(self):
         options = super().goal_programming_options()

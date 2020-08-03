@@ -3,6 +3,8 @@ within WarmingUp.HeatNetwork;
 block HeatDemand
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
+  //component type
+  parameter String component_type = "demand";
 
   parameter Real T_supply = 75.0;
   parameter Real T_return = 45.0;

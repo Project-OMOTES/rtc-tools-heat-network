@@ -3,6 +3,9 @@ within WarmingUp.HeatNetwork;
 block NodeQTHPort "Three junction with 2 inflow pipes and 1 outflow pipe"
   import SI = Modelica.SIunits;
   extends QTHPort;
+  //component type
+  parameter String component_type = "node";
+
   replaceable parameter Integer nout(min = 1) = 1 "Number of outflows";
   parameter Integer nin(min = 1) = 1 "Number of inflows";
   // Homotopy parameter
