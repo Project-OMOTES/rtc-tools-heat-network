@@ -471,7 +471,7 @@ class Example(
             # This plot illustrates:
             # * upper plot - Temperature from source to demand and back to source;
             # * middle plot - Heat from source to demand (with buffer in between);
-            # * lower plot - Discharge from source to demand with buffer in middle of network;
+            # * lower plot - Head from source to demand;
 
             # generate x-axis (length network)
             network_length = []
@@ -484,11 +484,15 @@ class Example(
 
             # Temperature in feed line
             temperature_route_feed = []
+            head_route_feed = []
             for pipe in self.pipe_profile_hot:
                 temperature_pipe_hot_in = np.mean(results[pipe + ".QTHIn.T"])
                 temperature_route_feed.append((temperature_pipe_hot_in))
                 temperature_pipe_hot_out = np.mean(results[pipe + ".QTHOut.T"])
                 temperature_route_feed.append((temperature_pipe_hot_out))
+                # Head along the selected route (feed)
+                head_route_feed.append(np.mean(results[pipe + ".QTHIn.H"]))
+                head_route_feed.append(np.mean(results[pipe + ".QTHOut.H"]))
 
             # Heat in feed line
             heat_route_feed = []
@@ -518,8 +522,9 @@ class Example(
                 heat_in = q * cp * rho * temperature_pipe_cold_in
                 heat_route_return.append(heat_in)
 
-            # Temperature in retour line
+            # Temperature and headloss in retour line
             temperature_route_return = []
+            head_route_return = []
             for pipe in list(reversed(self.pipe_profile_cold)):
                 # route same as hot, from source to demand
                 # temperature along route (cold is reversed)
@@ -527,6 +532,9 @@ class Example(
                 temperature_route_return.append((temperature_pipe_cold_out))
                 temperature_pipe_cold_in = np.mean(results[pipe + ".QTHIn.T"])
                 temperature_route_return.append((temperature_pipe_cold_in))
+                # Head along the selected route (return)
+                head_route_return.append(np.mean(results[pipe + ".QTHOut.H"]))
+                head_route_return.append(np.mean(results[pipe + ".QTHIn.H"]))
 
             # Locations for components (sources, demands and buffers)
             components = [self.source_connections, self.demand_connections, self.buffer_connections]
@@ -546,13 +554,6 @@ class Example(
             fig, axarr = plt.subplots(n_subplots, sharex=True, figsize=(8, 3 * n_subplots))
             axarr[0].set_title("Route")
 
-            # Upper subplot
-            axarr[0].set_ylabel("Temperature [degC]")
-            axarr[0].ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-            axarr[0].plot(
-                network_length, temperature_route_feed, label="Feed T", linewidth=2, color="r"
-            )
-
             color = ["k", "g", "y"]
             types = ["source", "demand", "buffer"]
             for i in range(len(comp_locations)):
@@ -562,21 +563,44 @@ class Example(
                     axarr[1].axvline(x=xc, color=color[i], label=types[i], linestyle="--")
                     axarr[2].axvline(x=xc, color=color[i], label=types[i], linestyle="--")
 
-            # Middle subplot
-            axarr[1].set_ylabel("Temperature [degC]")
-            axarr[1].plot(
+            # Upper subplot - Temperatures in the pipelines
+            axarr[0].set_ylabel("Temperature [degC]")
+            axarr[0].ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
+            axarr[0].plot(
+                network_length, temperature_route_feed, label="Feed T", linewidth=2, color="r"
+            )
+            axarr[0].plot(
                 network_length, temperature_route_return, label="Retour T", linewidth=2, color="b"
             )
 
-            # Lower subplot
-            axarr[2].set_ylabel("Heat")
-            axarr[2].plot(
+            # Middle subplot - Heat
+            axarr[1].set_ylabel("Heat")
+            axarr[1].plot(
                 network_length, heat_route_feed, label="heat feed", linewidth=2, color="r"
             )
-            axarr[2].plot(
+            axarr[1].plot(
                 network_length, heat_route_return, label="heat return", linewidth=2, color="b"
             )
-            axarr[2].set_xlabel("Route [m]")
+            axarr[1].set_xlabel("Route [m]")
+
+            # Bottom subplot - head along the selected route
+            axarr[2].set_ylabel("Head")
+            axarr[2].plot(
+                network_length,
+                head_route_return,
+                label="Retour head",
+                linewidth=2,
+                color="c",
+                linestyle="-",
+            )
+            axarr[2].plot(
+                network_length,
+                head_route_feed,
+                label="feed head",
+                linewidth=2,
+                color="c",
+                linestyle="--",
+            )
 
             # Shrink each axis and put a legend to the right of the axis
             for i in range(n_subplots):
