@@ -1,4 +1,4 @@
-within WarmingUp.HeatNetwork;
+within WarmingUp.HeatNetwork.QTH;
 
 partial model QTHTwoPort
   QTHPort QTHIn;

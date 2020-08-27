@@ -1,4 +1,4 @@
-within WarmingUp.HeatNetwork;
+within WarmingUp.HeatNetwork.QTH;
 
 connector QTHPort "Connector with potential temperature (T), flow discharge (Q) and head (H)"
   Modelica.SIunits.Temperature T "Temperature";

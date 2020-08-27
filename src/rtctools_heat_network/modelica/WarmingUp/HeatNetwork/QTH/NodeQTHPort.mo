@@ -1,4 +1,4 @@
-within WarmingUp.HeatNetwork;
+within WarmingUp.HeatNetwork.QTH;
 
 block NodeQTHPort "Three junction with 2 inflow pipes and 1 outflow pipe"
   import SI = Modelica.SIunits;

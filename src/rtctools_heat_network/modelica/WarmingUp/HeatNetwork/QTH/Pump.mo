@@ -1,4 +1,4 @@
-within WarmingUp.HeatNetwork;
+within WarmingUp.HeatNetwork.QTH;
 
 model Pump "Pump"
   extends QTHTwoPort;

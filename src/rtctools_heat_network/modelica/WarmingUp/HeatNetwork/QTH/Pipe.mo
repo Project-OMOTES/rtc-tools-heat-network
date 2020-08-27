@@ -1,4 +1,4 @@
-within WarmingUp.HeatNetwork;
+within WarmingUp.HeatNetwork.QTH;
 
 block Pipe
   import SI = Modelica.SIunits;

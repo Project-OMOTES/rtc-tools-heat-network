@@ -16,65 +16,65 @@ model Example
   parameter Real t_demand_min = 70;
 
   //Heatsource min en max in [W]
-  WarmingUp.HeatNetwork.HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
-  WarmingUp.HeatNetwork.HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
+  WarmingUp.HeatNetwork.QTH.HeatSource source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
+  WarmingUp.HeatNetwork.QTH.HeatSource source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
 
-  WarmingUp.HeatNetwork.Pipe pipe1aC(length = 170.365, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe1bC(length = 309.635, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe4aC(length = 5, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe4bC(length = 15, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe5C(length = 126, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe7C(length = 60, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe9C(length = 70, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe15C(length = 129, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe25C(length = 150, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe26C(length = 30, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe27C(length = 55, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe29C(length = 134, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe30C(length = 60, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe31C(length = 60, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe32C(length = 50, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe52_inC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.Pipe pipe52_outC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe1aC(length = 170.365, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe1bC(length = 309.635, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe4aC(length = 5, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe4bC(length = 15, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe5C(length = 126, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe7C(length = 60, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe9C(length = 70, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe15C(length = 129, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe25C(length = 150, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe26C(length = 30, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe27C(length = 55, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe29C(length = 134, diameter = 0.15, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe30C(length = 60, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe31C(length = 60, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe32C(length = 50, diameter = 0.1, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_inC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_outC(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
 
-  WarmingUp.HeatNetwork.HeatDemand demand7(theta = theta, QTHIn.T(min=t_demand_min));
-  WarmingUp.HeatNetwork.HeatDemand demand91(theta = theta, QTHIn.T(min=t_demand_min));
-  WarmingUp.HeatNetwork.HeatDemand demand92(theta = theta, QTHIn.T(min=t_demand_min));
+  WarmingUp.HeatNetwork.QTH.HeatDemand demand7(theta = theta, QTHIn.T(min=t_demand_min));
+  WarmingUp.HeatNetwork.QTH.HeatDemand demand91(theta = theta, QTHIn.T(min=t_demand_min));
+  WarmingUp.HeatNetwork.QTH.HeatDemand demand92(theta = theta, QTHIn.T(min=t_demand_min));
 
-  WarmingUp.HeatNetwork.HeatBuffer buffer1(theta = theta);
+  WarmingUp.HeatNetwork.QTH.HeatBuffer buffer1(theta = theta);
 
-  WarmingUp.HeatNetwork.Pipe pipe1aH(length = 170.365, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe1bH(length = 309.635, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe4aH(length = 5, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe4bH(length = 15, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe5H(length = 126, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe7H(length = 60, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe9H(length = 70, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe15H(length = 129, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe25H(length = 150, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe26H(length = 30, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe27H(length = 55, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe29H(length = 134, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe30H(length = 60, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe31H(length = 60, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe32H(length = 50, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe52_inH(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
-  WarmingUp.HeatNetwork.Pipe pipe52_outH(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe1aH(length = 170.365, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe1bH(length = 309.635, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe4aH(length = 5, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe4bH(length = 15, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe5H(length = 126, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe7H(length = 60, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe9H(length = 70, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe15H(length = 129, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe25H(length = 150, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe26H(length = 30, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe27H(length = 55, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe29H(length = 134, diameter = 0.15, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe30H(length = 60, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe31H(length = 60, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe32H(length = 50, diameter = 0.1, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_inH(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_outH(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
 
 
-  WarmingUp.HeatNetwork.NodeQTHPort nodeS2H(nin=2, nout=1, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeD7H(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeD92H(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeB1H(nin=2, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeS2H(nin=2, nout=1, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD7H(nin=1, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD92H(nin=1, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeB1H(nin=2, nout=2, theta = theta, temperature=75.0);
 
-  WarmingUp.HeatNetwork.NodeQTHPort nodeS2C(nin=1, nout=2, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeD7C(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeD92C(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.NodeQTHPort nodeB1C(nin=2, nout=2, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeS2C(nin=1, nout=2, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD7C(nin=2, nout=1, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD92C(nin=2, nout=1, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeB1C(nin=2, nout=2, theta = theta, temperature=45.0);
 
   //Q in [m^3/s] and H in [m]
-  WarmingUp.HeatNetwork.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
-  WarmingUp.HeatNetwork.Pump pump2(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));
+  WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
+  WarmingUp.HeatNetwork.QTH.Pump pump2(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));
 
   // Define Input/Output Variables and set them equal to model variables.
   //Heatdemand min en max in [W]
