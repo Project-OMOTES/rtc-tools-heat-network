@@ -14,7 +14,10 @@ from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_network_mixin import HeatNetworkMixin
+from rtctools_heat_network.heat_network_mixin import (
+    HeatNetworkMixin,
+    ModelicaComponentTypeMixin,
+)
 
 logger = logging.getLogger("rtctools")
 
@@ -68,6 +71,7 @@ class MaximizeGoal(Goal):
 
 class Example(
     HeatNetworkMixin,
+    ModelicaComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -162,8 +166,10 @@ class Example(
         # * priority 2: extract a certain (constant) heat from source1
         # * priority 3: minimize the usage of source2
 
+        components = self.heat_network_components()
+
         # Match the demand target heat
-        for d in self.demands:
+        for d in components["demand"]:
             k = d[6:]
             var = d + ".Heat"
             target_heat = self.get_timeseries("Heat_demand_" + k)
@@ -215,7 +221,7 @@ class Example(
 
         # In/out pipes to and from the buffer should have bidirectional flow
         if self.bidirectional_flow_buffer:
-            for p in self.pipes:
+            for p in components["pipe"]:
                 if "in" in p:
                     goals.append(
                         RangeGoal(
@@ -266,7 +272,9 @@ class Example(
         # also the pipe profile needs to be taken into acocunt. This is doable, but unnecessary for
         # now.)
 
-        for pipe in self.pipes:
+        hn_components = self.heat_network_components()
+
+        for pipe in hn_components["pipe"]:
             gravitational_constant = 9.81
             friction_factor = 0.04
             diameter = self.parameters(0)[pipe + ".diameter"]
@@ -365,7 +373,7 @@ class Example(
             import matplotlib.pyplot as plt
 
             sum_demands = np.full_like(self.times(), 0.0)
-            for d in self.demands:
+            for d in hn_components["demand"]:
                 k = d[6:]
                 sum_demands += self.get_timeseries("Heat_demand_" + k).values
 

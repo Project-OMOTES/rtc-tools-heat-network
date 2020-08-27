@@ -1,6 +1,8 @@
 import math
+from abc import abstractmethod
 from enum import IntEnum
 from math import isfinite
+from typing import Dict
 
 import casadi as ca
 
@@ -26,7 +28,33 @@ class HeadLossOption(IntEnum):
     LINEARIZED_DW = 3
 
 
-class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
+class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
+    @abstractmethod
+    def heat_network_components(self) -> Dict[str, str]:
+        raise NotImplementedError
+
+
+class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
+    def heat_network_components(self) -> Dict[str, str]:
+        try:
+            return self.__hn_component_types
+        except AttributeError:
+            string_parameters = self.string_parameters(0)
+
+            # Find the components in model, detection by string
+            # (name.component_type: type)
+            component_types = sorted({v for k, v in string_parameters.items()})
+
+            components = {}
+            for c in component_types:
+                components[c] = sorted({k[:-15] for k, v in string_parameters.items() if v == c})
+
+            self.__hn_component_types = components
+
+            return components
+
+
+class HeatNetworkMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
     Adds handling of heat network objects in your model to your optimization
     problem.
@@ -43,26 +71,6 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
             # Note that we inherit ourselves, as there is a certain in which
             # inheritance is required.
             raise Exception("Class needs inherit from HomotopyMixin")
-
-    def pre(self):
-        string_parameters = self.string_parameters(0)
-
-        # Find the components in model, detection by string (name.component_type: type)
-        component_types = sorted({v for k, v in string_parameters.items()})
-
-        self.components = {}
-        for c in component_types:
-            self.components[c + "s"] = sorted(
-                {k[:-15] for k, v in string_parameters.items() if v == c}
-            )
-
-        self.pipes = self.components["pipes"]
-        self.nodes = self.components["nodes"]
-        self.sources = self.components["sources"]
-        self.demands = self.components["demands"]
-        self.pumps = self.components["pumps"]
-
-        super().pre()
 
     def heat_network_options(self):
         r"""
@@ -130,6 +138,7 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         constraints = []
 
         parameters = self.parameters(ensemble_member)
+        components = self.heat_network_components()
 
         # Check if head_loss_option is correct
         options = self.heat_network_options()
@@ -141,14 +150,14 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         # Apply head loss constraints in pipes depending on the option set by
         # the user.
         if head_loss_option == HeadLossOption.NO_HEADLOSS:
-            for pipe in self.pipes:
+            for pipe in components["pipe"]:
                 constraints.append((self.state(f"{pipe}.dH"), 0.0, 0.0))
 
         elif head_loss_option == HeadLossOption.CQ2:
             estimated_velocity = options["estimated_velocity"]
             wall_roughness = options["wall_roughness"]
 
-            for pipe in self.pipes:
+            for pipe in components["pipe"]:
                 diameter = parameters[f"{pipe}.diameter"]
                 length = parameters[f"{pipe}.length"]
                 temperature = parameters[f"{pipe}.temperature"]
@@ -169,7 +178,7 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
             v_max = options["maximum_velocity"]
             n_lines = options["n_linearization_lines"]
 
-            for pipe in self.pipes:
+            for pipe in components["pipe"]:
                 diameter = parameters[f"{pipe}.diameter"]
                 area = math.pi * diameter ** 2 / 4
                 length = parameters[f"{pipe}.length"]
@@ -195,8 +204,9 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         constraints = []
 
         parameters = self.parameters(ensemble_member)
+        components = self.heat_network_components()
 
-        for source in self.sources:
+        for source in components["source"]:
             c = parameters[f"{source}.head_loss"]
 
             if c == 0.0:
@@ -220,11 +230,12 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         constraints = []
 
         options = self.heat_network_options()
+        components = self.heat_network_components()
 
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
-        for d in self.demands:
+        for d in components["demand"]:
             constraints.append(
                 (self.state(d + ".QTHIn.H") - self.state(d + ".QTHOut.H"), min_head_loss, np.inf)
             )
@@ -235,6 +246,7 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         constraints = super().path_constraints(ensemble_member).copy()
 
         options = self.heat_network_options()
+        components = self.heat_network_components()
 
         # Head (loss) constraints
         constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
@@ -245,7 +257,7 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
         maximum_temperature_der = options["maximum_temperature_der"]
 
         if maximum_temperature_der is not None and isfinite(maximum_temperature_der):
-            for pipe in self.pipes:
+            for pipe in components["pipe"]:
                 # Note that maximum temperature change is expressed in °C per
                 # hour. RTC-Tools uses seconds, so we have to scale the
                 # derivative with 3600.
@@ -254,7 +266,7 @@ class HeatNetworkMixin(CollocatedIntegratedOptimizationProblem):
 
         # Fix dT at demand nodes
         dtemp = options["dtemp_demand"]
-        for d in self.demands:
+        for d in components["demand"]:
             constraints.append(
                 (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dtemp, dtemp)
             )
