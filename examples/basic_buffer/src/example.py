@@ -89,42 +89,42 @@ class Example(
 
     # list of pipe-routes for plots
     pipe_profile_hot = [
-        "pipe1aH",
-        "pipe1bH",
-        "pipe5H",
-        "pipe7H",
-        "pipe9H",
-        "pipe15H",
-        "pipe25H",
-        "pipe27H",
-        "pipe29H",
-        "pipe31H",
-        "pipe32H",
+        "pipe1a_hot",
+        "pipe1b_hot",
+        "pipe5_hot",
+        "pipe7_hot",
+        "pipe9_hot",
+        "pipe15_hot",
+        "pipe25_hot",
+        "pipe27_hot",
+        "pipe29_hot",
+        "pipe31_hot",
+        "pipe32_hot",
     ]
 
     pipe_profile_cold = [
-        "pipe32C",
-        "pipe31C",
-        "pipe29C",
-        "pipe27C",
-        "pipe25C",
-        "pipe15C",
-        "pipe9C",
-        "pipe7C",
-        "pipe5C",
-        "pipe1bC",
-        "pipe1aC",
+        "pipe32_cold",
+        "pipe31_cold",
+        "pipe29_cold",
+        "pipe27_cold",
+        "pipe25_cold",
+        "pipe15_cold",
+        "pipe9_cold",
+        "pipe7_cold",
+        "pipe5_cold",
+        "pipe1b_cold",
+        "pipe1a_cold",
     ]
 
     demand_connections = [
-        "pipe27H",
-        "pipe31H",
+        "pipe27_hot",
+        "pipe31_hot",
         "demand91",
     ]
 
-    source_connections = ["pipe1aH", "pipe5H"]
+    source_connections = ["pipe1a_hot", "pipe5_hot"]
 
-    buffer_connections = ["pipe15H"]
+    buffer_connections = ["pipe15_hot"]
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)

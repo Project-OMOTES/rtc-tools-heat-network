@@ -72,6 +72,19 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             # inheritance is required.
             raise Exception("Class needs inherit from HomotopyMixin")
 
+    def pre(self):
+        # Check that all pipes have a corresponding hot and cold version
+        components = self.heat_network_components()
+
+        pipes = components["pipe"]
+        hot_pipes_no_suf = {p[:-4] for p in pipes if p.endswith("_hot")}
+        cold_pipes_no_suf = {p[:-5] for p in pipes if p.endswith("_cold")}
+
+        if hot_pipes_no_suf != cold_pipes_no_suf:
+            raise Exception("Every hot pipe should have a corresponding cold pipe and vice versa.")
+
+        super().pre()
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
