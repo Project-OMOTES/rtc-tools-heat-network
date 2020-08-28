@@ -1,6 +1,6 @@
 within WarmingUp.HeatNetwork.QTH;
 
-block NodeQTHPort "Three junction with 2 inflow pipes and 1 outflow pipe"
+block Node "Three junction with 2 inflow pipes and 1 outflow pipe"
   import SI = Modelica.SIunits;
   extends QTHPort;
   //component type
@@ -44,4 +44,4 @@ equation
   end for;
   QTHPort.H = H;
 
-end NodeQTHPort;
+end Node;

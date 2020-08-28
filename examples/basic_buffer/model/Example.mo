@@ -61,15 +61,15 @@ model Example
   WarmingUp.HeatNetwork.QTH.Pipe pipe52_in_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe52_out_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
 
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeS2_hot(nin=2, nout=1, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD7_hot(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD92_hot(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeB1_hot(nin=2, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeS2_hot(nin=2, nout=1, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD7_hot(nin=1, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD92_hot(nin=1, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_hot(nin=2, nout=2, theta = theta, temperature=75.0);
 
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeS2_cold(nin=1, nout=2, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD7_cold(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeD92_cold(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.NodeQTHPort nodeB1_cold(nin=2, nout=2, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeS2_cold(nin=1, nout=2, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD7_cold(nin=2, nout=1, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD92_cold(nin=2, nout=1, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_cold(nin=2, nout=2, theta = theta, temperature=45.0);
 
   //Q in [m^3/s] and H in [m]
   WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
