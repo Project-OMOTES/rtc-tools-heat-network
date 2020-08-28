@@ -15,8 +15,8 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.heat_network_mixin import (
-    HeatNetworkMixin,
     ModelicaComponentTypeMixin,
+    QTHMixin,
 )
 
 logger = logging.getLogger("rtctools")
@@ -70,7 +70,7 @@ class MaximizeGoal(Goal):
 
 
 class Example(
-    HeatNetworkMixin,
+    QTHMixin,
     ModelicaComponentTypeMixin,
     HomotopyMixin,
     GoalProgrammingMixin,

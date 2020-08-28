@@ -54,10 +54,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             return components
 
 
-class HeatNetworkMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
-    Adds handling of heat network objects in your model to your optimization
-    problem.
+    Adds handling of QTH heat network objects in your model to your
+    optimization problem.
 
     Relevant parameters and variables are read from the model, and from this
     data a set of constraints and objectives are automatically generated, e.g.
