@@ -3,8 +3,8 @@ within WarmingUp.HeatNetwork.QTH;
 block Pipe
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
-  //component type
   parameter String component_type = "pipe";
+
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;
   parameter Real temperature = 50.0;

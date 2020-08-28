@@ -3,7 +3,6 @@ within WarmingUp.HeatNetwork.QTH;
 block Buffer
   import SI = Modelica.SIunits;
   extends QTHBufferPort;
-  //component type
   parameter String component_type = "buffer";
 
   parameter Real T_supply = 75.0;

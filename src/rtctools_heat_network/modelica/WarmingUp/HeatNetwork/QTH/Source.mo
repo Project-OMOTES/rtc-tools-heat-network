@@ -3,7 +3,6 @@ within WarmingUp.HeatNetwork.QTH;
 block Source
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
-  //component type
   parameter String component_type = "source";
 
   parameter Real T_supply = 75.0;

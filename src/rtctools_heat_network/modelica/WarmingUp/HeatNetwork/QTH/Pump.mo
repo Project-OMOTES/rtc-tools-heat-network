@@ -2,8 +2,8 @@ within WarmingUp.HeatNetwork.QTH;
 
 model Pump "Pump"
   extends QTHTwoPort;
-  //component type
   parameter String component_type = "pump";
+
   input Modelica.SIunits.VolumeFlowRate Q(min=0.0);
   Modelica.SIunits.Level H;
   Modelica.SIunits.Level dH(min=0.0);
