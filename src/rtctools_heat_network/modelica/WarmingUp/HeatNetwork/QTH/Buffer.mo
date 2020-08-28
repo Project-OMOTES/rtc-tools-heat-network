@@ -1,6 +1,6 @@
 within WarmingUp.HeatNetwork.QTH;
 
-block HeatBuffer
+block Buffer
   import SI = Modelica.SIunits;
   extends QTHBufferPort;
   //component type
@@ -42,4 +42,4 @@ equation
 initial equation
   // Initialize the derivative to zero
   der(Stored_heat)/(cp * rho * dT) = 0.0;
- end HeatBuffer;
+ end Buffer;
