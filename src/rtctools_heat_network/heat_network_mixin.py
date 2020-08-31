@@ -183,7 +183,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
                 area = 0.25 * math.pi * diameter ** 2
 
-                v = self.state(f"{pipe}.QTHOut.Q") / area
+                v = self.state(f"{pipe}.Q") / area
                 constraints.append((-self.state(f"{pipe}.dH") - c_v * v ** 2, 0.0, np.inf))
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
@@ -231,7 +231,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                     (
                         self.state(f"{source}.QTHIn.H")
                         - self.state(f"{source}.QTHOut.H")
-                        - c * self.state(f"{source}.QTHOut.Q") ** 2,
+                        - c * self.state(f"{source}.QTHIn.Q") ** 2,
                         0.0,
                         np.inf,
                     )

@@ -30,7 +30,7 @@ block Pipe
 
 equation
   // Flow is constant
-  QTHOut.Q = Q;
+  QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
   dH = QTHOut.H - QTHIn.H;
 

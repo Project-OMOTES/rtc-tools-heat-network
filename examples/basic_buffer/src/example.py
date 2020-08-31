@@ -282,7 +282,7 @@ class Example(
             # Compute c_v constant (where |dH| ~ c_v*v^2)
             c_v = length * friction_factor / (2 * gravitational_constant) / diameter
             area = math.pi * diameter ** 2 / 4
-            q = results[pipe + ".QTHOut.Q"]
+            q = results[pipe + ".Q"]
             v = q / area
             dh = -c_v * v ** 2
             # Overwrite dH
