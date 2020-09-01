@@ -61,15 +61,15 @@ model Example
   WarmingUp.HeatNetwork.QTH.Pipe pipe52_in_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe52_out_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
 
-  WarmingUp.HeatNetwork.QTH.Node nodeS2_hot(nin=2, nout=1, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeD7_hot(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeD92_hot(nin=1, nout=2, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeB1_hot(nin=2, nout=2, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeS2_hot(n=3, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD7_hot(n=3, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD92_hot(n=3, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_hot(n=4, theta = theta, temperature=75.0);
 
-  WarmingUp.HeatNetwork.QTH.Node nodeS2_cold(nin=1, nout=2, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeD7_cold(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeD92_cold(nin=2, nout=1, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeB1_cold(nin=2, nout=2, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeS2_cold(n=3, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD7_cold(n=3, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeD92_cold(n=3, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_cold(n=4, theta = theta, temperature=45.0);
 
   //Q in [m^3/s] and H in [m]
   WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
@@ -92,18 +92,18 @@ equation
   connect(source1.QTHOut, pipe1a_hot.QTHIn) ;
   connect(pipe1a_hot.QTHOut, pump1.QTHIn) ;
   connect(pump1.QTHOut, pipe1b_hot.QTHIn) ;
-  connect(pipe1b_hot.QTHOut, nodeS2_hot.QIn[1]) ;
-  connect(nodeS2_hot.QOut[1], pipe5_hot.QTHIn) ;
+  connect(pipe1b_hot.QTHOut, nodeS2_hot.QTHConn[1]) ;
+  connect(nodeS2_hot.QTHConn[2], pipe5_hot.QTHIn) ;
   connect(pipe5_hot.QTHOut, pipe7_hot.QTHIn) ;
   connect(pipe7_hot.QTHOut, pipe9_hot.QTHIn) ;
-  connect(pipe9_hot.QTHOut, nodeB1_hot.QIn[1]) ;
-  connect(nodeB1_hot.QOut[1], pipe15_hot.QTHIn) ;
+  connect(pipe9_hot.QTHOut, nodeB1_hot.QTHConn[1]) ;
+  connect(nodeB1_hot.QTHConn[2], pipe15_hot.QTHIn) ;
   connect(pipe15_hot.QTHOut, pipe25_hot.QTHIn) ;
-  connect(pipe25_hot.QTHOut, nodeD7_hot.QIn[1]) ;
-  connect(nodeD7_hot.QOut[1], pipe27_hot.QTHIn) ;
+  connect(pipe25_hot.QTHOut, nodeD7_hot.QTHConn[1]) ;
+  connect(nodeD7_hot.QTHConn[2], pipe27_hot.QTHIn) ;
   connect(pipe27_hot.QTHOut, pipe29_hot.QTHIn) ;
-  connect(pipe29_hot.QTHOut, nodeD92_hot.QIn[1]) ;
-  connect(nodeD92_hot.QOut[1], pipe31_hot.QTHIn) ;
+  connect(pipe29_hot.QTHOut, nodeD92_hot.QTHConn[1]) ;
+  connect(nodeD92_hot.QTHConn[2], pipe31_hot.QTHIn) ;
   connect(pipe31_hot.QTHOut, pipe32_hot.QTHIn) ;
   connect(pipe32_hot.QTHOut, demand91.QTHIn) ;
 
@@ -111,18 +111,18 @@ equation
 //Cold lines from demand91 to source 1
   connect(demand91.QTHOut, pipe32_cold.QTHIn) ;
   connect(pipe32_cold.QTHOut, pipe31_cold.QTHIn) ;
-  connect(pipe31_cold.QTHOut, nodeD92_cold.QIn[1]) ;
-  connect(nodeD92_cold.QOut[1], pipe29_cold.QTHIn) ;
+  connect(pipe31_cold.QTHOut, nodeD92_cold.QTHConn[1]) ;
+  connect(nodeD92_cold.QTHConn[2], pipe29_cold.QTHIn) ;
   connect(pipe29_cold.QTHOut, pipe27_cold.QTHIn) ;
-  connect(pipe27_cold.QTHOut, nodeD7_cold.QIn[1]) ;
-  connect(nodeD7_cold.QOut[1], pipe25_cold.QTHIn) ;
+  connect(pipe27_cold.QTHOut, nodeD7_cold.QTHConn[1]) ;
+  connect(nodeD7_cold.QTHConn[2], pipe25_cold.QTHIn) ;
   connect(pipe25_cold.QTHOut, pipe15_cold.QTHIn) ;
-  connect(pipe15_cold.QTHOut, nodeB1_cold.QIn[1]) ;
-  connect(nodeB1_cold.QOut[1], pipe9_cold.QTHIn) ;
+  connect(pipe15_cold.QTHOut, nodeB1_cold.QTHConn[1]) ;
+  connect(nodeB1_cold.QTHConn[2], pipe9_cold.QTHIn) ;
   connect(pipe9_cold.QTHOut, pipe7_cold.QTHIn) ;
   connect(pipe7_cold.QTHOut, pipe5_cold.QTHIn) ;
-  connect(pipe5_cold.QTHOut, nodeS2_cold.QIn[1]) ;
-  connect(nodeS2_cold.QOut[1], pipe1b_cold.QTHIn) ;
+  connect(pipe5_cold.QTHOut, nodeS2_cold.QTHConn[1]) ;
+  connect(nodeS2_cold.QTHConn[2], pipe1b_cold.QTHIn) ;
   connect(pipe1b_cold.QTHOut, pipe1a_cold.QTHIn) ;
   connect(pipe1a_cold.QTHOut, source1.QTHIn) ;
 
@@ -131,33 +131,33 @@ equation
   connect(source2.QTHOut, pipe4a_hot.QTHIn) ;
   connect(pipe4a_hot.QTHOut, pump2.QTHIn) ;
   connect(pump2.QTHOut, pipe4b_hot.QTHIn) ;
-  connect(pipe4b_hot.QTHOut, nodeS2_hot.QIn[2]) ;
-  connect(nodeS2_cold.QOut[2], pipe4a_cold.QTHIn) ;
+  connect(pipe4b_hot.QTHOut, nodeS2_hot.QTHConn[3]) ;
+  connect(nodeS2_cold.QTHConn[3], pipe4a_cold.QTHIn) ;
   connect(pipe4a_cold.QTHOut, pipe4b_cold.QTHIn) ;
   connect(pipe4b_cold.QTHOut, source2.QTHIn) ;
 
 //Demand7
-  connect(nodeD7_hot.QOut[2], pipe26_hot.QTHIn) ;
+  connect(nodeD7_hot.QTHConn[3], pipe26_hot.QTHIn) ;
   connect(pipe26_hot.QTHOut, demand7.QTHIn) ;
   connect(demand7.QTHOut, pipe26_cold.QTHIn) ;
-  connect(pipe26_cold.QTHOut, nodeD7_cold.QIn[2]) ;
+  connect(pipe26_cold.QTHOut, nodeD7_cold.QTHConn[3]) ;
 
 //Demand92
-  connect(nodeD92_hot.QOut[2], pipe30_hot.QTHIn) ;
+  connect(nodeD92_hot.QTHConn[3], pipe30_hot.QTHIn) ;
   connect(pipe30_hot.QTHOut, demand92.QTHIn) ;
   connect(demand92.QTHOut, pipe30_cold.QTHIn) ;
-  connect(pipe30_cold.QTHOut, nodeD92_cold.QIn[2]) ;
+  connect(pipe30_cold.QTHOut, nodeD92_cold.QTHConn[3]) ;
 
   //Buffer1
   //Hot
-  connect(nodeB1_hot.QOut[2], pipe52_in_hot.QTHIn) ;
+  connect(nodeB1_hot.QTHConn[3], pipe52_in_hot.QTHIn) ;
   connect(pipe52_in_hot.QTHOut, buffer1.QTHHotIn) ;
   connect(buffer1.QTHHotOut, pipe52_out_hot.QTHIn) ;
-  connect(pipe52_out_hot.QTHOut, nodeB1_hot.QIn[2]) ;
+  connect(pipe52_out_hot.QTHOut, nodeB1_hot.QTHConn[4]) ;
   //Cold
-  connect(nodeB1_cold.QOut[2], pipe52_in_cold.QTHIn) ;
+  connect(nodeB1_cold.QTHConn[3], pipe52_in_cold.QTHIn) ;
   connect(pipe52_in_cold.QTHOut, buffer1.QTHColdIn) ;
   connect(buffer1.QTHColdOut, pipe52_out_cold.QTHIn) ;
-  connect(pipe52_out_cold.QTHOut, nodeB1_cold.QIn[2]) ;
+  connect(pipe52_out_cold.QTHOut, nodeB1_cold.QTHConn[4]) ;
 
 end Example;

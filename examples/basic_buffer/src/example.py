@@ -15,6 +15,7 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.heat_network_mixin import (
+    BoundsToPipeFlowDirectionsMixin,
     ModelicaComponentTypeMixin,
     QTHMixin,
 )
@@ -70,6 +71,7 @@ class MaximizeGoal(Goal):
 
 
 class Example(
+    BoundsToPipeFlowDirectionsMixin,
     QTHMixin,
     ModelicaComponentTypeMixin,
     HomotopyMixin,
@@ -166,7 +168,7 @@ class Example(
         # * priority 2: extract a certain (constant) heat from source1
         # * priority 3: minimize the usage of source2
 
-        components = self.heat_network_components()
+        components = self.heat_network_components
 
         # Match the demand target heat
         for d in components["demand"]:
@@ -272,7 +274,7 @@ class Example(
         # also the pipe profile needs to be taken into acocunt. This is doable, but unnecessary for
         # now.)
 
-        hn_components = self.heat_network_components()
+        hn_components = self.heat_network_components
 
         for pipe in hn_components["pipe"]:
             gravitational_constant = 9.81
