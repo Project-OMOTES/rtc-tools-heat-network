@@ -173,7 +173,7 @@ class Example(
         # Match the demand target heat
         for d in components["demand"]:
             k = d[6:]
-            var = d + ".Heat"
+            var = d + ".Heat_demand"
             target_heat = self.get_timeseries("Heat_demand_" + k)
             # Note: with the self.get_timeseries function you can extract the timeseries that are
             # in the timeseries_import file in the input folder.
@@ -199,7 +199,7 @@ class Example(
         goals.append(
             RangeGoal(
                 self,
-                state="source1.Heat",
+                state="source1.Heat_source",
                 target_min=1e5,
                 target_max=1e5,
                 state_bounds=(0.0, 1.5e6),
@@ -212,7 +212,7 @@ class Example(
         goals.append(
             RangeGoal(
                 self,
-                state="source2.Heat",
+                state="source2.Heat_source",
                 target_max=0.0,
                 target_min=np.nan,
                 state_bounds=(0.0, 1.5e6),

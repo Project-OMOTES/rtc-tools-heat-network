@@ -15,10 +15,10 @@ block Source
   // Homotopic parameter
   parameter Real theta;
 
-  Modelica.SIunits.Heat Heat(nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_source(nominal=cp * rho * dT);
 
 equation
   QTHOut.Q = QTHIn.Q;
-  (Heat - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(-QTHIn.T + QTHOut.T)))/(cp* rho * dT) = 0.0;
+  (Heat_source - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(-QTHIn.T + QTHOut.T)))/(cp* rho * dT) = 0.0;
 
  end Source;

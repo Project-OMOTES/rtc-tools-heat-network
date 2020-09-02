@@ -16,8 +16,8 @@ model Example
   parameter Real t_demand_min = 70;
 
   //Heatsource min en max in [W]
-  WarmingUp.HeatNetwork.QTH.Source source1(Heat(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
-  WarmingUp.HeatNetwork.QTH.Source source2(Heat(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
+  WarmingUp.HeatNetwork.QTH.Source source1(Heat_source(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
+  WarmingUp.HeatNetwork.QTH.Source source2(Heat_source(min=0.0, max=1.5e7, nominal=1e6), theta = theta, QTHOut.T(min=t_source2_min, max=t_source2_max));
 
   WarmingUp.HeatNetwork.QTH.Pipe pipe1a_cold(length = 170.365, diameter = 0.15, temperature=45.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe1b_cold(length = 309.635, diameter = 0.15, temperature=45.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
@@ -77,12 +77,12 @@ model Example
 
   // Define Input/Output Variables and set them equal to model variables.
   //Heatdemand min en max in [W]
-  input Modelica.SIunits.Heat Heat_source1(fixed=false, nominal=4200*988*30) = source1.Heat;
-  input Modelica.SIunits.Heat Heat_source2(fixed=false, nominal=4200*988*30) = source2.Heat;
+  input Modelica.SIunits.Heat Heat_source1(fixed=false, nominal=4200*988*30) = source1.Heat_source;
+  input Modelica.SIunits.Heat Heat_source2(fixed=false, nominal=4200*988*30) = source2.Heat_source;
 
-  output Modelica.SIunits.Heat Heat_demand7_opt = demand7.Heat;
-  output Modelica.SIunits.Heat Heat_demand91_opt = demand91.Heat;
-  output Modelica.SIunits.Heat Heat_demand92_opt = demand92.Heat;
+  output Modelica.SIunits.Heat Heat_demand7_opt = demand7.Heat_demand;
+  output Modelica.SIunits.Heat Heat_demand91_opt = demand91.Heat_demand;
+  output Modelica.SIunits.Heat Heat_demand92_opt = demand92.Heat_demand;
   output Modelica.SIunits.Heat StoredHeat_buffer = buffer1.Stored_heat;
 
 equation
