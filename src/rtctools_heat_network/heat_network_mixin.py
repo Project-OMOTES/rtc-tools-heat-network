@@ -536,7 +536,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return constraints
 
-    def __demand_head_loss_constraints(self, ensemble_member):
+    def __demand_head_loss_path_constraints(self, ensemble_member):
         constraints = []
 
         options = self.heat_network_options()
@@ -568,7 +568,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         # Head (loss) constraints
         constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
         constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
-        constraints.extend(self.__demand_head_loss_constraints(ensemble_member))
+        constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
 
         # Temperature gradient in pipes
         maximum_temperature_der = options["maximum_temperature_der"]
