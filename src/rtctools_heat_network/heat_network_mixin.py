@@ -615,10 +615,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 direction_ts = constant_inputs[flow_dirs[p]]
             except KeyError:
                 raise KeyError(
-                    f"""Could not find the direction of pipe {p} for ensemble member {ensemble_member}.
-                        Please extend or override the `heat_network_pipe_flow_directions`
-                        method. Note that this information is necessary before
-                        calling `super().pre()`, and cannot change afterwards."""
+                    f"Could not find the direction of pipe {p} for ensemble member "
+                    f"{ensemble_member}. Please extend or override the "
+                    f"`heat_network_pipe_flow_directions` method. Note that this information "
+                    f"is necessary before calling `super().pre()`, and cannot change afterwards."
                 )
 
             interpolated_flow_dir_values[p] = self.interpolate(
@@ -674,8 +674,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 np.amin(cur_pipe_flow_dir_values, 0), np.amax(cur_pipe_flow_dir_values, 0)
             ):
                 raise Exception(
-                    f"""Pipe direction of pipe '{p}' differs based on ensemble member.
-                        This is not properly supported yet."""
+                    f"Pipe direction of pipe '{p}' differs based on ensemble member. "
+                    f"This is not properly supported yet."
                 )
 
     def transcribe(self):
