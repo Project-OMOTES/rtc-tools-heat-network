@@ -270,6 +270,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         +--------------------------------+-----------+-----------------------------+
         | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour             |
         +--------------------------------+-----------+-----------------------------+
+        | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                    |
+        +--------------------------------+-----------+-----------------------------+
         | ``wall_roughness``             | ``float`` | ``0.002`` m                 |
         +--------------------------------+-----------+-----------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2``      |
@@ -287,6 +289,16 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         The ``dtemp_demand`` parameter specifies what the (fixed) temperature
         drop is  over the demand nodes.
+
+        The ``maximum_temperature_der`` is the maximum temperature change
+        allowed in the network. It is expressed in °C per hour. Note that this
+        is a proxy constraint as it does not imply that temperature in the
+        entire network is within the wanted limits.
+
+        When the flag ``max_t_der_bidirect_pipe`` is False, the maximum
+        temperature change set with ``maximum_temperature_der`` is _not_
+        imposed on pipes when the flow direction changes. When it is True (the
+        default), it is imposed in cases of flow reversal.
 
         The ``wall_roughness`` of the pipes plays a role in determining the
         resistance of the pipes.
@@ -311,6 +323,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         options["minimum_pressure_far_point"] = 1.0
         options["dtemp_demand"] = 30
         options["maximum_temperature_der"] = 2.0
+        options["max_t_der_bidirect_pipe"] = True
         options["wall_roughness"] = 2e-3
         options["head_loss_option"] = HeadLossOption.CQ2
         options["estimated_velocity"] = 1.0
@@ -339,15 +352,13 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             # Try again
             return self.interpolation_method(variable)
 
-    def __node_mixing_constraints(self, ensemble_member):
-        def state_vector_scaled(variable, ensemble_member):
-            canonical, sign = self.alias_relation.canonical_signed(variable)
-            return (
-                self.state_vector(canonical, ensemble_member)
-                * self.variable_nominal(canonical)
-                * sign
-            )
+    def __state_vector_scaled(self, variable, ensemble_member):
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
 
+    def __node_mixing_constraints(self, ensemble_member):
         parameters = self.parameters(ensemble_member)
         constraints = []
 
@@ -356,7 +367,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
-            temperature_node_sym = state_vector_scaled(f"{node}.Tnode", ensemble_member)
+            temperature_node_sym = self.__state_vector_scaled(f"{node}.Tnode", ensemble_member)
             temperature_estimate = parameters[f"{node}.temperature"]
 
             # Definition of in/outflows
@@ -386,9 +397,9 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 node_out = (node_in_or_out == NodeConnectionDirection.OUT).astype(int)
 
                 conn_base = f"{node}.QTHConn[{i_conn + 1}]"
-                conn_q = state_vector_scaled(f"{conn_base}.Q", ensemble_member)
+                conn_q = self.__state_vector_scaled(f"{conn_base}.Q", ensemble_member)
                 conn_q_abs = conn_q * flow_direction
-                conn_t = state_vector_scaled(f"{conn_base}.T", ensemble_member)
+                conn_t = self.__state_vector_scaled(f"{conn_base}.T", ensemble_member)
 
                 # In
                 q_in_sum += conn_q_abs * node_in
@@ -433,6 +444,91 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Temperature of outgoing flows is equal to mixing temperature
             constraints.append((ca.vertcat(*t_out_conn) / t_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __max_temp_rate_of_change_constraints(self, ensemble_member):
+        constraints = []
+
+        options = self.heat_network_options()
+        components = self.heat_network_components
+
+        parameters = self.parameters(ensemble_member)
+        theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+
+        # Maximum allowed rate of change of temperature in pipes
+        maximum_temperature_der = options["maximum_temperature_der"]
+
+        if (
+            maximum_temperature_der is not None
+            and isfinite(maximum_temperature_der)
+            and theta > 0.0
+        ):
+            # Temperature rate of change constraints are relevant only for the nonlinear
+            # model. Impose the rate of change constraints on the out temperature of the
+            # sources and on the pipes with bidirectional flow.
+            # NOTE: We impose them here (not as path_constraints), because we want to skip
+            # the initial derivative.
+            bounds = self.bounds()
+            times = self.times()
+            dt = np.diff(times)
+            avg_dt = np.mean(np.diff(times))  # For scaling purposes
+
+            # Note that maximum temperature change is expressed in °C per
+            # hour. RTC-Tools uses seconds, so we have to scale accordingly.
+            max_der_sec = maximum_temperature_der / 3600.0
+
+            for s in components["source"]:
+                # NOTE: Imposing the constraint on the outflow of the sources does mean that
+                # the temperature change for cold pipes might be higher than the target limit.
+                # Because the temperature on the cold side is generally less in our control
+                # anyway, we assume this is OK.
+                variable = f"{s}.QTHOut.T"
+                np.testing.assert_array_equal(self.times(variable), times)
+
+                source_temperature_out = self.__state_vector_scaled(variable, ensemble_member)
+                interp_mode = self.interpolation_method(variable)
+
+                # Get the bounds. We want to avoid setting a constraint on times/variables
+                # where the lower bound and upper bound are equal, as that would create empty,
+                # trivial constraints and thus break the linear independence requirement
+                lb, ub = bounds[variable]
+                if isinstance(lb, Timeseries):
+                    lb_values = self.interpolate(times[1:], lb.times, lb.values, mode=interp_mode)
+                else:
+                    assert np.isscalar(lb)
+                    lb_values = np.full(len(times[1:]), lb)
+                if isinstance(ub, Timeseries):
+                    ub_values = self.interpolate(times[1:], ub.times, ub.values, mode=interp_mode)
+                else:
+                    assert np.isscalar(ub)
+                    ub_values = np.full(len(times[1:]), ub)
+                inds = np.flatnonzero(lb_values != ub_values)
+
+                # Make the derivative constraints for the time steps we want.
+                var_cur = source_temperature_out[1:][inds]
+                var_prev = source_temperature_out[:-1][inds]
+                roc = (var_cur - var_prev) / dt
+                constraints.append((roc * avg_dt, -max_der_sec * avg_dt, max_der_sec * avg_dt))
+
+            if options["max_t_der_bidirect_pipe"]:
+                # Applies only to the pipes with bidirectional flow
+                flow_directions = self.__get_interpolated_flow_directions(ensemble_member)
+                for p in components["pipe"]:
+                    d_val = flow_directions[p]
+                    if not np.all(d_val == d_val[0]):
+                        for in_out in ["In", "Out"]:
+                            variable = f"{p}.QTH{in_out}.T"
+                            np.testing.assert_array_equal(self.times(variable), times)
+
+                            temperature = self.__state_vector_scaled(variable, ensemble_member)
+                            var_cur = temperature[1:]
+                            var_prev = temperature[:-1]
+                            roc = (var_cur - var_prev) / dt
+
+                            constraints.append(
+                                (roc * avg_dt, -max_der_sec * avg_dt, max_der_sec * avg_dt)
+                            )
 
         return constraints
 
@@ -558,6 +654,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         constraints.extend(self.__node_mixing_constraints(ensemble_member))
+        constraints.extend(self.__max_temp_rate_of_change_constraints(ensemble_member))
         return constraints
 
     def path_constraints(self, ensemble_member):
@@ -572,17 +669,6 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
         constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
         constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
-
-        # Temperature gradient in pipes
-        maximum_temperature_der = options["maximum_temperature_der"]
-
-        if maximum_temperature_der is not None and isfinite(maximum_temperature_der):
-            for pipe in components["pipe"]:
-                # Note that maximum temperature change is expressed in °C per
-                # hour. RTC-Tools uses seconds, so we have to scale the
-                # derivative with 3600.
-                dtemp_dt = self.der(f"{pipe}.QTHIn.T") * 3600.0
-                constraints.append((dtemp_dt, -maximum_temperature_der, maximum_temperature_der))
 
         if theta == 0.0:
             # Fix temperature in pipes for the fully linear model
