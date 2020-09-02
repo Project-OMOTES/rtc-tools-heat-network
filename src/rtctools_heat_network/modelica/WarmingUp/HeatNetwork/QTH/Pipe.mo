@@ -25,7 +25,7 @@ block Pipe
   // Homotopic parameter
   parameter Real theta;
 
-  Modelica.SIunits.VolumeFlowRate Q(min=0.0);
+  Modelica.SIunits.VolumeFlowRate Q;
   Modelica.SIunits.Level dH(max=0.0);
 
 equation
