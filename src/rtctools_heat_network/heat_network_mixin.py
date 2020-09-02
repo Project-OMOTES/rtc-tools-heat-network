@@ -325,6 +325,17 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         """
         raise NotImplementedError
 
+    def interpolation_method(self, variable=None):
+        try:
+            if variable in self.__pipe_flow_dir_symbols:
+                return self.INTERPOLATION_PIECEWISE_CONSTANT_BACKWARD
+            else:
+                return super().interpolation_method(variable)
+        except AttributeError:
+            self.__pipe_flow_dir_symbols = set(self.heat_network_pipe_flow_directions.values())
+            # Try again
+            return self.interpolation_method(variable)
+
     def __node_mixing_constraints(self, ensemble_member):
         def state_vector_scaled(variable, ensemble_member):
             canonical, sign = self.alias_relation.canonical_signed(variable)
@@ -434,6 +445,17 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
+
+        # Set the head loss according to the direction in the pipes
+        flow_dirs = self.heat_network_pipe_flow_directions
+
+        for pipe in components["pipe"]:
+            dh = self.state(f"{pipe}.dH")
+            flow_dir = self.variable(flow_dirs[pipe])
+            h_down = self.state(f"{pipe}.QTHOut.H")
+            h_up = self.state(f"{pipe}.QTHIn.H")
+
+            constraints.append((dh - flow_dir * (h_down - h_up), 0.0, 0.0))
 
         # Apply head loss constraints in pipes depending on the option set by
         # the user.

@@ -32,7 +32,6 @@ equation
   // Flow is constant
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
-  dH = QTHOut.H - QTHIn.H;
 
   // Heat loss estimate assuming constant ground temparature and constant dT at demand
   //positive negative dT depending on hot/coldpipe
