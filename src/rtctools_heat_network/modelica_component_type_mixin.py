@@ -1,5 +1,7 @@
 from typing import Dict
 
+from pymoca.backends.casadi.alias_relation import AliasRelation
+
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .heat_network_common import NodeConnectionDirection
 from .topology import Topology
@@ -17,6 +19,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
 
+        # Figure out if we are dealing with a Heat model, or a QTH model
+        try:
+            _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
+            heat_network_model_type = "Heat"
+        except KeyError:
+            heat_network_model_type = "QTH"
+
         for n in nodes:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
 
@@ -32,9 +41,12 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             node_connections[n] = connected_pipes = {}
 
             for i in range(n_connections):
-                cur_port = f"{n}.QTHConn[{i + 1}]"
+                cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
+                prop = "T" if heat_network_model_type == "QTH" else "Heat"
                 aliases = [
-                    x for x in self.alias_relation.aliases(f"{cur_port}.T") if not x.startswith(n)
+                    x
+                    for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
+                    if not x.startswith(n)
                 ]
 
                 if len(aliases) > 1:
@@ -42,19 +54,65 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 elif len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
 
-                if aliases[0].endswith(".QTHOut.T"):
-                    pipe_w_orientation = (aliases[0][:-9], NodeConnectionDirection.IN)
+                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+
+                if aliases[0].endswith(out_suffix):
+                    pipe_w_orientation = (
+                        aliases[0][: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
                 else:
-                    assert aliases[0].endswith(".QTHIn.T")
-                    pipe_w_orientation = (aliases[0][:-8], NodeConnectionDirection.OUT)
+                    assert aliases[0].endswith(in_suffix)
+                    pipe_w_orientation = (
+                        aliases[0][: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
 
                 assert pipe_w_orientation[0] in pipes_set
 
                 connected_pipes[i] = pipe_w_orientation
 
-        # Note that a pipe series can include both hot and cold pipes. It is
-        # only about figuring out which pipes are related direction-wise.
-        canonical_pipe_qs = {p: self.alias_relation.canonical_signed(f"{p}.Q") for p in pipes}
+        # Note that a pipe series can include both hot and cold pipes for
+        # QTH models. It is only about figuring out which pipes are
+        # related direction-wise.
+        # For Heat models, only hot pipes are allowed to be part of pipe
+        # series, as the cold part is zero heat by construction.
+        if heat_network_model_type == "QTH":
+            alias_relation = self.alias_relation
+        elif heat_network_model_type == "Heat":
+            # There is no proper AliasRelation yet (because there is heat loss in pipes).
+            # So we build one, as that is the easiest way to figure out which pipes are
+            # connected to each other in series. We do this by making a temporary/shadow
+            # discharge (".Q") variable per pipe, as that way we can share the processing
+            # logic for determining pipe series with that of QTH models.
+            alias_relation = AliasRelation()
+
+            # Look for aliases only in the hot pipes. All cold pipes are zero by convention anyway.
+            hot_pipes = [p for p in pipes if p.endswith("_hot")]
+
+            pipes_map = {f"{pipe}.HeatIn.Heat": pipe for pipe in hot_pipes}
+            pipes_map.update({f"{pipe}.HeatOut.Heat": pipe for pipe in hot_pipes})
+
+            for p in hot_pipes:
+                for port in ["In", "Out"]:
+                    heat_port = f"{p}.Heat{port}.Heat"
+                    connected = self.alias_relation.aliases(heat_port).intersection(
+                        pipes_map.keys()
+                    )
+                    connected.remove(heat_port)
+
+                    if connected:
+                        other_pipe_port = next(iter(connected))
+                        if other_pipe_port.endswith(f".Heat{port}.Heat"):
+                            sign_prefix = "-"
+                        else:
+                            sign_prefix = ""
+                        other_pipe = pipes_map[other_pipe_port]
+                        if f"{other_pipe}.Q" not in alias_relation.canonical_variables:
+                            alias_relation.add(f"{p}.Q", f"{sign_prefix}{other_pipe}.Q")
+
+        canonical_pipe_qs = {p: alias_relation.canonical_signed(f"{p}.Q") for p in pipes}
         # Move sign from canonical to alias
         canonical_pipe_qs = {(p, d): c for p, (c, d) in canonical_pipe_qs.items()}
         # Reverse the dictionary from `Dict[alias, canonical]` to `Dict[canonical, Set[alias]]`
