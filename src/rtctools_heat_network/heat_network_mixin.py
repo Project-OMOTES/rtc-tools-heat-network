@@ -206,8 +206,8 @@ class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
 
     def constant_inputs(self, ensemble_member):
         inputs = super().constant_inputs(ensemble_member)
-        for p, k in self.heat_network_pipe_flow_directions.items():
-            d = self.__implied_directions[ensemble_member][p]
+        for p, d in self.__implied_directions[ensemble_member].items():
+            k = self.heat_network_pipe_flow_directions[p]
             inputs[k] = Timeseries([-np.inf, np.inf], [d, d])
         return inputs
 
