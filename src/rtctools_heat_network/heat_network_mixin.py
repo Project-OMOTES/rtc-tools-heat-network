@@ -562,6 +562,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         options = self.heat_network_options()
         components = self.heat_network_components
+        parameters = self.parameters(ensemble_member)
+        theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
         # Head (loss) constraints
         constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
@@ -579,12 +581,19 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 dtemp_dt = self.der(f"{pipe}.QTHIn.T") * 3600.0
                 constraints.append((dtemp_dt, -maximum_temperature_der, maximum_temperature_der))
 
-        # Fix dT at demand nodes
-        dtemp = options["dtemp_demand"]
-        for d in components["demand"]:
-            constraints.append(
-                (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dtemp, dtemp)
-            )
+        if theta == 0.0:
+            # Fix temperature in pipes for the fully linear model
+            for pipe in components["pipe"]:
+                constraints.append(
+                    (self.state(f"{pipe}.QTHOut.T") - parameters[f"{pipe}.temperature"], 0.0, 0.0)
+                )
+        elif theta > 0.0:
+            # Fix dT at demand nodes otherwise
+            dtemp = options["dtemp_demand"]
+            for d in components["demand"]:
+                constraints.append(
+                    (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dtemp, dtemp)
+                )
 
         return constraints
 
