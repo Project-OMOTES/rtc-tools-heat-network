@@ -1,5 +1,4 @@
 import math
-from abc import abstractmethod
 from enum import IntEnum
 from math import isfinite
 from typing import Dict
@@ -42,8 +41,23 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     for the head loss and temperature losses in pipes.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, flow_directions=None, **kwargs):
+        """
+        :param flow_directions: A dictionary mapping a pipe name to a
+            Timeseries of the flow directions of type :py:class:`PipeFlowDirection`.
+        """
         super().__init__(*args, **kwargs)
+
+        if flow_directions is not None:
+            self.__flow_directions_name_map = {
+                p: f"{p}__flow_direction" for p in flow_directions.keys()
+            }
+            self.__flow_directions = {
+                self.__flow_directions_name_map[p]: v for p, v in flow_directions.items()
+            }
+        else:
+            self.__flow_directions_name_map = None
+            self.__flow_directions = None
 
         self.__implied_directions = None
         self.__direction_bounds = None
@@ -146,13 +160,24 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         return options
 
     @property
-    @abstractmethod
     def heat_network_pipe_flow_directions(self) -> Dict[str, str]:
         """
         Maps a pipe name to its corresponding `constant_inputs` Timeseries
         name for the direction.
         """
-        raise NotImplementedError
+        if self.__flow_directions_name_map is not None:
+            return self.__flow_directions_name_map
+        else:
+            raise NotImplementedError(
+                "Please implement/set the `heat_network_pipe_flow_directions` property"
+            )
+
+    def constant_inputs(self, ensemble_member):
+        inputs = super().constant_inputs(ensemble_member)
+        if self.__flow_directions is not None:
+            for k, v in self.__flow_directions.items():
+                inputs[k] = v
+        return inputs
 
     def interpolation_method(self, variable=None):
         try:
