@@ -1,5 +1,5 @@
 import math
-from abc import abstractproperty
+from abc import abstractmethod
 from enum import IntEnum
 from math import isfinite
 from typing import Dict, Tuple
@@ -77,11 +77,13 @@ class Topology:
 
 
 class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
-    @abstractproperty
+    @property
+    @abstractmethod
     def heat_network_components(self) -> Dict[str, str]:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def heat_network_topology(self) -> Topology:
         raise NotImplementedError
 
@@ -317,7 +319,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return options
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def heat_network_pipe_flow_directions(self) -> Dict[str, str]:
         """
         Maps a pipe name to its corresponding `constant_inputs` Timeseries
