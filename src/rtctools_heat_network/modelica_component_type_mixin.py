@@ -12,9 +12,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         components = self.heat_network_components
         nodes = components.get("node", [])
         pipes = components["pipe"]
+        buffers = components.get("buffer", [])
 
-        # Figure out which pipes are connected to which nodes, and which pipes
-        # are connected in series.
+        # Figure out which pipes are connected to which nodes, which pipes
+        # are connected in series, and which pipes are connected to which buffers.
+
         pipes_set = set(pipes)
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
@@ -129,7 +131,38 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 raise Exception(f"Pipes in series {ps} do not all have the same orientation")
             pipe_series.append([name for name, _ in ps])
 
-        self.__topology = Topology(node_connections, pipe_series)
+        buffer_connections = {}
+
+        for b in buffers:
+            buffer_connections[b] = connected_pipes = {}
+
+            for k in ["In", "Out"]:
+                b_conn = f"{b}.QTH{k}"
+                aliases = [
+                    x for x in self.alias_relation.aliases(f"{b_conn}.T") if not x.startswith(b)
+                ]
+
+                if len(aliases) > 1:
+                    raise Exception(f"More than one connection to {b_conn}")
+                elif len(aliases) == 0:
+                    raise Exception(f"Found no connection to {b_conn}")
+
+                if aliases[0].endswith(".QTHOut.T"):
+                    pipe = aliases[0][:-9]
+                else:
+                    assert aliases[0].endswith(".QTHIn.T")
+                    pipe = aliases[0][:-8]
+
+                assert pipe in pipes_set
+
+                if k == "In":
+                    assert "_hot" in aliases[0]
+                else:
+                    assert "_cold" in aliases[0]
+
+                connected_pipes[k] = pipe
+
+        self.__topology = Topology(node_connections, pipe_series, buffer_connections)
 
         super().pre()
 

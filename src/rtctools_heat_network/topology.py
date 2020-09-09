@@ -4,11 +4,13 @@ from .heat_network_common import NodeConnectionDirection
 
 
 class Topology:
-    def __init__(self, nodes=None, pipe_series=None):
+    def __init__(self, nodes=None, pipe_series=None, buffers=None):
         if nodes is not None:
             self._nodes = nodes
         if pipe_series is not None:
             self._pipe_series = pipe_series
+        if buffers is not None:
+            self._buffers = buffers
 
     @property
     def nodes(self) -> Dict[str, Dict[int, Tuple[str, NodeConnectionDirection]]]:
@@ -31,5 +33,17 @@ class Topology:
         """
         try:
             return self._pipe_series
+        except AttributeError:
+            raise NotImplementedError
+
+    @property
+    def buffers(self) -> Dict[str, List[str]]:
+        """
+        Maps a buffer name to a dictionary of its in/out connections. Written out using
+        descriptive variable names the return type would be:
+            Dict[buffer_name, List[hot_pipe, cold_pipe]]
+        """
+        try:
+            return self._buffers
         except AttributeError:
             raise NotImplementedError
