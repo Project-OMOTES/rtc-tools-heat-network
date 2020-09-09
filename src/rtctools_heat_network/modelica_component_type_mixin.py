@@ -10,7 +10,7 @@ from .topology import Topology
 class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def pre(self):
         components = self.heat_network_components
-        nodes = components["node"]
+        nodes = components.get("node", [])
         pipes = components["pipe"]
 
         # Figure out which pipes are connected to which nodes, and which pipes
