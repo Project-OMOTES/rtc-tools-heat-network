@@ -2,7 +2,7 @@ import math
 from abc import abstractmethod
 from enum import IntEnum
 from math import isfinite
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import casadi as ca
 
@@ -69,7 +69,12 @@ class Topology:
             raise NotImplementedError
 
     @property
-    def pipe_series(self):
+    def pipe_series(self) -> List[List[str]]:
+        """
+        Return a list of a pipe series (which itself is a list of pipe names
+        per serie). Note that all pipes in a series should have the same
+        orientation.
+        """
         try:
             return self._pipe_series
         except AttributeError:
@@ -137,8 +142,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
         # Note that a pipe series can include both hot and cold pipes. It is
         # only about figuring out which pipes are related direction-wise.
-        pipe_series = []
-
         canonical_pipe_qs = {p: self.alias_relation.canonical_signed(f"{p}.Q") for p in pipes}
         # Move sign from canonical to alias
         canonical_pipe_qs = {(p, d): c for p, (c, d) in canonical_pipe_qs.items()}
@@ -147,7 +150,14 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         for a, c in canonical_pipe_qs.items():
             pipe_sets.setdefault(c, []).append(a)
 
-        pipe_series = list(pipe_sets.values())
+        pipe_series_with_orientation = list(pipe_sets.values())
+
+        # Check that all pipes in the series have the same orientation
+        pipe_series = []
+        for ps in pipe_series_with_orientation:
+            if not len({orientation for _, orientation in ps}) == 1:
+                raise Exception(f"Pipes in series {ps} do not all have the same orientation")
+            pipe_series.append([name for name, _ in ps])
 
         self.__topology = Topology(node_connections, pipe_series)
 
