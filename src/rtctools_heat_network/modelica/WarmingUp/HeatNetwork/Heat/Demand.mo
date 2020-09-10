@@ -14,9 +14,9 @@ block Demand
 
   // Assumption: heat in/out and extracted is nonnegative
   // Heat in the return (i.e. cold) line is zero
-  Modelica.SIunits.Heat Heat_demand(min=0.0, nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_in(min=0.0, nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_out(min=0.0, max=0.0, nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_demand(min=0.0, nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_in(min=0.0, nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_out(min=0.0, max=0.0, nominal=Heat_nominal);
 equation
   // Heat balance equation
   (HeatOut.Heat - (HeatIn.Heat - Heat_demand))/Heat_nominal = 0.0;

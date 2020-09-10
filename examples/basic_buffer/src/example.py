@@ -750,10 +750,11 @@ class QTHProblem(
             plt.show()
 
 
-# Run
-start_time = time.time()
+if __name__ == "__main__":
+    # Run
+    start_time = time.time()
 
-run_heat_network_optimization(HeatProblem, QTHProblem)
+    run_heat_network_optimization(HeatProblem, QTHProblem)
 
-# Output runtime
-print("Execution time: " + time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time)))
+    # Output runtime
+    print("Execution time: " + time.strftime("%H:%M:%S", time.gmtime(time.time() - start_time)))

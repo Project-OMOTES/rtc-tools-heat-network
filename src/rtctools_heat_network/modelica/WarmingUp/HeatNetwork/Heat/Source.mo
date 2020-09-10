@@ -15,9 +15,9 @@ block Source
 
   // Assumption: heat in/out and added is nonnegative
   // Heat in the return (i.e. cold) line is zero
-  Modelica.SIunits.Heat Heat_source(min=0.0, nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_in(min=0.0, max=0.0, nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_out(min=0.0, nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_source(min=0.0, nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_in(min=0.0, max=0.0, nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_out(min=0.0, nominal=Heat_nominal);
 equation
   (HeatOut.Heat - (HeatIn.Heat + Heat_source))/Heat_nominal = 0.0;
 
