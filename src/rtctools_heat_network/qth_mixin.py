@@ -343,11 +343,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                     ub_values = np.full(len(times[1:]), ub)
                 inds = np.flatnonzero(lb_values != ub_values)
 
-                # Make the derivative constraints for the time steps we want.
-                var_cur = source_temperature_out[1:][inds]
-                var_prev = source_temperature_out[:-1][inds]
-                roc = (var_cur - var_prev) / dt
-                constraints.append((roc * avg_dt, -max_der_sec * avg_dt, max_der_sec * avg_dt))
+                if len(inds) > 0:
+                    # Make the derivative constraints for the time steps we want.
+                    var_cur = source_temperature_out[1:][inds]
+                    var_prev = source_temperature_out[:-1][inds]
+                    roc = (var_cur - var_prev) / dt[inds]
+                    constraints.append((roc * avg_dt, -max_der_sec * avg_dt, max_der_sec * avg_dt))
 
             if options["max_t_der_bidirect_pipe"]:
                 # Applies only to the pipes with bidirectional flow
