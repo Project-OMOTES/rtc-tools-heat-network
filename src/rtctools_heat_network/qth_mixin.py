@@ -196,6 +196,62 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+    def __pipe_heat_loss_constraints(self, ensemble_member):
+        parameters = self.parameters(ensemble_member)
+        constraints = []
+
+        theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+        components = self.heat_network_components
+
+        interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
+
+        for p in components["pipe"]:
+            temp_in_sym = self.__state_vector_scaled(f"{p}.QTHIn.T", ensemble_member)
+            temp_out_sym = self.__state_vector_scaled(f"{p}.QTHOut.T", ensemble_member)
+            q_sym = self.__state_vector_scaled(f"{p}.Q", ensemble_member)
+
+            cp = parameters[f"{p}.cp"]
+            rho = parameters[f"{p}.rho"]
+            length = parameters[f"{p}.length"]
+            u_1 = parameters[f"{p}.U_1"]
+            u_2 = parameters[f"{p}.U_2"]
+            temp_g = parameters[f"{p}.T_g"]
+            temp_supply = parameters[f"{p}.T_supply"]
+            temp_return = parameters[f"{p}.T_return"]
+            dtemp = temp_supply - temp_return
+            sign_dtemp = parameters[f"{p}.sign_dT"]
+
+            flow_direction = interpolated_flow_dir_values[p]
+            heat_loss_eq = []
+            no_heat_loss_eq = []
+
+            # If pipe is connected, add heat losses
+            heat_loss_inds = np.flatnonzero((flow_direction != 0).astype(int)).tolist()
+            heat_loss_eq.append(
+                (
+                    (1 - theta) * (temp_out_sym - temp_in_sym)
+                    + theta
+                    * (
+                        (temp_out_sym - temp_in_sym) * q_sym * cp * rho
+                        + length * (u_1 - u_2) * (temp_in_sym + temp_out_sym) / 2
+                        - (length * (u_1 - u_2) * temp_g)
+                        + (length * u_2 * sign_dtemp * dtemp)
+                    )
+                )[heat_loss_inds]
+            )
+
+            if len(heat_loss_inds) > 0:
+                constraints.append((ca.vertcat(*heat_loss_eq), 0.0, 0.0))
+
+            # If pipe is disabled, no heat equations
+            no_heat_loss_inds = np.flatnonzero((flow_direction == 0).astype(int)).tolist()
+            no_heat_loss_eq.append((temp_out_sym - temp_in_sym)[no_heat_loss_inds])
+
+            if len(no_heat_loss_inds) > 0:
+                constraints.append((ca.vertcat(*no_heat_loss_eq), 0.0, 0.0))
+
+        return constraints
+
     def __node_mixing_constraints(self, ensemble_member):
         parameters = self.parameters(ensemble_member)
         constraints = []
@@ -492,6 +548,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
+        constraints.extend(self.__pipe_heat_loss_constraints(ensemble_member))
         constraints.extend(self.__node_mixing_constraints(ensemble_member))
         constraints.extend(self.__max_temp_rate_of_change_constraints(ensemble_member))
         return constraints

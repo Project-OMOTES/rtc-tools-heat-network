@@ -33,8 +33,10 @@ equation
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
 
-  // Heat loss estimate assuming constant ground temparature and constant dT at demand
-  //positive negative dT depending on hot/coldpipe
-  (1-theta)*(QTHOut.T - QTHIn.T) + theta*(QTHOut.T*cp*rho*Q - QTHIn.T*cp*rho*Q + length*(U_1-U_2)*(QTHIn.T + QTHOut.T)/2 -(length*(U_1-U_2)*T_g)+(length*U_2*(sign_dT*dT))) = 0.0;
+  // Heat loss equation is added in the Python script to allow pipes to be disconnected.
+  // It assumes constant ground temparature and constant dT at demand
+  // positive negative dT depending on hot/cold pipe.
+  // Roughly:
+  // cp*rho*Q*(Out.T - In.T) + lenght*(U_1-U_2)*avg_T - lenght*(U_1-U_2)*T_g + lenght*U_2*sign_dT*dT = 0.0
 
  end Pipe;
