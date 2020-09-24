@@ -14,9 +14,15 @@ def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
     for p in hot_pipes:
         heat_in = results[p + ".HeatIn.Heat"]
         heat_out = results[p + ".HeatOut.Heat"]
-        directions[p] = Timeseries(
-            times, ((heat_in >= 0.0) & (heat_out >= 0.0)).astype(int) * 2 - 1
-        )
+
+        if not heat_problem.parameters(0)[p + ".disconnectable"]:
+            directions[p] = Timeseries(
+                times, ((heat_in >= 0.0) & (heat_out >= 0.0)).astype(int) * 2 - 1
+            )
+        elif heat_problem.parameters(0)[p + ".disconnectable"]:
+            dir = ((heat_in >= 0.0) & (heat_out >= 0.0)).astype(int) * 2 - 1
+            dir[((heat_out == 0.0) | (heat_in == 0.0))] = 0
+            directions[p] = Timeseries(times, dir)
 
         # NOTE: The assumption is that the orientation of the cold pipes is such that the flow
         # is always in the same direction as its "hot" pipe companion.

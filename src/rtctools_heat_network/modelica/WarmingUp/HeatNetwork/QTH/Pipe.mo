@@ -4,6 +4,7 @@ block Pipe
   import SI = Modelica.SIunits;
   extends QTHTwoPort;
   parameter String component_type = "pipe";
+  parameter Boolean disconnectable = false;
 
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;

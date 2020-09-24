@@ -627,10 +627,13 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, -np.inf, 0.0)
             ub = np.where(dir_values == PipeFlowDirection.POSITIVE, np.inf, 0.0)
+            b = self.merge_bounds(bounds[f"{p}.Q"], (Timeseries(times, lb), Timeseries(times, ub)))
+            # Pipes' bounds can take both negative and positive values.
+            # To force bounds to be zero, they need to be explicitely overwritten.
+            b[0].values[(dir_values == PipeFlowDirection.DISABLED)] = 0.0
+            b[1].values[(dir_values == PipeFlowDirection.DISABLED)] = 0.0
 
-            direction_bounds[f"{p}.Q"] = self.merge_bounds(
-                bounds[f"{p}.Q"], (Timeseries(times, lb), Timeseries(times, ub))
-            )
+            direction_bounds[f"{p}.Q"] = b
 
         if self.__flow_direction_bounds is None:
             self.__flow_direction_bounds = [{} for _ in range(self.ensemble_size)]
