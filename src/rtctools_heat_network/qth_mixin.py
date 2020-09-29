@@ -341,6 +341,168 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return constraints
 
+    def __buffer_constraints(self, ensemble_member):
+
+        parameters = self.parameters(ensemble_member)
+        constraints = []
+
+        theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+
+        interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
+
+        for b, [hot_pipe, _] in self.heat_network_topology.buffers.items():
+
+            flow_direction = interpolated_flow_dir_values[hot_pipe]
+            e = ensemble_member
+
+            # Temperature of outgoing flows is equal to buffer temperature
+            temp_hot_tank_sym = self.__state_vector_scaled(f"{b}.T_hot_tank", e)
+            temp_hot_pipe_sym = self.__state_vector_scaled(f"{b}.T_hot_pipe", e)
+            temp_cold_tank_sym = self.__state_vector_scaled(f"{b}.T_cold_tank", e)
+            temp_cold_pipe_sym = self.__state_vector_scaled(f"{b}.T_cold_pipe", e)
+
+            # Hot tank
+            t_hot_nominal = self.variable_nominal(f"{b}.T_hot_tank")
+            pipe_temp_as_buffer_hot = (flow_direction != 1).astype(int)
+            inds_hot = np.flatnonzero(pipe_temp_as_buffer_hot).tolist()
+            t_out_conn = (temp_hot_pipe_sym - temp_hot_tank_sym)[inds_hot]
+            if len(inds_hot) > 0:
+                constraints.append((t_out_conn / t_hot_nominal, 0.0, 0.0))
+
+            # Cold tank
+            t_cold_nominal = self.variable_nominal(f"{b}.T_cold_tank")
+            pipe_temp_as_buffer_cold = (flow_direction != -1).astype(int)
+            inds_cold = np.flatnonzero(pipe_temp_as_buffer_cold).tolist()
+            t_out_conn = (temp_cold_pipe_sym - temp_cold_tank_sym)[inds_cold]
+            if len(inds_cold) > 0:
+                constraints.append((t_out_conn / t_cold_nominal, 0.0, 0.0))
+
+            # Temperature mixing in the buffer
+            # There are two set of equations, depending on whether the tank is charging
+            # or discharging.
+            # If tank is charging, there is temperature mixing and thus:
+            # * der(T_tank * V_tank) - T_pipe * Q_pipe + heat losses = 0.
+            # If the tank is discharging, there is no temperature mixing and thus:
+            # * der(T_tank) + heat losses = 0.
+            # Where heat losses are:
+            # surface area * heat transfer coefficient * (T_tank - T_outside) / (rho * cp)
+            # Surface area is 2 * pi * r * (r + h). It is approximated with an average height
+            # when there is no temperature mixing.
+            # Note: the equations are not apply at t0
+
+            radius = parameters[f"{b}.radius"]
+            height = parameters[f"{b}.height"]
+            volume = math.pi * radius ** 2 * height
+            avg_surface = math.pi * radius * (radius + height)
+            cp = parameters[f"{b}.cp"]
+            rho = parameters[f"{b}.rho"]
+            heat_transfer_coeff = parameters[f"{b}.heat_transfer_coeff"]
+            temp_outside = parameters[f"{b}.T_outside"]
+
+            # Collocation times of those variables must same as the global ones
+            assert np.all(self.times() == self.times(f"{b}.T_hot_tank"))
+            assert np.all(self.times() == self.times(f"{b}.V_hot_tank"))
+            assert np.all(self.times() == self.times(f"{b}.Q_hot_pipe"))
+            assert np.all(self.times() == self.times(f"{b}.T_hot_pipe"))
+            assert np.all(self.times() == self.times(f"{b}.T_cold_tank"))
+            assert np.all(self.times() == self.times(f"{b}.V_cold_tank"))
+            assert np.all(self.times() == self.times(f"{b}.Q_cold_pipe"))
+            assert np.all(self.times() == self.times(f"{b}.T_cold_pipe"))
+
+            t_hot_tank_curr = self.__state_vector_scaled(f"{b}.T_hot_tank", e)[1:]
+            t_hot_tank_prev = self.__state_vector_scaled(f"{b}.T_hot_tank", e)[:-1]
+            v_hot_tank_curr = self.__state_vector_scaled(f"{b}.V_hot_tank", e)[1:]
+            v_hot_tank_prev = self.__state_vector_scaled(f"{b}.V_hot_tank", e)[:-1]
+            q_hot_pipe_curr = self.__state_vector_scaled(f"{b}.Q_hot_pipe", e)[1:]
+            t_hot_pipe_curr = self.__state_vector_scaled(f"{b}.T_hot_pipe", e)[1:]
+
+            t_cold_tank_curr = self.__state_vector_scaled(f"{b}.T_cold_tank", e)[1:]
+            t_cold_tank_prev = self.__state_vector_scaled(f"{b}.T_cold_tank", e)[:-1]
+            v_cold_tank_curr = self.__state_vector_scaled(f"{b}.V_cold_tank", e)[1:]
+            v_cold_tank_prev = self.__state_vector_scaled(f"{b}.V_cold_tank", e)[:-1]
+            q_cold_pipe_curr = self.__state_vector_scaled(f"{b}.Q_cold_pipe", e)[1:]
+            t_cold_pipe_curr = self.__state_vector_scaled(f"{b}.T_cold_pipe", e)[1:]
+
+            dt = np.diff(self.times())
+
+            t_mix_hot = []
+            t_mix_cold = []
+
+            hot_mix_inds = np.flatnonzero((flow_direction[1:] == 1).astype(int)).tolist()
+            cold_mix_inds = np.flatnonzero((flow_direction[1:] != 1).astype(int)).tolist()
+
+            # Hot tank
+            t_mix_hot.append(
+                (
+                    (1 - theta) * (t_hot_tank_curr - t_hot_tank_prev)
+                    + theta
+                    * (
+                        (t_hot_tank_curr * v_hot_tank_curr - t_hot_tank_prev * v_hot_tank_prev) / dt
+                        - q_hot_pipe_curr * t_hot_pipe_curr
+                        + (math.pi * radius ** 2 + 2 / radius * v_hot_tank_curr)
+                        * heat_transfer_coeff
+                        * (t_hot_tank_prev - temp_outside)
+                        / (rho * cp)
+                    )
+                )[hot_mix_inds]
+            )
+
+            t_mix_hot.append(
+                (
+                    (
+                        (1 - theta) * (t_hot_tank_curr - t_hot_tank_prev)
+                        + theta
+                        * (
+                            (t_hot_tank_curr - t_hot_tank_prev) / dt
+                            + avg_surface
+                            / (volume / 2)
+                            * heat_transfer_coeff
+                            * (t_hot_tank_prev - temp_outside)
+                            / (rho * cp)
+                        )
+                    )[cold_mix_inds]
+                )
+            )
+
+            # Cold tank
+            t_mix_cold.append(
+                (
+                    (1 - theta) * (t_cold_tank_curr - t_cold_tank_prev)
+                    + theta
+                    * (
+                        (t_cold_tank_curr * v_cold_tank_curr - t_cold_tank_prev * v_cold_tank_prev)
+                        / dt
+                        - q_cold_pipe_curr * t_cold_pipe_curr
+                        + (math.pi * radius ** 2 + 2 / radius * v_cold_tank_curr)
+                        * heat_transfer_coeff
+                        * (t_cold_tank_curr - temp_outside)
+                        / (rho * cp)
+                    )
+                )[cold_mix_inds]
+            )
+
+            t_mix_cold.append(
+                (
+                    (
+                        (1 - theta) * (t_cold_tank_curr - t_cold_tank_prev)
+                        + theta
+                        * (
+                            (t_cold_tank_curr - t_cold_tank_prev) / dt
+                            + avg_surface
+                            / (volume / 2)
+                            * heat_transfer_coeff
+                            * (t_cold_tank_prev - temp_outside)
+                            / (rho * cp)
+                        )
+                    )[hot_mix_inds]
+                )
+            )
+
+            constraints.append((ca.vertcat(*t_mix_hot), 0.0, 0.0))
+            constraints.append((ca.vertcat(*t_mix_cold), 0.0, 0.0))
+
+        return constraints
+
     def __max_temp_rate_of_change_constraints(self, ensemble_member):
         constraints = []
 
@@ -550,6 +712,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         constraints = super().constraints(ensemble_member)
         constraints.extend(self.__pipe_heat_loss_constraints(ensemble_member))
         constraints.extend(self.__node_mixing_constraints(ensemble_member))
+        constraints.extend(self.__buffer_constraints(ensemble_member))
         constraints.extend(self.__max_temp_rate_of_change_constraints(ensemble_member))
         return constraints
 

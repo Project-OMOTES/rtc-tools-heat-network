@@ -1,4 +1,4 @@
-model Example
+model Example_QTH
   // Declare Model Elements
 
   parameter Real Q_nominal = 0.001;
@@ -14,6 +14,11 @@ model Example
   parameter Real t_source2_max = 90.0;
 
   parameter Real t_demand_min = 70;
+
+  parameter Real t_supply_nom = 75.0;
+  parameter Real t_return_nom = 45.0;
+
+  parameter Real init_V_hot_tank = 0.0;
 
   //Heatsource min en max in [W]
   WarmingUp.HeatNetwork.QTH.Source source1(Heat_source(min=0.0, max=1.5e6, nominal=1e6), theta = theta, QTHOut.T(min=t_source1_min, max=t_source1_max));
@@ -34,14 +39,13 @@ model Example
   WarmingUp.HeatNetwork.QTH.Pipe pipe30_cold(length = 60, diameter = 0.1, temperature=45.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe31_cold(length = 60, diameter = 0.1, temperature=45.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe32_cold(length = 50, diameter = 0.1, temperature=45.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.QTH.Pipe pipe52_in_cold(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
-  WarmingUp.HeatNetwork.QTH.Pipe pipe52_out_cold(length = 10, diameter = 0.164, temperature=45.0, Q(max=0.023, min=0.0, nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), dH(min=-1.0), theta = 0.0, sign_dT=-1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_cold(disconnectable = true, length = 10, diameter = 0.164, temperature=45.0, Q(nominal=Q_nominal), QTHIn.T(min=t_return_min, max=t_return_max), QTHOut.T(min=t_return_min, max=t_return_max), theta = theta, sign_dT=-1.0);
 
   WarmingUp.HeatNetwork.QTH.Demand demand7(theta = theta, QTHIn.T(min=t_demand_min));
   WarmingUp.HeatNetwork.QTH.Demand demand91(theta = theta, QTHIn.T(min=t_demand_min));
   WarmingUp.HeatNetwork.QTH.Demand demand92(theta = theta, QTHIn.T(min=t_demand_min));
 
-  WarmingUp.HeatNetwork.QTH.Buffer buffer1(theta = theta);
+  WarmingUp.HeatNetwork.QTH.Buffer buffer1(height = 10, radius = 5, heat_transfer_coeff = 1.0, init_V_hot_tank=init_V_hot_tank, init_T_hot_tank=t_supply_nom, init_T_cold_tank=t_return_nom);
 
   WarmingUp.HeatNetwork.QTH.Pipe pipe1a_hot(length = 170.365, diameter = 0.15, temperature=75.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe1b_hot(length = 309.635, diameter = 0.15, temperature=75.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
@@ -58,18 +62,17 @@ model Example
   WarmingUp.HeatNetwork.QTH.Pipe pipe30_hot(length = 60, diameter = 0.1, temperature=75.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe31_hot(length = 60, diameter = 0.1, temperature=75.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
   WarmingUp.HeatNetwork.QTH.Pipe pipe32_hot(length = 50, diameter = 0.1, temperature=75.0, Q(min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
-  WarmingUp.HeatNetwork.QTH.Pipe pipe52_in_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
-  WarmingUp.HeatNetwork.QTH.Pipe pipe52_out_hot(length = 10, diameter = 0.164, temperature=75.0, Q(max=0.023, min=0.0, nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), dH(min=-1.0), theta = 0.0, sign_dT=1.0);
+  WarmingUp.HeatNetwork.QTH.Pipe pipe52_hot(disconnectable = true, length = 10, diameter = 0.164, temperature=75.0, Q(nominal=Q_nominal), QTHIn.T(min=t_supply_min, max=t_supply_max), QTHOut.T(min=t_supply_min, max=t_supply_max), theta = theta, sign_dT=1.0);
 
   WarmingUp.HeatNetwork.QTH.Node nodeS2_hot(n=3, theta = theta, temperature=75.0);
   WarmingUp.HeatNetwork.QTH.Node nodeD7_hot(n=3, theta = theta, temperature=75.0);
   WarmingUp.HeatNetwork.QTH.Node nodeD92_hot(n=3, theta = theta, temperature=75.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeB1_hot(n=4, theta = theta, temperature=75.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_hot(n=3, theta = theta, temperature=75.0);
 
   WarmingUp.HeatNetwork.QTH.Node nodeS2_cold(n=3, theta = theta, temperature=45.0);
   WarmingUp.HeatNetwork.QTH.Node nodeD7_cold(n=3, theta = theta, temperature=45.0);
   WarmingUp.HeatNetwork.QTH.Node nodeD92_cold(n=3, theta = theta, temperature=45.0);
-  WarmingUp.HeatNetwork.QTH.Node nodeB1_cold(n=4, theta = theta, temperature=45.0);
+  WarmingUp.HeatNetwork.QTH.Node nodeB1_cold(n=3, theta = theta, temperature=45.0);
 
   //Q in [m^3/s] and H in [m]
   WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
@@ -83,7 +86,6 @@ model Example
   output Modelica.SIunits.Heat Heat_demand7_opt = demand7.Heat_demand;
   output Modelica.SIunits.Heat Heat_demand91_opt = demand91.Heat_demand;
   output Modelica.SIunits.Heat Heat_demand92_opt = demand92.Heat_demand;
-  output Modelica.SIunits.Heat StoredHeat_buffer = buffer1.Stored_heat;
 
 equation
 // Connect Model Elements
@@ -149,15 +151,11 @@ equation
   connect(pipe30_cold.QTHOut, nodeD92_cold.QTHConn[3]) ;
 
   //Buffer1
-  //Hot
-  connect(nodeB1_hot.QTHConn[3], pipe52_in_hot.QTHIn) ;
-  connect(pipe52_in_hot.QTHOut, buffer1.QTHHotIn) ;
-  connect(buffer1.QTHHotOut, pipe52_out_hot.QTHIn) ;
-  connect(pipe52_out_hot.QTHOut, nodeB1_hot.QTHConn[4]) ;
-  //Cold
-  connect(nodeB1_cold.QTHConn[3], pipe52_in_cold.QTHIn) ;
-  connect(pipe52_in_cold.QTHOut, buffer1.QTHColdIn) ;
-  connect(buffer1.QTHColdOut, pipe52_out_cold.QTHIn) ;
-  connect(pipe52_out_cold.QTHOut, nodeB1_cold.QTHConn[4]) ;
+  // Hot
+  connect(nodeB1_hot.QTHConn[3], pipe52_hot.QTHIn) ;
+  connect(pipe52_hot.QTHOut, buffer1.QTHIn) ;
+  // Cold
+  connect(buffer1.QTHOut, pipe52_cold.QTHIn) ;
+  connect(pipe52_cold.QTHOut, nodeB1_cold.QTHConn[3]) ;
 
-end Example;
+end Example_QTH;

@@ -134,7 +134,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         buffer_connections = {}
 
         for b in buffers:
-            buffer_connections[b] = connected_pipes = {}
+            buffer_connections[b] = []
 
             for k in ["In", "Out"]:
                 b_conn = f"{b}.QTH{k}"
@@ -160,7 +160,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 else:
                     assert "_cold" in aliases[0]
 
-                connected_pipes[k] = pipe
+                buffer_connections[b].append(pipe)
 
         self.__topology = Topology(node_connections, pipe_series, buffer_connections)
 
