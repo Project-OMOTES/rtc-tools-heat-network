@@ -19,10 +19,15 @@ class Pipe(QTHTwoPort):
         self.cp = 4200.0
         self.rho = 988.0
 
-        # For a PUR-PE pipe estimated based on 1m deep 150 mm pipe with 75 mm
-        # PUR and 15 mm PE and distance of 2x centre to centre
-        self.U_1 = 0.397
-        self.U_2 = 0.0185
+        # Parameters determining the heat loss
+        # All of these have default values in the library function
+        self.insulation_thickness = nan
+        self.conductivity_insulation = nan
+        self.conductivity_subsoil = nan
+        self.depth = nan
+        self.h_surface = nan
+        self.pipe_pair_distance = nan
+
         self.T_supply = nan
         self.T_return = nan
         self.dT = self.T_supply - self.T_return

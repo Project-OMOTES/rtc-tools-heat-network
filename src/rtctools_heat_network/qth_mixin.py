@@ -16,6 +16,7 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.timeseries import Timeseries
 
 import rtctools_heat_network._darcy_weisbach as darcy_weisbach
+from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
@@ -287,11 +288,24 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             temp_out_sym = self.__state_vector_scaled(f"{p}.QTHOut.T", ensemble_member)
             q_sym = self.__state_vector_scaled(f"{p}.Q", ensemble_member)
 
+            u_kwargs = {
+                "inner_diameter": parameters[f"{p}.diameter"],
+                "insulation_thicknesses": parameters[f"{p}.insulation_thickness"],
+                "conductivities_insulation": parameters[f"{p}.conductivity_insulation"],
+                "conductivity_subsoil": parameters[f"{p}.conductivity_subsoil"],
+                "depth": parameters[f"{p}.depth"],
+                "h_surface": parameters[f"{p}.h_surface"],
+                "pipe_distance": parameters[f"{p}.pipe_pair_distance"],
+            }
+
+            # NaN values mean we use the function default
+            u_kwargs = {k: v for k, v in u_kwargs.items() if not np.all(np.isnan(v))}
+            u_1, u_2 = heat_loss_u_values_pipe(**u_kwargs)
+
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
             length = parameters[f"{p}.length"]
-            u_1 = parameters[f"{p}.U_1"]
-            u_2 = parameters[f"{p}.U_2"]
+
             temp_ground = parameters[f"{p}.T_ground"]
             temp_supply = parameters[f"{p}.T_supply"]
             temp_return = parameters[f"{p}.T_return"]

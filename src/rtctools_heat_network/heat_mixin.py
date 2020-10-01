@@ -10,8 +10,9 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
-from .base_component_type_mixin import BaseComponentTypeMixin
+from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
+from .base_component_type_mixin import BaseComponentTypeMixin
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -132,9 +133,21 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         # heat that is absorbed by the return line. Note that the term dtemp is
         # positive when the pipe is in the supply line and negative otherwise.
         for p in self.heat_network_components["pipe"]:
+            u_kwargs = {
+                "inner_diameter": parameters[f"{p}.diameter"],
+                "insulation_thicknesses": parameters[f"{p}.insulation_thickness"],
+                "conductivities_insulation": parameters[f"{p}.conductivity_insulation"],
+                "conductivity_subsoil": parameters[f"{p}.conductivity_subsoil"],
+                "depth": parameters[f"{p}.depth"],
+                "h_surface": parameters[f"{p}.h_surface"],
+                "pipe_distance": parameters[f"{p}.pipe_pair_distance"],
+            }
+
+            # NaN values mean we use the function default
+            u_kwargs = {k: v for k, v in u_kwargs.items() if not np.all(np.isnan(v))}
+            u_1, u_2 = heat_loss_u_values_pipe(**u_kwargs)
+
             length = parameters[f"{p}.length"]
-            u_1 = parameters[f"{p}.U_1"]
-            u_2 = parameters[f"{p}.U_2"]
             temperature = parameters[f"{p}.temperature"]
             temperature_ground = parameters[f"{p}.T_ground"]
             sign_dtemp = 1 if self.is_hot_pipe(p) else -1

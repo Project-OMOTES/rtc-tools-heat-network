@@ -13,9 +13,15 @@ block Pipe
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
 
-  //For a PUR-PE pipe estimated based on 1m deep 150mm pipe with 75mm PUR and 15mm PE and distance of 2x centre to centre
-  parameter Real U_1 = 0.397;
-  parameter Real U_2 = 0.0185;
+  // Parameters determining the heat loss
+  // All of these have default values in the library function
+  parameter SI.Thickness insulation_thickness;
+  parameter SI.ThermalConductivity conductivity_insulation;
+  parameter SI.ThermalConductivity conductivity_subsoil;
+  parameter SI.Distance depth;
+  parameter SI.CoefficientOfHeatTransfer h_surface;
+  parameter SI.Distance pipe_pair_distance;
+
   parameter Real T_supply;
   parameter Real T_return;
   parameter Real dT = T_supply - T_return;
