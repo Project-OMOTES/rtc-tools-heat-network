@@ -605,19 +605,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         # Set the head loss according to the direction in the pipes
         flow_dirs = self.heat_network_pipe_flow_directions
 
-        for pipe in components["pipe"]:
-            dh = self.state(f"{pipe}.dH")
-            flow_dir = self.variable(flow_dirs[pipe])
-            h_down = self.state(f"{pipe}.QTHOut.H")
-            h_up = self.state(f"{pipe}.QTHIn.H")
-
-            constraints.append((dh - flow_dir * (h_down - h_up), 0.0, 0.0))
-
         # Apply head loss constraints in pipes depending on the option set by
         # the user.
         if head_loss_option == HeadLossOption.NO_HEADLOSS:
-            for pipe in components["pipe"]:
-                constraints.append((self.state(f"{pipe}.dH"), 0.0, 0.0))
+            # No constraints to be set. Note that we will set the bounds of
+            # all the dH symbols to zero.
+            pass
 
         elif head_loss_option == HeadLossOption.CQ2:
             estimated_velocity = options["estimated_velocity"]
@@ -663,6 +656,14 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 dh = ca.repmat(self.state(f"{pipe}.dH"), len(a))
                 q = ca.repmat(self.state(f"{pipe}.Q"), len(a))
                 constraints.append((-dh - (a * q + b), 0.0, np.inf))
+
+        for pipe in components["pipe"]:
+            dh = self.state(f"{pipe}.dH")
+            flow_dir = self.variable(flow_dirs[pipe])
+            h_down = self.state(f"{pipe}.QTHOut.H")
+            h_up = self.state(f"{pipe}.QTHIn.H")
+
+            constraints.append((dh - flow_dir * (h_down - h_up), 0.0, 0.0))
 
         return constraints
 
@@ -726,8 +727,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         # Head (loss) constraints
         constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
-        constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
-        constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
+        # Add source/demand head loss constrains only if head loss is non-zero
+        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
+            constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
 
         if theta == 0.0:
             # Fix temperature in pipes for the fully linear model
@@ -806,9 +809,15 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     def bounds(self):
         bounds = super().bounds()
 
+        options = self.heat_network_options()
+
         if self.__flow_direction_bounds is not None:
             # TODO: Per ensemble member
             bounds.update(self.__flow_direction_bounds[0])
+
+        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+            for pipe in self.heat_network_components["pipe"]:
+                bounds[f"{pipe}.dH"] = (0.0, 0.0)
 
         return bounds
 
