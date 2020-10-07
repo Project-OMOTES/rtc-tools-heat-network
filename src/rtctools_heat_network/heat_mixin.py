@@ -111,7 +111,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return parameters
 
-    def __pipe_rate_heat_change_path_constraints(self, ensemble_member):
+    def __pipe_rate_heat_change_constraints(self, ensemble_member):
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -121,7 +121,11 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         q_change = hn_options["maximum_flow_der"]
 
         for p in self.__hot_pipes:
-            der_heat_in = self.der(f"{p}.HeatIn.Heat") * 3600.0
+            variable = f"{p}.HeatIn.Heat"
+            dt = np.diff(self.times(variable))
+
+            canonical, sign = self.alias_relation.canonical_signed(variable)
+            source_temperature_out = sign * self.state_vector(canonical, ensemble_member)
 
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
@@ -132,13 +136,15 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             elif not np.isfinite(heat_change):
                 continue
 
-            heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
+            var_cur = source_temperature_out[1:]
+            var_prev = source_temperature_out[:-1]
+            variable_nominal = self.variable_nominal(variable)
 
             constraints.append(
                 (
-                    der_heat_in / heat_nominal,
-                    -heat_change / heat_nominal,
-                    heat_change / heat_nominal,
+                    var_cur - var_prev,
+                    -heat_change * dt / variable_nominal,
+                    heat_change * dt / variable_nominal,
                 )
             )
 
@@ -250,10 +256,16 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
-        constraints.extend(self.__pipe_rate_heat_change_path_constraints(ensemble_member))
         constraints.extend(self.__node_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
+
+        return constraints
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
 
         return constraints
 
