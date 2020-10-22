@@ -137,9 +137,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             buffer_connections[b] = []
 
             for k in ["In", "Out"]:
-                b_conn = f"{b}.QTH{k}"
+
+                b_conn = f"{b}.{heat_network_model_type}{k}"
+                prop = "T" if heat_network_model_type == "QTH" else "Heat"
                 aliases = [
-                    x for x in self.alias_relation.aliases(f"{b_conn}.T") if not x.startswith(b)
+                    x
+                    for x in self.alias_relation.aliases(f"{b_conn}.{prop}")
+                    if not x.startswith(b) and x.endswith(f".{prop}")
                 ]
 
                 if len(aliases) > 1:
@@ -147,12 +151,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 elif len(aliases) == 0:
                     raise Exception(f"Found no connection to {b_conn}")
 
-                if aliases[0].endswith(".QTHOut.T"):
-                    pipe = aliases[0][:-9]
-                else:
-                    assert aliases[0].endswith(".QTHIn.T")
-                    pipe = aliases[0][:-8]
-
+                pipe = aliases[0].rsplit(".", maxsplit=2)[0]
                 assert pipe in pipes_set
 
                 if k == "In":

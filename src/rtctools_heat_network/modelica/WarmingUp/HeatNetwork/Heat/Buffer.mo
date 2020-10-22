@@ -3,6 +3,7 @@ within WarmingUp.HeatNetwork.Heat;
 block Buffer
   import SI = Modelica.SIunits;
   extends HeatTwoPort;
+  parameter String component_type = "buffer";
 
   // Nominal
   parameter Real T_supply = 75.0;
