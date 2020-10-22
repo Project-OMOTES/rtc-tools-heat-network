@@ -46,6 +46,5 @@ equation
   (HeatHot - HeatIn.Heat)/Heat_nominal = 0.0;
 
 initial equation
-  Stored_heat/(Heat_nominal) - init_Heat = 0.0;
-
+  (Stored_heat - init_Heat)/Heat_nominal = 0.0;
  end Buffer;
