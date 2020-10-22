@@ -48,7 +48,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
-                    if not x.startswith(n)
+                    if not x.startswith(n) and x.endswith(f".{prop}")
                 ]
 
                 if len(aliases) > 1:
