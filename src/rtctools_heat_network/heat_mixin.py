@@ -174,8 +174,9 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         for p in self.__cold_pipes:
             heat_in = self.state(f"{p}.HeatIn.Heat")
             heat_out = self.state(f"{p}.HeatOut.Heat")
+            heat_nominal = self.variable_nominal(f"{p}.HeatOut.Heat")
 
-            constraints.append((heat_in - heat_out, 0.0, 0.0))
+            constraints.append(((heat_in - heat_out) / heat_nominal, 0.0, 0.0))
 
         for p in self.__hot_pipes:
             heat_loss = parameters[f"{p}.Heat_loss"]
