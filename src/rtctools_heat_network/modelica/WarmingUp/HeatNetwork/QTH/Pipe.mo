@@ -23,9 +23,6 @@ block Pipe
   // sign_dT = 1.0 if supply pipe, else sign_dT = -1.0
   parameter Real sign_dT = 1.0;
 
-  // Homotopic parameter
-  parameter Real theta;
-
   Modelica.SIunits.VolumeFlowRate Q;
   Modelica.SIunits.Level dH(max=0.0);
 

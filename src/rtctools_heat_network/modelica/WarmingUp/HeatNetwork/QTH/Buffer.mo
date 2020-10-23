@@ -17,9 +17,6 @@ block Buffer
   parameter Real surface = 2 * 3.14 * radius^2 + 2 * 3.14 * radius * height;
   parameter Real T_outside = 10.0;
 
-  // Homotopic parameter
-  parameter Real theta;
-
   // Nominals
   parameter Real nom_heat = cp * rho * dT;
   parameter Real nom_tank_volume = volume/2;

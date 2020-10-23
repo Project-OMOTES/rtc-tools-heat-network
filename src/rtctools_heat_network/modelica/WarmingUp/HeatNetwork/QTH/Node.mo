@@ -6,8 +6,6 @@ block Node
 
   replaceable parameter Integer n(min = 2) = 2 "Number of flows";
 
-  // Homotopy parameter
-  parameter Real theta;
   parameter Real temperature;
 
   SI.Temperature Tnode;
