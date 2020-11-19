@@ -6,6 +6,7 @@ from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMi
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
@@ -23,8 +24,8 @@ class TargetDemandGoal(Goal):
     order = 1
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("Heat_demand")
-        self.target_max = optimization_problem.get_timeseries("Heat_demand")
+        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
@@ -32,7 +33,15 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state("demand.Heat_demand")
 
 
+class _GoalsAndOptions:
+    def path_goals(self):
+        goals = super().path_goals().copy()
+        goals.append(TargetDemandGoal(self))
+        return goals
+
+
 class HeatModelica(
+    _GoalsAndOptions,
     HeatMixin,
     ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
@@ -40,14 +49,11 @@ class HeatModelica(
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
-        return [TargetDemandGoal(self)]
-
-    def post(self):
-        super().post()
+    pass
 
 
 class HeatPython(
+    _GoalsAndOptions,
     HeatMixin,
     ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
@@ -59,16 +65,25 @@ class HeatPython(
         self.__model = Model()
         super().__init__(*args, **kwargs)
 
-    def path_goals(self):
-        return [TargetDemandGoal(self)]
-
-    def post(self):
-        super().post()
-
     def pycml_model(self):
         return self.__model
+
+
+class HeatESDL(
+    _GoalsAndOptions,
+    HeatMixin,
+    ModelicaComponentTypeMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def bounds(self):
+        bounds = super().bounds()
+        bounds["source.Heat_source"] = (75_000.0, 125_000.0)
+        return bounds
 
 
 if __name__ == "__main__":
     a = run_optimization_problem(HeatModelica)
     b = run_optimization_problem(HeatPython)
+    c = run_optimization_problem(HeatESDL)

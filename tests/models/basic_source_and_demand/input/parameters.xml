@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<parameters
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.wldelft.nl/fews/PI"
+    xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_modelparameters.xsd"
+    version="1.5">
+
+    <group id="51c44578-5f62-4a77-b29a-ee829a3c2e8c" name="pipe">
+        <parameter id="innerDiameter">
+            <dblValue>0.15</dblValue>
+        </parameter>
+    </group>
+
+    <group id="0007ad4d-feb6-43b8-a819-9ca5d71b7c86" name="pipe_ret">
+        <parameter id="innerDiameter">
+            <dblValue>0.15</dblValue>
+        </parameter>
+    </group>
+</parameters>
