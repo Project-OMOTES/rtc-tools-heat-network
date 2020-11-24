@@ -1,4 +1,5 @@
 import logging
+import math
 
 import casadi as ca
 
@@ -112,6 +113,11 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         return parameters
 
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
+        # To avoid sudden change in heat from a timestep to the next,
+        # constraints on d(Heat)/dt are introduced.
+        # Information of restrictions on dQ/dt and dT/dt are used, as d(Heat)/dt is
+        # proportional to average_temperature * dQ/dt + average_discharge * dT/dt.
+        # The average discharge is computed using the assumption that the average velocity is 1.
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -127,9 +133,16 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             canonical, sign = self.alias_relation.canonical_signed(variable)
             source_temperature_out = sign * self.state_vector(canonical, ensemble_member)
 
+            # Maximum differences are expressed per hour. We scale appropriately.
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
-            heat_change = t_change * q_change * cp * rho
+            diameter = parameters[f"{p}.diameter"]
+            area = 0.25 * math.pi * diameter ** 2
+            avg_t = parameters[f"{p}.temperature"]
+            # Assumption: average velocity is 1 m/s
+            avg_v = 1
+            avg_q = avg_v * area
+            heat_change = cp * rho * (t_change / 3600 * avg_q + q_change / 3600 * avg_t)
 
             if heat_change < 0:
                 raise Exception(f"Heat change of pipe {p} should be nonnegative.")
