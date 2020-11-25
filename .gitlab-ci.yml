@@ -17,8 +17,6 @@ style:
     - tox -vv
   variables:
     TOXENV: flake8,black
-  tags:
-    - v13.1.2
 
 # build
 build:
@@ -29,8 +27,6 @@ build:
     paths:
       - dist/
     expire_in: 1 week
-  tags:
-    - v13.1.2
 
 # test
 py36:linux:
@@ -40,8 +36,6 @@ py36:linux:
   image: python:3.6
   variables:
     TOXENV: py36
-  tags:
-    - v13.1.2
 
 # documentation
 pages:
@@ -60,5 +54,3 @@ pages:
       - public
   only:
     - master
-  tags:
-    - v13.1.2
