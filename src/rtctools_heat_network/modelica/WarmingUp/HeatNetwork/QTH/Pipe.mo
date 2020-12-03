@@ -5,6 +5,7 @@ block Pipe
   extends QTHTwoPort;
   parameter String component_type = "pipe";
   parameter Boolean disconnectable = false;
+  parameter Boolean has_control_valve = false;
 
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;

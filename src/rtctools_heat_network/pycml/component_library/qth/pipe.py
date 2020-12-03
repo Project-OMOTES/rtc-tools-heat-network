@@ -11,6 +11,7 @@ class Pipe(QTHTwoPort):
 
         self.component_type = "pipe"
         self.disconnectable = False
+        self.has_control_valve = False
 
         self.length = 1.0
         self.diameter = 1.0

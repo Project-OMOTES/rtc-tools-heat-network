@@ -1,7 +1,8 @@
+import logging
 import math
 from enum import IntEnum
 from math import isfinite
-from typing import Dict
+from typing import Dict, Optional, Union
 
 import casadi as ca
 
@@ -10,6 +11,7 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
+from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.timeseries import Timeseries
 
@@ -18,6 +20,9 @@ import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
 from .heat_network_common import NodeConnectionDirection, PipeFlowDirection
+
+
+logger = logging.getLogger("rtctools_heat_network")
 
 
 class HeadLossOption(IntEnum):
@@ -29,6 +34,44 @@ class HeadLossOption(IntEnum):
     NO_HEADLOSS = 1
     CQ2 = 2
     LINEARIZED_DW = 3
+
+
+class _MinimizeHeadLosses(Goal):
+    order = 1
+
+    priority = 2 ** 31 - 1
+
+    def __init__(self, optimization_problem, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.optimization_problem = optimization_problem
+        self.function_nominal = len(optimization_problem.times())
+
+    @property
+    def is_empty(self):
+        parameters = self.optimization_problem.parameters(0)
+        theta = parameters[self.optimization_problem.homotopy_options()["homotopy_parameter"]]
+
+        # Check if there are any goals before us, otherwise there is not much to do
+        all_goals = [*self.optimization_problem.goals(), *self.optimization_problem.path_goals()]
+        other_goals = [
+            g for g in all_goals if not isinstance(g, _MinimizeHeadLosses) and not g.is_empty
+        ]
+
+        return (theta < 1.0) or (not other_goals)
+
+    def function(self, optimization_problem, ensemble_member):
+        sum_ = 0.0
+
+        parameters = self.optimization_problem.parameters(ensemble_member)
+
+        for p in optimization_problem.heat_network_components["pump"]:
+            sum_ += optimization_problem.state(f"{p}.dH")
+
+        for p in optimization_problem.heat_network_components["pipe"]:
+            if not parameters[f"{p}.has_control_valve"]:
+                sum_ += -1 * optimization_problem.state(f"{p}.dH")
+
+        return sum_
 
 
 class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
@@ -109,6 +152,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         +--------------------------------+-----------+-----------------------------+
         | ``n_linearization_lines``      | ``int``   | ``10`` (LINEARIZED_DW)      |
         +--------------------------------+-----------+-----------------------------+
+        | ``minimize_head_losses``       | ``bool``  | ``True``                    |
+        +--------------------------------+-----------+-----------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
         requirement at any demand node, which means that the pressure at the
@@ -143,6 +188,15 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = maximum_velocity`
         will then be linearized using ``n_linearization`` lines.
+
+        When ``minimize_head_losses`` is set to True (default), a last
+        priority is inserted where the head losses in the system are
+        minimized. This is related to the assumption that control valves are
+        present in the system to steer water in the right direction the case
+        of multiple routes. If such control valves are not present, enabling
+        this option will give warnings in case the found solution is not
+        feasible. In case the option is False, both the minimization and
+        checks are skipped.
         """
 
         options = {}
@@ -156,6 +210,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         options["estimated_velocity"] = 1.0
         options["maximum_velocity"] = 2.0
         options["n_linearization_lines"] = 10
+        options["minimize_head_losses"] = True
 
         return options
 
@@ -589,6 +644,101 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return constraints
 
+    def __pipe_head_loss(
+        self,
+        pipe: str,
+        heat_network_options,
+        parameters,
+        discharge: Union[ca.MX, np.ndarray],
+        head_loss: Optional[ca.MX],
+    ):
+        """
+        This function has two purposes:
+        - return the head loss constraint expression(s) or
+        - compute the head loss numerically.
+
+        Note that there are different head loss formulations (see
+        :class:`HeadLossOption`), that are possible. When `head_loss` is its
+        corresponding MX symbol/expression, the appropriate constraint expression is
+        returned. When `head_loss` is None, the `discharge` is assumed numerical, and
+        the numerical computation of the appropriate heat loss formulation is
+        returned.
+        """
+
+        if head_loss is None:
+            symbolic = False
+        else:
+            symbolic = True
+
+        head_loss_option = heat_network_options["head_loss_option"]
+
+        # Apply head loss constraints in pipes depending on the option set by
+        # the user.
+        if head_loss_option == HeadLossOption.NO_HEADLOSS:
+            # No constraints to be set. Note that we will set the bounds of
+            # all the dH symbols to zero.
+            if symbolic:
+                return []
+            else:
+                return 0.0
+
+        elif head_loss_option == HeadLossOption.CQ2:
+            estimated_velocity = heat_network_options["estimated_velocity"]
+            wall_roughness = heat_network_options["wall_roughness"]
+
+            diameter = parameters[f"{pipe}.diameter"]
+            length = parameters[f"{pipe}.length"]
+            temperature = parameters[f"{pipe}.temperature"]
+
+            ff = darcy_weisbach.friction_factor(
+                estimated_velocity, diameter, length, wall_roughness, temperature
+            )
+
+            # Compute c_v constant (where |dH| ~ c_v * v^2)
+            c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
+            area = 0.25 * math.pi * diameter ** 2
+
+            v = discharge / area
+            expr = c_v * v ** 2
+
+            if symbolic:
+                return [(head_loss - expr, 0.0, np.inf)]
+            else:
+                return expr
+
+        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+            wall_roughness = heat_network_options["wall_roughness"]
+            v_max = heat_network_options["maximum_velocity"]
+            n_lines = heat_network_options["n_linearization_lines"]
+
+            diameter = parameters[f"{pipe}.diameter"]
+            area = math.pi * diameter ** 2 / 4
+            length = parameters[f"{pipe}.length"]
+            temperature = parameters[f"{pipe}.temperature"]
+
+            a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
+                diameter,
+                length,
+                wall_roughness,
+                temperature=temperature,
+                n_lines=n_lines,
+                v_max=v_max,
+            )
+
+            # The function above only gives result in the positive quadrant
+            # (positive head loss, positive discharge). We also need a
+            # positive head loss for _negative_ discharges.
+            a = np.hstack([-a, a])
+            b = np.hstack([b, b])
+
+            # Vectorize constraint for speed
+            if symbolic:
+                head_loss_vec = ca.repmat(head_loss, len(a))
+                discharge_vec = ca.repmat(discharge, len(a))
+                return [(head_loss_vec - (a * discharge_vec + b), 0.0, np.inf)]
+            else:
+                return np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
+
     def __pipe_head_loss_path_constraints(self, ensemble_member):
         constraints = []
 
@@ -605,63 +755,16 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         # Set the head loss according to the direction in the pipes
         flow_dirs = self.heat_network_pipe_flow_directions
 
-        # Apply head loss constraints in pipes depending on the option set by
-        # the user.
-        if head_loss_option == HeadLossOption.NO_HEADLOSS:
-            # No constraints to be set. Note that we will set the bounds of
-            # all the dH symbols to zero.
-            pass
-
-        elif head_loss_option == HeadLossOption.CQ2:
-            estimated_velocity = options["estimated_velocity"]
-            wall_roughness = options["wall_roughness"]
-
-            for pipe in components["pipe"]:
-                diameter = parameters[f"{pipe}.diameter"]
-                length = parameters[f"{pipe}.length"]
-                temperature = parameters[f"{pipe}.temperature"]
-
-                ff = darcy_weisbach.friction_factor(
-                    estimated_velocity, diameter, length, wall_roughness, temperature
+        for pipe in components["pipe"]:
+            constraints.extend(
+                self.__pipe_head_loss(
+                    pipe,
+                    options,
+                    parameters,
+                    self.state(f"{pipe}.Q"),
+                    -1 * self.state(f"{pipe}.dH"),
                 )
-
-                # Compute c_v constant (where |dH| ~ c_v * v^2)
-                c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
-                area = 0.25 * math.pi * diameter ** 2
-
-                v = self.state(f"{pipe}.Q") / area
-                constraints.append((-self.state(f"{pipe}.dH") - c_v * v ** 2, 0.0, np.inf))
-
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            wall_roughness = options["wall_roughness"]
-            v_max = options["maximum_velocity"]
-            n_lines = options["n_linearization_lines"]
-
-            for pipe in components["pipe"]:
-                diameter = parameters[f"{pipe}.diameter"]
-                area = math.pi * diameter ** 2 / 4
-                length = parameters[f"{pipe}.length"]
-                temperature = parameters[f"{pipe}.temperature"]
-
-                a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
-                    diameter,
-                    length,
-                    wall_roughness,
-                    temperature=temperature,
-                    n_lines=n_lines,
-                    v_max=v_max,
-                )
-
-                # The function above only gives result in the positive quadrant
-                # (positive head loss, positive discharge). We also need a
-                # positive head loss for _negative_ discharges.
-                a = np.hstack([-a, a])
-                b = np.hstack([b, b])
-
-                # Vectorize constraint for speed
-                dh = ca.repmat(self.state(f"{pipe}.dH"), len(a))
-                q = ca.repmat(self.state(f"{pipe}.Q"), len(a))
-                constraints.append((-dh - (a * q + b), 0.0, np.inf))
+            )
 
         for pipe in components["pipe"]:
             dh = self.state(f"{pipe}.dH")
@@ -753,6 +856,74 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 )
 
         return constraints
+
+    def priority_started(self, priority):
+        super().priority_started(priority)
+        self.__priority = priority
+
+    def priority_completed(self, priority):
+        super().priority_completed(priority)
+
+        options = self.heat_network_options()
+
+        if options["minimize_head_losses"] and priority == _MinimizeHeadLosses.priority:
+            parameters = self.parameters(0)
+            theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+            assert (
+                theta == 1.0
+            )  # Minimization should be skipped (via `Goal.is_empty`) if theta < 1.0
+
+            components = self.heat_network_components
+
+            rtol = 1e-5
+            atol = 1e-4
+
+            for ensemble_member in range(self.ensemble_size):
+                parameters = self.parameters(ensemble_member)
+                results = self.extract_results(ensemble_member)
+
+                for pipe in components["pipe"]:
+                    if parameters[f"{pipe}.has_control_valve"]:
+                        continue
+                    q = results[f"{pipe}.Q"]
+                    head_loss = -1 * results[f"{pipe}.dH"]
+                    head_loss_target = self.__pipe_head_loss(pipe, options, parameters, q, None)
+
+                    if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
+                        logger.warning(
+                            f"Pipe {pipe} has artificial head loss; "
+                            f"at least one more control valve should be added to the network."
+                        )
+
+                for source in components["source"]:
+                    c = parameters[f"{source}.head_loss"]
+                    head_loss = results[f"{source}.QTHIn.H"] - results[f"{source}.QTHOut.H"]
+                    head_loss_target = c * results[f"{source}.QTHIn.Q"] ** 2
+
+                    if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
+                        logger.warning(f"Source {source} has artificial head loss.")
+
+                min_head_loss_target = options["minimum_pressure_far_point"] * 10.2
+                min_head_loss = None
+
+                for demand in components["demand"]:
+                    head_loss = results[f"{demand}.QTHIn.H"] - results[f"{demand}.QTHOut.H"]
+                    if min_head_loss is None:
+                        min_head_loss = head_loss
+                    else:
+                        min_head_loss = np.minimum(min_head_loss, head_loss)
+
+                if not np.allclose(min_head_loss, min_head_loss_target, rtol=rtol, atol=atol):
+                    logger.warning("Minimum head at demands is higher than target minimum.")
+
+    def path_goals(self):
+        g = super().path_goals().copy()
+
+        options = self.heat_network_options()
+        if options["minimize_head_losses"]:
+            g.append(_MinimizeHeadLosses(self))
+
+        return g
 
     def __get_interpolated_flow_directions(self, ensemble_member) -> Dict[str, np.ndarray]:
         """
@@ -851,4 +1022,46 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         for e in range(self.ensemble_size):
             self.__update_flow_direction_bounds(e)
 
-        return super().transcribe()
+        discrete, lbx, ubx, lbg, ubg, x0, nlp = super().transcribe()
+
+        if self.__priority == _MinimizeHeadLosses.priority:
+            # We overrule here instead of in bounds(), because bounds() does
+            # not support per-ensemble-member bounds. The collocation indices
+            # are private for now, but will become part of the public API soon.
+
+            parameters = self.parameters(0)
+            theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+            assert (
+                theta == 1.0
+            )  # Minimization should be skipped (via `Goal.is_empty`) if theta < 1.0
+
+            lb = np.full_like(lbx, -np.inf)
+            ub = np.full_like(ubx, np.inf)
+
+            fix_value_variables = set()
+            for p in self.heat_network_components["pipe"]:
+                fix_value_variables.add(f"{p}.QTHIn.Q")
+            fix_value_variables = {
+                self.alias_relation.canonical_signed(v)[0] for v in fix_value_variables
+            }
+
+            output = self.solver_output
+
+            previous_indices = self.__previous_indices
+            current_indices = self._CollocatedIntegratedOptimizationProblem__indices_as_lists
+
+            for ensemble_member in range(self.ensemble_size):
+                for v in fix_value_variables:
+                    cur_inds = current_indices[ensemble_member][v]
+                    prev_inds = previous_indices[ensemble_member][v]
+                    ub[cur_inds] = lb[cur_inds] = output[prev_inds]
+
+            lbx = np.maximum(lbx, lb)
+            ubx = np.minimum(ubx, ub)
+
+        self.__previous_indices = self._CollocatedIntegratedOptimizationProblem__indices_as_lists
+
+        return discrete, lbx, ubx, lbg, ubg, x0, nlp
+
+    def post(self):
+        super().post()
