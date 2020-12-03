@@ -652,6 +652,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                     v_max=v_max,
                 )
 
+                # The function above only gives result in the positive quadrant
+                # (positive head loss, positive discharge). We also need a
+                # positive head loss for _negative_ discharges.
+                a = np.hstack([-a, a])
+                b = np.hstack([b, b])
+
                 # Vectorize constraint for speed
                 dh = ca.repmat(self.state(f"{pipe}.dH"), len(a))
                 q = ca.repmat(self.state(f"{pipe}.Q"), len(a))
