@@ -16,11 +16,11 @@ block Pipe
   //For a PUR-PE pipe estimated based on 1m deep 150mm pipe with 75mm PUR and 15mm PE and distance of 2x centre to centre
   parameter Real U_1 = 0.397;
   parameter Real U_2 = 0.0185;
-  parameter Real T_supply = 75.0;
-  parameter Real T_return = 45.0;
+  parameter Real T_supply;
+  parameter Real T_return;
   parameter Real dT = T_supply - T_return;
   // T_g = ground temperature
-  parameter Real T_g = 10.0;
+  parameter Real T_g;
 
   Modelica.SIunits.Heat Heat_in(nominal=cp * rho * dT);
   Modelica.SIunits.Heat Heat_out(nominal=cp * rho * dT);

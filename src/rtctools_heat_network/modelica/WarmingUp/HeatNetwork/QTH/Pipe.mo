@@ -8,7 +8,7 @@ block Pipe
 
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;
-  parameter Real temperature = 50.0;
+  parameter Real temperature;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
 
