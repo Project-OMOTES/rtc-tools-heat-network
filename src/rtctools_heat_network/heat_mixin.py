@@ -283,6 +283,11 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return constraints
 
+    def goal_programming_options(self):
+        options = super().goal_programming_options()
+        options["keep_soft_constraints"] = True
+        return options
+
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = "qpsol"

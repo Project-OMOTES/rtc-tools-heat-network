@@ -132,12 +132,6 @@ class HeatProblem(
 
     model_name = "Example_Heat"
 
-    def goal_programming_options(self):
-        options = super().goal_programming_options()
-        options["constraint_relaxation"] = 1e-5
-        options["keep_soft_constraints"] = True
-        return options
-
 
 class QTHProblem(
     GoalsAndOptions,
