@@ -28,13 +28,50 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
     def pre(self):
         super().pre()
 
+        def _get_max_bound(bound):
+            if isinstance(bound, np.ndarray):
+                return max(bound)
+            elif isinstance(bound, Timeseries):
+                return max(bound.values)
+            else:
+                return bound
+
+        def _get_min_bound(bound):
+            if isinstance(bound, np.ndarray):
+                return min(bound)
+            elif isinstance(bound, Timeseries):
+                return min(bound.values)
+            else:
+                return bound
+
+        bounds = self.bounds()
+
         # Mixed-integer formulation applies only to hot pipes.
         for p in self.__hot_pipes:
             flow_dir_var = f"{p}__flow_direct_var"
 
             self.__pipe_to_flow_direct_map[p] = flow_dir_var
             self.__flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
-            self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
+
+            # Fix the directions that are already implied by the bounds on heat
+            # Nonnegative heat implies that flow direction Boolean is equal to one.
+            # Nonpositive heat implies that flow direction Boolean is equal to zero.
+
+            heat_in_lb = _get_min_bound(bounds[f"{p}.HeatIn.Heat"][0])
+            heat_in_ub = _get_max_bound(bounds[f"{p}.HeatIn.Heat"][1])
+            heat_out_lb = _get_min_bound(bounds[f"{p}.HeatOut.Heat"][0])
+            heat_out_ub = _get_max_bound(bounds[f"{p}.HeatOut.Heat"][1])
+
+            if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
+                heat_out_lb >= 0.0 and heat_out_ub >= 0.0
+            ):
+                self.__flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+            elif (heat_in_lb <= 0.0 and heat_in_ub <= 0.0) or (
+                heat_out_lb <= 0.0 and heat_out_ub <= 0.0
+            ):
+                self.__flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+            else:
+                self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
     def heat_network_options(self):
         r"""
