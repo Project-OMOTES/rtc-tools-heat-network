@@ -232,16 +232,11 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             heat_loss = parameters[f"{p}.Heat_loss"]
             heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
 
-            flow_dir_var = self.__pipe_to_flow_direct_map[p]
-
             heat_in = self.state(f"{p}.HeatIn.Heat")
             heat_out = self.state(f"{p}.HeatOut.Heat")
-            flow_dir = self.state(flow_dir_var)
 
             # Heat loss constraint
-            constraints.append(
-                ((heat_in - heat_out + (1 - 2 * flow_dir) * heat_loss) / heat_nominal, 0.0, 0.0)
-            )
+            constraints.append(((heat_in - heat_out - heat_loss) / heat_nominal, 0.0, 0.0))
 
         return constraints
 
