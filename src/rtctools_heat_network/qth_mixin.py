@@ -34,6 +34,7 @@ class HeadLossOption(IntEnum):
     NO_HEADLOSS = 1
     CQ2 = 2
     LINEARIZED_DW = 3
+    LINEAR = 4
 
 
 class _MinimizeHeadLosses(Goal):
@@ -146,7 +147,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         +--------------------------------+-----------+-----------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2``      |
         +--------------------------------+-----------+-----------------------------+
-        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2)           |
+        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2 & LINEAR)  |
         +--------------------------------+-----------+-----------------------------+
         | ``maximum_velocity``           | ``float`` | ``2.0`` m/s (LINEARIZED_DW) |
         +--------------------------------+-----------+-----------------------------+
@@ -188,6 +189,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = maximum_velocity`
         will then be linearized using ``n_linearization`` lines.
+
+        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q`. For pipes that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
         When ``minimize_head_losses`` is set to True (default), a last
         priority is inserted where the head losses in the system are
@@ -672,6 +678,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         head_loss_option = heat_network_options["head_loss_option"]
 
+        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
+            # If there is a control valve present, we use the more accurate
+            # C*Q^2 inequality formulation.
+            head_loss_option = HeadLossOption.CQ2
+
         # Apply head loss constraints in pipes depending on the option set by
         # the user.
         if head_loss_option == HeadLossOption.NO_HEADLOSS:
@@ -682,13 +693,14 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             else:
                 return 0.0
 
-        elif head_loss_option == HeadLossOption.CQ2:
+        elif head_loss_option in {HeadLossOption.CQ2, HeadLossOption.LINEAR}:
             estimated_velocity = heat_network_options["estimated_velocity"]
             wall_roughness = heat_network_options["wall_roughness"]
 
             diameter = parameters[f"{pipe}.diameter"]
             length = parameters[f"{pipe}.length"]
             temperature = parameters[f"{pipe}.temperature"]
+            has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
             ff = darcy_weisbach.friction_factor(
                 estimated_velocity, diameter, length, wall_roughness, temperature
@@ -699,10 +711,22 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             area = 0.25 * math.pi * diameter ** 2
 
             v = discharge / area
-            expr = c_v * v ** 2
+
+            if head_loss_option == HeadLossOption.CQ2:
+                expr = c_v * v ** 2
+                ub = np.inf
+            else:
+                if not symbolic:
+                    # We are supposed to only return a positive head loss,
+                    # regardless of the sign of the discharge.
+                    v = np.abs(v)
+
+                assert head_loss_option == HeadLossOption.LINEAR
+                expr = c_v * v
+                ub = np.inf if has_control_valve else 0.0
 
             if symbolic:
-                return [(head_loss - expr, 0.0, np.inf)]
+                return [(head_loss - expr, 0.0, ub)]
             else:
                 return expr
 
@@ -756,13 +780,27 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         flow_dirs = self.heat_network_pipe_flow_directions
 
         for pipe in components["pipe"]:
+            if head_loss_option == HeadLossOption.LINEAR:
+                # When dealing with a linear head loss relationship, we do not
+                # need to have a head symbol that is always a certain sign
+                # regardless of flow direction (e.g. the pipe's dH symbol will
+                # always be negative). A need for such a symbol only arises
+                # when dealing with inequality constraints or if the discharge
+                # symbol is squared.
+                head_loss = self.state(f"{pipe}.QTHIn.H") - self.state(f"{pipe}.QTHOut.H")
+            else:
+                # Note that the dH (always negative for pipes) is the opposite
+                # sign of the head loss (which is positive). See also the
+                # definition/constraints of a pipe's dH symbol.
+                head_loss = -1 * self.state(f"{pipe}.dH")
+
             constraints.extend(
                 self.__pipe_head_loss(
                     pipe,
                     options,
                     parameters,
                     self.state(f"{pipe}.Q"),
-                    -1 * self.state(f"{pipe}.dH"),
+                    head_loss,
                 )
             )
 
