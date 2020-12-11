@@ -32,9 +32,10 @@ class HeadLossOption(IntEnum):
     """
 
     NO_HEADLOSS = 1
-    CQ2 = 2
+    CQ2_INEQUALITY = 2
     LINEARIZED_DW = 3
     LINEAR = 4
+    CQ2_EQUALITY = 5
 
 
 class _MinimizeHeadLosses(Goal):
@@ -132,29 +133,29 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         r"""
         Returns a dictionary of heat network specific options.
 
-        +--------------------------------+-----------+-----------------------------+
-        | Option                         | Type      | Default value               |
-        +================================+===========+========================-----+
-        | ``minimum_pressure_far_point`` | ``float`` | ``1.0`` bar                 |
-        +--------------------------------+-----------+-----------------------------+
-        | ``dtemp_demand``               | ``float`` | ``30`` °C                   |
-        +--------------------------------+-----------+-----------------------------+
-        | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour             |
-        +--------------------------------+-----------+-----------------------------+
-        | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                    |
-        +--------------------------------+-----------+-----------------------------+
-        | ``wall_roughness``             | ``float`` | ``0.002`` m                 |
-        +--------------------------------+-----------+-----------------------------+
-        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2``      |
-        +--------------------------------+-----------+-----------------------------+
-        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2 & LINEAR)  |
-        +--------------------------------+-----------+-----------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.0`` m/s (LINEARIZED_DW) |
-        +--------------------------------+-----------+-----------------------------+
-        | ``n_linearization_lines``      | ``int``   | ``10`` (LINEARIZED_DW)      |
-        +--------------------------------+-----------+-----------------------------+
-        | ``minimize_head_losses``       | ``bool``  | ``True``                    |
-        +--------------------------------+-----------+-----------------------------+
+        +--------------------------------+-----------+-----------------------------------+
+        | Option                         | Type      | Default value                     |
+        +================================+===========+===================================+
+        | ``minimum_pressure_far_point`` | ``float`` | ``1.0`` bar                       |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``dtemp_demand``               | ``float`` | ``30`` °C                         |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour                   |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                          |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``wall_roughness``             | ``float`` | ``0.002`` m                       |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``maximum_velocity``           | ``float`` | ``2.0`` m/s (LINEARIZED_DW)       |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``n_linearization_lines``      | ``int``   | ``10`` (LINEARIZED_DW)            |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``minimize_head_losses``       | ``bool``  | ``True``                          |
+        +--------------------------------+-----------+-----------------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
         requirement at any demand node, which means that the pressure at the
@@ -181,7 +182,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         explanation on what each option entails. Note that all options model
         the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`.
 
-        When ``HeadLossOption.CQ2`` is used, the wall roughness at
+        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
@@ -193,6 +194,13 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         When ``HeadLossOption.LINEAR`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+
+        When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q^2`. Note that this formulation is non-convex. At `theta < 1` we
+        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
         When ``minimize_head_losses`` is set to True (default), a last
@@ -212,7 +220,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         options["maximum_temperature_der"] = 2.0
         options["max_t_der_bidirect_pipe"] = True
         options["wall_roughness"] = 2e-3
-        options["head_loss_option"] = HeadLossOption.CQ2
+        options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
         options["maximum_velocity"] = 2.0
         options["n_linearization_lines"] = 10
@@ -681,7 +689,15 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
             # If there is a control valve present, we use the more accurate
             # C*Q^2 inequality formulation.
-            head_loss_option = HeadLossOption.CQ2
+            head_loss_option = HeadLossOption.CQ2_INEQUALITY
+        elif head_loss_option == HeadLossOption.CQ2_EQUALITY:
+            if parameters[f"{pipe}.has_control_valve"]:
+                # An equality would be wrong when there is a control valve
+                # present, so use the inequality formulation
+                head_loss_option = HeadLossOption.CQ2_INEQUALITY
+            elif parameters[self.homotopy_options()["homotopy_parameter"]] < 1.0:
+                # Not fully non-linear yet, so use the linear formulation instead
+                head_loss_option = HeadLossOption.LINEAR
 
         # Apply head loss constraints in pipes depending on the option set by
         # the user.
@@ -693,7 +709,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             else:
                 return 0.0
 
-        elif head_loss_option in {HeadLossOption.CQ2, HeadLossOption.LINEAR}:
+        elif head_loss_option in {
+            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.LINEAR,
+            HeadLossOption.CQ2_EQUALITY,
+        }:
             estimated_velocity = heat_network_options["estimated_velocity"]
             wall_roughness = heat_network_options["wall_roughness"]
 
@@ -712,9 +732,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             v = discharge / area
 
-            if head_loss_option == HeadLossOption.CQ2:
+            if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
                 expr = c_v * v ** 2
                 ub = np.inf
+            elif head_loss_option == HeadLossOption.CQ2_EQUALITY:
+                expr = c_v * v ** 2
+                ub = np.inf if has_control_valve else 0.0
             else:
                 if not symbolic:
                     # We are supposed to only return a positive head loss,
