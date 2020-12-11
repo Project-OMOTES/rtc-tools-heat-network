@@ -8,7 +8,7 @@ from rtctools.util import run_optimization_problem
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class TestExamples(TestCase):
+class TestArtificalHeadLoss(TestCase):
     def test_single_pipe(self):
 
         base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
