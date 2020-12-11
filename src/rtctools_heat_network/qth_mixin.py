@@ -843,7 +843,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         if theta == 0.0:
             # Fix temperature in pipes for the fully linear model
-            for pipe in components["pipe"]:
+            hot_pipe = next(p for p in components["pipe"] if p.endswith("_hot"))
+            cold_pipe = next(p for p in components["pipe"] if p.endswith("_cold"))
+
+            for pipe in (hot_pipe, cold_pipe):
                 constraints.append(
                     (self.state(f"{pipe}.QTHOut.T") - parameters[f"{pipe}.temperature"], 0.0, 0.0)
                 )
