@@ -42,4 +42,6 @@ class TestExamples(TestCase):
         )
 
         np.testing.assert_allclose(modelica_heat._objective_values, pycml_heat._objective_values)
-        np.testing.assert_allclose(modelica_qth._objective_values, pycml_qth._objective_values)
+        np.testing.assert_allclose(
+            modelica_qth._objective_values, pycml_qth._objective_values, rtol=1e-4
+        )
