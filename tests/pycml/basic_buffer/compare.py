@@ -13,7 +13,9 @@ from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.util import run_heat_network_optimization
 
 
-base_folder = (Path(__file__).parent.parent.parent.parent / "examples" / "basic_buffer").absolute()
+base_folder = (
+    Path(__file__).resolve().parent.parent.parent.parent / "examples" / "basic_buffer"
+).absolute()
 sys.path.insert(0, str(base_folder / "src"))
 from example import HeatProblem as _HeatProblem, QTHProblem as _QTHProblem  # noqa: E402, I100
 
