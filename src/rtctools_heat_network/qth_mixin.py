@@ -66,7 +66,9 @@ class _MinimizeHeadLosses(Goal):
 
         parameters = self.optimization_problem.parameters(ensemble_member)
 
-        for p in optimization_problem.heat_network_components["pump"]:
+        pumps = optimization_problem.heat_network_components.get("pump", [])
+
+        for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
 
         for p in optimization_problem.heat_network_components["pipe"]:
