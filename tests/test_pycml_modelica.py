@@ -9,7 +9,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.util import run_heat_network_optimization
 
 
-class TestExamples(TestCase):
+class TestPyCML(TestCase):
     def test_basic_source_and_demand(self):
         base_folder = (Path(__file__).parent / "models" / "basic_source_and_demand").absolute()
         sys.path.insert(0, str(base_folder / "src"))
