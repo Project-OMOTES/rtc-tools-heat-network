@@ -13,7 +13,7 @@ logger = logging.getLogger("rtctools_heat_network")
 class TestArtificalHeadLoss(TestCase):
     def test_single_pipe(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from double_pipe_qth import SinglePipeQTH
 
@@ -30,7 +30,7 @@ class TestArtificalHeadLoss(TestCase):
 
     def test_double_pipe_unequal(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from double_pipe_qth import DoublePipeUnequalQTH
 
@@ -47,7 +47,7 @@ class TestArtificalHeadLoss(TestCase):
 
     def test_double_pipe_unequal_with_valve(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from double_pipe_qth import DoublePipeUnequalWithValveQTH
 
@@ -66,7 +66,7 @@ class TestArtificalHeadLoss(TestCase):
 class TestHeadLossEqualities(TestCase):
     def test_equal_length(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from cq2_inequality_vs_equality import (
             EqualLengthLinearEquality,
@@ -117,7 +117,7 @@ class TestHeadLossEqualities(TestCase):
 
     def test_unequal_length(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from cq2_inequality_vs_equality import (
             UnequalLengthLinearEquality,
@@ -168,7 +168,7 @@ class TestHeadLossEqualities(TestCase):
 
     def test_unequal_length_valve(self):
 
-        base_folder = (Path(__file__).parent / "models" / "double_pipe_qth").absolute()
+        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
         sys.path.insert(0, str(base_folder / "src"))
         from cq2_inequality_vs_equality import (
             UnequalLengthValveLinearEquality,
