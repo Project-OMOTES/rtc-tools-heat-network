@@ -11,7 +11,7 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 class TestExamples(TestCase):
     def test_basic_source_and_demand(self):
-        base_folder = (Path(__file__).parent / "basic_source_and_demand").absolute()
+        base_folder = (Path(__file__).parent / "models" / "basic_source_and_demand").absolute()
         sys.path.insert(0, str(base_folder / "src"))
         from heat_comparison import HeatModelica, HeatPython
 
@@ -23,7 +23,7 @@ class TestExamples(TestCase):
         self.assertAlmostEqual(case_modelica.objective_value, case_python.objective_value, 6)
 
     def test_basic_buffer_example(self):
-        sys.path.insert(0, str((Path(__file__).parent / "basic_buffer").absolute()))
+        sys.path.insert(0, str((Path(__file__).parent / "models" / "basic_buffer" / "src").absolute()))
         from compare import (
             HeatProblemModelica,
             QTHProblemModelica,
