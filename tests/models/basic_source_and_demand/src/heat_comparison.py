@@ -1,5 +1,3 @@
-from model import Model
-
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -11,6 +9,11 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
+
+if __name__ == "__main__":
+    from model import Model
+else:
+    from .model import Model
 
 
 class TargetDemandGoal(Goal):

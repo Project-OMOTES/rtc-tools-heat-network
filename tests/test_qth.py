@@ -7,18 +7,22 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+
 logger = logging.getLogger("rtctools_heat_network")
 
 
 class TestArtificalHeadLoss(TestCase):
-    def test_single_pipe(self):
+    @classmethod
+    def setUpClass(cls):
+        import models.double_pipe_qth.src.double_pipe_qth as double_pipe_qth
 
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from double_pipe_qth import SinglePipeQTH
+        cls.base_folder = Path(double_pipe_qth.__file__).resolve().parent.parent
+
+    def test_single_pipe(self):
+        from models.double_pipe_qth.src.double_pipe_qth import SinglePipeQTH
 
         with self.assertLogs(logger, level="WARNING") as cm:
-            run_optimization_problem(SinglePipeQTH, base_folder=base_folder)
+            run_optimization_problem(SinglePipeQTH, base_folder=self.base_folder)
 
             self.assertNotIn("artificial head loss", str(cm.output))
 
@@ -29,13 +33,10 @@ class TestArtificalHeadLoss(TestCase):
         sys.path.pop(0)
 
     def test_double_pipe_unequal(self):
-
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from double_pipe_qth import DoublePipeUnequalQTH
+        from models.double_pipe_qth.src.double_pipe_qth import DoublePipeUnequalQTH
 
         with self.assertLogs(logger, level="WARNING") as cm:
-            run_optimization_problem(DoublePipeUnequalQTH, base_folder=base_folder)
+            run_optimization_problem(DoublePipeUnequalQTH, base_folder=self.base_folder)
 
             self.assertIn("Pipe pipe_2_hot has artificial head loss", str(cm.output))
             self.assertIn("Pipe pipe_2_cold has artificial head loss", str(cm.output))
@@ -46,13 +47,10 @@ class TestArtificalHeadLoss(TestCase):
         sys.path.pop(0)
 
     def test_double_pipe_unequal_with_valve(self):
-
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from double_pipe_qth import DoublePipeUnequalWithValveQTH
+        from models.double_pipe_qth.src.double_pipe_qth import DoublePipeUnequalWithValveQTH
 
         with self.assertLogs(logger, level="WARNING") as cm:
-            run_optimization_problem(DoublePipeUnequalWithValveQTH, base_folder=base_folder)
+            run_optimization_problem(DoublePipeUnequalWithValveQTH, base_folder=self.base_folder)
 
             self.assertNotIn("artificial head loss", str(cm.output))
 
@@ -64,18 +62,22 @@ class TestArtificalHeadLoss(TestCase):
 
 
 class TestHeadLossEqualities(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import models.double_pipe_qth.src.cq2_inequality_vs_equality as cq2_inequality_vs_equality
+
+        cls.base_folder = Path(cq2_inequality_vs_equality.__file__).resolve().parent.parent
+
     def test_equal_length(self):
 
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from cq2_inequality_vs_equality import (
+        from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             EqualLengthLinearEquality,
             EqualLengthQuadraticEquality,
         )
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_linear_equality = run_optimization_problem(
-                EqualLengthLinearEquality, base_folder=base_folder
+                EqualLengthLinearEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))
@@ -86,7 +88,7 @@ class TestHeadLossEqualities(TestCase):
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_quadratic_equality = run_optimization_problem(
-                EqualLengthQuadraticEquality, base_folder=base_folder
+                EqualLengthQuadraticEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))
@@ -117,16 +119,14 @@ class TestHeadLossEqualities(TestCase):
 
     def test_unequal_length(self):
 
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from cq2_inequality_vs_equality import (
+        from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             UnequalLengthLinearEquality,
             UnequalLengthQuadraticEquality,
         )
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_linear_equality = run_optimization_problem(
-                UnequalLengthLinearEquality, base_folder=base_folder
+                UnequalLengthLinearEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))
@@ -137,7 +137,7 @@ class TestHeadLossEqualities(TestCase):
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_quadratic_equality = run_optimization_problem(
-                UnequalLengthQuadraticEquality, base_folder=base_folder
+                UnequalLengthQuadraticEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))
@@ -168,16 +168,14 @@ class TestHeadLossEqualities(TestCase):
 
     def test_unequal_length_valve(self):
 
-        base_folder = Path(__file__).resolve().parent / "models" / "double_pipe_qth"
-        sys.path.insert(0, str(base_folder / "src"))
-        from cq2_inequality_vs_equality import (
+        from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             UnequalLengthValveLinearEquality,
             UnequalLengthValveQuadraticEquality,
         )
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_linear_equality = run_optimization_problem(
-                UnequalLengthValveLinearEquality, base_folder=base_folder
+                UnequalLengthValveLinearEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))
@@ -188,7 +186,7 @@ class TestHeadLossEqualities(TestCase):
 
         with self.assertLogs(logger, level="WARNING") as cm:
             equal_length_quadratic_equality = run_optimization_problem(
-                UnequalLengthValveQuadraticEquality, base_folder=base_folder
+                UnequalLengthValveQuadraticEquality, base_folder=self.base_folder
             )
 
             self.assertNotIn("artificial head loss", str(cm.output))

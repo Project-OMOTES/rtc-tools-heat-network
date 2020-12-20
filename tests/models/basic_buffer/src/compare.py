@@ -3,23 +3,33 @@ import time
 from abc import ABCMeta
 from pathlib import Path
 
-from model_heat import ModelHeat
-
-from model_qth import ModelQTH
-
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.util import run_heat_network_optimization
 
+# We want to import the example we compare with as a module that is somewhat
+# uniquely identifiable. We therefore start from the root.
+root_folder = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
+sys.path.insert(1, root_folder)
 
-base_folder = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent / "examples" / "basic_buffer"
-).absolute()
-sys.path.insert(0, str(base_folder / "src"))
-from example import HeatProblem as _HeatProblem, QTHProblem as _QTHProblem  # noqa: E402, I100
+import examples.basic_buffer.src.example  # noqa: E402, I100
+from examples.basic_buffer.src.example import (  # noqa: E402, I100
+    HeatProblem as _HeatProblem,
+    QTHProblem as _QTHProblem,
+)
 
-sys.path.pop(0)
+base_folder = Path(examples.basic_buffer.src.example.__file__).resolve().parent.parent
+
+del root_folder
+sys.path.pop(1)
+
+if __name__ == "__main__":
+    from model_heat import ModelHeat
+    from model_qth import ModelQTH
+else:
+    from .model_heat import ModelHeat
+    from .model_qth import ModelQTH
 
 
 class SwitchModelicaToPyCML(ABCMeta):

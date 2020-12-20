@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from unittest import TestCase
 
@@ -11,28 +10,24 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 class TestPyCML(TestCase):
     def test_basic_source_and_demand(self):
-        base_folder = Path(__file__).resolve().parent / "models" / "basic_source_and_demand"
-        sys.path.insert(0, str(base_folder / "src"))
-        from heat_comparison import HeatModelica, HeatPython
+        import models.basic_source_and_demand.src.heat_comparison as heat_comparison
+        from models.basic_source_and_demand.src.heat_comparison import HeatModelica, HeatPython
+
+        base_folder = Path(heat_comparison.__file__).resolve().parent.parent
 
         case_modelica = run_optimization_problem(HeatModelica, base_folder=base_folder)
         case_python = run_optimization_problem(HeatPython, base_folder=base_folder)
 
-        sys.path.pop(0)
-
         self.assertAlmostEqual(case_modelica.objective_value, case_python.objective_value, 6)
 
     def test_basic_buffer_example(self):
-        sys.path.insert(0, str(Path(__file__).resolve().parent / "models" / "basic_buffer" / "src"))
-        from compare import (
+        from models.basic_buffer.src.compare import (
             HeatProblemModelica,
             QTHProblemModelica,
             HeatProblemPyCML,
             QTHProblemPyCML,
             base_folder,
         )
-
-        sys.path.pop(0)
 
         modelica_heat, modelica_qth = run_heat_network_optimization(
             HeatProblemModelica, QTHProblemModelica, base_folder=base_folder
