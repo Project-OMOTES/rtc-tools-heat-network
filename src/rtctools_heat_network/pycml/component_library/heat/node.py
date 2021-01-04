@@ -1,3 +1,5 @@
+from rtctools_heat_network.pycml import Variable
+
 from ._internal import HeatComponent
 from .heat_port import HeatPort
 
@@ -12,7 +14,11 @@ class Node(HeatComponent):
         assert self.n >= 2
 
         self.add_variable(HeatPort, "HeatConn", self.n)
+        self.add_variable(Variable, "H")
 
         # Because the orientation of the connected pipes are important to
         # setup the heat conservation, these constraints are added in the
         # mixin.
+
+        for i in range(1, self.n + 1):
+            self.add_equation(self.HeatConn[i].H - self.H)

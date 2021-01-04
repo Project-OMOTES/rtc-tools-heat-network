@@ -13,21 +13,39 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
 from .base_component_type_mixin import BaseComponentTypeMixin
+from .head_loss_mixin import HeadLossOption, _HeadLossMixin
+
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+
+    __allowed_head_loss_options = {
+        HeadLossOption.NO_HEADLOSS,
+        HeadLossOption.LINEAR,
+        HeadLossOption.LINEARIZED_DW,
+    }
+
+    _hn_prefix = "Heat"
+
     def __init__(self, *args, **kwargs):
         # Prepare dicts for additional variables
         self.__flow_direct_var = {}
         self.__flow_direct_bounds = {}
         self.__pipe_to_flow_direct_map = {}
 
+        self.__pipe_disconnect_var = {}
+        self.__pipe_disconnect_var_bounds = {}
+        self.__pipe_disconnect_map = {}
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
         super().pre()
+
+        options = self.heat_network_options()
+        parameters = self.parameters(0)
 
         def _get_max_bound(bound):
             if isinstance(bound, np.ndarray):
@@ -74,6 +92,13 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             else:
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
+            if options["minimum_velocity"] > 0.0 and parameters[f"{p}.disconnectable"]:
+                disconnected_var = f"{p}__is_disconnected"
+
+                self.__pipe_disconnect_map[p] = disconnected_var
+                self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+                self.__pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
 
@@ -81,25 +106,48 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         r"""
         Returns a dictionary of heat network specific options.
 
-        +--------------------------------+-----------+-----------------------------+
-        | Option                         | Type      | Default value               |
-        +================================+===========+========================-----+
-        | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour             |
-        +--------------------------------+-----------+-----------------------------+
-        | ``maximum_flow_der``           | ``float`` | ``np.inf`` m3/s/hour        |
-        +--------------------------------+-----------+-----------------------------+
+        +--------------------------------------+-----------+-----------------------------+
+        | Option                               | Type      | Default value               |
+        +======================================+===========+=============================+
+        | ``minimum_pressure_far_point``       | ``float`` | ``1.0`` bar                 |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``maximum_temperature_der``          | ``float`` | ``2.0`` °C/hour             |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``maximum_flow_der``                 | ``float`` | ``np.inf`` m3/s/hour        |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
         per hour. Similarly, the ``maximum_flow_der`` parameter gives the
         maximum flow change per hour. These options together are used to
         constrain the maximum heat change per hour allowed in the entire
         network. Note the unit for flow is m3/s, but the change is expressed
-        on an hourly basis leading to the ``m3/s/hour`` unit."""
+        on an hourly basis leading to the ``m3/s/hour`` unit.
 
-        options = {}
+        The ``minimum_velocity`` is the minimum absolute value of the velocity
+        in every pipe. It is mostly an option to improve the stability of the
+        solver in a possibly subsequent QTH problem: the default value of
+        `0.005` m/s helps the solver by avoiding the difficult case where
+        discharges get close to zero.
 
+        Note that the inherited options ``head_loss_option`` and
+        ``minimize_head_losses`` are changed from their default values to
+        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+        """
+
+        options = super().heat_network_options()
+
+        options["minimum_pressure_far_point"] = 1.0
         options["maximum_temperature_der"] = 2.0
         options["maximum_flow_der"] = np.inf
+        options["minimum_velocity"] = 0.005
+        options["head_loss_option"] = HeadLossOption.LINEAR
+        options["minimize_head_losses"] = False
 
         return options
 
@@ -107,10 +155,11 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
     def path_variables(self):
         variables = super().path_variables.copy()
         variables.extend(self.__flow_direct_var.values())
+        variables.extend(self.__pipe_disconnect_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
-        if variable in self.__flow_direct_var:
+        if variable in self.__flow_direct_var or variable in self.__pipe_disconnect_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -118,6 +167,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
     def bounds(self):
         bounds = super().bounds()
         bounds.update(self.__flow_direct_bounds)
+        bounds.update(self.__pipe_disconnect_var_bounds)
         return bounds
 
     def parameters(self, ensemble_member):
@@ -217,7 +267,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return constraints
 
-    def __node_mixing_path_constraints(self, ensemble_member):
+    def __node_heat_mixing_path_constraints(self, ensemble_member):
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
@@ -231,6 +281,23 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
             heat_nominal = np.median(heat_nominals)
             constraints.append((heat_sum / heat_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __node_discharge_mixing_path_constraints(self, ensemble_member):
+        constraints = []
+
+        for node, connected_pipes in self.heat_network_topology.nodes.items():
+            q_sum = 0.0
+            q_nominals = []
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                q_conn = f"{node}.HeatConn[{i_conn + 1}].Q"
+                q_sum += orientation * self.state(q_conn)
+                q_nominals.append(self.variable_nominal(q_conn))
+
+            q_nominal = np.median(q_nominals)
+            constraints.append((q_sum / q_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -257,24 +324,30 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return constraints
 
+    @staticmethod
+    def __get_abs_max_bounds(*bounds):
+        max_ = 0.0
+
+        for b in bounds:
+            if isinstance(b, np.ndarray):
+                max_ = max(max_, max(abs(b)))
+            elif isinstance(b, Timeseries):
+                max_ = max(max_, max(abs(b.values)))
+            else:
+                max_ = max(max_, abs(b))
+
+        return max_
+
     def __flow_direction_path_constraints(self, ensemble_member):
         constraints = []
-
-        def _get_abs_max_bounds(*bounds):
-            max_ = 0.0
-
-            for b in bounds:
-                if isinstance(b, np.ndarray):
-                    max_ = max(max_, max(abs(b)))
-                elif isinstance(b, Timeseries):
-                    max_ = max(max_, max(abs(b.values)))
-                else:
-                    max_ = max(max_, abs(b))
-
-            return max_
+        options = self.heat_network_options()
+        parameters = self.parameters(ensemble_member)
 
         bounds = self.bounds()
 
+        # These constraints are redundant with the discharge ones. However,
+        # CBC tends to get confused and return significantly infeasible
+        # results if we remove them.
         for p in self.hot_pipes:
             flow_dir_var = self.__pipe_to_flow_direct_map[p]
 
@@ -282,7 +355,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             heat_out = self.state(f"{p}.HeatOut.Heat")
             flow_dir = self.state(flow_dir_var)
 
-            big_m = _get_abs_max_bounds(
+            big_m = self.__get_abs_max_bounds(
                 *self.merge_bounds(bounds[f"{p}.HeatIn.Heat"], bounds[f"{p}.HeatOut.Heat"])
             )
 
@@ -298,6 +371,67 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             # its heat losses.
             constraints.append(((heat_out - big_m * flow_dir) / big_m, -np.inf, 0.0))
             constraints.append(((heat_out + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
+
+        minimum_velocity = options["minimum_velocity"]
+        maximum_velocity = options["maximum_velocity"]
+
+        # Also ensure that the discharge has the same sign as the heat.
+        for p in self.heat_network_components["pipe"]:
+            # FIXME: Enable heat in cold pipes as well.
+            if self.is_cold_pipe(p):
+                hot_pipe = self.cold_to_hot_pipe(p)
+            else:
+                hot_pipe = p
+
+            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+            flow_dir = self.state(flow_dir_var)
+
+            is_disconnected_var = self.__pipe_disconnect_map.get(hot_pipe)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
+            q_pipe = self.state(f"{p}.Q")
+            diameter = parameters[f"{p}.diameter"]
+            area = 0.25 * math.pi * diameter ** 2
+            maximum_discharge = maximum_velocity * area
+
+            if math.isfinite(minimum_velocity):
+                minimum_discharge = minimum_velocity * area
+            else:
+                minimum_discharge = 0.0
+
+            big_m = maximum_discharge + minimum_discharge
+
+            if minimum_discharge > 0.0 and is_disconnected_var is not None:
+                constraint_nominal = (minimum_discharge * big_m) ** 0.5
+            else:
+                constraint_nominal = big_m
+
+            constraints.append(
+                (
+                    (q_pipe - big_m * flow_dir + (1 - is_disconnected) * minimum_discharge)
+                    / constraint_nominal,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(
+                (
+                    (q_pipe + big_m * (1 - flow_dir) - (1 - is_disconnected) * minimum_discharge)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+            # If a pipe is disconnected, the discharge should be zero
+            if is_disconnected_var is not None:
+                constraints.append(((q_pipe - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0))
+
+                constraints.append(((q_pipe + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf))
 
         # Pipes that are connected in series should have the same heat direction.
         for pipes in self.heat_network_topology.pipe_series:
@@ -335,13 +469,212 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return constraints
 
+    def __demand_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for d in self.heat_network_components["demand"]:
+            q_nominal = parameters[f"{d}.Q_nominal"]
+            cp = parameters[f"{d}.cp"]
+            rho = parameters[f"{d}.rho"]
+            dt = parameters[f"{d}.T_supply"] - parameters[f"{d}.T_return"]
+            heat_nominal = cp * rho * dt * q_nominal
+
+            discharge = self.state(f"{d}.Q")
+            heat_consumed = self.state(f"{d}.Heat_demand")
+
+            constraints.append(
+                ((heat_consumed - cp * rho * dt * discharge) / heat_nominal, 0.0, 0.0)
+            )
+
+        return constraints
+
+    def __source_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for s in self.heat_network_components["source"]:
+            q_nominal = parameters[f"{s}.Q_nominal"]
+            cp = parameters[f"{s}.cp"]
+            rho = parameters[f"{s}.rho"]
+            dt = parameters[f"{s}.T_supply"] - parameters[f"{s}.T_return"]
+            heat_nominal = cp * rho * dt * q_nominal
+
+            discharge = self.state(f"{s}.Q")
+            heat_production = self.state(f"{s}.Heat_source")
+
+            constraints.append(
+                ((heat_production - cp * rho * dt * discharge) / heat_nominal, 0.0, np.inf)
+            )
+
+        return constraints
+
+    def __pipe_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        sum_heat_losses = sum(
+            parameters[f"{p}.Heat_loss"] for p in self.heat_network_components["pipe"]
+        )
+
+        for p in self.hot_pipes:
+            cp = parameters[f"{p}.cp"]
+            rho = parameters[f"{p}.rho"]
+            dt = parameters[f"{p}.T_supply"] - parameters[f"{p}.T_return"]
+            heat_to_discharge_fac = 1.0 / (cp * rho * dt)
+
+            flow_dir_var = self.__pipe_to_flow_direct_map[p]
+            flow_dir = self.state(flow_dir_var)
+            scaled_heat_in = self.state(f"{p}.HeatIn.Heat") * heat_to_discharge_fac
+            scaled_heat_out = self.state(f"{p}.HeatOut.Heat") * heat_to_discharge_fac
+            pipe_q = self.state(f"{p}.Q")
+
+            # We do not want Big M to be too tight in this case, as it results
+            # in a rather hard yes/no constraint as far as feasibility on e.g.
+            # a single source system is concerned. Use a factor of 2 to give
+            # some slack.
+            big_m = 2 * sum_heat_losses * heat_to_discharge_fac
+
+            for heat in (scaled_heat_in, scaled_heat_out):
+                constraints.append(((heat - pipe_q + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
+                constraints.append(((heat - pipe_q - big_m * flow_dir) / big_m, -np.inf, 0.0))
+
+        return constraints
+
+    def __buffer_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+
+        for b, ((hot_pipe, hot_pipe_orientation), _) in self.heat_network_topology.buffers.items():
+            q_nominal = parameters[f"{b}.Q_nominal"]
+            cp = parameters[f"{b}.cp"]
+            rho = parameters[f"{b}.rho"]
+            dt = parameters[f"{b}.T_supply"] - parameters[f"{b}.T_return"]
+            heat_nominal = cp * rho * dt * q_nominal
+
+            discharge = self.state(f"{b}.HeatIn.Q") * hot_pipe_orientation
+            # Note that `heat_consumed` can be negative for the buffer; in that case we
+            # are extracting heat from it.
+            heat_consumed = self.state(f"{b}.Heat_buffer")
+
+            # We want an _equality_ constraint between discharge and heat if the buffer is
+            # consuming (i.e. behaving like a "demand"). We want an _inequality_
+            # constraint (`|heat| >= |f(Q)|`) just like a "source" component if heat is
+            # extracted from the buffer. We accomplish this by disabling one of
+            # the constraints with a boolean. Note that `discharge` and `heat_consumed`
+            # are guaranteed to have the same sign.
+            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+            is_buffer_charging = hot_pipe_orientation * self.state(flow_dir_var)
+
+            big_m = self.__get_abs_max_bounds(
+                *self.merge_bounds(bounds[f"{b}.HeatIn.Heat"], bounds[f"{b}.HeatOut.Heat"])
+            )
+
+            constraints.append(
+                (
+                    (heat_consumed - cp * rho * dt * discharge + (1 - is_buffer_charging) * big_m)
+                    / heat_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                ((heat_consumed - cp * rho * dt * discharge) / heat_nominal, -np.inf, 0.0)
+            )
+
+        return constraints
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
+
+    @staticmethod
+    def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
+        head_loss_option = heat_network_options["head_loss_option"]
+
+        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
+            # If there is a control valve present, we use the more accurate
+            # Darcy-Weisbach inequality formulation.
+            head_loss_option = HeadLossOption.LINEARIZED_DW
+
+        return head_loss_option
+
+    def _hn_pipe_head_loss_constraints(self, ensemble_member):
+        constraints = []
+
+        options = self.heat_network_options()
+        parameters = self.parameters(ensemble_member)
+        components = self.heat_network_components
+
+        # Set the head loss according to the direction in the pipes. Note that
+        # the `.__head_loss` symbol is always positive by definition, but that
+        # `.dH` is not (positive when flow is negative, and vice versa).
+        # If the pipe is disconnected, we leave the .__head_loss symbol free
+        # (and it has no physical meaning). We also do not set any discharge
+        # relationship in this case (but dH is still equal to Out - In of
+        # course).
+        for pipe in components["pipe"]:
+            if parameters[f"{pipe}.length"] == 0.0:
+                # If the pipe does not have a control valve, the head loss is
+                # forced to zero via bounds. If the pipe _does_ have a control
+                # valve, then there still is no relationship between the
+                # discharge and the head loss/dH.
+                continue
+
+            if self.is_cold_pipe(pipe):
+                hot_pipe = self.cold_to_hot_pipe(pipe)
+            else:
+                hot_pipe = pipe
+
+            head_loss_sym = self._hn_pipe_to_head_loss_map[hot_pipe]
+
+            dh = self.__state_vector_scaled(f"{pipe}.dH", ensemble_member)
+            head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)
+            discharge = self.__state_vector_scaled(f"{pipe}.Q", ensemble_member)
+
+            constraints.extend(
+                self._hn_pipe_head_loss(pipe, options, parameters, discharge, head_loss, dh)
+            )
+
+            # Relate the head loss symbol to the pipe's dH symbol.
+            area = 0.25 * math.pi * parameters[f"{pipe}.diameter"] ** 2
+            max_discharge = options["maximum_velocity"] * area
+            max_head_loss = self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+
+            # FIXME: Ugly hack. Cold pipes should be modelled completely with
+            # their own integers as well.
+            flow_dir = self.__state_vector_scaled(
+                self.__pipe_to_flow_direct_map[hot_pipe], ensemble_member
+            )
+
+            constraints.append(
+                (
+                    (-dh - head_loss + (1 - flow_dir) * max_head_loss) / max_head_loss,
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                ((dh - head_loss + flow_dir * max_head_loss) / max_head_loss, 0.0, np.inf)
+            )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
-        constraints.extend(self.__node_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__buffer_path_constraints(ensemble_member))
+        constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member))
 
         return constraints
 
@@ -392,10 +725,17 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         options["solver"] = "cbc"
         return options
 
+    def compiler_options(self):
+        options = super().compiler_options()
+        options["resolve_parameter_values"] = True
+        return options
+
     def post(self):
         super().post()
 
         results = self.extract_results()
+        parameters = self.parameters(0)
+        options = self.heat_network_options()
 
         # The flow directions are the same as the heat directions if the
         # return (i.e. cold) line has zero heat throughout. Here we check that
@@ -405,3 +745,51 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             heat_out = results[f"{p}.HeatOut.Heat"]
             if np.any(heat_in > 1.0) or np.any(heat_out > 1.0):
                 logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
+
+        for p in self.heat_network_components["pipe"]:
+            head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
+            if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
+                atol = self.variable_nominal(f"{p}.HeatIn.H") * 1e-5
+                assert np.allclose(head_diff, 0.0, atol=atol)
+            else:
+                q = results[f"{p}.Q"]
+                q_nominal = self.variable_nominal(self.alias_relation.canonical_signed(f"{p}.Q")[0])
+                inds = np.abs(q) / q_nominal > 1e-4
+                assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
+
+        minimum_velocity = options["minimum_velocity"]
+        for p in self.heat_network_components["pipe"]:
+            if self.is_cold_pipe(p):
+                hot_pipe = self.cold_to_hot_pipe(p)
+            else:
+                hot_pipe = p
+            area = 0.25 * math.pi * parameters[f"{p}.diameter"] ** 2
+            q = results[f"{p}.Q"]
+            q_w_error_margin = q + 1e-5 * np.sign(q) * self.variable_nominal(f"{p}.Q")
+            v = q_w_error_margin / area
+            flow_dir = np.round(results[self.__pipe_to_flow_direct_map[hot_pipe]])
+            try:
+                is_disconnected = np.round(results[self.__pipe_disconnect_map[hot_pipe]])
+            except KeyError:
+                is_disconnected = np.zeros_like(q)
+
+            inds_disconnected = is_disconnected == 1
+            inds_positive = (flow_dir == 1) & ~inds_disconnected
+            inds_negative = (flow_dir == 0) & ~inds_disconnected
+
+            assert np.all(v[inds_positive] >= minimum_velocity)
+            assert np.all(v[inds_negative] <= -1 * minimum_velocity)
+
+            assert np.all(np.abs(q[inds_disconnected]) / self.variable_nominal(f"{p}.Q") <= 1e-5)
+
+        for p in self.hot_pipes:
+            heat_in = results[f"{p}.HeatIn.Heat"]
+            heat_out = results[f"{p}.HeatOut.Heat"]
+            inds = np.abs(heat_out) > np.abs(heat_in)
+
+            heat = heat_in.copy()
+            heat[inds] = heat_out[inds]
+
+            flow_dir_var = np.round(results[self.__pipe_to_flow_direct_map[p]])
+
+            assert np.all(np.sign(heat) == 2 * flow_dir_var - 1)

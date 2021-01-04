@@ -7,7 +7,13 @@ block Node
   replaceable parameter Integer n(min = 2) = 2 "Number of flows";
 
   HeatPort HeatConn[n];
+  output SI.Position H;
 equation
   // Because the orientation of the connected pipes are important to setup the
   // heat conservation, these constraints are added in Python.
+
+  for i in 1:n loop
+    HeatConn[i].H = H;
+    // Q and Heat to be set in Python
+  end for;
 end Node;

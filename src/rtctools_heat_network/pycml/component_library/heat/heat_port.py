@@ -8,3 +8,5 @@ class HeatPort(HeatComponent, Connector):
         super().__init__(name, **modifiers)
 
         self.add_variable(Variable, "Heat")
+        self.add_variable(Variable, "Q")
+        self.add_variable(Variable, "H")

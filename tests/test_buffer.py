@@ -31,6 +31,6 @@ class TestBufferHistory(TestCase):
         bufferheat_history = history_results["buffer.Heat_buffer"]
         bufferheat_historystoredheat = historystoredheat_results["buffer.Heat_buffer"]
 
-        np.testing.assert_array_equal(0.0, bufferheat_nohistory[0])
+        np.testing.assert_allclose(0.0, bufferheat_nohistory[0])
         np.testing.assert_array_less(bufferheat_history[0], 0.0)
-        np.testing.assert_array_equal(bufferheat_history, bufferheat_historystoredheat)
+        np.testing.assert_allclose(bufferheat_history, bufferheat_historystoredheat)

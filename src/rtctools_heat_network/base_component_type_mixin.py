@@ -12,7 +12,8 @@ class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
     """
     The standard naming convention is that pipes have "_hot" and "_cold" suffixes.
     Such convention can be overridden using the `is_hot_pipe` and `is_cold_pipe` methods.
-    Moreover, one has to set the mapping between hot and cold pipes via `hot_to_cold_pipe`.
+    Moreover, one has to set the mapping between hot and cold pipes via `hot_to_cold_pipe`
+    and `cold_to_hot_pipe`.
     """
 
     @property
@@ -35,6 +36,11 @@ class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
         assert self.is_hot_pipe(pipe)
 
         return f"{pipe[:-4]}_cold"
+
+    def cold_to_hot_pipe(self, pipe: str):
+        assert self.is_cold_pipe(pipe)
+
+        return f"{pipe[:-5]}_hot"
 
     @property
     def hot_pipes(self) -> List[str]:

@@ -6,12 +6,13 @@ block Buffer
   parameter String component_type = "buffer";
 
   // Nominal
+  parameter Real Q_nominal = 1.0;
   parameter Real T_supply;
   parameter Real T_return;
   parameter Real dT = T_supply - T_return;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
-  parameter Real Heat_nominal = cp * rho * dT;
+  parameter Real Heat_nominal = cp * rho * dT * Q_nominal;
 
   parameter Real heat_transfer_coeff = 1;
   parameter Real height = 5;
@@ -43,8 +44,12 @@ block Buffer
   Modelica.SIunits.Heat HeatHot(nominal=Heat_nominal);
   Modelica.SIunits.Heat HeatCold(min=0.0, max=0.0, nominal=Heat_nominal);
 
+  Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
+
   parameter Real _heat_loss_eq_nominal_buf = sqrt(Heat_nominal * _nominal_heat_loss);
 equation
+  HeatIn.Q = Q;
+  HeatIn.Q = HeatOut.Q;
 
   // Heat stored in the buffer
   (der(Stored_heat) - Heat_buffer + Heat_loss) / _heat_loss_eq_nominal_buf = 0.0;

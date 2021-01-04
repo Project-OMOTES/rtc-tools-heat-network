@@ -7,12 +7,13 @@ block Pipe
   parameter Boolean disconnectable = false;
   parameter Boolean has_control_valve = false;
 
+  parameter Real Q_nominal = 1.0;
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;
   parameter Real temperature;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
-  parameter Real Heat_nominal = cp * rho * dT;
+  parameter Real Heat_nominal = cp * rho * dT * Q_nominal;
 
   // Parameters determining the heat loss
   // All of these have default values in the library function
@@ -28,13 +29,19 @@ block Pipe
   parameter Real dT = T_supply - T_return;
   parameter Real T_ground = 10.0;
 
-  Modelica.SIunits.Heat Heat_in(nominal=cp * rho * dT);
-  Modelica.SIunits.Heat Heat_out(nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_in(nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_out(nominal=Heat_nominal);
+
+  Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
+  Modelica.SIunits.Level dH;
 
   // Heat loss
   // To be calculated in RTC-Tools, or else the parameter would disappear
   parameter Real Heat_loss;
 equation
+  HeatIn.Q = Q;
+  HeatIn.Q = HeatOut.Q;
+
   // Aliases
   (Heat_out - HeatOut.Heat)/Heat_nominal = 0.0;
   (Heat_in - HeatIn.Heat)/Heat_nominal = 0.0;

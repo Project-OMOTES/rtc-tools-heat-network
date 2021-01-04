@@ -427,10 +427,13 @@ class _HeadLossMixin(
     def __source_head_loss_path_constraints(self, ensemble_member):
         constraints = []
 
+        options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
         components = self.heat_network_components
 
         pref = self._hn_prefix
+
+        head_loss_option = options["head_loss_option"]
 
         for source in components["source"]:
             c = parameters[f"{source}.head_loss"]
@@ -443,7 +446,11 @@ class _HeadLossMixin(
                         0.0,
                     )
                 )
-            else:
+            elif head_loss_option in {HeadLossOption.LINEAR, HeadLossOption.LINEARIZED_DW}:
+                raise NotImplementedError(
+                    f"Head loss for sources is not implemented for {head_loss_option}"
+                )
+            elif head_loss_option in {HeadLossOption.CQ2_INEQUALITY, HeadLossOption.CQ2_EQUALITY}:
                 constraints.append(
                     (
                         self.state(f"{source}.{pref}In.H")
