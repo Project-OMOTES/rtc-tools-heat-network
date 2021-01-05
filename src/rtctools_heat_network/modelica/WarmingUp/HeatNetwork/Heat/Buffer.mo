@@ -42,9 +42,11 @@ equation
   (Heat_loss - Stored_heat * heat_loss_coeff) / Heat_nominal = 0.0;
   (Heat_buffer - (HeatHot - HeatCold))/Heat_nominal = 0.0;
 
-  // Aliases
-  (HeatCold - HeatOut.Heat)/Heat_nominal = 0.0;
-  (HeatHot - HeatIn.Heat)/Heat_nominal = 0.0;
+  // Set in Python script. We want HeatHot to be positive when the buffer is
+  // charging, which means we need to know the orientation of the connected
+  // pipe.
+  // (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
+  // (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
 
 initial equation
   (Stored_heat - init_Heat)/Heat_nominal = 0.0;

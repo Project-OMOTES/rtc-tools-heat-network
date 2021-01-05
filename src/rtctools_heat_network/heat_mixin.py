@@ -299,12 +299,32 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         return constraints
 
+    def __buffer_path_constraints(self, ensemble_member):
+        constraints = []
+
+        for b, ((_, hot_orient), (_, cold_orient)) in self.heat_network_topology.buffers.items():
+            heat_nominal = self.variable_nominal(f"{b}.HeatIn.Heat")
+
+            heat_in = self.state(f"{b}.HeatIn.Heat")
+            heat_out = self.state(f"{b}.HeatOut.Heat")
+            heat_hot = self.state(f"{b}.HeatHot")
+            heat_cold = self.state(f"{b}.HeatCold")
+
+            # Note that in the conventional scenario, where the hot pipe out-port is connected
+            # to the buffer's in-port and the buffer's out-port is connected to the cold pipe
+            # in-port, the orientation of the hot/cold pipe is 1/-1 respectively.
+            constraints.append(((heat_hot - hot_orient * heat_in) / heat_nominal, 0.0, 0.0))
+            constraints.append(((heat_cold + cold_orient * heat_out) / heat_nominal, 0.0, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__node_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
+        constraints.extend(self.__buffer_path_constraints(ensemble_member))
 
         return constraints
 

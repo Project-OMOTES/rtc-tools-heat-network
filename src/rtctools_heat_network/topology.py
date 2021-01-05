@@ -37,11 +37,14 @@ class Topology:
             raise NotImplementedError
 
     @property
-    def buffers(self) -> Dict[str, List[str]]:
+    def buffers(
+        self,
+    ) -> Dict[str, Tuple[Tuple[str, NodeConnectionDirection], Tuple[str, NodeConnectionDirection]]]:
         """
         Maps a buffer name to a dictionary of its in/out connections. Written out using
         descriptive variable names the return type would be:
-            Dict[buffer_name, List[hot_pipe, cold_pipe]]
+            Dict[buffer_name, Tuple[Tuple[hot_pipe, hot_pipe_orientation],
+                                    Tuple[cold_pipe, cold_pipe_orientation]]]
         """
         try:
             return self._buffers

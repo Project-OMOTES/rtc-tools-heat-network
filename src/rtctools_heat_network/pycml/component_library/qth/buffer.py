@@ -60,6 +60,11 @@ class Buffer(QTHTwoPort):
         # The hot tank is connected to the supply line, while the cold one to the return line.
         # The total volume of the system is constant.
         # Assumption: constant density and heat capacity
+        # Q_hot_pipe is positive when the buffer is charging, negative if discharching.
+        # Note that, as volume is constant, the amount of hot and cold water discharged
+        # must be equal.
+        # For convention, we assume that Q_hot_pipe and Q_cold_pipe have the same sign, i.e.,
+        # Q_hot_pipe = Q_cold_pipe.
 
         # Volume
         self.add_equation(((self.V_hot_tank + self.V_cold_tank) - self.volume) / self.volume)
@@ -77,9 +82,13 @@ class Buffer(QTHTwoPort):
         # der(V_hot_tank * T_hot_tank) - (Q_hot_pipe * T_hot_pipe) = 0.0;
         # der(V_cold_tank * T_hot_tank) - (Q_cold_pipe * T_cold_pipe) = 0.0;
 
+        # * Flows in/out:
+        # recall that Q_hot_pipe and Q_cold_pipe have the same sign.
+        # To compensate for pipe orientations, we have:
+        # hot_pipe_orientation * QTHIn.Q = Q_hot_pipe;
+        # -1 * cold_pipe_orientation * QTHOut.Q = Q_cold_pipe;
+
         # Aliases
-        self.add_equation(self.QTHIn.Q - self.Q_hot_pipe)
-        self.add_equation(self.QTHOut.Q - self.Q_cold_pipe)
         self.add_equation(self.QTHIn.T - self.T_hot_pipe)
         self.add_equation(self.QTHOut.T - self.T_cold_pipe)
 

@@ -151,15 +151,31 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 elif len(aliases) == 0:
                     raise Exception(f"Found no connection to {b_conn}")
 
-                pipe = aliases[0].rsplit(".", maxsplit=2)[0]
-                assert pipe in pipes_set
+                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+
+                if aliases[0].endswith(out_suffix):
+                    pipe_w_orientation = (
+                        aliases[0][: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
+                else:
+                    assert aliases[0].endswith(in_suffix)
+                    pipe_w_orientation = (
+                        aliases[0][: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
+
+                assert pipe_w_orientation[0] in pipes_set
 
                 if k == "In":
-                    assert "_hot" in aliases[0]
+                    assert "_hot" in pipe_w_orientation[0]
                 else:
-                    assert "_cold" in aliases[0]
+                    assert "_cold" in pipe_w_orientation[0]
 
-                buffer_connections[b].append(pipe)
+                buffer_connections[b].append(pipe_w_orientation)
+
+            buffer_connections[b] = tuple(buffer_connections[b])
 
         self.__topology = Topology(node_connections, pipe_series, buffer_connections)
 

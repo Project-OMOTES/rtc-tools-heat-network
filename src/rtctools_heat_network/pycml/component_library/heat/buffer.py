@@ -48,7 +48,10 @@ class Buffer(HeatTwoPort):
         self.add_equation((self.Heat_buffer - (self.HeatHot - self.HeatCold)) / self.Heat_nominal)
 
         # Aliases
-        self.add_equation((self.HeatCold - self.HeatOut.Heat) / self.Heat_nominal)
-        self.add_equation((self.HeatHot - self.HeatIn.Heat) / self.Heat_nominal)
+        # Set in Python script. We want HeatHot to be positive when the buffer is
+        # charging, which means we need to know the orientation of the connected
+        # pipe.
+        # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
+        # (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
 
         self.add_initial_equation((self.Stored_heat - self.init_Heat) / self.Heat_nominal)

@@ -421,10 +421,29 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
-        for b, [hot_pipe, _] in self.heat_network_topology.buffers.items():
+        for b, (hot_pair, cold_pair) in self.heat_network_topology.buffers.items():
+            hot_pipe, hot_pipe_orientation = hot_pair
+            _, cold_pipe_orientation = cold_pair
 
-            flow_direction = interpolated_flow_dir_values[hot_pipe]
+            # buffer_is_charging:
+            #   1 if buffer is charging (flow into buffer on hot side)
+            #  -1 if discharging (flow out of buffer on hot side)
+            #   0 if no flow going in/out of buffer
+            buffer_is_charging = hot_pipe_orientation * interpolated_flow_dir_values[hot_pipe]
             e = ensemble_member
+
+            # Flows going in/out of the buffer. We want Q_hot_pipe and
+            # Q_cold_pipe to be positive when the buffer is charging.
+            # Note that in the conventional scenario, where the hot pipe out-port is connected
+            # to the buffer's in-port and the buffer's out-port is connected to the cold pipe
+            # in-port, the orientation of the hot/cold pipe is 1/-1 respectively.
+            q_in = self.__state_vector_scaled(f"{b}.QTHIn.Q", e)
+            q_out = self.__state_vector_scaled(f"{b}.QTHOut.Q", e)
+            q_hot_pipe = self.__state_vector_scaled(f"{b}.Q_hot_pipe", e)
+            q_cold_pipe = self.__state_vector_scaled(f"{b}.Q_cold_pipe", e)
+
+            constraints.append((hot_pipe_orientation * q_in - q_hot_pipe, 0.0, 0.0))
+            constraints.append((cold_pipe_orientation * q_out + q_cold_pipe, 0.0, 0.0))
 
             # Temperature of outgoing flows is equal to buffer temperature
             temp_hot_tank_sym = self.__state_vector_scaled(f"{b}.T_hot_tank", e)
@@ -434,7 +453,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Hot tank
             t_hot_nominal = self.variable_nominal(f"{b}.T_hot_tank")
-            pipe_temp_as_buffer_hot = (flow_direction != 1).astype(int)
+            pipe_temp_as_buffer_hot = (buffer_is_charging != 1).astype(int)
             inds_hot = np.flatnonzero(pipe_temp_as_buffer_hot).tolist()
             t_out_conn = (temp_hot_pipe_sym - temp_hot_tank_sym)[inds_hot]
             if len(inds_hot) > 0:
@@ -442,7 +461,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Cold tank
             t_cold_nominal = self.variable_nominal(f"{b}.T_cold_tank")
-            pipe_temp_as_buffer_cold = (flow_direction != -1).astype(int)
+            pipe_temp_as_buffer_cold = (buffer_is_charging != -1).astype(int)
             inds_cold = np.flatnonzero(pipe_temp_as_buffer_cold).tolist()
             t_out_conn = (temp_cold_pipe_sym - temp_cold_tank_sym)[inds_cold]
             if len(inds_cold) > 0:
@@ -499,8 +518,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             t_mix_hot = []
             t_mix_cold = []
 
-            hot_mix_inds = np.flatnonzero((flow_direction[1:] == 1).astype(int)).tolist()
-            cold_mix_inds = np.flatnonzero((flow_direction[1:] != 1).astype(int)).tolist()
+            hot_mix_inds = np.flatnonzero((buffer_is_charging[1:] == 1).astype(int)).tolist()
+            cold_mix_inds = np.flatnonzero((buffer_is_charging[1:] != 1).astype(int)).tolist()
 
             # Hot tank
             t_mix_hot.append(
