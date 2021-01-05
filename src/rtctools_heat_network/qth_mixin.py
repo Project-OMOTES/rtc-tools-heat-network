@@ -128,6 +128,9 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             raise Exception("Every hot pipe should have a corresponding cold pipe and vice versa.")
 
         self.__flow_direction_bounds = None
+        self.__temperature_pipe_theta_zero = None
+
+        self.__update_temperature_pipe_theta_zero_bounds()
 
         super().pre()
 
@@ -273,6 +276,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
         components = self.heat_network_components
+
+        # At theta=0, the temperature of the hot/cold pipes are constant
+        # and equal to the design ones. Thus heat loss equations do not apply.
+        if theta == 0.0:
+            return []
 
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
@@ -451,8 +459,30 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             temp_cold_tank_sym = self.__state_vector_scaled(f"{b}.T_cold_tank", e)
             temp_cold_pipe_sym = self.__state_vector_scaled(f"{b}.T_cold_pipe", e)
 
-            # Hot tank
             t_hot_nominal = self.variable_nominal(f"{b}.T_hot_tank")
+            t_cold_nominal = self.variable_nominal(f"{b}.T_cold_tank")
+
+            # At theta=0, the temperature of the pipes is equal to the design temperature.
+            # We fix the temperature of the buffer as well.
+            # Note that at temperature of the buffer at t0 is already fixed through the model.
+            if theta == 0.0:
+                constraints.append(
+                    ((temp_hot_pipe_sym[1:] - temp_hot_tank_sym[1:]) / t_hot_nominal, 0.0, 0.0)
+                )
+                constraints.append(
+                    ((temp_cold_pipe_sym[1:] - temp_cold_tank_sym[1:]) / t_hot_nominal, 0.0, 0.0)
+                )
+                break
+
+            # At theta>0, we need to model the buffer temperature and how it is related
+            # to the network.
+            # There are two part to model:
+            # - the water going out of a tank must have the same temperature as the tank itself.
+            # - temperature of the each tank
+
+            # Temperature of outgoing flows is equal to buffer temperature
+
+            # Hot tank
             pipe_temp_as_buffer_hot = (buffer_is_charging != 1).astype(int)
             inds_hot = np.flatnonzero(pipe_temp_as_buffer_hot).tolist()
             t_out_conn = (temp_hot_pipe_sym - temp_hot_tank_sym)[inds_hot]
@@ -923,17 +953,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
             constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
 
-        if theta == 0.0:
-            # Fix temperature in pipes for the fully linear model
-            hot_pipe = next(p for p in components["pipe"] if p.endswith("_hot"))
-            cold_pipe = next(p for p in components["pipe"] if p.endswith("_cold"))
-
-            for pipe in (hot_pipe, cold_pipe):
-                constraints.append(
-                    (self.state(f"{pipe}.QTHOut.T") - parameters[f"{pipe}.temperature"], 0.0, 0.0)
-                )
-        elif theta > 0.0:
+        if theta > 0.0:
             # Fix dT at demand nodes otherwise
+            # Note that for theta == 0.0, this is trivially satisfied as the temperature
+            # of the cold/hot line are constant.
             dtemp = options["dtemp_demand"]
             for d in components["demand"]:
                 constraints.append(
@@ -1068,10 +1091,28 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         self.__flow_direction_bounds[ensemble_member] = direction_bounds.copy()
 
+    def __update_temperature_pipe_theta_zero_bounds(self):
+        # At theta=0, the temperature of the pipes must be equal to its design temperature.
+        # Here we create a dictionary which will be used to update the bounds.
+        # Note that the design temperature is not ensemble dependent.
+        parameters = self.parameters(0)
+        temperature_bounds = {}
+
+        for p in self.heat_network_components["pipe"]:
+            temperature = parameters[f"{p}.temperature"]
+            b = (temperature, temperature)
+
+            temperature_bounds[f"{p}.QTHIn.T"] = b
+            temperature_bounds[f"{p}.QTHOut.T"] = b
+
+        self.__temperature_pipe_theta_zero = temperature_bounds.copy()
+
     def bounds(self):
-        bounds = super().bounds()
+        bounds = super().bounds().copy()
 
         options = self.heat_network_options()
+        parameters = self.parameters(0)
+        theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
         if self.__flow_direction_bounds is not None:
             # TODO: Per ensemble member
@@ -1080,6 +1121,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             for pipe in self.heat_network_components["pipe"]:
                 bounds[f"{pipe}.dH"] = (0.0, 0.0)
+
+        # Set the temperature of the pipes in the linear problem
+        if theta == 0.0:
+            bounds.update(self.__temperature_pipe_theta_zero)
 
         return bounds
 
