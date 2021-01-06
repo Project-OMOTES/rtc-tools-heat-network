@@ -93,9 +93,10 @@ class GoalsAndOptions:
 
         tot_demand = 0.0
         for d in self.heat_network_components["demand"]:
-            dem = self.get_timeseries("Heat_demand_" + d[-1]).values
+            ts = self.get_timeseries("Heat_demand_" + d[-1])
+            dem = ts.values
             dem /= 10
-            self.set_timeseries("Heat_demand_" + d[-1], Timeseries(self.times(), dem))
+            self.set_timeseries("Heat_demand_" + d[-1], Timeseries(ts.times, dem))
             tot_demand += np.mean(dem)
 
     def path_goals(self):
