@@ -483,6 +483,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             # Temperature of outgoing flows is equal to buffer temperature
 
             # Hot tank
+            # In this case, there is outgoing flow only when the buffer is discharging.
+            # When the buffer is neither charging or discharging, the buffer is disconnected
+            # from the network and thus the temperature is not relevant. However, for consistency
+            # purposes, we do not want the temperature to take arbitrary values in this case.
+            # Thus, we also set it to be equal to the temperature of the buffer.
+            # A similar reasoning holds for the cold tank.
             pipe_temp_as_buffer_hot = (buffer_is_charging != 1).astype(int)
             inds_hot = np.flatnonzero(pipe_temp_as_buffer_hot).tolist()
             t_out_conn = (temp_hot_pipe_sym - temp_hot_tank_sym)[inds_hot]
@@ -499,10 +505,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Temperature mixing in the buffer
             # There are two set of equations, depending on whether the tank is charging
-            # or discharging.
+            # or not charging (i.e., discharging or not used).
             # If tank is charging, there is temperature mixing and thus:
             # * der(T_tank * V_tank) - T_pipe * Q_pipe + heat losses = 0.
-            # If the tank is discharging, there is no temperature mixing and thus:
+            # If the tank is discharging or is not used, there is no temperature mixing and thus:
             # * der(T_tank) + heat losses = 0.
             # Where heat losses are:
             # surface area * heat transfer coefficient * (T_tank - T_outside) / (rho * cp)
@@ -549,7 +555,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             t_mix_cold = []
 
             hot_mix_inds = np.flatnonzero((buffer_is_charging[1:] == 1).astype(int)).tolist()
-            cold_mix_inds = np.flatnonzero((buffer_is_charging[1:] != 1).astype(int)).tolist()
+            cold_mix_inds = np.flatnonzero((buffer_is_charging[1:] == -1).astype(int)).tolist()
+            inactive_inds = np.flatnonzero((buffer_is_charging[1:] == 0).astype(int)).tolist()
 
             # Hot tank
             t_mix_hot.append(
@@ -580,7 +587,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                             * (t_hot_tank_prev - temp_outside)
                             / (rho * cp)
                         )
-                    )[cold_mix_inds]
+                    )[cold_mix_inds + inactive_inds]
                 )
             )
 
@@ -614,7 +621,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                             * (t_cold_tank_prev - temp_outside)
                             / (rho * cp)
                         )
-                    )[hot_mix_inds]
+                    )[hot_mix_inds + inactive_inds]
                 )
             )
 
