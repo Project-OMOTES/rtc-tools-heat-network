@@ -107,7 +107,7 @@ class Model(_Model):
             **supply_return_modifiers,
         )
 
-        self.add_variable(ControlInput, "Heat_source", nominal=1e5, value=self.source.Heat_source)
+        self.add_variable(ControlInput, "Heat_source", value=self.source.Heat_source)
 
         self.connect(self.source.HeatOut, self.pipe_sourcebuffer_hot.HeatIn)
         self.connect(self.pipe_sourcebuffer_hot.HeatOut, self.node_buffer_hot.HeatConn[1])

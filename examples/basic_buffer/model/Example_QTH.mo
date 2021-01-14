@@ -80,8 +80,8 @@ model Example_QTH
 
   // Define Input/Output Variables and set them equal to model variables.
   //Heatdemand min en max in [W]
-  input Modelica.SIunits.Heat Heat_source1(fixed=false, nominal=4200*988*30) = source1.Heat_source;
-  input Modelica.SIunits.Heat Heat_source2(fixed=false, nominal=4200*988*30) = source2.Heat_source;
+  input Modelica.SIunits.Heat Heat_source1(fixed=false) = source1.Heat_source;
+  input Modelica.SIunits.Heat Heat_source2(fixed=false) = source2.Heat_source;
 
   output Modelica.SIunits.Heat Heat_demand7_opt = demand7.Heat_demand;
   output Modelica.SIunits.Heat Heat_demand91_opt = demand91.Heat_demand;

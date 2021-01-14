@@ -399,12 +399,8 @@ class ModelQTH(_Model):
 
         # Define Input/Output Variables and set them equal to model variables.
         # Heatdemand min en max in [W]
-        self.add_variable(
-            ControlInput, "Heat_source1", nominal=4200 * 988 * 30, value=self.source1.Heat_source
-        )
-        self.add_variable(
-            ControlInput, "Heat_source2", nominal=4200 * 988 * 30, value=self.source2.Heat_source
-        )
+        self.add_variable(ControlInput, "Heat_source1", value=self.source1.Heat_source)
+        self.add_variable(ControlInput, "Heat_source2", value=self.source2.Heat_source)
 
         self.add_variable(Variable, "Heat_demand7_opt", value=self.demand7.Heat_demand)
         self.add_variable(Variable, "Heat_demand91_opt", value=self.demand91.Heat_demand)
