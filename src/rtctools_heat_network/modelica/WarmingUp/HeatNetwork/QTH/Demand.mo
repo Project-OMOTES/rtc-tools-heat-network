@@ -5,6 +5,7 @@ block Demand
   extends QTHTwoPort;
   parameter String component_type = "demand";
 
+  parameter Real Q_nominal = 1.0;
   parameter Real T_supply;
   parameter Real T_return;
   parameter Real dT = T_supply - T_return;
@@ -14,10 +15,10 @@ block Demand
   // Homotopic parameter
   parameter Real theta;
 
-  Modelica.SIunits.Heat Heat_demand(nominal=cp * rho * dT);
+  Modelica.SIunits.Heat Heat_demand(nominal=cp * rho * dT * Q_nominal);
 
 equation
   QTHOut.Q = QTHIn.Q;
-  (Heat_demand - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(QTHIn.T - QTHOut.T)))/(cp* rho * dT) = 0.0;
+  (Heat_demand - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(QTHIn.T - QTHOut.T)))/(cp* rho * dT * Q_nominal) = 0.0;
 
  end Demand;

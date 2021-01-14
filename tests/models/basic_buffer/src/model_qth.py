@@ -44,6 +44,7 @@ class ModelQTH(_Model):
             Heat_source=dict(min=0.0, max=1.5e6, nominal=1e6),
             theta=self.theta,
             QTHOut=dict(T=dict(min=self.t_source1_min, max=self.t_source1_max)),
+            Q_nominal=self.Q_nominal,
             **supply_return_modifiers,
         )
         self.add_variable(
@@ -52,6 +53,7 @@ class ModelQTH(_Model):
             Heat_source=dict(min=0.0, max=1.5e7, nominal=1e6),
             theta=self.theta,
             QTHOut=dict(T=dict(min=self.t_source2_min, max=self.t_source2_max)),
+            Q_nominal=self.Q_nominal,
             **supply_return_modifiers,
         )
 
@@ -199,6 +201,7 @@ class ModelQTH(_Model):
             "demand7",
             theta=self.theta,
             QTHIn=dict(T=dict(min=self.t_demand_min)),
+            Q_nominal=self.Q_nominal,
             **supply_return_modifiers,
         )
         self.add_variable(
@@ -206,6 +209,7 @@ class ModelQTH(_Model):
             "demand91",
             theta=self.theta,
             QTHIn=dict(T=dict(min=self.t_demand_min)),
+            Q_nominal=self.Q_nominal,
             **supply_return_modifiers,
         )
         self.add_variable(
@@ -213,6 +217,7 @@ class ModelQTH(_Model):
             "demand92",
             theta=self.theta,
             QTHIn=dict(T=dict(min=self.t_demand_min)),
+            Q_nominal=self.Q_nominal,
             **supply_return_modifiers,
         )
 

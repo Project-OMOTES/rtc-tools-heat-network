@@ -8,6 +8,7 @@ model DoublePipeBase
   WarmingUp.HeatNetwork.QTH.Source source(
     theta=theta,
     Heat_source(min=0.0, max=1.25e6, nominal=1e6),
+    Q_nominal=Q_nominal,
     T_supply=75.0,
     T_return=45.0,
     QTHOut.T(min=65.0, max=90.0)
@@ -77,6 +78,7 @@ model DoublePipeBase
 
   WarmingUp.HeatNetwork.QTH.Demand demand(
     theta=theta,
+    Q_nominal=Q_nominal,
     T_supply=75.0,
     T_return=45.0,
     QTHIn.T(min=t_demand_min)

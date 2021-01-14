@@ -11,6 +11,7 @@ class Demand(QTHTwoPort):
 
         self.component_type = "demand"
 
+        self.Q_nominal = 1.0
         self.T_supply = nan
         self.T_return = nan
         self.dT = self.T_supply - self.T_return
@@ -19,7 +20,9 @@ class Demand(QTHTwoPort):
 
         self.add_variable(SymbolicParameter, "theta")
 
-        self.add_variable(Variable, "Heat_demand", nominal=self.cp * self.rho * self.dT)
+        self.add_variable(
+            Variable, "Heat_demand", nominal=self.cp * self.rho * self.dT * self.Q_nominal
+        )
 
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
         self.add_equation(
@@ -30,5 +33,5 @@ class Demand(QTHTwoPort):
                 * self.QTHOut.Q
                 * ((1 - self.theta) * self.dT + self.theta * (self.QTHIn.T - self.QTHOut.T))
             )
-            / (self.cp * self.rho * self.dT)
+            / (self.cp * self.rho * self.dT * self.Q_nominal)
         )

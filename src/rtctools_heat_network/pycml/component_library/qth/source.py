@@ -11,6 +11,7 @@ class Source(QTHTwoPort):
 
         self.component_type = "source"
 
+        self.Q_nominal = 1.0
         self.T_supply = nan
         self.T_return = nan
         self.dT = self.T_supply - self.T_return
@@ -20,7 +21,9 @@ class Source(QTHTwoPort):
 
         self.add_variable(SymbolicParameter, "theta")
 
-        self.add_variable(Variable, "Heat_source", min=0.0, nominal=self.cp * self.rho * self.dT)
+        self.add_variable(
+            Variable, "Heat_source", min=0.0, nominal=self.cp * self.rho * self.dT * self.Q_nominal
+        )
 
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
         self.add_equation(
@@ -31,5 +34,5 @@ class Source(QTHTwoPort):
                 * self.QTHOut.Q
                 * ((1 - self.theta) * self.dT + self.theta * (-self.QTHIn.T + self.QTHOut.T))
             )
-            / (self.cp * self.rho * self.dT)
+            / (self.cp * self.rho * self.dT * self.Q_nominal)
         )
