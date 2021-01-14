@@ -304,6 +304,15 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             heat_loss_eq = []
             no_heat_loss_eq = []
 
+            # We want to scale the equation appropriately. We therefore find
+            # the (approximate) geometric mean of the coefficients in the
+            # jacobian.
+            heat_nominal = (
+                rho * cp * self.variable_nominal(f"{p}.Q") * self.variable_nominal(f"{p}.QTHIn.T")
+            )
+            heat_loss_nominal = length * (u_1 - u_2) * self.variable_nominal(f"{p}.QTHIn.T")
+            equation_nominal = (heat_nominal * heat_loss_nominal) ** 0.5
+
             # If pipe is connected, add heat losses
             heat_loss_inds = np.flatnonzero((flow_direction != 0).astype(int)).tolist()
             heat_loss_eq.append(
@@ -316,6 +325,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                         - (length * (u_1 - u_2) * temp_g)
                         + (length * u_2 * sign_dtemp * dtemp)
                     )
+                    / equation_nominal
                 )[heat_loss_inds]
             )
 
