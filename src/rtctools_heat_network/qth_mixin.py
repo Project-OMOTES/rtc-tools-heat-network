@@ -149,6 +149,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         +--------------------------------+-----------+-----------------------------------+
         | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                          |
         +--------------------------------+-----------+-----------------------------------+
+        | ``minimum_velocity``           | ``float`` | ``0.005`` m/s                     |
+        +--------------------------------+-----------+-----------------------------------+
         | ``wall_roughness``             | ``float`` | ``0.002`` m                       |
         +--------------------------------+-----------+-----------------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
@@ -178,6 +180,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         temperature change set with ``maximum_temperature_der`` is _not_
         imposed on pipes when the flow direction changes. When it is True (the
         default), it is imposed in cases of flow reversal.
+
+        The ``minimum_velocity`` is the minimum absolute value of the velocity
+        in every pipe. It is mostly an option to improve the stability of the
+        solver: the default value of `0.005` m/s helps the solver by avoiding
+        the difficult case where discharges get close to zero.
 
         The ``wall_roughness`` of the pipes plays a role in determining the
         resistance of the pipes.
@@ -224,6 +231,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         options["dtemp_demand"] = 30
         options["maximum_temperature_der"] = 2.0
         options["max_t_der_bidirect_pipe"] = True
+        options["minimum_velocity"] = 0.005
         options["wall_roughness"] = 2e-3
         options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
@@ -1086,15 +1094,26 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     def __update_flow_direction_bounds(self, ensemble_member):
         times = self.times()
         bounds = self.bounds()
+        parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
 
         direction_bounds = {}
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
+        min_abs_velocity = abs(options["minimum_velocity"])
+
         for p in self.heat_network_components["pipe"]:
             dir_values = interpolated_flow_dir_values[p]
 
-            lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, -np.inf, 0.0)
-            ub = np.where(dir_values == PipeFlowDirection.POSITIVE, np.inf, 0.0)
+            if isfinite(min_abs_velocity):
+                diameter = parameters[f"{p}.diameter"]
+                area = 0.25 * math.pi * diameter ** 2
+                min_abs_discharge = min_abs_velocity * area
+            else:
+                min_abs_discharge = 0.0
+
+            lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, -np.inf, min_abs_discharge)
+            ub = np.where(dir_values == PipeFlowDirection.POSITIVE, np.inf, -1 * min_abs_discharge)
             b = self.merge_bounds(bounds[f"{p}.Q"], (Timeseries(times, lb), Timeseries(times, ub)))
             # Pipes' bounds can take both negative and positive values.
             # To force bounds to be zero, they need to be explicitely overwritten.
