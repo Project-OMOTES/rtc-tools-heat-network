@@ -127,6 +127,15 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
 
+        # Compute the heat loss of each pipe
+        # The heat losses have three components:
+        # - dependency on the pipe temperature
+        # - dependency on the ground temperature
+        # - dependency on temperature difference between the supply/return line.
+        # This latter term assumes that the supply and return lines lie close
+        # to, and thus influence, each other. I.e., the supply line loses
+        # heat that is absorbed by the return line. Note that the term dtemp is
+        # positive when the pipe is in the supply line and negative otherwise.
         for p in self.heat_network_components["pipe"]:
             length = parameters[f"{p}.length"]
             u_1 = parameters[f"{p}.U_1"]

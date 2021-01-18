@@ -20,8 +20,6 @@ block Pipe
   parameter Real T_return;
   parameter Real dT = T_supply - T_return;
   parameter Real T_ground = 10.0;
-  // sign_dT = 1.0 if supply pipe, else sign_dT = -1.0
-  parameter Real sign_dT = 1.0;
 
   Modelica.SIunits.VolumeFlowRate Q;
   Modelica.SIunits.Level dH(max=0.0);
@@ -35,6 +33,6 @@ equation
   // It assumes constant ground temparature and constant dT at demand
   // positive negative dT depending on hot/cold pipe.
   // Roughly:
-  // cp*rho*Q*(Out.T - In.T) + lenght*(U_1-U_2)*avg_T - lenght*(U_1-U_2)*T_ground + lenght*U_2*sign_dT*dT = 0.0
+  // cp*rho*Q*(Out.T - In.T) + lenght*(U_1-U_2)*avg_T - lenght*(U_1-U_2)*T_ground + lenght*U_2*dT = 0.0
 
  end Pipe;

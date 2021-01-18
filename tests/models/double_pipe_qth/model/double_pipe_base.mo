@@ -22,8 +22,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Node node_source_hot(
@@ -39,8 +38,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Pipe pipe_2_hot(
@@ -51,8 +49,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Node node_demand_hot(
@@ -68,8 +65,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Demand demand(
@@ -88,8 +84,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=-1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Node node_demand_cold(
@@ -105,8 +100,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=-1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Pipe pipe_2_cold(
@@ -117,8 +111,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=-1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Node node_source_cold(
@@ -134,8 +127,7 @@ model DoublePipeBase
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=-1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Pump pump(

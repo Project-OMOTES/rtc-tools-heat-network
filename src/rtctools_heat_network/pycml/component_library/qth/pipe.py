@@ -28,8 +28,6 @@ class Pipe(QTHTwoPort):
         self.dT = self.T_supply - self.T_return
         self.T_ground = 10.0
 
-        self.sign_dT = 1.0  # 1.0 if supply pipe, else -1.0
-
         self.add_variable(Variable, "Q")
         self.add_variable(Variable, "dH", max=0.0)
 
@@ -43,4 +41,4 @@ class Pipe(QTHTwoPort):
         #   cp * rho * Q * (Out.T - In.T)
         #   + length * (U_1-U_2) * avg_T
         #   - length * (U_1-U_2) * T_ground
-        #   + length * U_2 * sign_dT * dT = 0.0
+        #   + length * U_2 * dT = 0.0

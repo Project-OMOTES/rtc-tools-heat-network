@@ -305,8 +305,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             temp_ground = parameters[f"{p}.T_ground"]
             temp_supply = parameters[f"{p}.T_supply"]
             temp_return = parameters[f"{p}.T_return"]
-            dtemp = temp_supply - temp_return
-            sign_dtemp = parameters[f"{p}.sign_dT"]
+            sign_dtemp = 1 if p.endswith("_hot") else -1
+            dtemp = sign_dtemp * (temp_supply - temp_return)
 
             flow_direction = interpolated_flow_dir_values[p]
             heat_loss_eq = []
@@ -322,6 +322,14 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             equation_nominal = (heat_nominal * heat_loss_nominal) ** 0.5
 
             # If pipe is connected, add heat losses
+            # The heat losses have three components:
+            # - dependency on the pipe temperature
+            # - dependency on the ground temperature
+            # - dependency on temperature difference between the supply/return line.
+            # This latter term assumes that the supply and return lines lie close
+            # to, and thus influence, each other. I.e., the supply line loses
+            # heat that is absorbed by the return line. Note that the term dtemp is
+            # positive when the pipe is in the supply line and negative otherwise.
             heat_loss_inds = np.flatnonzero((flow_direction != 0).astype(int)).tolist()
             heat_loss_eq.append(
                 (
@@ -331,7 +339,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                         (temp_out_sym - temp_in_sym) * q_sym * cp * rho
                         + length * (u_1 - u_2) * (temp_in_sym + temp_out_sym) / 2
                         - (length * (u_1 - u_2) * temp_ground)
-                        + (length * u_2 * sign_dtemp * dtemp)
+                        + (length * u_2 * dtemp)
                     )
                     / equation_nominal
                 )[heat_loss_inds]

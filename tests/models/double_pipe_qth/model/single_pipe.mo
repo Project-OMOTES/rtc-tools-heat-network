@@ -22,8 +22,7 @@ model SinglePipeQTH
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Demand demand(
@@ -43,8 +42,7 @@ model SinglePipeQTH
     T_return=45.0,
     Q(min=0.0, nominal=Q_nominal),
     QTHIn.T(min=10.0, max=90.0),
-    QTHOut.T(min=10.0, max=90.0),
-    sign_dT=-1.0
+    QTHOut.T(min=10.0, max=90.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Pump pump(

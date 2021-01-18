@@ -61,7 +61,6 @@ class ModelQTH(_Model):
             temperature=self.t_return_nom,
             QTHIn=dict(T=dict(min=self.t_return_min, max=self.t_return_max)),
             QTHOut=dict(T=dict(min=self.t_return_min, max=self.t_return_max)),
-            sign_dT=-1.0,
             **supply_return_modifiers,
         )
 
@@ -236,7 +235,6 @@ class ModelQTH(_Model):
             temperature=self.t_supply_nom,
             QTHIn=dict(T=dict(min=self.t_supply_min, max=self.t_supply_max)),
             QTHOut=dict(T=dict(min=self.t_supply_min, max=self.t_supply_max)),
-            sign_dT=1.0,
             **supply_return_modifiers,
         )
 
