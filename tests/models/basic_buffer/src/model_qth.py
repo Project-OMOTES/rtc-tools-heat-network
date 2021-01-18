@@ -62,7 +62,6 @@ class ModelQTH(_Model):
             QTHIn=dict(T=dict(min=self.t_return_min, max=self.t_return_max)),
             QTHOut=dict(T=dict(min=self.t_return_min, max=self.t_return_max)),
             sign_dT=-1.0,
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -238,7 +237,6 @@ class ModelQTH(_Model):
             QTHIn=dict(T=dict(min=self.t_supply_min, max=self.t_supply_max)),
             QTHOut=dict(T=dict(min=self.t_supply_min, max=self.t_supply_max)),
             sign_dT=1.0,
-            T_g=10.0,
             **supply_return_modifiers,
         )
 

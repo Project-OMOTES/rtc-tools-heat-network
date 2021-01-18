@@ -302,7 +302,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             length = parameters[f"{p}.length"]
             u_1 = parameters[f"{p}.U_1"]
             u_2 = parameters[f"{p}.U_2"]
-            temp_g = parameters[f"{p}.T_g"]
+            temp_ground = parameters[f"{p}.T_ground"]
             temp_supply = parameters[f"{p}.T_supply"]
             temp_return = parameters[f"{p}.T_return"]
             dtemp = temp_supply - temp_return
@@ -330,7 +330,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                     * (
                         (temp_out_sym - temp_in_sym) * q_sym * cp * rho
                         + length * (u_1 - u_2) * (temp_in_sym + temp_out_sym) / 2
-                        - (length * (u_1 - u_2) * temp_g)
+                        - (length * (u_1 - u_2) * temp_ground)
                         + (length * u_2 * sign_dtemp * dtemp)
                     )
                     / equation_nominal

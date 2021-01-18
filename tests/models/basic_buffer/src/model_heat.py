@@ -48,7 +48,6 @@ class ModelHeat(_Model):
             temperature=self.T_return,
             HeatOut=dict(Heat=dict(nominal=self.heat_nominal_cold_pipes)),
             HeatIn=dict(Heat=dict(max=self.heat_max_abs, nominal=self.heat_nominal_cold_pipes)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -119,7 +118,6 @@ class ModelHeat(_Model):
                     nominal=self.heat_nominal_hot_pipes,
                 )
             ),
-            T_g=10.0,
             **supply_return_modifiers,
         )
         self.add_variable(Pipe, "pipe1a_hot", length=170.365, diameter=0.15, **hot_pipe_modifiers)

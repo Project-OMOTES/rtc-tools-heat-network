@@ -17,8 +17,7 @@ model HeatModelica
     HeatIn.Heat(min=-2e5, max=2e5, nominal=1e5),
     HeatOut.Heat(nominal=1e5),
     T_supply=75.0,
-    T_return=45.0,
-    T_g=10.0
+    T_return=45.0
   );
   WarmingUp.HeatNetwork.Heat.Pipe pipe_cold(
     length=1000.0,
@@ -27,8 +26,7 @@ model HeatModelica
     HeatOut.Heat(nominal=1e5),
     HeatIn.Heat(max=2e5, nominal=1e5),
     T_supply=75.0,
-    T_return=45.0,
-    T_g=10.0
+    T_return=45.0
   );
 
    input Modelica.SIunits.Heat Heat_source(fixed=false, nominal=1e5) = source.Heat_source;

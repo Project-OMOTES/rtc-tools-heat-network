@@ -132,7 +132,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             u_1 = parameters[f"{p}.U_1"]
             u_2 = parameters[f"{p}.U_2"]
             temperature = parameters[f"{p}.temperature"]
-            temperature_ground = parameters[f"{p}.T_g"]
+            temperature_ground = parameters[f"{p}.T_ground"]
             sign_dtemp = 1 if p.endswith("_hot") else -1
             dtemp = sign_dtemp * (parameters[f"{p}.T_supply"] - parameters[f"{p}.T_return"])
 

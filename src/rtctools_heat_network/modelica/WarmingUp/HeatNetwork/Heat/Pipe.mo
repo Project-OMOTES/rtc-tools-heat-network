@@ -20,8 +20,7 @@ block Pipe
   parameter Real T_supply;
   parameter Real T_return;
   parameter Real dT = T_supply - T_return;
-  // T_g = ground temperature
-  parameter Real T_g;
+  parameter Real T_ground = 10.0;
 
   Modelica.SIunits.Heat Heat_in(nominal=cp * rho * dT);
   Modelica.SIunits.Heat Heat_out(nominal=cp * rho * dT);

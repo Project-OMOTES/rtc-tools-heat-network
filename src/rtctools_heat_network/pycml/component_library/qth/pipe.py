@@ -26,7 +26,7 @@ class Pipe(QTHTwoPort):
         self.T_supply = nan
         self.T_return = nan
         self.dT = self.T_supply - self.T_return
-        self.T_g = nan  # ground temperature
+        self.T_ground = 10.0
 
         self.sign_dT = 1.0  # 1.0 if supply pipe, else -1.0
 
@@ -42,5 +42,5 @@ class Pipe(QTHTwoPort):
         # Roughly:
         #   cp * rho * Q * (Out.T - In.T)
         #   + length * (U_1-U_2) * avg_T
-        #   - length * (U_1-U_2) * T_g
+        #   - length * (U_1-U_2) * T_ground
         #   + length * U_2 * sign_dT * dT = 0.0

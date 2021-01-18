@@ -40,7 +40,6 @@ class Model(_Model):
             temperature=self.T_supply,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -52,7 +51,6 @@ class Model(_Model):
             temperature=self.T_supply,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -64,7 +62,6 @@ class Model(_Model):
             temperature=self.T_supply,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -79,7 +76,6 @@ class Model(_Model):
             temperature=self.T_return,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -91,7 +87,6 @@ class Model(_Model):
             temperature=self.T_return,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 
@@ -103,7 +98,6 @@ class Model(_Model):
             temperature=self.T_return,
             HeatIn=dict(Heat=dict(min=-2e5, max=2e5, nominal=1e5)),
             HeatOut=dict(Heat=dict(nominal=1e5)),
-            T_g=10.0,
             **supply_return_modifiers,
         )
 

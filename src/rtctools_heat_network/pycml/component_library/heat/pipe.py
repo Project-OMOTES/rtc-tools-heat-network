@@ -26,7 +26,7 @@ class Pipe(HeatTwoPort):
         self.T_supply = nan
         self.T_return = nan
         self.dT = self.T_supply - self.T_return
-        self.T_g = nan  # ground temperature
+        self.T_ground = 10.0
 
         self.Heat_nominal = self.cp * self.rho * self.dT
         self.Heat_loss = nan
