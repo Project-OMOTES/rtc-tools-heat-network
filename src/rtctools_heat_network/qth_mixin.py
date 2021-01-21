@@ -651,6 +651,11 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 )
             )
 
+            # Can't vertcat 1x0 symbols that would occur when running with only
+            # two time steps (due to the slicing above). Remove them first.
+            t_mix_hot = [x for x in t_mix_hot if x.nnz() > 0]
+            t_mix_cold = [x for x in t_mix_cold if x.nnz() > 0]
+
             constraints.append((ca.vertcat(*t_mix_hot), 0.0, 0.0))
             constraints.append((ca.vertcat(*t_mix_cold), 0.0, 0.0))
 
