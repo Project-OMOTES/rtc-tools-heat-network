@@ -6,6 +6,8 @@ from pathlib import Path
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
+from rtctools_heat_network.qth_loop_mixin import BufferTargetDischargeGoal, QTHLoopMixin
+from rtctools_heat_network.qth_mixin import QTHMixin
 from rtctools_heat_network.util import run_heat_network_optimization
 
 # We want to import the example we compare with as a module that is somewhat
@@ -36,6 +38,21 @@ class SwitchModelicaToPyCML(ABCMeta):
     def mro(cls):
         assert len(cls.__bases__) == 1
         return [cls] + [x if x != ModelicaMixin else PyCMLMixin for x in cls.__bases__[0].__mro__]
+
+
+class SwitchQTHToQTHLoop(SwitchModelicaToPyCML, ABCMeta):
+    def mro(cls):
+        assert len(cls.__bases__) == 1
+
+        bases = list(cls.__bases__[0].__mro__)
+        index = bases.index(QTHMixin)
+        try:
+            ind_loop = bases.index(QTHLoopMixin)
+            assert ind_loop == index - 1
+        except ValueError:
+            bases.insert(index, QTHLoopMixin)
+
+        return [cls, *bases]
 
 
 class HeatProblemModelica(_HeatProblem):
@@ -80,6 +97,30 @@ class QTHProblemPyCML(QTHProblemModelica, metaclass=SwitchModelicaToPyCML):
         return self.__model
 
 
+class QTHLoopProblemPyCML(QTHProblemPyCML, metaclass=SwitchQTHToQTHLoop):
+    def __init__(self, *args, **kwargs):
+        self.__model = ModelQTH()
+        super().__init__(*args, **kwargs)
+
+    def pycml_model(self):
+        return self.__model
+
+    def goals(self):
+        goals = super().goals()
+        buffer_goals = self.buffer_target_discharge_goals(priority=5)
+        return [*goals, *buffer_goals]
+
+    def post(self):
+        super().post()
+        goals = [*self.goals(), *self.path_goals()]
+        buffer_target_goal_priority = sorted({g.priority for g in goals})[1]
+        assert all(
+            g.priority == buffer_target_goal_priority
+            for g in goals
+            if isinstance(g, BufferTargetDischargeGoal)
+        )
+
+
 if __name__ == "__main__":
     # Run
     start_time = time.time()
@@ -89,6 +130,10 @@ if __name__ == "__main__":
     )
     e1, e2 = run_heat_network_optimization(
         HeatProblemPyCML, QTHProblemPyCML, base_folder=base_folder
+    )
+
+    e1_loop, e2_loop = run_heat_network_optimization(
+        HeatProblemPyCML, QTHLoopProblemPyCML, base_folder=base_folder
     )
 
     # Output runtime

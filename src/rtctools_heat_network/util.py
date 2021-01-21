@@ -33,6 +33,24 @@ def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
         cold_pipe = f"{p[:-4]}_cold"
         directions[cold_pipe] = directions[p]
 
-    qth_problem = run_optimization_problem(qht_class, *args, flow_directions=directions, **kwargs)
+    buffer_target_discharges = {}
+    parameters = heat_problem.parameters(0)
+
+    for b in heat_problem.heat_network_components.get("buffer", []):
+        cp = parameters[f"{b}.cp"]
+        rho = parameters[f"{b}.rho"]
+        delta_temperature = parameters[f"{b}.T_supply"] - parameters[f"{b}.T_return"]
+        heat_flow_rate_to_discharge = 1 / (cp * rho * delta_temperature)
+        buffer_target_discharges[b] = Timeseries(
+            times, results[f"{b}.Heat_buffer"] * heat_flow_rate_to_discharge
+        )
+
+    qth_problem = run_optimization_problem(
+        qht_class,
+        *args,
+        flow_directions=directions,
+        buffer_target_discharges=buffer_target_discharges,
+        **kwargs,
+    )
 
     return heat_problem, qth_problem

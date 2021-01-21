@@ -97,7 +97,7 @@ class GoalsAndOptions:
                 state="source1.Heat_source",
                 target_min=1.8e5,
                 target_max=1.8e5,
-                priority=2,
+                priority=10,
                 # order=1,
             )
         )
@@ -109,7 +109,7 @@ class GoalsAndOptions:
                 state="source2.Heat_source",
                 target_min=np.nan,
                 target_max=0.0,
-                priority=3,
+                priority=20,
                 # TMP
                 state_bounds=(0.0, self.tot_heat),
                 order=2,

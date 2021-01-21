@@ -1,11 +1,29 @@
+from abc import ABCMeta
+
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.qth_mixin import HeadLossOption
+from rtctools_heat_network.qth_loop_mixin import QTHLoopMixin
+from rtctools_heat_network.qth_mixin import HeadLossOption, QTHMixin
 
 if __name__ == "__main__":
     from double_pipe_qth import DoublePipeBase
 else:
     from .double_pipe_qth import DoublePipeBase
+
+
+class SwitchQTHToQTHLoop(ABCMeta):
+    def mro(cls):
+        assert len(cls.__bases__) == 1
+
+        bases = list(cls.__bases__[0].__mro__)
+        index = bases.index(QTHMixin)
+        try:
+            ind_loop = bases.index(QTHLoopMixin)
+            assert ind_loop == index - 1
+        except ValueError:
+            bases.insert(index, QTHLoopMixin)
+
+        return [cls, *bases]
 
 
 class Base(DoublePipeBase):
@@ -66,12 +84,18 @@ class UnequalLengthValveQuadraticEquality(
     pass
 
 
+class UnequalLengthQuadraticEqualityLoop(
+    UnequalLengthQuadraticEquality, metaclass=SwitchQTHToQTHLoop
+):
+    pass
+
+
 if __name__ == "__main__":
     # Cases that use only inequality formulations
-    equal_length_inequality = run_optimization_problem(EqualLengthInequality)
-    unequal_length_inequality = run_optimization_problem(UnequalLengthInequality)
-    unequal_length_valve_inequality = run_optimization_problem(UnequalLengthValveInequality)
-
+    # equal_length_inequality = run_optimization_problem(EqualLengthInequality)
+    # unequal_length_inequality = run_optimization_problem(UnequalLengthInequality)
+    # unequal_length_valve_inequality = run_optimization_problem(UnequalLengthValveInequality)
+    #
     # Cases that use linear equality formulation
     equal_length_linear_equality = run_optimization_problem(EqualLengthLinearEquality)
     unequal_length_linear_equality = run_optimization_problem(UnequalLengthLinearEquality)
@@ -84,4 +108,9 @@ if __name__ == "__main__":
     unequal_length_quadratic_equality = run_optimization_problem(UnequalLengthQuadraticEquality)
     unequal_length_valve_quadratic_equality = run_optimization_problem(
         UnequalLengthValveQuadraticEquality
+    )
+
+    # Cases that use C*Q^2 equality formulations with the loop mixin
+    unequal_length_quadratic_equality_loop = run_optimization_problem(
+        UnequalLengthQuadraticEqualityLoop
     )

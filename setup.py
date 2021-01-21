@@ -42,7 +42,7 @@ setup(
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    install_requires=["rtc-tools >= 2.5.0a2"],
+    install_requires=["rtc-tools >= 2.5.0a4"],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
     python_requires=">=3.6",
