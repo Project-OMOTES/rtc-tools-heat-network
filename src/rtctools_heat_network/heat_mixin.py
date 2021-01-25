@@ -73,6 +73,9 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             else:
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
+            if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
+                raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
