@@ -3,17 +3,21 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.csv_mixin import CSVMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.bounds_to_pipe_flow_directions_mixin import (
+    BoundsToPipeFlowDirectionsMixin,
+)
 from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
+from rtctools_heat_network.qth_mixin import QTHMixin
 
 if __name__ == "__main__":
-    from model_heat import Model
+    from model_qth import Model
 else:
-    from .model_heat import Model
+    from .model_qth import Model
 
 
 class TargetDemandGoal(Goal):
@@ -32,24 +36,40 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state("demand.Heat_demand")
 
 
-class HeatModelica(
-    HeatMixin,
+class _GoalsAndOptions:
+    def path_goals(self):
+        goals = super().path_goals().copy()
+        goals.append(TargetDemandGoal(self))
+        return goals
+
+    def priority_completed(self, priority):
+        super().priority_completed(priority)
+
+        if not hasattr(self, "_objective_values"):
+            self._objective_values = []
+        self._objective_values.append(self.objective_value)
+
+
+class QTHModelica(
+    _GoalsAndOptions,
+    BoundsToPipeFlowDirectionsMixin,
+    QTHMixin,
     ModelicaComponentTypeMixin,
+    HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
-        return [TargetDemandGoal(self)]
-
-    def post(self):
-        super().post()
+    pass
 
 
-class HeatPython(
-    HeatMixin,
+class QTHPython(
+    _GoalsAndOptions,
+    BoundsToPipeFlowDirectionsMixin,
+    QTHMixin,
     ModelicaComponentTypeMixin,
+    HomotopyMixin,
     GoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,
@@ -59,16 +79,10 @@ class HeatPython(
         self.__model = Model()
         super().__init__(*args, **kwargs)
 
-    def path_goals(self):
-        return [TargetDemandGoal(self)]
-
-    def post(self):
-        super().post()
-
     def pycml_model(self):
         return self.__model
 
 
 if __name__ == "__main__":
-    a = run_optimization_problem(HeatModelica)
-    b = run_optimization_problem(HeatPython)
+    a = run_optimization_problem(QTHModelica)
+    b = run_optimization_problem(QTHPython)

@@ -9,7 +9,7 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TestPyCML(TestCase):
-    def test_basic_source_and_demand(self):
+    def test_basic_source_and_demand_heat(self):
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatModelica, HeatPython
 
@@ -19,6 +19,17 @@ class TestPyCML(TestCase):
         case_python = run_optimization_problem(HeatPython, base_folder=base_folder)
 
         self.assertAlmostEqual(case_modelica.objective_value, case_python.objective_value, 6)
+
+    def test_basic_source_and_demand_qth(self):
+        import models.basic_source_and_demand.src.qth_comparison as qth_comparison
+        from models.basic_source_and_demand.src.qth_comparison import QTHModelica, QTHPython
+
+        base_folder = Path(qth_comparison.__file__).resolve().parent.parent
+
+        case_modelica = run_optimization_problem(QTHModelica, base_folder=base_folder)
+        case_python = run_optimization_problem(QTHPython, base_folder=base_folder)
+
+        np.testing.assert_allclose(case_modelica._objective_values, case_python._objective_values)
 
     def test_basic_buffer_example(self):
         from models.basic_buffer.src.compare import (
