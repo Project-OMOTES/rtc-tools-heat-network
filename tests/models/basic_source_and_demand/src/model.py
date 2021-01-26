@@ -1,5 +1,5 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import Demand, Pipe, Source
+from rtctools_heat_network.pycml.component_library.heat import Demand, Pipe, Pump, Source
 
 
 class Model(_Model):
@@ -43,9 +43,16 @@ class Model(_Model):
             **supply_return_modifiers,
         )
 
-        self.add_variable(ControlInput, "Heat_source", nominal=1e5, value=self.source.Heat_source)
+        self.add_variable(
+            Pump,
+            "pump",
+            **supply_return_modifiers,
+        )
+
+        self.add_variable(ControlInput, "Heat_source", value=self.source.Heat_source)
 
         self.connect(self.source.HeatOut, self.pipe_hot.HeatIn)
         self.connect(self.pipe_hot.HeatOut, self.demand.HeatIn)
         self.connect(self.demand.HeatOut, self.pipe_cold.HeatIn)
-        self.connect(self.pipe_cold.HeatOut, self.source.HeatIn)
+        self.connect(self.pipe_cold.HeatOut, self.pump.HeatIn)
+        self.connect(self.pump.HeatOut, self.source.HeatIn)

@@ -28,11 +28,16 @@ model HeatModelica
     T_supply=75.0,
     T_return=45.0
   );
+  WarmingUp.HeatNetwork.Heat.Pump pump(
+    T_supply=75.0,
+    T_return=45.0
+  );
 
-   input Modelica.SIunits.Heat Heat_source(fixed=false, nominal=1e5) = source.Heat_source;
+   input Modelica.SIunits.Heat Heat_source(fixed=false) = source.Heat_source;
 equation
   connect(source.HeatOut, pipe_hot.HeatIn);
   connect(pipe_hot.HeatOut, demand.HeatIn);
   connect(demand.HeatOut, pipe_cold.HeatIn);
-  connect(pipe_cold.HeatOut, source.HeatIn);
+  connect(pipe_cold.HeatOut, pump.HeatIn);
+  connect(pump.HeatOut, source.HeatIn);
 end HeatModelica;
