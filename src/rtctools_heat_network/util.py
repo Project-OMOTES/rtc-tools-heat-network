@@ -9,9 +9,7 @@ def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
 
     directions = {}
 
-    hot_pipes = [p for p in heat_problem.heat_network_components["pipe"] if p.endswith("_hot")]
-
-    for p in hot_pipes:
+    for p in heat_problem.hot_pipes:
         heat_in = results[p + ".HeatIn.Heat"]
         heat_out = results[p + ".HeatOut.Heat"]
 
@@ -30,7 +28,7 @@ def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
 
         # NOTE: The assumption is that the orientation of the cold pipes is such that the flow
         # is always in the same direction as its "hot" pipe companion.
-        cold_pipe = f"{p[:-4]}_cold"
+        cold_pipe = heat_problem.hot_to_cold_pipe(p)
         directions[cold_pipe] = directions[p]
 
     buffer_target_discharges = {}

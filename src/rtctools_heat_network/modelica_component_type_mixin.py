@@ -91,7 +91,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             alias_relation = AliasRelation()
 
             # Look for aliases only in the hot pipes. All cold pipes are zero by convention anyway.
-            hot_pipes = [p for p in pipes if p.endswith("_hot")]
+            hot_pipes = self.hot_pipes.copy()
 
             pipes_map = {f"{pipe}.HeatIn.Heat": pipe for pipe in hot_pipes}
             pipes_map.update({f"{pipe}.HeatOut.Heat": pipe for pipe in hot_pipes})
@@ -169,9 +169,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 assert pipe_w_orientation[0] in pipes_set
 
                 if k == "In":
-                    assert "_hot" in pipe_w_orientation[0]
+                    assert self.is_hot_pipe(pipe_w_orientation[0])
                 else:
-                    assert "_cold" in pipe_w_orientation[0]
+                    assert self.is_cold_pipe(pipe_w_orientation[0])
 
                 buffer_connections[b].append(pipe_w_orientation)
 

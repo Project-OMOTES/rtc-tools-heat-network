@@ -47,7 +47,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         bounds = self.bounds()
 
         # Mixed-integer formulation applies only to hot pipes.
-        for p in self.__hot_pipes:
+        for p in self.hot_pipes:
             flow_dir_var = f"{p}__flow_direct_var"
 
             self.__pipe_to_flow_direct_map[p] = flow_dir_var
@@ -100,14 +100,6 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         return options
 
     @property
-    def __cold_pipes(self):
-        return [p for p in self.heat_network_components["pipe"] if p.endswith("_cold")]
-
-    @property
-    def __hot_pipes(self):
-        return [p for p in self.heat_network_components["pipe"] if p.endswith("_hot")]
-
-    @property
     def path_variables(self):
         variables = super().path_variables.copy()
         variables.extend(self.__flow_direct_var.values())
@@ -142,7 +134,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
             u_2 = parameters[f"{p}.U_2"]
             temperature = parameters[f"{p}.temperature"]
             temperature_ground = parameters[f"{p}.T_ground"]
-            sign_dtemp = 1 if p.endswith("_hot") else -1
+            sign_dtemp = 1 if self.is_hot_pipe(p) else -1
             dtemp = sign_dtemp * (parameters[f"{p}.T_supply"] - parameters[f"{p}.T_return"])
 
             heat_loss = (
@@ -172,7 +164,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         t_change = hn_options["maximum_temperature_der"]
         q_change = hn_options["maximum_flow_der"]
 
-        for p in self.__hot_pipes:
+        for p in self.hot_pipes:
             variable = f"{p}.HeatIn.Heat"
             dt = np.diff(self.times(variable))
 
@@ -230,14 +222,14 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for p in self.__cold_pipes:
+        for p in self.cold_pipes:
             heat_in = self.state(f"{p}.HeatIn.Heat")
             heat_out = self.state(f"{p}.HeatOut.Heat")
             heat_nominal = self.variable_nominal(f"{p}.HeatOut.Heat")
 
             constraints.append(((heat_in - heat_out) / heat_nominal, 0.0, 0.0))
 
-        for p in self.__hot_pipes:
+        for p in self.hot_pipes:
             heat_loss = parameters[f"{p}.Heat_loss"]
             heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
 
@@ -267,7 +259,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
 
         bounds = self.bounds()
 
-        for p in self.__hot_pipes:
+        for p in self.hot_pipes:
             flow_dir_var = self.__pipe_to_flow_direct_map[p]
 
             heat_in = self.state(f"{p}.HeatIn.Heat")
@@ -297,7 +289,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
                 continue
 
             assert (
-                len({p for p in pipes if p.endswith("_cold")}) == 0
+                len({p for p in pipes if self.is_cold_pipe(p)}) == 0
             ), "Pipe series for Heat models should only contain hot pipes"
 
             base_flow_dir_var = self.state(self.__pipe_to_flow_direct_map[pipes[0]])
@@ -392,7 +384,7 @@ class HeatMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem)
         # The flow directions are the same as the heat directions if the
         # return (i.e. cold) line has zero heat throughout. Here we check that
         # this is indeed the case.
-        for p in self.__cold_pipes:
+        for p in self.cold_pipes:
             heat_in = results[f"{p}.HeatIn.Heat"]
             heat_out = results[f"{p}.HeatOut.Heat"]
             if np.any(heat_in > 1.0) or np.any(heat_out > 1.0):

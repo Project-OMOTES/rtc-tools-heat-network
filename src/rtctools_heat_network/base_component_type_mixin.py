@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict
+from typing import Dict, List
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -9,6 +9,12 @@ from .topology import Topology
 
 
 class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
+    """
+    The standard naming convention is that pipes have "_hot" and "_cold" suffixes.
+    Such convention can be overridden using the `is_hot_pipe` and `is_cold_pipe` methods.
+    Moreover, one has to set the mapping between hot and cold pipes via `hot_to_cold_pipe`.
+    """
+
     @property
     @abstractmethod
     def heat_network_components(self) -> Dict[str, str]:
@@ -18,3 +24,22 @@ class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
     @abstractmethod
     def heat_network_topology(self) -> Topology:
         raise NotImplementedError
+
+    def is_hot_pipe(self, pipe: str) -> bool:
+        return pipe.endswith("_hot")
+
+    def is_cold_pipe(self, pipe: str) -> bool:
+        return pipe.endswith("_cold")
+
+    def hot_to_cold_pipe(self, pipe: str):
+        assert self.is_hot_pipe(pipe)
+
+        return f"{pipe[:-4]}_cold"
+
+    @property
+    def hot_pipes(self) -> List[str]:
+        return [p for p in self.heat_network_components["pipe"] if self.is_hot_pipe(p)]
+
+    @property
+    def cold_pipes(self) -> List[str]:
+        return [p for p in self.heat_network_components["pipe"] if self.is_cold_pipe(p)]

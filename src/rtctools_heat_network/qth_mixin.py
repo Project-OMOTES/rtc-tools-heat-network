@@ -117,16 +117,6 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         self.__flow_direction_bounds = None
 
     def pre(self):
-        # Check that all pipes have a corresponding hot and cold version
-        components = self.heat_network_components
-
-        pipes = components["pipe"]
-        hot_pipes_no_suf = {p[:-4] for p in pipes if p.endswith("_hot")}
-        cold_pipes_no_suf = {p[:-5] for p in pipes if p.endswith("_cold")}
-
-        if hot_pipes_no_suf != cold_pipes_no_suf:
-            raise Exception("Every hot pipe should have a corresponding cold pipe and vice versa.")
-
         self.__flow_direction_bounds = None
         self.__temperature_pipe_theta_zero = None
 
@@ -305,7 +295,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             temp_ground = parameters[f"{p}.T_ground"]
             temp_supply = parameters[f"{p}.T_supply"]
             temp_return = parameters[f"{p}.T_return"]
-            sign_dtemp = 1 if p.endswith("_hot") else -1
+            sign_dtemp = 1 if self.is_hot_pipe(p) else -1
             dtemp = sign_dtemp * (temp_supply - temp_return)
 
             flow_direction = interpolated_flow_dir_values[p]

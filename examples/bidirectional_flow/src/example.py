@@ -146,7 +146,7 @@ class QTHProblem(
         times = self.times()
         constant_inputs = self.constant_inputs(0)
 
-        for p in [p for p in self.heat_network_components["pipe"] if p.endswith("_hot")]:
+        for p in [p for p in self.heat_network_components["pipe"] if self.is_hot_pipe(p)]:
             q_ub = np.full_like(times, 0.0)
             q_lb = np.full_like(times, 0.0)
 

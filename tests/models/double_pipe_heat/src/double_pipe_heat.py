@@ -72,9 +72,7 @@ if __name__ == "__main__":
 
     directions = {}
 
-    hot_pipes = [p for p in heat_problem.heat_network_components["pipe"] if p.endswith("_hot")]
-
-    for p in hot_pipes:
+    for p in heat_problem.hot_pipes:
         heat_in = results[p + ".HeatIn.Heat"]
         heat_out = results[p + ".HeatOut.Heat"]
 
@@ -93,7 +91,7 @@ if __name__ == "__main__":
 
         # NOTE: The assumption is that the orientation of the cold pipes is such that the flow
         # is always in the same direction as its "hot" pipe companion.
-        cold_pipe = f"{p[:-4]}_cold"
+        cold_pipe = heat_problem.hot_to_cold_pipe(p)
         directions[cold_pipe] = directions[p]
 
     directions_values = {k: v.values for k, v in directions.items()}
