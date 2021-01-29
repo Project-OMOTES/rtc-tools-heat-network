@@ -1,4 +1,4 @@
-image: python:3.6
+image: python:3.7
 
 before_script:
   - pip install tox
@@ -12,7 +12,7 @@ stages:
 # style
 style:
   stage: style
-  image: python:3.6
+  image: python:3.7
   script:
     - tox -vv
   variables:
@@ -29,13 +29,13 @@ build:
     expire_in: 1 week
 
 # test
-py36:linux:
+py37:linux:
   stage: test
   script:
     - tox -vv
-  image: python:3.6
+  image: python:3.7
   variables:
-    TOXENV: py36
+    TOXENV: py37
 
 # documentation
 pages:

@@ -25,8 +25,8 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 6):
-    sys.exit("Sorry, Python 3.6 or newer is required.")
+if sys.version_info < (3, 7):
+    sys.exit("Sorry, Python 3.7 or newer is required.")
 
 setup(
     name="rtc-tools-heat-network",
@@ -45,7 +45,7 @@ setup(
     install_requires=["rtc-tools >= 2.5.0a4"],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]
