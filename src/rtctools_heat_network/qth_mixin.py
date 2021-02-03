@@ -431,8 +431,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 )
             )
 
-            # Temperature of outgoing flows is equal to mixing temperature
-            constraints.append((ca.vertcat(*t_out_conn) / t_nominal, 0.0, 0.0))
+            if theta > 0.0:
+                # Temperature of outgoing flows is equal to mixing temperature
+                # At theta zero this is implied by the bounds on temperature.
+                constraints.append((ca.vertcat(*t_out_conn) / t_nominal, 0.0, 0.0))
 
         return constraints
 
