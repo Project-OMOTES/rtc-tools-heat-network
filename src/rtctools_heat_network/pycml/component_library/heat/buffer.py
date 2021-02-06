@@ -33,17 +33,30 @@ class Buffer(HeatTwoPort):
         # As by construction the cold line should have zero heat, we fix HeatCold to zero.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
         self.add_variable(Variable, "Heat_buffer", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Stored_heat", min=0.0, nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Heat_loss", min=0.0, nominal=self.Heat_nominal)
+        # Assume the storage fills in about an hour at typical rate
+        self._typical_fill_time = 3600.0
+        self._nominal_stored_heat = self.Heat_nominal * self._typical_fill_time
+        self.add_variable(Variable, "Stored_heat", min=0.0, nominal=self._nominal_stored_heat)
+        # For nicer constraint coefficient scaling, we shift a bit more error into
+        # the state vector entry of `Heat_loss`. In other words, with a factor of
+        # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
+        self._heat_loss_error_to_state_factor = 10.0
+        self._nominal_heat_loss = (
+            self._nominal_stored_heat * self.heat_loss_coeff * self._heat_loss_error_to_state_factor
+        )
+        self.add_variable(Variable, "Heat_loss", min=0.0, nominal=self._nominal_heat_loss)
         self.add_variable(Variable, "HeatHot", nominal=self.Heat_nominal)
         self.add_variable(Variable, "HeatCold", min=0.0, max=0.0, nominal=self.Heat_nominal)
 
+        self._heat_loss_eq_nominal_buf = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
+
         # Heat stored in the buffer
         self.add_equation(
-            (self.der(self.Stored_heat) - self.Heat_buffer + self.Heat_loss) / self.Heat_nominal
+            (self.der(self.Stored_heat) - self.Heat_buffer + self.Heat_loss)
+            / self._heat_loss_eq_nominal_buf
         )
         self.add_equation(
-            (self.Heat_loss - self.Stored_heat * self.heat_loss_coeff) / self.Heat_nominal
+            (self.Heat_loss - self.Stored_heat * self.heat_loss_coeff) / self._nominal_heat_loss
         )
         self.add_equation((self.Heat_buffer - (self.HeatHot - self.HeatCold)) / self.Heat_nominal)
 
@@ -54,4 +67,4 @@ class Buffer(HeatTwoPort):
         # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
         # (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
 
-        self.add_initial_equation((self.Stored_heat - self.init_Heat) / self.Heat_nominal)
+        self.add_initial_equation((self.Stored_heat - self.init_Heat) / self._nominal_stored_heat)
