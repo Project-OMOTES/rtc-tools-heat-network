@@ -6,10 +6,14 @@ class Model(_Model):
     def __init__(self):
         super().__init__(None)
 
+        self.Q_nominal = 0.001
+
         self.T_supply = 75.0
         self.T_return = 45.0
 
-        supply_return_modifiers = dict(T_supply=self.T_supply, T_return=self.T_return)
+        supply_return_modifiers = dict(
+            T_supply=self.T_supply, T_return=self.T_return, Q_nominal=self.Q_nominal
+        )
 
         self.add_variable(
             Source,

@@ -16,6 +16,8 @@ class ModelHeat(_Model):
         # Declare Model Elements
         self.init_Heat = 0.0
 
+        self.Q_nominal = 0.001
+
         self.heat_nominal_cold_pipes = 45.0 * 4200 * 988 * 0.005
         self.heat_nominal_hot_pipes = 75.0 * 4200 * 988 * 0.005
         self.heat_max_abs = 0.01111 * 100.0 * 4200.0 * 988
@@ -24,7 +26,9 @@ class ModelHeat(_Model):
         self.T_supply = 75.0
         self.T_return = 45.0
 
-        supply_return_modifiers = dict(T_supply=self.T_supply, T_return=self.T_return)
+        supply_return_modifiers = dict(
+            T_supply=self.T_supply, T_return=self.T_return, Q_nominal=self.Q_nominal
+        )
 
         # Heatsource min en max in [W]
         self.add_variable(
