@@ -894,6 +894,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
+        if head_loss_option == HeadLossOption.NO_HEADLOSS:
+            # No relationships between H and dh, Q are set. H values are completely free.
+            return []
+
         # Set the head loss according to the direction in the pipes
         flow_dirs = self.heat_network_pipe_flow_directions
 
