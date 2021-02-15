@@ -17,7 +17,9 @@ block Demand
 
   Modelica.SIunits.Heat Heat_demand(nominal=cp * rho * dT * Q_nominal);
 
+  Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
 equation
+  QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
   (Heat_demand - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(QTHIn.T - QTHOut.T)))/(cp* rho * dT * Q_nominal) = 0.0;
 
