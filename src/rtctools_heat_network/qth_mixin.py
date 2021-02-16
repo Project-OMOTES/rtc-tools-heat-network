@@ -805,10 +805,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             else:
                 return 0.0
 
+        maximum_velocity = heat_network_options["maximum_velocity"]
         estimated_velocity = heat_network_options["estimated_velocity"]
         wall_roughness = heat_network_options["wall_roughness"]
 
         diameter = parameters[f"{pipe}.diameter"]
+        area = math.pi * diameter ** 2 / 4
         length = parameters[f"{pipe}.length"]
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
@@ -822,7 +824,6 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
-            area = 0.25 * math.pi * diameter ** 2
 
             linearization_velocity = estimated_velocity
             linearization_head_loss = c_v * linearization_velocity ** 2
@@ -850,7 +851,6 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
-            area = 0.25 * math.pi * diameter ** 2
 
             v = discharge / area
             expr = c_v * v ** 2
@@ -866,14 +866,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 return expr
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            wall_roughness = heat_network_options["wall_roughness"]
-            v_max = heat_network_options["maximum_velocity"]
             n_lines = heat_network_options["n_linearization_lines"]
-
-            diameter = parameters[f"{pipe}.diameter"]
-            area = math.pi * diameter ** 2 / 4
-            length = parameters[f"{pipe}.length"]
-            temperature = parameters[f"{pipe}.temperature"]
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,
@@ -881,7 +874,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
                 wall_roughness,
                 temperature=temperature,
                 n_lines=n_lines,
-                v_max=v_max,
+                v_max=maximum_velocity,
             )
 
             # The function above only gives result in the positive quadrant
