@@ -148,7 +148,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         +--------------------------------+-----------+-----------------------------------+
         | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.0`` m/s (LINEARIZED_DW)       |
+        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s (LINEARIZED_DW)       |
         +--------------------------------+-----------+-----------------------------------+
         | ``n_linearization_lines``      | ``int``   | ``10`` (LINEARIZED_DW)            |
         +--------------------------------+-----------+-----------------------------------+
@@ -227,7 +227,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         options["wall_roughness"] = 2e-3
         options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
-        options["maximum_velocity"] = 2.0
+        options["maximum_velocity"] = 2.5
         options["n_linearization_lines"] = 10
         options["minimize_head_losses"] = True
 
