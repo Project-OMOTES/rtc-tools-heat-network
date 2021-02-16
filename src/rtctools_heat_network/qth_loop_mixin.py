@@ -123,7 +123,6 @@ class QTHLoopMixin(QTHMixin):
 
     def homotopy_options(self):
         options = super().homotopy_options()
-        options["delta_theta_min"] = 1.0
 
         if self.__tstep > 0:
             options["theta_start"] = 1.0

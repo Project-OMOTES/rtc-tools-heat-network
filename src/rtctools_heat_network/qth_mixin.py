@@ -1262,5 +1262,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return options
 
+    def homotopy_options(self):
+        options = super().homotopy_options()
+        options["delta_theta_min"] = 1.0
+        return options
+
     def post(self):
         super().post()
