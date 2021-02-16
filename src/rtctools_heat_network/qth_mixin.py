@@ -2,17 +2,19 @@ import logging
 import math
 from enum import IntEnum
 from math import isfinite
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import casadi as ca
 
 import numpy as np
 
+from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
+from rtctools.optimization.optimization_problem import BT
 from rtctools.optimization.timeseries import Timeseries
 
 import rtctools_heat_network._darcy_weisbach as darcy_weisbach
@@ -76,8 +78,9 @@ class _MinimizeHeadLosses(Goal):
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         for p in optimization_problem.heat_network_components["pipe"]:
-            if not parameters[f"{p}.has_control_valve"]:
-                sum_ += -1 * optimization_problem.state(f"{p}.dH")
+            if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
+                sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
+                sum_ += optimization_problem.state(sym_name)
 
         return sum_
 
@@ -120,13 +123,58 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         self.__flow_direction_bounds = None
 
+        self.__pipe_head_loss_var = {}
+        self.__pipe_head_loss_bounds = {}
+        self.__pipe_head_loss_nominals = {}
+        self.__pipe_head_loss_zero_bounds = {}
+        self._hn_pipe_to_head_loss_map = {}
+
     def pre(self):
         self.__flow_direction_bounds = None
         self.__temperature_pipe_theta_zero = None
 
+        super().pre()
+
         self.__update_temperature_pipe_theta_zero_bounds()
 
-        super().pre()
+        self.__pipe_head_loss_nominals = AliasDict(self.alias_relation)
+
+        options = self.heat_network_options()
+        parameters = self.parameters(0)
+
+        head_loss_option = options["head_loss_option"]
+        if head_loss_option not in HeadLossOption.__members__.values():
+            raise Exception(f"Head loss option '{head_loss_option}' does not exist")
+
+        for p in self.heat_network_components["pipe"]:
+            length = parameters[f"{p}.length"]
+            if length < 0.0:
+                raise ValueError("Pipe length has to be larger than or equal to zero")
+
+            head_loss_option = self._hn_get_pipe_head_loss_option(p, options, parameters)
+
+            if head_loss_option == HeadLossOption.NO_HEADLOSS or (
+                length == 0.0 and not parameters[f"{p}.has_control_valve"]
+            ):
+                self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
+            else:
+                area = 0.25 * math.pi * parameters[f"{p}.diameter"] ** 2
+                q_nominal = np.array([area * options["estimated_velocity"]])
+                q_max = np.array([area * options["maximum_velocity"]])
+                head_loss_nominal = self._hn_pipe_head_loss(p, options, parameters, q_nominal)[0]
+                head_loss_max = self._hn_pipe_head_loss(p, options, parameters, q_max)[0]
+
+                self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
+
+                # The .dH is by definition "Out - In". The .__head_loss is by
+                # definition larger than or equal to the absolute value of dH.
+                head_loss_var = f"{p}.__head_loss"
+
+                self._hn_pipe_to_head_loss_map[p] = head_loss_var
+                self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
+
+                self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
+                self.__pipe_head_loss_bounds[head_loss_var] = (0.0, head_loss_max)
 
     def heat_network_options(self):
         r"""
@@ -758,31 +806,16 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return constraints
 
-    def __pipe_head_loss(
-        self,
-        pipe: str,
-        heat_network_options,
-        parameters,
-        discharge: Union[ca.MX, np.ndarray],
-        head_loss: Optional[ca.MX] = None,
-    ):
+    def _hn_get_pipe_head_loss_option(self, pipe, heat_network_options, parameters):
         """
-        This function has two purposes:
-        - return the head loss constraint expression(s) or
-        - compute the head loss numerically.
+        The global user head loss option is not necessarily the same as the
+        head loss option for a specific pipe. For example, when a control
+        valve is present, a .LINEAR global head loss option would mean a
+        .CQ2_INEQUALITY formulation should be used instead.
 
-        Note that there are different head loss formulations (see
-        :class:`HeadLossOption`), that are possible. When `head_loss` is its
-        corresponding MX symbol/expression, the appropriate constraint expression is
-        returned. When `head_loss` is None, the `discharge` is assumed numerical, and
-        the numerical computation of the appropriate heat loss formulation is
-        returned.
+        See also the explanation of `head_loss_option` (and its values) in
+        :py:meth:`.heat_network_options`.
         """
-
-        if head_loss is None:
-            symbolic = False
-        else:
-            symbolic = True
 
         head_loss_option = heat_network_options["head_loss_option"]
 
@@ -791,23 +824,69 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             # C*Q^2 inequality formulation.
             head_loss_option = HeadLossOption.CQ2_INEQUALITY
         elif head_loss_option == HeadLossOption.CQ2_EQUALITY:
+            theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+
             if parameters[f"{pipe}.has_control_valve"]:
                 # An equality would be wrong when there is a control valve
                 # present, so use the inequality formulation
                 head_loss_option = HeadLossOption.CQ2_INEQUALITY
-            elif parameters[self.homotopy_options()["homotopy_parameter"]] < 1.0:
+            elif np.isnan(theta):
+                # In pre()
+                pass
+            elif theta < 1.0:
                 # Not fully non-linear yet, so use the linear formulation instead
                 head_loss_option = HeadLossOption.LINEAR
 
-        # Apply head loss constraints in pipes depending on the option set by
-        # the user.
-        if head_loss_option == HeadLossOption.NO_HEADLOSS:
-            # No constraints to be set. Note that we will set the bounds of
-            # all the dH symbols to zero.
-            if symbolic:
-                return []
+        return head_loss_option
+
+    def _hn_pipe_head_loss(
+        self,
+        pipe: str,
+        heat_network_options,
+        parameters,
+        discharge: Union[ca.MX, np.ndarray],
+        head_loss: Optional[ca.MX] = None,
+        dh: Optional[ca.MX] = None,
+    ) -> Union[List[Tuple[ca.MX, BT, BT]], np.ndarray]:
+        """
+        This function has two purposes:
+        - return the head loss constraint expression(s) or
+        - compute the head loss numerically (always positive).
+
+        Note that there are different head loss formulations (see
+        :class:`HeadLossOption`). Some formulations require the passing of
+        `head_loss` (a symbol that is always positive by definition), and
+        others require the passing of `dh` (which is negative when the flow is
+        positive).
+
+        When `head_loss` or `dh` is its corresponding MX symbol/expression,
+        the appropriate constraint expression is returned. When `head_loss`
+        and `dh` are both None, the `discharge` is assumed numerical, and the
+        numerical computation of the appropriate head loss formulation is
+        returned. Note that this returned numerical value is always positive,
+        regardless of the sign of the discharge.
+        """
+
+        if head_loss is None and dh is None:
+            symbolic = False
+        else:
+            symbolic = True
+
+        head_loss_option = self._hn_get_pipe_head_loss_option(
+            pipe, heat_network_options, parameters
+        )
+        assert (
+            head_loss_option != HeadLossOption.NO_HEADLOSS
+        ), "This method should be skipped when NO_HEADLOSS is set."
+
+        length = parameters[f"{pipe}.length"]
+
+        if length == 0.0:
+            if not symbolic:
+                return np.zeros_like(discharge)
             else:
-                return 0.0
+                # dH is set to zero in bounds
+                return []
 
         maximum_velocity = heat_network_options["maximum_velocity"]
         estimated_velocity = heat_network_options["estimated_velocity"]
@@ -815,7 +894,6 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         diameter = parameters[f"{pipe}.diameter"]
         area = math.pi * diameter ** 2 / 4
-        length = parameters[f"{pipe}.length"]
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
@@ -833,17 +911,20 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             linearization_head_loss = c_v * linearization_velocity ** 2
             linearization_discharge = linearization_velocity * area
 
-            if not symbolic:
-                # We are supposed to only return a positive head loss,
-                # regardless of the sign of the discharge.
-                discharge = np.abs(discharge)
-
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                return [(head_loss - expr, 0.0, 0.0)]
+                q_nominal = self.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                constraint_nominal = (
+                    head_loss_nominal
+                    * linearization_head_loss
+                    * q_nominal
+                    / linearization_discharge
+                ) ** 0.5
+                return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
             else:
-                return expr
+                return expr * np.sign(discharge)
 
         elif head_loss_option in {
             HeadLossOption.CQ2_INEQUALITY,
@@ -862,10 +943,13 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
                 ub = np.inf
             elif head_loss_option == HeadLossOption.CQ2_EQUALITY:
-                ub = np.inf if has_control_valve else 0.0
+                ub = 0.0
 
             if symbolic:
-                return [(head_loss - expr, 0.0, ub)]
+                q_nominal = self.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
+                return [((head_loss - expr) / constraint_nominal, 0.0, ub)]
             else:
                 return expr
 
@@ -889,64 +973,73 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             # Vectorize constraint for speed
             if symbolic:
+                q_nominal = self.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                constraint_nominal = np.abs(head_loss_nominal * a * q_nominal) ** 0.5
                 head_loss_vec = ca.repmat(head_loss, len(a))
                 discharge_vec = ca.repmat(discharge, len(a))
-                return [(head_loss_vec - (a * discharge_vec + b), 0.0, np.inf)]
+                return [
+                    ((head_loss_vec - (a * discharge_vec + b)) / constraint_nominal, 0.0, np.inf)
+                ]
             else:
                 return np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
+
+    def __pipe_head_loss_constraints(self, ensemble_member):
+        constraints = []
+
+        options = self.heat_network_options()
+        parameters = self.parameters(ensemble_member)
+        components = self.heat_network_components
+
+        # Set the head loss according to the direction in the pipes.
+        interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
+
+        # Set the head loss according to the direction in the pipes. Note that
+        # the `.__head_loss` symbol is always positive by definition, but that
+        # `.dH` is not (positive when flow is negative, and vice versa).
+        # If the flow direction is zero (i.e. pipe is disconnected), we leave
+        # the .__head_loss symbol free (and it has no physical meaning). We
+        # also do not set any discharge relationship in this case (but dH is
+        # still equal to Out - In of course).
+        for pipe in components["pipe"]:
+            dir_values = interpolated_flow_dir_values[pipe]
+            inds = np.flatnonzero(dir_values != PipeFlowDirection.DISABLED)
+
+            if len(inds) == 0:
+                continue
+
+            head_loss_sym = self._hn_pipe_to_head_loss_map[pipe]
+
+            dh = self.__state_vector_scaled(f"{pipe}.dH", ensemble_member)[inds]
+            head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)[inds]
+            discharge = self.__state_vector_scaled(f"{pipe}.Q", ensemble_member)[inds]
+
+            constraints.extend(
+                self._hn_pipe_head_loss(pipe, options, parameters, discharge, head_loss, dh)
+            )
+
+            # Relate the absolute value of the head loss to the dH symbol (if
+            # pipe is not disconnected).
+            constraint_nominal = self.variable_nominal(f"{pipe}.dH")
+            constraints.append(((dir_values[inds] * dh + head_loss) / constraint_nominal, 0.0, 0.0))
+
+        return constraints
 
     def __pipe_head_loss_path_constraints(self, ensemble_member):
         constraints = []
 
-        parameters = self.parameters(ensemble_member)
-        components = self.heat_network_components
-
-        # Check if head_loss_option is correct
-        options = self.heat_network_options()
-        head_loss_option = options["head_loss_option"]
-
-        if head_loss_option not in HeadLossOption.__members__.values():
-            raise Exception(f"Head loss option '{head_loss_option}' does not exist")
-
-        if head_loss_option == HeadLossOption.NO_HEADLOSS:
-            # No relationships between H and dh, Q are set. H values are completely free.
-            return []
-
-        # Set the head loss according to the direction in the pipes
-        flow_dirs = self.heat_network_pipe_flow_directions
-
-        for pipe in components["pipe"]:
-            if head_loss_option == HeadLossOption.LINEAR:
-                # When dealing with a linear head loss relationship, we do not
-                # need to have a head symbol that is always a certain sign
-                # regardless of flow direction (e.g. the pipe's dH symbol will
-                # always be negative). A need for such a symbol only arises
-                # when dealing with inequality constraints or if the discharge
-                # symbol is squared.
-                head_loss = self.state(f"{pipe}.QTHIn.H") - self.state(f"{pipe}.QTHOut.H")
-            else:
-                # Note that the dH (always negative for pipes) is the opposite
-                # sign of the head loss (which is positive). See also the
-                # definition/constraints of a pipe's dH symbol.
-                head_loss = -1 * self.state(f"{pipe}.dH")
-
-            constraints.extend(
-                self.__pipe_head_loss(
-                    pipe,
-                    options,
-                    parameters,
-                    self.state(f"{pipe}.Q"),
-                    head_loss,
-                )
-            )
-
-        for pipe in components["pipe"]:
+        # We set this constraint relating .dH to the upstream and downstream
+        # heads here in the Mixin for scaling purposes (dH nominal is
+        # calculated in pre()).
+        for pipe in self.heat_network_components["pipe"]:
             dh = self.state(f"{pipe}.dH")
-            flow_dir = self.variable(flow_dirs[pipe])
             h_down = self.state(f"{pipe}.QTHOut.H")
             h_up = self.state(f"{pipe}.QTHIn.H")
 
-            constraints.append((dh - flow_dir * (h_down - h_up), 0.0, 0.0))
+            constraint_nominal = (
+                self.variable_nominal(f"{pipe}.dH") * self.variable_nominal(f"{pipe}.QTHIn.H")
+            ) ** 0.5
+            constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -998,6 +1091,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         constraints.extend(self.__node_mixing_constraints(ensemble_member))
         constraints.extend(self.__buffer_constraints(ensemble_member))
         constraints.extend(self.__max_temp_rate_of_change_constraints(ensemble_member))
+
+        if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(self.__pipe_head_loss_constraints(ensemble_member))
+
         return constraints
 
     def path_constraints(self, ensemble_member):
@@ -1008,10 +1105,9 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         parameters = self.parameters(ensemble_member)
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
-        # Head (loss) constraints
-        constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
         # Add source/demand head loss constrains only if head loss is non-zero
         if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
             constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
             constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
 
@@ -1049,15 +1145,24 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             atol = 1e-4
 
             for ensemble_member in range(self.ensemble_size):
+                interpolated_flow_dir_values = self.__get_interpolated_flow_directions(
+                    ensemble_member
+                )
                 parameters = self.parameters(ensemble_member)
                 results = self.extract_results(ensemble_member)
 
                 for pipe in components["pipe"]:
                     if parameters[f"{pipe}.has_control_valve"]:
                         continue
-                    q = results[f"{pipe}.Q"]
-                    head_loss = -1 * results[f"{pipe}.dH"]
-                    head_loss_target = self.__pipe_head_loss(pipe, options, parameters, q, None)
+
+                    # Just like with a control valve, if pipe is disconnected
+                    # there is nothing to check.
+                    dir_values = interpolated_flow_dir_values[pipe]
+                    inds = np.flatnonzero(dir_values != PipeFlowDirection.DISABLED)
+
+                    q = results[f"{pipe}.Q"][inds]
+                    head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
+                    head_loss_target = self._hn_pipe_head_loss(pipe, options, parameters, q, None)
 
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(
@@ -1162,6 +1267,13 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
             direction_bounds[f"{p}.Q"] = b
 
+            # Head loss
+            lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, 0.0, -np.inf)
+            ub = np.where(dir_values == PipeFlowDirection.POSITIVE, 0.0, np.inf)
+            b = self.merge_bounds(bounds[f"{p}.dH"], (Timeseries(times, lb), Timeseries(times, ub)))
+
+            direction_bounds[f"{p}.dH"] = b
+
         if self.__flow_direction_bounds is None:
             self.__flow_direction_bounds = [{} for _ in range(self.ensemble_size)]
 
@@ -1183,10 +1295,21 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         self.__temperature_pipe_theta_zero = temperature_bounds.copy()
 
+    @property
+    def path_variables(self):
+        variables = super().path_variables.copy()
+        variables.extend(self.__pipe_head_loss_var.values())
+        return variables
+
+    def variable_nominal(self, variable):
+        try:
+            return self.__pipe_head_loss_nominals[variable]
+        except KeyError:
+            return super().variable_nominal(variable)
+
     def bounds(self):
         bounds = super().bounds().copy()
 
-        options = self.heat_network_options()
         parameters = self.parameters(0)
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
@@ -1194,13 +1317,12 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             # TODO: Per ensemble member
             bounds.update(self.__flow_direction_bounds[0])
 
-        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
-            for pipe in self.heat_network_components["pipe"]:
-                bounds[f"{pipe}.dH"] = (0.0, 0.0)
-
         # Set the temperature of the pipes in the linear problem
         if theta == 0.0:
             bounds.update(self.__temperature_pipe_theta_zero)
+
+        bounds.update(self.__pipe_head_loss_bounds)
+        bounds.update(self.__pipe_head_loss_zero_bounds)
 
         return bounds
 

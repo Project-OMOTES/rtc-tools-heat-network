@@ -28,7 +28,7 @@ block Pipe
   parameter Real T_ground = 10.0;
 
   Modelica.SIunits.VolumeFlowRate Q;
-  Modelica.SIunits.Level dH(max=0.0);
+  Modelica.SIunits.Level dH;
 
 equation
   // Flow is constant

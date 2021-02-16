@@ -34,7 +34,7 @@ class Pipe(QTHTwoPort):
         self.T_ground = 10.0
 
         self.add_variable(Variable, "Q")
-        self.add_variable(Variable, "dH", max=0.0)
+        self.add_variable(Variable, "dH")
 
         self.add_equation(self.QTHIn.Q - self.Q)
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
