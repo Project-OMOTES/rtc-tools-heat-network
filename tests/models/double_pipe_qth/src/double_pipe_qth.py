@@ -90,4 +90,4 @@ if __name__ == "__main__":
     single_pipe = run_optimization_problem(SinglePipeQTH)
     double_pipe_equal = run_optimization_problem(DoublePipeEqualQTH)
     double_pipe_unequal = run_optimization_problem(DoublePipeUnequalQTH)
-    double_pipe_unequal = run_optimization_problem(DoublePipeUnequalWithValveQTH)
+    double_pipe_unequal_valve = run_optimization_problem(DoublePipeUnequalWithValveQTH)
