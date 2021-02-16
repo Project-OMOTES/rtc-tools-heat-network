@@ -1252,5 +1252,15 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         return discrete, lbx, ubx, lbg, ubg, x0, nlp
 
+    def solver_options(self):
+        options = super().solver_options()
+
+        solver = options["solver"]
+        options[solver]["nlp_scaling_method"] = "none"
+        options[solver]["linear_system_scaling"] = "none"
+        options[solver]["linear_scaling_on_demand"] = "no"
+
+        return options
+
     def post(self):
         super().post()
