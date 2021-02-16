@@ -805,18 +805,16 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             else:
                 return 0.0
 
-        elif head_loss_option in {
-            HeadLossOption.CQ2_INEQUALITY,
-            HeadLossOption.LINEAR,
-            HeadLossOption.CQ2_EQUALITY,
-        }:
-            estimated_velocity = heat_network_options["estimated_velocity"]
-            wall_roughness = heat_network_options["wall_roughness"]
+        estimated_velocity = heat_network_options["estimated_velocity"]
+        wall_roughness = heat_network_options["wall_roughness"]
 
-            diameter = parameters[f"{pipe}.diameter"]
-            length = parameters[f"{pipe}.length"]
-            temperature = parameters[f"{pipe}.temperature"]
-            has_control_valve = parameters[f"{pipe}.has_control_valve"]
+        diameter = parameters[f"{pipe}.diameter"]
+        length = parameters[f"{pipe}.length"]
+        temperature = parameters[f"{pipe}.temperature"]
+        has_control_valve = parameters[f"{pipe}.has_control_valve"]
+
+        if head_loss_option == HeadLossOption.LINEAR:
+            assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
                 estimated_velocity, diameter, length, wall_roughness, temperature
@@ -826,22 +824,40 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
             area = 0.25 * math.pi * diameter ** 2
 
+            linearization_velocity = estimated_velocity
+            linearization_head_loss = c_v * linearization_velocity ** 2
+            linearization_discharge = linearization_velocity * area
+
+            if not symbolic:
+                # We are supposed to only return a positive head loss,
+                # regardless of the sign of the discharge.
+                discharge = np.abs(discharge)
+
+            expr = linearization_head_loss * discharge / linearization_discharge
+
+            if symbolic:
+                return [(head_loss - expr, 0.0, 0.0)]
+            else:
+                return expr
+
+        elif head_loss_option in {
+            HeadLossOption.CQ2_INEQUALITY,
+            HeadLossOption.CQ2_EQUALITY,
+        }:
+            ff = darcy_weisbach.friction_factor(
+                estimated_velocity, diameter, length, wall_roughness, temperature
+            )
+
+            # Compute c_v constant (where |dH| ~ c_v * v^2)
+            c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
+            area = 0.25 * math.pi * diameter ** 2
+
             v = discharge / area
+            expr = c_v * v ** 2
 
             if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
-                expr = c_v * v ** 2
                 ub = np.inf
             elif head_loss_option == HeadLossOption.CQ2_EQUALITY:
-                expr = c_v * v ** 2
-                ub = np.inf if has_control_valve else 0.0
-            else:
-                if not symbolic:
-                    # We are supposed to only return a positive head loss,
-                    # regardless of the sign of the discharge.
-                    v = np.abs(v)
-
-                assert head_loss_option == HeadLossOption.LINEAR
-                expr = c_v * v
                 ub = np.inf if has_control_valve else 0.0
 
             if symbolic:
