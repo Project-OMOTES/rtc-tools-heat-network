@@ -760,7 +760,7 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         heat_network_options,
         parameters,
         discharge: Union[ca.MX, np.ndarray],
-        head_loss: Optional[ca.MX],
+        head_loss: Optional[ca.MX] = None,
     ):
         """
         This function has two purposes:
