@@ -1,5 +1,4 @@
 import logging
-import sys
 from pathlib import Path
 from unittest import TestCase
 
@@ -30,8 +29,6 @@ class TestArtificalHeadLoss(TestCase):
                 # Prevent __exit__ from failing on AssertionError
                 logger.warning("Test succeeded")
 
-        sys.path.pop(0)
-
     def test_double_pipe_unequal(self):
         from models.double_pipe_qth.src.double_pipe_qth import DoublePipeUnequalQTH
 
@@ -44,8 +41,6 @@ class TestArtificalHeadLoss(TestCase):
             self.assertNotIn("Pipe pipe_1_hot has artificial head loss", str(cm.output))
             self.assertNotIn("Pipe pipe_1_cold has artificial head loss", str(cm.output))
 
-        sys.path.pop(0)
-
     def test_double_pipe_unequal_with_valve(self):
         from models.double_pipe_qth.src.double_pipe_qth import DoublePipeUnequalWithValveQTH
 
@@ -57,8 +52,6 @@ class TestArtificalHeadLoss(TestCase):
             if not cm.output:
                 # Prevent __exit__ from failing on AssertionError
                 logger.warning("Test succeeded")
-
-        sys.path.pop(0)
 
 
 class TestHeadLossEqualities(TestCase):
@@ -115,8 +108,6 @@ class TestHeadLossEqualities(TestCase):
 
         np.testing.assert_allclose(quadratic_ratio, 1.0)
 
-        sys.path.pop(0)
-
     def test_unequal_length(self):
 
         from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
@@ -163,8 +154,6 @@ class TestHeadLossEqualities(TestCase):
         quadratic_ratio = quadratic_q_1 / quadratic_q_2
 
         np.testing.assert_allclose(quadratic_ratio, 2.0)
-
-        sys.path.pop(0)
 
     def test_unequal_length_valve(self):
 
@@ -222,5 +211,3 @@ class TestHeadLossEqualities(TestCase):
         # quadratic and linear formulations to have the same result.
         np.testing.assert_allclose(linear_q_1, quadratic_q_1)
         np.testing.assert_allclose(linear_q_2, quadratic_q_2)
-
-        sys.path.pop(0)
