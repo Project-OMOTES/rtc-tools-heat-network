@@ -65,12 +65,15 @@ class _MinimizeHeadLosses(Goal):
     def function(self, optimization_problem, ensemble_member):
         sum_ = 0.0
 
-        parameters = self.optimization_problem.parameters(ensemble_member)
+        parameters = optimization_problem.parameters(ensemble_member)
+        options = optimization_problem.heat_network_options()
 
         pumps = optimization_problem.heat_network_components.get("pump", [])
 
         for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
+
+        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         for p in optimization_problem.heat_network_components["pipe"]:
             if not parameters[f"{p}.has_control_valve"]:
@@ -209,7 +212,8 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         When ``minimize_head_losses`` is set to True (default), a last
         priority is inserted where the head losses in the system are
-        minimized. This is related to the assumption that control valves are
+        minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
+        This is related to the assumption that control valves are
         present in the system to steer water in the right direction the case
         of multiple routes. If such control valves are not present, enabling
         this option will give warnings in case the found solution is not
@@ -1086,7 +1090,10 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         g = super().path_goals().copy()
 
         options = self.heat_network_options()
-        if options["minimize_head_losses"]:
+        if (
+            options["minimize_head_losses"]
+            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        ):
             g.append(_MinimizeHeadLosses(self))
 
         return g

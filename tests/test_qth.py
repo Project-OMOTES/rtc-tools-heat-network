@@ -54,6 +54,34 @@ class TestArtificalHeadLoss(TestCase):
                 logger.warning("Test succeeded")
 
 
+class TestNoHeadLoss(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import models.double_pipe_qth.src.double_pipe_qth as double_pipe_qth
+
+        cls.base_folder = Path(double_pipe_qth.__file__).resolve().parent.parent
+
+    def test_single_pipe_no_headloss(self):
+        from rtctools_heat_network.qth_mixin import _MinimizeHeadLosses
+
+        from models.double_pipe_qth.src.single_pipe_no_headloss import SinglePipeQTHNoHeadLoss
+
+        with self.assertLogs(logger, level="WARNING") as cm:
+            problem = run_optimization_problem(
+                SinglePipeQTHNoHeadLoss, base_folder=self.base_folder
+            )
+
+            self.assertNotIn("artificial head loss", str(cm.output))
+
+            if not cm.output:
+                # Prevent __exit__ from failing on AssertionError
+                logger.warning("Test succeeded")
+
+            priorities = {g.priority for g in [*problem.path_goals(), *problem.goals()]}
+
+            self.assertNotIn(_MinimizeHeadLosses.priority, priorities)
+
+
 class TestHeadLossEqualities(TestCase):
     @classmethod
     def setUpClass(cls):
