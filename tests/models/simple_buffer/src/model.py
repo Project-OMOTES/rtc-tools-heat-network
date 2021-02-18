@@ -70,6 +70,7 @@ class Model(_Model):
         self.add_variable(
             Pipe,
             "pipe_buffer_hot",
+            disconnectable=True,
             length=10.0,
             diameter=0.15,
             temperature=self.T_supply,
@@ -106,6 +107,7 @@ class Model(_Model):
         self.add_variable(
             Pipe,
             "pipe_buffer_cold",
+            disconnectable=True,
             length=10.0,
             diameter=0.15,
             temperature=self.T_return,
