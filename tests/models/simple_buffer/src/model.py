@@ -1,5 +1,12 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import Buffer, Demand, Node, Pipe, Source
+from rtctools_heat_network.pycml.component_library.heat import (
+    Buffer,
+    Demand,
+    Node,
+    Pipe,
+    Pump,
+    Source,
+)
 
 
 class Model(_Model):
@@ -13,6 +20,12 @@ class Model(_Model):
         self.T_return = 45.0
 
         supply_return_modifiers = dict(T_supply=self.T_supply, T_return=self.T_return)
+
+        self.add_variable(
+            Pump,
+            "pump",
+            **supply_return_modifiers,
+        )
 
         self.add_variable(
             Source,
@@ -113,6 +126,7 @@ class Model(_Model):
         self.connect(self.demand.HeatOut, self.pipe_bufferdemand_cold.HeatIn)
         self.connect(self.pipe_bufferdemand_cold.HeatOut, self.node_buffer_cold.HeatConn[1])
         self.connect(self.node_buffer_cold.HeatConn[2], self.pipe_sourcebuffer_cold.HeatIn)
-        self.connect(self.pipe_sourcebuffer_cold.HeatOut, self.source.HeatIn)
+        self.connect(self.pipe_sourcebuffer_cold.HeatOut, self.pump.HeatIn)
+        self.connect(self.pump.HeatOut, self.source.HeatIn)
         self.connect(self.buffer.HeatOut, self.pipe_buffer_cold.HeatIn)
         self.connect(self.pipe_buffer_cold.HeatOut, self.node_buffer_cold.HeatConn[3])
