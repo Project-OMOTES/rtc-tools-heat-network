@@ -182,8 +182,9 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
 
         To model the head loss in pipes, the ``head_lost_option`` refers to
         one of the ways this can be done. See :class:`HeadLossOption` for more
-        explanation on what each option entails. Note that all options model
-        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`.
+        explanation on what each option entails. Note that some options model
+        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
+        others model it as an equality.
 
         When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
