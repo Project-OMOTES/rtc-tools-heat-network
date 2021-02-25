@@ -185,7 +185,7 @@ class Model:
             raise Exception(f"Variable with name '{var_name}' already exists")
 
         if var_name in self._modifiers:
-            kwargs = {**kwargs, **self._modifiers.pop(var_name)}
+            kwargs = self.merge_modifiers(kwargs, self._modifiers.pop(var_name))
             # Explicit conversion to MX for our wrapper classes
             for k, v in kwargs.items():
                 if isinstance(v, BaseVariable):
@@ -256,6 +256,27 @@ class Model:
     @property
     def initial_inequalities(self):
         return self._initial_inequalities.copy()
+
+    @staticmethod
+    def merge_modifiers(a: dict, b: dict):
+        """
+        Recursive (not in place) merge of dictionaries.
+
+        :param a: Base dictionary to merge.
+        :param b: Dictionary to merge on top of base dictionary.
+        :return: Merged dictionary
+        """
+        b = b.copy()
+
+        for k, v in a.items():
+            if isinstance(v, dict):
+                b_node = b.setdefault(k, {})
+                b[k] = Model.merge_modifiers(v, b_node)
+            else:
+                if k not in b:
+                    b[k] = v
+
+        return b
 
     def __MX__(self):  # noqa: N802
         return self.symbol

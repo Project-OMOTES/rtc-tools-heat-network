@@ -8,7 +8,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.util import run_heat_network_optimization
 
 
-class TestPyCML(TestCase):
+class TestPyCMLvsModelica(TestCase):
     def test_basic_source_and_demand_heat(self):
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatModelica, HeatPython
