@@ -1,9 +1,17 @@
+import logging
+
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
+from . import __version__
 
-def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
-    heat_problem = run_optimization_problem(heat_class, *args, **kwargs)
+
+def run_heat_network_optimization(heat_class, qht_class, *args, log_level=logging.INFO, **kwargs):
+    logger = logging.getLogger("rtctools_heat_network")
+    logger.setLevel(log_level)
+    logger.info(f"Using RTC-Tools Heat Network {__version__}.")
+
+    heat_problem = run_optimization_problem(heat_class, *args, log_level=log_level, **kwargs)
     results = heat_problem.extract_results()
     times = heat_problem.times()
 
@@ -46,6 +54,7 @@ def run_heat_network_optimization(heat_class, qht_class, *args, **kwargs):
     qth_problem = run_optimization_problem(
         qht_class,
         *args,
+        log_level=log_level,
         flow_directions=directions,
         buffer_target_discharges=buffer_target_discharges,
         **kwargs,
