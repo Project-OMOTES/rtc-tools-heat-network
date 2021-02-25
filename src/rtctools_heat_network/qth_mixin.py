@@ -1245,20 +1245,20 @@ class QTHMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
         direction_bounds = {}
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
-        min_abs_velocity = abs(options["minimum_velocity"])
+        minimum_velocity = options["minimum_velocity"]
 
         for p in self.heat_network_components["pipe"]:
             dir_values = interpolated_flow_dir_values[p]
 
-            if isfinite(min_abs_velocity):
+            if isfinite(minimum_velocity):
                 diameter = parameters[f"{p}.diameter"]
                 area = 0.25 * math.pi * diameter ** 2
-                min_abs_discharge = min_abs_velocity * area
+                minimum_discharge = minimum_velocity * area
             else:
-                min_abs_discharge = 0.0
+                minimum_discharge = 0.0
 
-            lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, -np.inf, min_abs_discharge)
-            ub = np.where(dir_values == PipeFlowDirection.POSITIVE, np.inf, -1 * min_abs_discharge)
+            lb = np.where(dir_values == PipeFlowDirection.NEGATIVE, -np.inf, minimum_discharge)
+            ub = np.where(dir_values == PipeFlowDirection.POSITIVE, np.inf, -1 * minimum_discharge)
             b = self.merge_bounds(bounds[f"{p}.Q"], (Timeseries(times, lb), Timeseries(times, ub)))
             # Pipes' bounds can take both negative and positive values.
             # To force bounds to be zero, they need to be explicitely overwritten.
