@@ -23,6 +23,5 @@ class Node(QTHComponent):
         # setup the heat conservation, these constraints are added in the
         # mixin.
 
-        # TODO(Tjerk): This won't work, as there is no list.
         for i in range(1, self.n + 1):
             self.add_equation(self.QTHConn[i].H - self.H)
