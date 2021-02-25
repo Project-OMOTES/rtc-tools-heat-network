@@ -274,10 +274,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             length = parameters[f"{p}.length"]
 
             temp_ground = parameters[f"{p}.T_ground"]
-            temp_supply = parameters[f"{p}.T_supply"]
-            temp_return = parameters[f"{p}.T_return"]
             sign_dtemp = 1 if self.is_hot_pipe(p) else -1
-            dtemp = sign_dtemp * (temp_supply - temp_return)
+            dtemp = sign_dtemp * parameters[f"{p}.dT"]
 
             flow_direction = interpolated_flow_dir_values[p]
             heat_loss_eq = []
@@ -827,7 +825,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # Note that for theta == 0.0, this is trivially satisfied as the temperature
             # of the cold/hot line are constant.
             for d in components["demand"]:
-                dt = parameters[d + ".T_supply"] - parameters[d + ".T_return"]
+                dt = parameters[d + ".dT"]
                 constraints.append(
                     (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dt, dt)
                 )

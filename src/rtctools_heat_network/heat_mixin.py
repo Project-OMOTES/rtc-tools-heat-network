@@ -240,7 +240,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             temperature = parameters[f"{p}.temperature"]
             temperature_ground = parameters[f"{p}.T_ground"]
             sign_dtemp = 1 if self.is_hot_pipe(p) else -1
-            dtemp = sign_dtemp * (parameters[f"{p}.T_supply"] - parameters[f"{p}.T_return"])
+            dtemp = sign_dtemp * parameters[f"{p}.dT"]
 
             heat_loss = (
                 length * (u_1 - u_2) * temperature
@@ -605,11 +605,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         parameters = self.parameters(ensemble_member)
 
         for d in self.heat_network_components["demand"]:
-            q_nominal = parameters[f"{d}.Q_nominal"]
+            heat_nominal = parameters[f"{d}.Heat_nominal"]
             cp = parameters[f"{d}.cp"]
             rho = parameters[f"{d}.rho"]
-            dt = parameters[f"{d}.T_supply"] - parameters[f"{d}.T_return"]
-            heat_nominal = cp * rho * dt * q_nominal
+            dt = parameters[f"{d}.dT"]
 
             discharge = self.state(f"{d}.Q")
             heat_consumed = self.state(f"{d}.Heat_demand")
@@ -625,11 +624,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         parameters = self.parameters(ensemble_member)
 
         for s in self.heat_network_components["source"]:
-            q_nominal = parameters[f"{s}.Q_nominal"]
+            heat_nominal = parameters[f"{s}.Heat_nominal"]
             cp = parameters[f"{s}.cp"]
             rho = parameters[f"{s}.rho"]
-            dt = parameters[f"{s}.T_supply"] - parameters[f"{s}.T_return"]
-            heat_nominal = cp * rho * dt * q_nominal
+            dt = parameters[f"{s}.dT"]
 
             discharge = self.state(f"{s}.Q")
             heat_production = self.state(f"{s}.Heat_source")
@@ -651,7 +649,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for p in self.hot_pipes:
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
-            dt = parameters[f"{p}.T_supply"] - parameters[f"{p}.T_return"]
+            dt = parameters[f"{p}.dT"]
             heat_to_discharge_fac = 1.0 / (cp * rho * dt)
 
             flow_dir_var = self.__pipe_to_flow_direct_map[p]
@@ -678,11 +676,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds = self.bounds()
 
         for b, ((hot_pipe, hot_pipe_orientation), _) in self.heat_network_topology.buffers.items():
-            q_nominal = parameters[f"{b}.Q_nominal"]
+            heat_nominal = parameters[f"{b}.Heat_nominal"]
             cp = parameters[f"{b}.cp"]
             rho = parameters[f"{b}.rho"]
-            dt = parameters[f"{b}.T_supply"] - parameters[f"{b}.T_return"]
-            heat_nominal = cp * rho * dt * q_nominal
+            dt = parameters[f"{b}.dT"]
 
             discharge = self.state(f"{b}.HeatIn.Q") * hot_pipe_orientation
             # Note that `heat_consumed` can be negative for the buffer; in that case we

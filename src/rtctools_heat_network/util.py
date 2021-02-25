@@ -53,8 +53,7 @@ def run_heat_network_optimization(heat_class, qht_class, *args, log_level=loggin
     for b in heat_problem.heat_network_components.get("buffer", []):
         cp = parameters[f"{b}.cp"]
         rho = parameters[f"{b}.rho"]
-        delta_temperature = parameters[f"{b}.T_supply"] - parameters[f"{b}.T_return"]
-        heat_flow_rate_to_discharge = 1 / (cp * rho * delta_temperature)
+        heat_flow_rate_to_discharge = 1 / (cp * rho * parameters[f"{b}.dT"])
         buffer_target_discharges[b] = Timeseries(
             times, results[f"{b}.Heat_buffer"] * heat_flow_rate_to_discharge
         )
