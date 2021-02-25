@@ -1,5 +1,4 @@
 import logging
-import math
 from math import isfinite
 from typing import Dict
 
@@ -891,8 +890,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             dir_values = interpolated_flow_dir_values[p]
 
             if isfinite(minimum_velocity):
-                diameter = parameters[f"{p}.diameter"]
-                area = 0.25 * math.pi * diameter ** 2
+                area = parameters[f"{p}.area"]
                 minimum_discharge = minimum_velocity * area
             else:
                 minimum_discharge = 0.0

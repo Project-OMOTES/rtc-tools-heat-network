@@ -9,6 +9,7 @@ block Pipe
 
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;
+  final parameter Real area = 0.25 * 3.14159265358979323846 * diameter ^ 2;
   parameter Real temperature;
 
   // Parameters determining the heat loss

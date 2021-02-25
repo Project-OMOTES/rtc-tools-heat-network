@@ -272,7 +272,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             head_loss = 0.0
 
             for pipe in components["pipe"]:
-                area = 0.25 * math.pi * parameters[f"{pipe}.diameter"] ** 2
+                area = parameters[f"{pipe}.area"]
                 max_discharge = options["maximum_velocity"] * area
                 head_loss += self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
@@ -371,8 +371,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Maximum differences are expressed per hour. We scale appropriately.
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
-            diameter = parameters[f"{p}.diameter"]
-            area = 0.25 * math.pi * diameter ** 2
+            area = parameters[f"{p}.area"]
             avg_t = parameters[f"{p}.temperature"]
             # Assumption: average velocity is 1 m/s
             avg_v = 1
@@ -525,8 +524,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 is_disconnected = self.state(is_disconnected_var)
 
             q_pipe = self.state(f"{p}.Q")
-            diameter = parameters[f"{p}.diameter"]
-            area = 0.25 * math.pi * diameter ** 2
+            area = parameters[f"{p}.area"]
             maximum_discharge = maximum_velocity * area
 
             if math.isfinite(minimum_velocity):
@@ -768,7 +766,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             )
 
             # Relate the head loss symbol to the pipe's dH symbol.
-            area = 0.25 * math.pi * parameters[f"{pipe}.diameter"] ** 2
+            area = parameters[f"{pipe}.area"]
             max_discharge = options["maximum_velocity"] * area
             max_head_loss = self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
@@ -810,8 +808,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # by looking at connected pipes.
             q_aliases = self.alias_relation.aliases(q.name())
             connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
-            maximum_diameter = max(parameters[f"{p}.diameter"] for p in connected_pipes)
-            maximum_area = 0.25 * math.pi * maximum_diameter ** 2
+            maximum_area = max(parameters[f"{p}.area"] for p in connected_pipes)
             maximum_discharge = maximum_area * maximum_velocity
 
             maximum_head_loss = self.__maximum_total_head_loss
@@ -845,8 +842,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # by looking at connected pipes.
             q_aliases = self.alias_relation.aliases(q.name())
             connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
-            maximum_diameter = max(parameters[f"{p}.diameter"] for p in connected_pipes)
-            maximum_area = 0.25 * math.pi * maximum_diameter ** 2
+            maximum_area = max(parameters[f"{p}.area"] for p in connected_pipes)
             maximum_discharge = maximum_area * maximum_velocity
 
             maximum_head_loss = self.__maximum_total_head_loss
@@ -968,7 +964,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 hot_pipe = self.cold_to_hot_pipe(p)
             else:
                 hot_pipe = p
-            area = 0.25 * math.pi * parameters[f"{p}.diameter"] ** 2
+            area = parameters[f"{p}.area"]
             q = results[f"{p}.Q"]
             q_w_error_margin = q + 1e-5 * np.sign(q) * self.variable_nominal(f"{p}.Q")
             v = q_w_error_margin / area

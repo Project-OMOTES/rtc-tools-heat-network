@@ -1,5 +1,4 @@
 import logging
-import math
 from abc import abstractmethod
 from enum import IntEnum
 from typing import List, Optional, Tuple, Type, Union
@@ -230,7 +229,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             ):
                 self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
             else:
-                area = 0.25 * math.pi * parameters[f"{p}.diameter"] ** 2
+                area = parameters[f"{p}.area"]
                 q_nominal = np.array([area * options["estimated_velocity"]])
                 q_max = np.array([area * options["maximum_velocity"]])
                 head_loss_nominal = self._hn_pipe_head_loss(p, options, parameters, q_nominal)[0]
@@ -302,7 +301,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         wall_roughness = heat_network_options["wall_roughness"]
 
         diameter = parameters[f"{pipe}.diameter"]
-        area = math.pi * diameter ** 2 / 4
+        area = parameters[f"{pipe}.area"]
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
