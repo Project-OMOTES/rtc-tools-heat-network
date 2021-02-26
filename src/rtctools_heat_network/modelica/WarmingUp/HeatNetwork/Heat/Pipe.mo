@@ -33,6 +33,9 @@ block Pipe
   Modelica.SIunits.Heat Heat_out(nominal=Heat_nominal);
 
   Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
+
+  Modelica.SIunits.Level H_in;
+  Modelica.SIunits.Level H_out;
   Modelica.SIunits.Level dH;
 
   // Heat loss
@@ -41,6 +44,9 @@ block Pipe
 equation
   HeatIn.Q = Q;
   HeatIn.Q = HeatOut.Q;
+
+  HeatIn.H = H_in;
+  HeatOut.H = H_out;
 
   // Aliases
   (Heat_out - HeatOut.Heat)/Heat_nominal = 0.0;

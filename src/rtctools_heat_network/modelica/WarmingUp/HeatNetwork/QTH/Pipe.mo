@@ -28,12 +28,17 @@ block Pipe
   parameter Real T_ground = 10.0;
 
   Modelica.SIunits.VolumeFlowRate Q;
-  Modelica.SIunits.Level dH;
 
+  Modelica.SIunits.Level H_in;
+  Modelica.SIunits.Level H_out;
+  Modelica.SIunits.Level dH;
 equation
   // Flow is constant
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
+
+  QTHIn.H = H_in;
+  QTHOut.H = H_out;
 
   // Heat loss equation is added in the Python script to allow pipes to be disconnected.
   // It assumes constant ground temparature and constant dT at demand

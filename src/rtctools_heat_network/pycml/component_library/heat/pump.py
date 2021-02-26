@@ -22,8 +22,14 @@ class Pump(HeatTwoPort):
         self.add_variable(Variable, "Heat", nominal=self.Heat_nominal)
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
+        self.add_variable(Variable, "H_in")
+        self.add_variable(Variable, "H_out")
+
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
+
+        self.add_equation(self.HeatIn.H - self.H_in)
+        self.add_equation(self.HeatOut.H - self.H_out)
 
         self.add_equation((self.HeatIn.Heat - self.HeatOut.Heat) / self.Heat_nominal)
         self.add_equation((self.Heat - self.HeatIn.Heat) / self.Heat_nominal)

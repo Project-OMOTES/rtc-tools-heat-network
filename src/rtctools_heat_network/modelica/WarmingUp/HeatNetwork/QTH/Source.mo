@@ -19,9 +19,16 @@ block Source
   Modelica.SIunits.Heat Heat_source(nominal=cp * rho * dT * Q_nominal);
 
   Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
+
+  Modelica.SIunits.Level H_in;
+  Modelica.SIunits.Level H_out;
 equation
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
+
+  QTHIn.H = H_in;
+  QTHOut.H = H_out;
+
   (Heat_source - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(-QTHIn.T + QTHOut.T)))/(cp* rho * dT * Q_nominal) = 0.0;
 
  end Source;

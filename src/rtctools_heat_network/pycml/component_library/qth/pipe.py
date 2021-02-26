@@ -34,10 +34,16 @@ class Pipe(QTHTwoPort):
         self.T_ground = 10.0
 
         self.add_variable(Variable, "Q")
+
+        self.add_variable(Variable, "H_in")
+        self.add_variable(Variable, "H_out")
         self.add_variable(Variable, "dH")
 
         self.add_equation(self.QTHIn.Q - self.Q)
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
+
+        self.add_equation(self.QTHIn.H - self.H_in)
+        self.add_equation(self.QTHOut.H - self.H_out)
 
         # Heat loss equation is added in the Python script to allow pipes to be disconnected.
         # It assumes constant ground temparature and constant dT at demand

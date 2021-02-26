@@ -27,8 +27,15 @@ class Source(QTHTwoPort):
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
+        self.add_variable(Variable, "H_in")
+        self.add_variable(Variable, "H_out")
+
         self.add_equation(self.QTHIn.Q - self.Q)
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
+
+        self.add_equation(self.QTHIn.H - self.H_in)
+        self.add_equation(self.QTHOut.H - self.H_out)
+
         self.add_equation(
             (
                 self.Heat_source
