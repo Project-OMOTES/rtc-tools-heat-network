@@ -203,11 +203,6 @@ class _HeadLossMixin(
         raise NotImplementedError
 
     @property
-    @abstractmethod
-    def _hn_prefix(self) -> str:
-        raise NotImplementedError
-
-    @property
     def _hn_minimization_goal_class(self) -> Type[Goal]:
         return _MinimizeHeadLosses
 
@@ -407,18 +402,16 @@ class _HeadLossMixin(
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
         constraints = []
 
-        pref = self._hn_prefix
-
         # We set this constraint relating .dH to the upstream and downstream
         # heads here in the Mixin for scaling purposes (dH nominal is
         # calculated in pre()).
         for pipe in self.heat_network_components["pipe"]:
             dh = self.state(f"{pipe}.dH")
-            h_down = self.state(f"{pipe}.{pref}Out.H")
-            h_up = self.state(f"{pipe}.{pref}In.H")
+            h_down = self.state(f"{pipe}.H_out")
+            h_up = self.state(f"{pipe}.H_in")
 
             constraint_nominal = (
-                self.variable_nominal(f"{pipe}.dH") * self.variable_nominal(f"{pipe}.{pref}In.H")
+                self.variable_nominal(f"{pipe}.dH") * self.variable_nominal(f"{pipe}.H_in")
             ) ** 0.5
             constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 
@@ -431,8 +424,6 @@ class _HeadLossMixin(
         parameters = self.parameters(ensemble_member)
         components = self.heat_network_components
 
-        pref = self._hn_prefix
-
         head_loss_option = options["head_loss_option"]
 
         for source in components["source"]:
@@ -441,7 +432,7 @@ class _HeadLossMixin(
             if c == 0.0:
                 constraints.append(
                     (
-                        self.state(f"{source}.{pref}In.H") - self.state(f"{source}.{pref}Out.H"),
+                        self.state(f"{source}.H_in") - self.state(f"{source}.H_out"),
                         0.0,
                         0.0,
                     )
@@ -453,9 +444,9 @@ class _HeadLossMixin(
             elif head_loss_option in {HeadLossOption.CQ2_INEQUALITY, HeadLossOption.CQ2_EQUALITY}:
                 constraints.append(
                     (
-                        self.state(f"{source}.{pref}In.H")
-                        - self.state(f"{source}.{pref}Out.H")
-                        - c * self.state(f"{source}.{pref}In.Q") ** 2,
+                        self.state(f"{source}.H_in")
+                        - self.state(f"{source}.H_out")
+                        - c * self.state(f"{source}.Q") ** 2,
                         0.0,
                         np.inf,
                     )
@@ -469,15 +460,13 @@ class _HeadLossMixin(
         options = self.heat_network_options()
         components = self.heat_network_components
 
-        pref = self._hn_prefix
-
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
         for d in components["demand"]:
             constraints.append(
                 (
-                    self.state(f"{d}.{pref}In.H") - self.state(f"{d}.{pref}Out.H"),
+                    self.state(f"{d}.H_in") - self.state(f"{d}.H_out"),
                     min_head_loss,
                     np.inf,
                 )
@@ -514,8 +503,6 @@ class _HeadLossMixin(
         super().priority_completed(priority)
 
         options = self.heat_network_options()
-
-        pref = self._hn_prefix
 
         if (
             options["minimize_head_losses"]
@@ -555,8 +542,8 @@ class _HeadLossMixin(
 
                 for source in components["source"]:
                     c = parameters[f"{source}.head_loss"]
-                    head_loss = results[f"{source}.{pref}In.H"] - results[f"{source}.{pref}Out.H"]
-                    head_loss_target = c * results[f"{source}.{pref}In.Q"] ** 2
+                    head_loss = results[f"{source}.H_in"] - results[f"{source}.H_out"]
+                    head_loss_target = c * results[f"{source}.Q"] ** 2
 
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(f"Source {source} has artificial head loss.")
@@ -565,7 +552,7 @@ class _HeadLossMixin(
                 min_head_loss = None
 
                 for demand in components["demand"]:
-                    head_loss = results[f"{demand}.{pref}In.H"] - results[f"{demand}.{pref}Out.H"]
+                    head_loss = results[f"{demand}.H_in"] - results[f"{demand}.H_out"]
                     if min_head_loss is None:
                         min_head_loss = head_loss
                     else:

@@ -51,7 +51,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     for the head loss and temperature losses in pipes.
     """
 
-    _hn_prefix = "QTH"
     _hn_minimization_goal_class = _MinimizeHeadLosses
 
     def __init__(self, *args, flow_directions=None, **kwargs):

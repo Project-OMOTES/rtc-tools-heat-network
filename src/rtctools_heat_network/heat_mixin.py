@@ -27,8 +27,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         HeadLossOption.LINEARIZED_DW,
     }
 
-    _hn_prefix = "Heat"
-
     def __init__(self, *args, **kwargs):
         # Prepare dicts for additional variables
         self.__flow_direct_var = {}
