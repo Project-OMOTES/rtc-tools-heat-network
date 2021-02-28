@@ -12,7 +12,6 @@ model Pump
   parameter Real rho = 988.0;
   parameter Real Heat_nominal = cp * rho * dT * Q_nominal;
 
-  Modelica.SIunits.Level Heat;
   Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
 
   Modelica.SIunits.Level H_in;
@@ -26,5 +25,4 @@ equation
 
 // Heat is constant
   (HeatIn.Heat - HeatOut.Heat) / Heat_nominal = 0.0;
-  Heat = HeatIn.Heat;
 end Pump;
