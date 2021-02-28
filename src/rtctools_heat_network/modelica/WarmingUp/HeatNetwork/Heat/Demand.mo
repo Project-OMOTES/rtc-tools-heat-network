@@ -30,10 +30,8 @@ equation
   HeatIn.H = H_in;
   HeatOut.H = H_out;
 
-  // Heat balance equation
   (HeatOut.Heat - (HeatIn.Heat - Heat_demand))/Heat_nominal = 0.0;
 
-  // Heat in/out aliases
   (Heat_out - HeatOut.Heat)/Heat_nominal = 0.0;
   (Heat_in - HeatIn.Heat)/Heat_nominal = 0.0;
 end Demand;

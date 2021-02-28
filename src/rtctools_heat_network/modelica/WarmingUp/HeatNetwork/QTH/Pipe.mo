@@ -36,7 +36,6 @@ block Pipe
   Modelica.SIunits.Level H_out;
   Modelica.SIunits.Level dH;
 equation
-  // Flow is constant
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
 

@@ -55,4 +55,5 @@ class Pipe(HeatTwoPort):
         self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
         self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)
 
-        # Note: Heat loss is added in Python, because it depends on the flow direction
+        # Note: Heat loss is added in the mixin, because it depends on the flow direction
+        # * heat loss equation: (HeatOut.Heat - (HeatIn.Heat +/- Heat_loss)) = 0.

@@ -13,7 +13,6 @@ block Source
   parameter Real rho = 988.0;
   parameter Real head_loss = 0.0;
 
-  // Homotopic parameter
   parameter Real theta;
 
   Modelica.SIunits.Heat Heat_source(nominal=cp * rho * dT * Q_nominal);

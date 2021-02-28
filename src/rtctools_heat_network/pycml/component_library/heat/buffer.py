@@ -63,8 +63,7 @@ class Buffer(HeatTwoPort):
         )
         self.add_equation((self.Heat_buffer - (self.HeatHot - self.HeatCold)) / self.Heat_nominal)
 
-        # Aliases
-        # Set in Python script. We want HeatHot to be positive when the buffer is
+        # Set in Mixin. We want HeatHot to be positive when the buffer is
         # charging, which means we need to know the orientation of the connected
         # pipe.
         # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;

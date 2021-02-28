@@ -9,11 +9,13 @@ block Buffer
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
   parameter Real head_loss = 0.0;
-  //Source for U estimates: //https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/energy-consumption-of-tanks-and-vats
+  // Source for U estimates:
+  // https://www.spiraxsarco.com/learn-about-steam/steam-engineering-principles-and-heat-transfer/energy-consumption-of-tanks-and-vats
   parameter Real heat_transfer_coeff = 1;
   parameter Real height = 5;
   parameter Real radius= 10;
   parameter Real volume = 3.14*radius^2 * height ;
+
   //if the tank is plced on ground, ignore surface of bottom of tank
   parameter Real surface = 2 * 3.14 * radius^2 + 2 * 3.14 * radius * height;
   parameter Real T_outside = 10.0;

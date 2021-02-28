@@ -5,7 +5,6 @@ block Buffer
   extends HeatTwoPort;
   parameter String component_type = "buffer";
 
-  // Nominal
   parameter Real Q_nominal = 1.0;
   parameter Real T_supply;
   parameter Real T_return;
@@ -19,7 +18,6 @@ block Buffer
   parameter Real radius= 10;
   parameter Real heat_loss_coeff = 2 * heat_transfer_coeff / (radius * rho * cp);
 
-  // Initial value
   parameter Real init_Heat = 0.0;
 
   // Stored_heat is the heat that is contained in the buffer.
@@ -29,7 +27,6 @@ block Buffer
   // the hot (resp. cold) line. 
   // As by construction the cold line should have zero heat, we fix HeatCold to zero.
   // Thus Heat_buffer = HeatHot = der(Stored_heat).
-
   Modelica.SIunits.Heat Heat_buffer(nominal=Heat_nominal);
   // Assume the storage fills in about an hour at typical rate
   parameter Modelica.SIUnits.Duration _typical_fill_time = 3600.0;
@@ -53,7 +50,7 @@ equation
   (Heat_loss - Stored_heat * heat_loss_coeff) / _nominal_heat_loss = 0.0;
   (Heat_buffer - (HeatHot - HeatCold))/Heat_nominal = 0.0;
 
-  // Set in Python script. We want HeatHot to be positive when the buffer is
+  // Set in Mixin. We want HeatHot to be positive when the buffer is
   // charging, which means we need to know the orientation of the connected
   // pipe.
   // (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;

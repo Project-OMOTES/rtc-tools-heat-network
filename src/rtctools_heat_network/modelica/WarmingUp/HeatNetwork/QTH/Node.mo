@@ -18,6 +18,6 @@ equation
 
   for i in 1:n loop
     QTHConn[i].H = H;
-    // Q and T to be set in Python
+    // Q and T to be set in the mixin
   end for;
 end Node;

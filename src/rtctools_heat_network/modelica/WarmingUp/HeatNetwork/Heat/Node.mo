@@ -10,10 +10,10 @@ block Node
   output SI.Position H;
 equation
   // Because the orientation of the connected pipes are important to setup the
-  // heat conservation, these constraints are added in Python.
+  // heat conservation, these constraints are added in the mixin.
 
   for i in 1:n loop
     HeatConn[i].H = H;
-    // Q and Heat to be set in Python
+    // Q and Heat to be set in the mixin
   end for;
 end Node;

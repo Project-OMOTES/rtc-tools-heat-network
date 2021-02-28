@@ -25,6 +25,5 @@ equation
   HeatOut.H = H_out;
   dH = HeatOut.H - HeatIn.H;
 
-// Heat is constant
   (HeatIn.Heat - HeatOut.Heat) / Heat_nominal = 0.0;
 end Pump;

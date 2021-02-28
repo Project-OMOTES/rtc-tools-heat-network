@@ -19,6 +19,8 @@ class Demand(HeatTwoPort):
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
+        # Assumption: heat in/out and extracted is nonnegative
+        # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_demand", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_in", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_out", min=0.0, max=0.0, nominal=self.Heat_nominal)

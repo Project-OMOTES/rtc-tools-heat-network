@@ -12,7 +12,6 @@ block Demand
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
 
-  // Homotopic parameter
   parameter Real theta;
 
   Modelica.SIunits.Heat Heat_demand(nominal=cp * rho * dT * Q_nominal);

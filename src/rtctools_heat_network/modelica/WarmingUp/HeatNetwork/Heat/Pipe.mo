@@ -38,8 +38,6 @@ block Pipe
   Modelica.SIunits.Level H_out;
   Modelica.SIunits.Level dH;
 
-  // Heat loss
-  // To be calculated in RTC-Tools, or else the parameter would disappear
   parameter Real Heat_loss;
 equation
   HeatIn.Q = Q;
@@ -48,11 +46,9 @@ equation
   HeatIn.H = H_in;
   HeatOut.H = H_out;
 
-  // Aliases
   (Heat_out - HeatOut.Heat)/Heat_nominal = 0.0;
   (Heat_in - HeatIn.Heat)/Heat_nominal = 0.0;
 
-  // Note: Heat loss is added in Python, because it depends on the flow direction
+  // Note: Heat loss is added in the mixin, because it depends on the flow direction
   // * heat loss equation: (HeatOut.Heat - (HeatIn.Heat +/- Heat_loss)) = 0.0
-
 end Pipe;

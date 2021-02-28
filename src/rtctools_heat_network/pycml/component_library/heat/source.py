@@ -20,6 +20,8 @@ class Source(HeatTwoPort):
         self.head_loss = 0.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
+        # Assumption: heat in/out and added is nonnegative
+        # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_source", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_in", min=0.0, max=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_out", min=0.0, nominal=self.Heat_nominal)

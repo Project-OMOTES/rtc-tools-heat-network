@@ -22,3 +22,4 @@ class Node(HeatComponent):
 
         for i in range(1, self.n + 1):
             self.add_equation(self.HeatConn[i].H - self.H)
+            # Q and Heat to be set in the mixin

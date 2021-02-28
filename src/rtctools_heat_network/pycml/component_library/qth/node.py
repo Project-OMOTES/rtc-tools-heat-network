@@ -25,3 +25,4 @@ class Node(QTHComponent):
 
         for i in range(1, self.n + 1):
             self.add_equation(self.QTHConn[i].H - self.H)
+            # Q and T to be set in the mixin
