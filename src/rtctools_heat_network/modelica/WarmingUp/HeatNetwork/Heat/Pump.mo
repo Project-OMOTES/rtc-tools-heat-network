@@ -16,12 +16,14 @@ model Pump
 
   Modelica.SIunits.Level H_in;
   Modelica.SIunits.Level H_out;
+  Modelica.SIunits.Level dH(min=0.0);
 equation
   HeatIn.Q = Q;
   HeatIn.Q = HeatOut.Q;
 
   HeatIn.H = H_in;
   HeatOut.H = H_out;
+  dH = HeatOut.H - HeatIn.H;
 
 // Heat is constant
   (HeatIn.Heat - HeatOut.Heat) / Heat_nominal = 0.0;
