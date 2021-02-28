@@ -21,7 +21,6 @@ block Buffer
   parameter Real T_outside = 10.0;
 
   // Nominals
-  parameter Real nom_heat = cp * rho * dT;
   parameter Real nom_tank_volume = volume/2;
   parameter Real T_supply;
   parameter Real T_return;
