@@ -385,7 +385,7 @@ class ModelQTH(_Model):
             "pump1",
             Q=dict(min=0.00002778, max=0.01111, nominal=self.Q_nominal),
             dH=dict(min=0.2, max=20.0),
-            H=dict(min=0.0, max=0.0),
+            QTHIn=dict(H=dict(min=0.0, max=0.0)),
         )
         self.add_variable(
             Pump,

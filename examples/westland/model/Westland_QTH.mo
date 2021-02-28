@@ -146,7 +146,7 @@ model Westland_QTH
   WarmingUp.HeatNetwork.QTH.Node nodeDD_hot(n=3, temperature=85.0); 
   WarmingUp.HeatNetwork.QTH.Node nodeDD_cold(n=3, temperature=35.0);
 
-  WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.0, max=0.5, nominal=Q_nominal), dH(min=0.0, max=1000.0), H(min=0.0, max=0.0));
+  WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.0, max=0.5, nominal=Q_nominal), dH(min=0.0, max=1000.0), QTHIn.H(min=0.0, max=0.0));
   WarmingUp.HeatNetwork.QTH.Pump pump2(Q(min=0.0, max=0.5, nominal=Q_nominal), dH(min=0.0, max=1000.0));
   WarmingUp.HeatNetwork.QTH.Pump pump3(Q(min=0.0, max=0.5, nominal=Q_nominal), dH(min=0.0, max=1000.0));
   WarmingUp.HeatNetwork.QTH.Pump pump4(Q(min=0.0, max=0.5, nominal=Q_nominal), dH(min=0.0, max=1000.0));

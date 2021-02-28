@@ -59,7 +59,7 @@ model Example_QTH
   WarmingUp.HeatNetwork.QTH.Node nodeD92_cold(n=3, temperature=45.0);
 
   //Q in [m^3/s] and H in [m]
-  WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), H(min=0.0, max=0.0));
+  WarmingUp.HeatNetwork.QTH.Pump pump1(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0), QTHIn.H(min=0.0, max=0.0));
   WarmingUp.HeatNetwork.QTH.Pump pump2(Q(min=0.00002778, max=0.01111, nominal=Q_nominal), dH(min=0.2, max=20.0));
 
   // Define Input/Output Variables and set them equal to model variables.
