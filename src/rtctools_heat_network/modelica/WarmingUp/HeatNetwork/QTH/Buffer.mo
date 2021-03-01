@@ -5,6 +5,7 @@ block Buffer
   extends QTHTwoPort;
   parameter String component_type = "buffer";
 
+  parameter Real Q_nominal = 1.0;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
   parameter Real head_loss = 0.0;
@@ -38,8 +39,8 @@ block Buffer
   SI.Temperature T_cold_tank(min=T_outside, nominal=T_return);
 
   // Alias variables for the in/out pipes.
-  SI.VolumeFlowRate Q_hot_pipe;
-  SI.VolumeFlowRate Q_cold_pipe;
+  SI.VolumeFlowRate Q_hot_pipe(nominal=Q_nominal);
+  SI.VolumeFlowRate Q_cold_pipe(nominal=Q_nominal);
   SI.Temperature T_hot_pipe(nominal=T_supply);
   SI.Temperature T_cold_pipe(nominal=T_return);
 

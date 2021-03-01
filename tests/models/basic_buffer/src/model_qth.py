@@ -222,6 +222,7 @@ class ModelQTH(_Model):
         self.add_variable(
             Buffer,
             "buffer1",
+            Q_nominal=self.Q_nominal,
             height=10,
             radius=5,
             heat_transfer_coeff=1.0,

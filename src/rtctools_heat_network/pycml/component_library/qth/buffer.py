@@ -11,6 +11,7 @@ class Buffer(QTHTwoPort):
 
         self.component_type = "buffer"
 
+        self.Q_nominal = 1.0
         self.cp = 4200.0
         self.rho = 988.0
         self.head_loss = 0.0
@@ -51,8 +52,8 @@ class Buffer(QTHTwoPort):
         self.add_variable(Variable, "T_cold_tank", min=self.T_outside, nominal=self.T_return)
 
         # Alias variables for the in/out pipes.
-        self.add_variable(Variable, "Q_hot_pipe")
-        self.add_variable(Variable, "Q_cold_pipe")
+        self.add_variable(Variable, "Q_hot_pipe", nominal=self.Q_nominal)
+        self.add_variable(Variable, "Q_cold_pipe", nominal=self.Q_nominal)
         self.add_variable(Variable, "T_hot_pipe", nominal=self.T_supply)
         self.add_variable(Variable, "T_cold_pipe", nominal=self.T_return)
 
