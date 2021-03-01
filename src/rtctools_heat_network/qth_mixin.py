@@ -933,6 +933,14 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             lbx = np.maximum(lbx, lb)
             ubx = np.minimum(ubx, ub)
 
+            # Sometimes rounding errors can change the ulp, leading to lbx
+            # becomes slightly (~1E-15) larger than ubx. Fix by setting
+            # equality entries explicitly.
+            inds = lb == ub
+            lbx[inds] = ubx[inds] = lb[inds]
+
+            assert np.all(lbx <= ubx)
+
         self.__previous_indices = self._CollocatedIntegratedOptimizationProblem__indices_as_lists
 
         return discrete, lbx, ubx, lbg, ubg, x0, nlp
