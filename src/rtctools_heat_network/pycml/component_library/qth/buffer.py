@@ -47,14 +47,14 @@ class Buffer(QTHTwoPort):
         )
 
         # Temperature in the tanks
-        self.add_variable(Variable, "T_hot_tank", min=55.0, max=100.0, nominal=self.T_supply)
-        self.add_variable(Variable, "T_cold_tank", min=30.0, max=50.0, nominal=self.T_return)
+        self.add_variable(Variable, "T_hot_tank", min=self.T_outside, nominal=self.T_supply)
+        self.add_variable(Variable, "T_cold_tank", min=self.T_outside, nominal=self.T_return)
 
         # Alias variables for the in/out pipes.
         self.add_variable(Variable, "Q_hot_pipe")
         self.add_variable(Variable, "Q_cold_pipe")
-        self.add_variable(Variable, "T_hot_pipe")
-        self.add_variable(Variable, "T_cold_pipe")
+        self.add_variable(Variable, "T_hot_pipe", nominal=self.T_supply)
+        self.add_variable(Variable, "T_cold_pipe", nominal=self.T_return)
 
         # Buffer is modelled with an hot and a cold tank.
         # The hot tank is connected to the supply line, while the cold one to the return line.

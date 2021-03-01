@@ -34,14 +34,14 @@ block Buffer
   SI.Volume V_cold_tank(min=0.0, max=volume, nominal=nom_tank_volume);
 
   // Temperature in the tanks
-  SI.Temperature T_hot_tank(min=55, max=100, nominal=T_supply);
-  SI.Temperature T_cold_tank(min=30, max=50, nominal=T_return);
+  SI.Temperature T_hot_tank(min=T_outside, nominal=T_supply);
+  SI.Temperature T_cold_tank(min=T_outside, nominal=T_return);
 
   // Alias variables for the in/out pipes.
   SI.VolumeFlowRate Q_hot_pipe;
   SI.VolumeFlowRate Q_cold_pipe;
-  SI.Temperature T_hot_pipe;
-  SI.Temperature T_cold_pipe;
+  SI.Temperature T_hot_pipe(nominal=T_supply);
+  SI.Temperature T_cold_pipe(nominal=T_return);
 
 equation
 
