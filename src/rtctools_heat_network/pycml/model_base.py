@@ -160,6 +160,9 @@ class Model:
     _skip_variables = None
 
     def __init__(self, name, **modifiers):
+        # Note that this method should be such that it's allowed to be called
+        # multiple times, e.g. when a (modifiable) parameter is passed as a
+        # modifier to its super class.
         self._variables = {}
         self._numeric_parameters = {}
         self._derivatives = {}

@@ -2,14 +2,17 @@ within WarmingUp.HeatNetwork.QTH;
 
 block Pipe
   import SI = Modelica.SIunits;
-  extends QTHTwoPort;
+
+  parameter Real temperature;
+
+  extends QTHTwoPort(QTHIn.T(nominal=temperature), QTHOut.T(nominal=temperature));
+
   parameter String component_type = "pipe";
   parameter Boolean disconnectable = false;
   parameter Boolean has_control_valve = false;
 
   parameter Real length = 1.0;
   parameter Real diameter = 1.0;
-  parameter Real temperature;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
 

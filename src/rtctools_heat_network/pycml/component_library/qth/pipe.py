@@ -9,6 +9,19 @@ class Pipe(QTHTwoPort):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
+        self.temperature = nan
+
+        super().__init__(
+            name,
+            **self.merge_modifiers(
+                modifiers,
+                dict(
+                    QTHIn=dict(T=dict(nominal=self.temperature)),
+                    QTHOut=dict(T=dict(nominal=self.temperature)),
+                ),
+            ),
+        )
+
         self.component_type = "pipe"
         self.disconnectable = False
         self.has_control_valve = False
