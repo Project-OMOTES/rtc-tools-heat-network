@@ -384,8 +384,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             q_hot_pipe = self.__state_vector_scaled(f"{b}.Q_hot_pipe", e)
             q_cold_pipe = self.__state_vector_scaled(f"{b}.Q_cold_pipe", e)
 
-            constraints.append((hot_pipe_orientation * q_in - q_hot_pipe, 0.0, 0.0))
-            constraints.append((cold_pipe_orientation * q_out + q_cold_pipe, 0.0, 0.0))
+            q_nominal = self.variable_nominal(f"{b}.QTHIn.Q")
+
+            constraints.append(((hot_pipe_orientation * q_in - q_hot_pipe) / q_nominal, 0.0, 0.0))
+            constraints.append(
+                ((cold_pipe_orientation * q_out + q_cold_pipe) / q_nominal, 0.0, 0.0)
+            )
 
             # Temperature of outgoing flows is equal to buffer temperature
             temp_hot_tank_sym = self.__state_vector_scaled(f"{b}.T_hot_tank", e)
