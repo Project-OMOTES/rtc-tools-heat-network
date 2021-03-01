@@ -44,11 +44,8 @@ block Buffer
   Modelica.SIunits.Heat HeatHot(nominal=Heat_nominal);
   Modelica.SIunits.Heat HeatCold(min=0.0, max=0.0, nominal=Heat_nominal);
 
-  Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
-
   parameter Real _heat_loss_eq_nominal_buf = sqrt(Heat_nominal * _nominal_heat_loss);
 equation
-  HeatIn.Q = Q;
   HeatIn.Q = HeatOut.Q;
 
   // Heat stored in the buffer
