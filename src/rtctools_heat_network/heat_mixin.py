@@ -744,16 +744,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if np.any(heat_in > 1.0) or np.any(heat_out > 1.0):
                 logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
 
-        for p in self.heat_network_components["pipe"]:
-            head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
-            if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
-                atol = self.variable_nominal(f"{p}.HeatIn.H") * 1e-5
-                assert np.allclose(head_diff, 0.0, atol=atol)
-            else:
-                q = results[f"{p}.Q"]
-                q_nominal = self.variable_nominal(self.alias_relation.canonical_signed(f"{p}.Q")[0])
-                inds = np.abs(q) / q_nominal > 1e-4
-                assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
+        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            for p in self.heat_network_components["pipe"]:
+                head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
+                if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
+                    atol = self.variable_nominal(f"{p}.HeatIn.H") * 1e-5
+                    assert np.allclose(head_diff, 0.0, atol=atol)
+                else:
+                    q = results[f"{p}.Q"]
+                    q_nominal = self.variable_nominal(
+                        self.alias_relation.canonical_signed(f"{p}.Q")[0]
+                    )
+                    inds = np.abs(q) / q_nominal > 1e-4
+                    assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
         minimum_velocity = options["minimum_velocity"]
         for p in self.heat_network_components["pipe"]:
