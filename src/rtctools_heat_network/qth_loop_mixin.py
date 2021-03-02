@@ -103,6 +103,15 @@ class QTHLoopMixin(QTHMixin):
 
         return goals
 
+    def goal_programming_options(self):
+        options = super().goal_programming_options()
+
+        # The optimization problems only have two timesteps, and issues due to
+        # overconstraining it are more likely than leaving too much freedom.
+        options["keep_soft_constraints"] = True
+
+        return options
+
     def heat_network_options(self):
         """
         Returns a dictionary of heat network specific options.

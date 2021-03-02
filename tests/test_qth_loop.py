@@ -72,5 +72,5 @@ class TestQTHLoop(TestCase):
         quadratic_loop_ratio = quadratic_loop_q_1 / quadratic_loop_q_2
 
         # Check that both have a ratio of 2.0
-        np.testing.assert_allclose(quadratic_ratio, 2.0)
-        np.testing.assert_allclose(quadratic_loop_ratio, 2.0)
+        np.testing.assert_allclose(quadratic_ratio, 2.0, rtol=1e-6, atol=1e-6)
+        np.testing.assert_allclose(quadratic_loop_ratio, 2.0, rtol=1e-6, atol=1e-6)
