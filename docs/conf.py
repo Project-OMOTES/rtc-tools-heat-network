@@ -70,5 +70,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_css_files = [
+    'css/custom.css',
+]
+
 # Intersphinx: refer to the RTC-Tools standard library.
-intersphinx_mapping = {'rtctools': ('http://rtc-tools.readthedocs.io/en/latest/', None)}
+intersphinx_mapping = {'rtctools': ('https://rtc-tools.readthedocs.io/en/latest/', None)}

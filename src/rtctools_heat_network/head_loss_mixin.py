@@ -22,9 +22,81 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class HeadLossOption(IntEnum):
-    """
-    Enumeration for the possible options to take head loss in pipes into
-    account.
+    r"""
+    Enumeration for the possible options to take head loss in pipes into account.
+    Also see :py:meth:`._HeadLossMixin.heat_network_options` for related options.
+
+    .. note::
+        Not all options are supported by :py:class:`.HeatMixin`, due to the focus
+        on MILP formulations.
+
+    NO_HEADLOSS
+       The NO_HEADLOSS option assumes that there is no headloss in the pipelines.
+       There are no constraints added relating the discharge to the head.
+
+    CQ2_INEQUALITY
+        As the name implies, this adds a quadratic inquality constraint between
+        the head and the discharge in a pipe:
+
+         .. math::
+
+           dH \ge C \cdot Q^2
+
+        This expression of the headloss requires a system-specific estimation of
+        the constant C.
+
+        As dH is always positive, a boolean is needed when flow directions are not
+        fixed in a mixed-integer formulation to determine if
+
+         .. math::
+
+           dH = H_{up} - H_{down}
+
+        or (when the :math:`Q < 0`)
+
+         .. math::
+
+           dH = H_{down} - H_{up}
+
+    LINEARIZED_DW
+        Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
+
+        .. math::
+           \Delta H \ge \vec{a} \cdot Q + \vec{b}
+
+        with :math:`\vec{a}` and :math:`\vec{b}` the linearization coefficients.
+
+        This approach can more easily be explain with a plot, showing the Darcy-Weisbach
+        head loss, and the linear lines approximating it. Note that the number of
+        supporting lines is an option that can be set by the user by overriding
+        :py:meth:`._HeadLossMixin.heat_network_options`. Also note that, just like
+        ``CQ2_INEQUALITY``, a boolean is needed when flow directions are not fixed.
+
+           .. image:: /images/DWlinearization.PNG
+
+    LINEAR
+        This option uses a linear head loss formulation.
+        A single constraint of the type
+
+         .. math::
+
+           H_{up} - H_{down} = dH = C \cdot Q
+
+        is added.
+        Note that no boolean are required to support the case where flow directions
+        are not fixed yet, at the cost of reduced fidelity in the head-loss relationship.
+
+        The exact velocity to use to linearize can be set by overriding
+        :py:meth:`._HeadLossMixin.heat_network_options`.
+
+    CQ2_EQUALITY
+        This option adds **equality** constraints of the type:
+
+         .. math::
+
+           dH = C \cdot Q^2
+
+        This equation is non-convex, and can therefore lead to convergence issues.
     """
 
     NO_HEADLOSS = 1
