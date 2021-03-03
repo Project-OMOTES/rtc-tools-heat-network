@@ -96,17 +96,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         +--------------------------------+-----------+-----------------------------------+
         | Option                         | Type      | Default value                     |
         +================================+===========+===================================+
-        | ``dtemp_demand``               | ``float`` | ``30`` °C                         |
-        +--------------------------------+-----------+-----------------------------------+
         | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour                   |
         +--------------------------------+-----------+-----------------------------------+
         | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                          |
         +--------------------------------+-----------+-----------------------------------+
         | ``minimum_velocity``           | ``float`` | ``0.005`` m/s                     |
         +--------------------------------+-----------+-----------------------------------+
-
-        The ``dtemp_demand`` parameter specifies what the (fixed) temperature
-        drop is  over the demand nodes.
 
         The ``maximum_temperature_der`` is the maximum temperature change
         allowed in the network. It is expressed in °C per hour. Note that this
@@ -126,7 +121,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         options = super().heat_network_options()
 
-        options["dtemp_demand"] = 30
         options["maximum_temperature_der"] = 2.0
         options["max_t_der_bidirect_pipe"] = True
         options["minimum_velocity"] = 0.005
@@ -743,7 +737,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member).copy()
 
-        options = self.heat_network_options()
         components = self.heat_network_components
         parameters = self.parameters(ensemble_member)
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
@@ -752,10 +745,10 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # Fix dT at demand nodes otherwise
             # Note that for theta == 0.0, this is trivially satisfied as the temperature
             # of the cold/hot line are constant.
-            dtemp = options["dtemp_demand"]
             for d in components["demand"]:
+                dt = parameters[d + ".T_supply"] - parameters[d + ".T_return"]
                 constraints.append(
-                    (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dtemp, dtemp)
+                    (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dt, dt)
                 )
 
         return constraints
