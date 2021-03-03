@@ -7,11 +7,14 @@ from typing import Dict, Union
 from pyecore.resources import ResourceSet
 
 import rtctools.data.pi as pi
+from rtctools.optimization.collocated_integrated_optimization_problem import (
+    CollocatedIntegratedOptimizationProblem,
+)
 from rtctools.optimization.io_mixin import IOMixin
 
 import rtctools_heat_network.esdl.esdl as esdl
-from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
 
@@ -25,7 +28,9 @@ logger = logging.getLogger("rtctools_heat_network")
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
 
-class ESDLMixin(BaseComponentTypeMixin, IOMixin, PyCMLMixin):
+class ESDLMixin(
+    ModelicaComponentTypeMixin, IOMixin, PyCMLMixin, CollocatedIntegratedOptimizationProblem
+):
 
     esdl_run_info_path: Path = None
 

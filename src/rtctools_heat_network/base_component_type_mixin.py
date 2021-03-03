@@ -1,14 +1,10 @@
 from abc import abstractmethod
 from typing import Dict, List
 
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-
 from .topology import Topology
 
 
-class BaseComponentTypeMixin(CollocatedIntegratedOptimizationProblem):
+class BaseComponentTypeMixin:
     """
     The standard naming convention is that pipes have "_hot" and "_cold" suffixes.
     Such convention can be overridden using the `is_hot_pipe` and `is_cold_pipe` methods.

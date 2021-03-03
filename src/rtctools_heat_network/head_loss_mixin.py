@@ -9,11 +9,8 @@ import casadi as ca
 import numpy as np
 
 from rtctools._internal.alias_tools import AliasDict
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
 from rtctools.optimization.goal_programming_mixin_base import Goal, _GoalProgrammingMixinBase
-from rtctools.optimization.optimization_problem import BT
+from rtctools.optimization.optimization_problem import BT, OptimizationProblem
 
 import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
@@ -68,9 +65,7 @@ class _MinimizeHeadLosses(Goal):
         return sum_
 
 
-class _HeadLossMixin(
-    BaseComponentTypeMixin, _GoalProgrammingMixinBase, CollocatedIntegratedOptimizationProblem
-):
+class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, OptimizationProblem):
     """
     Adds handling of discharge - head (loss) relationship to the model.
     """

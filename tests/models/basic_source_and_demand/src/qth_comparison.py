@@ -91,7 +91,6 @@ class QTHESDL(
     _GoalsAndOptions,
     QTHMixin,
     HomotopyMixin,
-    ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,

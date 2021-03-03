@@ -10,9 +10,7 @@ from pymoca.backends.casadi.model import Model as _Model
 
 from rtctools._internal.alias_tools import AliasDict
 from rtctools._internal.caching import cached
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
+from rtctools.optimization.optimization_problem import OptimizationProblem
 
 from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 
@@ -20,7 +18,7 @@ from . import ConstantInput, ControlInput, Model, SymbolicParameter, Variable
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class PyCMLMixin(CollocatedIntegratedOptimizationProblem):
+class PyCMLMixin(OptimizationProblem):
     def __init__(self, *args, **kwargs):
         logger.debug("Using pymoca {}.".format(pymoca.__version__))
 
