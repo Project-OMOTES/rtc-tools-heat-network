@@ -182,7 +182,6 @@ class QTHProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
 
-        options["dtemp_demand"] = 50.0
         options["minimum_pressure_far_point"] = 0.0
         # Note: True also works
         options["max_t_der_bidirect_pipe"] = False
