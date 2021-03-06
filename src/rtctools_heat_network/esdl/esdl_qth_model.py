@@ -6,6 +6,7 @@ from rtctools_heat_network.pycml import SymbolicParameter
 from rtctools_heat_network.pycml.component_library.qth import (
     Buffer,
     Demand,
+    GeothermalSource,
     Node,
     Pipe,
     Pump,
@@ -260,7 +261,11 @@ class AssetToQTHComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
         )
 
-        return Source, modifiers
+        if asset.asset_type == "GeothermalSource":
+            modifiers["target_flow_rate"] = asset.attributes["flowRate"]
+            return GeothermalSource, modifiers
+        else:
+            return Source, modifiers
 
 
 class ESDLQTHModel(_ESDLModelBase):

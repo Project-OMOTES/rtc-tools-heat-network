@@ -1,5 +1,6 @@
 from .buffer import Buffer
 from .demand import Demand
+from .geothermal_source import GeothermalSource
 from .heat_port import HeatPort
 from .heat_two_port import HeatTwoPort
 from .node import Node
@@ -10,6 +11,7 @@ from .source import Source
 __all__ = [
     Buffer,
     Demand,
+    GeothermalSource,
     HeatPort,
     HeatTwoPort,
     Node,

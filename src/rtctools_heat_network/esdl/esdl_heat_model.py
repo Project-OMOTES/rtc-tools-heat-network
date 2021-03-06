@@ -4,6 +4,7 @@ from typing import Dict, Tuple, Type
 from rtctools_heat_network.pycml.component_library.heat import (
     Buffer,
     Demand,
+    GeothermalSource,
     Node,
     Pipe,
     Pump,
@@ -172,7 +173,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._rho_cp_modifiers,
         )
 
-        return Source, modifiers
+        if asset.asset_type == "GeothermalSource":
+            modifiers["target_flow_rate"] = asset.attributes["flowRate"]
+            return GeothermalSource, modifiers
+        else:
+            return Source, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):
