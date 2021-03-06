@@ -15,3 +15,14 @@ class TestWarmingUpUnitCases(TestCase):
         _heat_problem, _qth_problem = run_heat_network_optimization(
             HeatProblem, QTHProblem, base_folder=base_folder
         )
+
+    def test_2a(self):
+        import models.unit_cases.case_2a.src.run_2a as run_2a
+        from models.unit_cases.case_2a.src.run_2a import HeatProblem, QTHProblem
+
+        base_folder = Path(run_2a.__file__).resolve().parent.parent
+
+        # Just a "problem is not infeasible"
+        _heat_problem, _qth_problem = run_heat_network_optimization(
+            HeatProblem, QTHProblem, base_folder=base_folder
+        )

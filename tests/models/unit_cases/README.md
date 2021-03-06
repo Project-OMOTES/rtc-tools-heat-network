@@ -12,3 +12,14 @@ graph TD
     S --> D2{Greenhouse}
     S --> D3{Greenhouse}
 ```
+
+### 2a
+
+Geothermal well and boiler providing for greenhouses and residential areas in a ring network.
+
+```mermaid
+graph TD
+    S1[Geothermal Well] --- D1{Residental Area} --- S2[Boiler]
+    S1 --- D2{Greenhouse} --- S2
+    S1 --- D3{Residential area} --- S2
+```
