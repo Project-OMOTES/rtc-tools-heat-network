@@ -9,6 +9,6 @@ class Asset:
     id: str
     name: str
     in_port: esdl.InPort
-    out_port: esdl.InPort
+    out_port: esdl.OutPort
     attributes: dict
     global_properties: dict
