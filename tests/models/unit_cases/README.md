@@ -23,3 +23,16 @@ graph TD
     S1 --- D2{Greenhouse} --- S2
     S1 --- D3{Residential area} --- S2
 ```
+
+### 3a
+
+Geothermal well with storage providing for greenhouses in a tree network.
+
+```mermaid
+graph TD
+    S[Geothermal Well] --> N( )
+    B[Buffer] --- N
+    N --> D1{Greenhouse}
+    N --> D2{Greenhouse}
+    N --> D3{Greenhouse}
+```
