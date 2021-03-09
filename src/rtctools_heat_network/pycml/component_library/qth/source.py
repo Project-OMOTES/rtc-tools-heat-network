@@ -17,7 +17,6 @@ class Source(QTHTwoPort):
         self.dT = self.T_supply - self.T_return
         self.cp = 4200.0
         self.rho = 988.0
-        self.head_loss = 0.0
 
         self.add_variable(SymbolicParameter, "theta")
 
@@ -29,12 +28,14 @@ class Source(QTHTwoPort):
 
         self.add_variable(Variable, "H_in")
         self.add_variable(Variable, "H_out")
+        self.add_variable(Variable, "dH", min=0.0)
 
         self.add_equation(self.QTHIn.Q - self.Q)
         self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
 
         self.add_equation(self.QTHIn.H - self.H_in)
         self.add_equation(self.QTHOut.H - self.H_out)
+        self.add_equation(self.dH - (self.QTHOut.H - self.QTHIn.H))
 
         self.add_equation(
             (

@@ -51,9 +51,16 @@ class _MinimizeHeadLosses(Goal):
         options = optimization_problem.heat_network_options()
 
         pumps = optimization_problem.heat_network_components.get("pump", [])
+        sources = optimization_problem.heat_network_components.get("source", [])
 
         for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
+
+        # If sources have an accompanying pump, we prefer the produced head to
+        # be shifted to that pump. We therefore penalize the head of the
+        # sources twice as much.
+        for s in sources:
+            sum_ += 2 * optimization_problem.state(f"{s}.dH")
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
@@ -412,43 +419,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         return constraints
 
-    def __source_head_loss_path_constraints(self, ensemble_member):
-        constraints = []
-
-        options = self.heat_network_options()
-        parameters = self.parameters(ensemble_member)
-        components = self.heat_network_components
-
-        head_loss_option = options["head_loss_option"]
-
-        for source in components["source"]:
-            c = parameters[f"{source}.head_loss"]
-
-            if c == 0.0:
-                constraints.append(
-                    (
-                        self.state(f"{source}.H_in") - self.state(f"{source}.H_out"),
-                        0.0,
-                        0.0,
-                    )
-                )
-            elif head_loss_option in {HeadLossOption.LINEAR, HeadLossOption.LINEARIZED_DW}:
-                raise NotImplementedError(
-                    f"Head loss for sources is not implemented for {head_loss_option}"
-                )
-            elif head_loss_option in {HeadLossOption.CQ2_INEQUALITY, HeadLossOption.CQ2_EQUALITY}:
-                constraints.append(
-                    (
-                        self.state(f"{source}.H_in")
-                        - self.state(f"{source}.H_out")
-                        - c * self.state(f"{source}.Q") ** 2,
-                        0.0,
-                        np.inf,
-                    )
-                )
-
-        return constraints
-
     def __demand_head_loss_path_constraints(self, _ensemble_member):
         constraints = []
 
@@ -485,7 +455,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         # Add source/demand head loss constrains only if head loss is non-zero
         if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(self.__pipe_head_loss_path_constraints(ensemble_member))
-            constraints.extend(self.__source_head_loss_path_constraints(ensemble_member))
             constraints.extend(self.__demand_head_loss_path_constraints(ensemble_member))
 
         return constraints
@@ -534,14 +503,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                             f"Pipe {pipe} has artificial head loss; "
                             f"at least one more control valve should be added to the network."
                         )
-
-                for source in components["source"]:
-                    c = parameters[f"{source}.head_loss"]
-                    head_loss = results[f"{source}.H_in"] - results[f"{source}.H_out"]
-                    head_loss_target = c * results[f"{source}.Q"] ** 2
-
-                    if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
-                        logger.warning(f"Source {source} has artificial head loss.")
 
                 min_head_loss_target = options["minimum_pressure_far_point"] * 10.2
                 min_head_loss = None

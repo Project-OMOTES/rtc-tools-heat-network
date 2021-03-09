@@ -11,7 +11,6 @@ block Source
   parameter Real dT = T_supply - T_return;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
-  parameter Real head_loss = 0.0;
 
   parameter Real theta;
 
@@ -21,12 +20,14 @@ block Source
 
   Modelica.SIunits.Level H_in;
   Modelica.SIunits.Level H_out;
+  Modelica.SIunits.Level dH(min=0.0);
 equation
   QTHIn.Q = Q;
   QTHOut.Q = QTHIn.Q;
 
   QTHIn.H = H_in;
   QTHOut.H = H_out;
+  dH = QTHOut.H - QTHIn.H;
 
   (Heat_source - cp * rho * QTHOut.Q*((1-theta)*(dT) + (theta)*(-QTHIn.T + QTHOut.T)))/(cp* rho * dT * Q_nominal) = 0.0;
 

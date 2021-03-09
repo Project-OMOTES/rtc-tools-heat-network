@@ -17,7 +17,6 @@ class Source(HeatTwoPort):
         self.dT = self.T_supply - self.T_return
         self.cp = 4200.0
         self.rho = 988.0
-        self.head_loss = 0.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
         # Assumption: heat in/out and added is nonnegative
@@ -30,12 +29,14 @@ class Source(HeatTwoPort):
 
         self.add_variable(Variable, "H_in")
         self.add_variable(Variable, "H_out")
+        self.add_variable(Variable, "dH", min=0.0)
 
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
 
         self.add_equation(self.HeatIn.H - self.H_in)
         self.add_equation(self.HeatOut.H - self.H_out)
+        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
 
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat + self.Heat_source)) / self.Heat_nominal

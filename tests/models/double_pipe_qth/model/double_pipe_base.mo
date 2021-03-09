@@ -11,7 +11,8 @@ model DoublePipeBase
     Q_nominal=Q_nominal,
     T_supply=75.0,
     T_return=45.0,
-    QTHOut.T(min=65.0, max=90.0)
+    QTHOut.T(min=65.0, max=90.0),
+    dH(min=0.0, max=0.0)
   );
 
   WarmingUp.HeatNetwork.QTH.Pipe pipe_source_hot(
