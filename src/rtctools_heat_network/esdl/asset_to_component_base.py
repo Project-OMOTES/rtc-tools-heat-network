@@ -25,6 +25,7 @@ class _AssetToComponentBase:
 
     def __init__(self):
         self._port_to_q_nominal = {}
+        self._port_to_esdl_component_type = {}
 
     def convert(self, asset: Asset) -> Tuple[Type[_Model], MODIFIERS]:
         """
@@ -34,8 +35,28 @@ class _AssetToComponentBase:
             Tuple[pycml_heat_component_type, Dict[component_attribute, new_attribute_value]]
         """
 
+        for port in [asset.in_port, asset.out_port]:
+            self._port_to_esdl_component_type[port] = asset.asset_type
+
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
+
+    def _is_buffer_pipe(self, asset):
+        connected_type_in = self._port_to_esdl_component_type.get(
+            asset.in_port.connectedTo[0], None
+        )
+        connected_type_out = self._port_to_esdl_component_type.get(
+            asset.out_port.connectedTo[0], None
+        )
+
+        if "HeatStorage" in {connected_type_in, connected_type_out}:
+            return True
+        elif connected_type_in is None or connected_type_out is None:
+            raise _RetryLaterException(
+                f"Could not determine if {asset.asset_type} '{asset.name}' is a buffer pipe"
+            )
+        else:
+            return False
 
     def _set_q_nominal(self, asset, q_nominal):
         self._port_to_q_nominal[asset.in_port] = q_nominal

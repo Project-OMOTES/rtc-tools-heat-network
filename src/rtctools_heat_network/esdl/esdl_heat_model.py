@@ -45,6 +45,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             Stored_heat=dict(min=min_heat, max=max_heat),
             init_Heat=min_heat,
+            **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
 
@@ -128,6 +129,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             length=asset.attributes["length"],
             diameter=diameter,
             temperature=temperature,
+            disconnectable=self._is_buffer_pipe(asset),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max, nominal=hfr_nominal),
                 Q=dict(min=-q_max, max=q_max),
