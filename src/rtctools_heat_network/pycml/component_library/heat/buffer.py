@@ -68,5 +68,3 @@ class Buffer(HeatTwoPort):
         # pipe.
         # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
         # (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
-
-        self.add_initial_equation((self.Stored_heat - self.init_Heat) / self._nominal_stored_heat)

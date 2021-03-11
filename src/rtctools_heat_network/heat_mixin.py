@@ -37,6 +37,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
+        self.__buffer_t0_bounds = {}
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
@@ -99,6 +101,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
+
+        # Set the stored heat at t0 in the buffer(s) via bounds
+        components = self.heat_network_components
+        buffers = components.get("buffer", [])
+        t = self.times()
+        # We assume that t0 is always equal to self.times()[0]
+        assert self.initial_time == self.times()[0]
+
+        for b in buffers:
+            init_heat = parameters[f"{b}.init_Heat"]
+            stored_heat = f"{b}.Stored_heat"
+
+            lb = np.full_like(t, -np.inf)
+            ub = np.full_like(t, np.inf)
+            lb[0] = init_heat
+            ub[0] = init_heat
+            b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
+            self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
 
     def heat_network_options(self):
         r"""
@@ -166,6 +186,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds = super().bounds()
         bounds.update(self.__flow_direct_bounds)
         bounds.update(self.__pipe_disconnect_var_bounds)
+        bounds.update(self.__buffer_t0_bounds)
         return bounds
 
     def parameters(self, ensemble_member):

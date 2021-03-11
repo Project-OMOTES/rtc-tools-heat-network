@@ -55,7 +55,4 @@ equation
   // pipe.
   // (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
   // (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
-
-initial equation
-  (Stored_heat - init_Heat)/_nominal_stored_heat = 0.0;
  end Buffer;
