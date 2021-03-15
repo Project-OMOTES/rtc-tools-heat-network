@@ -448,9 +448,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # Note: the equations are not apply at t0
 
             radius = parameters[f"{b}.radius"]
-            height = parameters[f"{b}.height"]
-            volume = math.pi * radius ** 2 * height
-            avg_surface = math.pi * radius * (radius + height)
             cp = parameters[f"{b}.cp"]
             rho = parameters[f"{b}.rho"]
             heat_transfer_coeff = parameters[f"{b}.heat_transfer_coeff"]
@@ -497,7 +494,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                     * (
                         (t_hot_tank_curr * v_hot_tank_curr - t_hot_tank_prev * v_hot_tank_prev) / dt
                         - q_hot_pipe_curr * t_hot_pipe_curr
-                        + (math.pi * radius ** 2 + 2 / radius * v_hot_tank_curr)
+                        + (2 / radius * v_hot_tank_curr)
                         * heat_transfer_coeff
                         * (t_hot_tank_prev - temp_outside)
                         / (rho * cp)
@@ -512,8 +509,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         + theta
                         * (
                             (t_hot_tank_curr - t_hot_tank_prev) / dt
-                            + avg_surface
-                            / (volume / 2)
+                            + 2
+                            / radius
                             * heat_transfer_coeff
                             * (t_hot_tank_prev - temp_outside)
                             / (rho * cp)
@@ -531,7 +528,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         (t_cold_tank_curr * v_cold_tank_curr - t_cold_tank_prev * v_cold_tank_prev)
                         / dt
                         - q_cold_pipe_curr * t_cold_pipe_curr
-                        + (math.pi * radius ** 2 + 2 / radius * v_cold_tank_curr)
+                        + (2 / radius * v_cold_tank_curr)
                         * heat_transfer_coeff
                         * (t_cold_tank_curr - temp_outside)
                         / (rho * cp)
@@ -546,8 +543,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         + theta
                         * (
                             (t_cold_tank_curr - t_cold_tank_prev) / dt
-                            + avg_surface
-                            / (volume / 2)
+                            + 2
+                            / radius
                             * heat_transfer_coeff
                             * (t_cold_tank_prev - temp_outside)
                             / (rho * cp)
