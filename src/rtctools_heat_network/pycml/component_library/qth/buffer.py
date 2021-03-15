@@ -24,6 +24,9 @@ class Buffer(QTHTwoPort):
         self.height = 5.0
         self.radius = 10.0
         self.volume = math.pi * self.radius ** 2 * self.height
+        # The hot/cold tank can have a lower bound on its volume.
+        # Meaning that they might always be, for e.g., 5% full.
+        self.min_fraction_tank_volume = 0.05
 
         # if the tank is plced on ground, ignore surface of bottom of tank
         self.surface = 2 * math.pi * self.radius ** 2 + 2 * math.pi * self.radius * self.height
@@ -37,16 +40,24 @@ class Buffer(QTHTwoPort):
         self.nom_heat = self.cp * self.rho * self.dT
 
         # Initial values
-        self.init_V_hot_tank = 0.0
+        self.init_V_hot_tank = nan
         self.init_T_hot_tank = self.T_supply
         self.init_T_cold_tank = self.T_return
 
         # Volume of the tanks
         self.add_variable(
-            Variable, "V_hot_tank", min=0.0, max=self.volume, nominal=self.nom_tank_volume
+            Variable,
+            "V_hot_tank",
+            min=self.volume * self.min_fraction_tank_volume,
+            max=self.volume,
+            nominal=self.nom_tank_volume,
         )
         self.add_variable(
-            Variable, "V_cold_tank", min=0.0, max=self.volume, nominal=self.nom_tank_volume
+            Variable,
+            "V_cold_tank",
+            min=self.volume * self.min_fraction_tank_volume,
+            max=self.volume,
+            nominal=self.nom_tank_volume,
         )
 
         # Temperature in the tanks
@@ -70,7 +81,15 @@ class Buffer(QTHTwoPort):
         # Q_hot_pipe = Q_cold_pipe.
 
         # Volume
-        self.add_equation(((self.V_hot_tank + self.V_cold_tank) - self.volume) / self.volume)
+        # The total volume between the hot and cold tank is constant
+        # and equal to the minimum plus full tank capacity.
+        self.add_equation(
+            (
+                (self.V_hot_tank + self.V_cold_tank)
+                - (1 + self.min_fraction_tank_volume) * self.volume
+            )
+            / self.volume
+        )
         self.add_equation(self.der(self.V_hot_tank) - self.Q_hot_pipe)
 
         # The following relationships are set in the mixin:
@@ -95,7 +114,6 @@ class Buffer(QTHTwoPort):
         self.add_equation(self.QTHIn.T - self.T_hot_pipe)
         self.add_equation(self.QTHOut.T - self.T_cold_pipe)
 
-        # Set volume and temperatures at t0
-        self.add_initial_equation(self.V_hot_tank - self.init_V_hot_tank)
+        # Set temperatures at t0
         self.add_initial_equation(self.T_hot_tank - self.init_T_hot_tank)
         self.add_initial_equation(self.T_cold_tank - self.init_T_cold_tank)

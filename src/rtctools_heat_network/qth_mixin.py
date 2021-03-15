@@ -88,6 +88,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         super().pre()
 
         self.__update_temperature_pipe_theta_zero_bounds()
+        self.__check_buffer_values()
 
     def heat_network_options(self):
         r"""
@@ -157,6 +158,44 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             self.__pipe_flow_dir_symbols = set(self.heat_network_pipe_flow_directions.values())
             # Try again
             return self.interpolation_method(variable)
+
+    def __check_buffer_values(self):
+        parameters = self.parameters(0)
+        bounds = self.bounds()
+        components = self.heat_network_components
+        buffers = components.get("buffer", [])
+
+        for b in buffers:
+            min_fract_vol = parameters[f"{b}.min_fraction_tank_volume"]
+            if min_fract_vol < 0.0 or min_fract_vol >= 1.0:
+                raise Exception(
+                    f"Minimum fraction of tank capacity of {b} must be smaller"
+                    "than 1.0 and larger or equal to 0.0"
+                )
+
+            volume = parameters[f"{b}.volume"]
+            vol_t0 = parameters[f"{b}.init_V_hot_tank"]
+            vol = f"{b}.V_hot_tank"
+            if np.isnan(vol_t0):
+                default_vol_t0 = min_fract_vol * volume
+                parameters[f"{b}.init_V_hot_tank"] = default_vol_t0
+                logger.info(f"Initial volume of {b} is not provided. It is set to {default_vol_t0}")
+
+            # Check that volume at t0 is within bounds
+            lb_vol, ub_vol = bounds[vol]
+            lb_vol_t0 = np.inf
+            ub_vol_t0 = -np.inf
+            for bound in [lb_vol, ub_vol]:
+                assert not isinstance(bound, np.ndarray), f"{b} volume cannot be a vector state"
+                if isinstance(bound, Timeseries):
+                    bound_t0 = bound.values[0]
+                else:
+                    bound_t0 = bound
+                lb_vol_t0 = min(lb_vol_t0, bound_t0)
+                ub_vol_t0 = max(ub_vol_t0, bound_t0)
+
+            if vol_t0 < lb_vol_t0 or vol_t0 > ub_vol_t0:
+                raise Exception(f"Initial volume of {b} is not within bounds.")
 
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
@@ -384,6 +423,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                 ((cold_pipe_orientation * q_out + q_cold_pipe) / q_nominal, 0.0, 0.0)
             )
 
+            # Set hot tank volume at t0
+            vol_t0 = parameters[f"{b}.init_V_hot_tank"]
+            v_hot_tank_t0 = self.state_at(f"{b}.V_hot_tank", self.initial_time, e)
+            nominal = self.variable_nominal(f"{b}.V_hot_tank")
+            constraints.append(((v_hot_tank_t0 - vol_t0) / nominal, 0.0, 0.0))
+
             # Temperature of outgoing flows is equal to buffer temperature
             temp_hot_tank_sym = self.__state_vector_scaled(f"{b}.T_hot_tank", e)
             temp_hot_pipe_sym = self.__state_vector_scaled(f"{b}.T_hot_pipe", e)
@@ -443,8 +488,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # * der(T_tank) + heat losses = 0.
             # Where heat losses are:
             # surface area * heat transfer coefficient * (T_tank - T_outside) / (rho * cp)
-            # Surface area is 2 * pi * r * (r + h). It is approximated with an average height
-            # when there is no temperature mixing.
+            # Surface area is 2 * pi * r * h, i.e., only the rounded area.
+            # It is approximated with an average height when there is no temperature mixing.
             # Note: the equations are not apply at t0
 
             radius = parameters[f"{b}.radius"]
@@ -494,10 +539,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                     * (
                         (t_hot_tank_curr * v_hot_tank_curr - t_hot_tank_prev * v_hot_tank_prev) / dt
                         - q_hot_pipe_curr * t_hot_pipe_curr
-                        + (2 / radius * v_hot_tank_curr)
-                        * heat_transfer_coeff
-                        * (t_hot_tank_prev - temp_outside)
-                        / (rho * cp)
+                        + (
+                            (2 / radius * v_hot_tank_curr)
+                            * heat_transfer_coeff
+                            * (t_hot_tank_prev - temp_outside)
+                            / (rho * cp)
+                        )
                     )
                 )[hot_mix_inds]
             )
@@ -509,11 +556,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         + theta
                         * (
                             (t_hot_tank_curr - t_hot_tank_prev) / dt
-                            + 2
-                            / radius
-                            * heat_transfer_coeff
-                            * (t_hot_tank_prev - temp_outside)
-                            / (rho * cp)
+                            + (
+                                (2 / radius)
+                                * heat_transfer_coeff
+                                * (t_hot_tank_prev - temp_outside)
+                                / (rho * cp)
+                            )
                         )
                     )[cold_mix_inds + inactive_inds]
                 )
@@ -528,10 +576,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         (t_cold_tank_curr * v_cold_tank_curr - t_cold_tank_prev * v_cold_tank_prev)
                         / dt
                         - q_cold_pipe_curr * t_cold_pipe_curr
-                        + (2 / radius * v_cold_tank_curr)
-                        * heat_transfer_coeff
-                        * (t_cold_tank_curr - temp_outside)
-                        / (rho * cp)
+                        + (
+                            (2 / radius * v_cold_tank_curr)
+                            * heat_transfer_coeff
+                            * (t_cold_tank_curr - temp_outside)
+                            / (rho * cp)
+                        )
                     )
                 )[cold_mix_inds]
             )
@@ -543,11 +593,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                         + theta
                         * (
                             (t_cold_tank_curr - t_cold_tank_prev) / dt
-                            + 2
-                            / radius
-                            * heat_transfer_coeff
-                            * (t_cold_tank_prev - temp_outside)
-                            / (rho * cp)
+                            + (
+                                (2 / radius)
+                                * heat_transfer_coeff
+                                * (t_cold_tank_prev - temp_outside)
+                                / (rho * cp)
+                            )
                         )
                     )[hot_mix_inds + inactive_inds]
                 )

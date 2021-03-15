@@ -33,8 +33,6 @@ class ModelQTH(_Model):
         self.t_supply_nom = 75.0
         self.t_return_nom = 45.0
 
-        self.init_V_hot_tank = 0.0
-
         supply_return_modifiers = dict(T_supply=self.t_supply_nom, T_return=self.t_return_nom)
 
         # Heatsource min en max in [W]
@@ -226,7 +224,6 @@ class ModelQTH(_Model):
             height=10,
             radius=5,
             heat_transfer_coeff=1.0,
-            init_V_hot_tank=self.init_V_hot_tank,
             init_T_hot_tank=self.t_supply_nom,
             init_T_cold_tank=self.t_return_nom,
             **supply_return_modifiers,

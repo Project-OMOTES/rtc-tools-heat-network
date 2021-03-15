@@ -73,6 +73,10 @@ class QTHLoopMixin(QTHMixin):
 
         self.__buffer_target_discharges = buffer_target_discharges
 
+        self.__extended_history = None
+        self.__expose_all_results = False
+        self.__all_results = []
+
     def pre(self):
         super().pre()
 

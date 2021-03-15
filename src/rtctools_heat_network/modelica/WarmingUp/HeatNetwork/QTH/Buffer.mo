@@ -15,7 +15,9 @@ block Buffer
   parameter Real heat_transfer_coeff = 1;
   parameter Real height = 5;
   parameter Real radius= 10;
-  parameter Real volume = pi*radius^2 * height ;
+  parameter Real volume = pi*radius^2 * height;
+  // The hot/cold tank can have a lower bound on its volume. Meaning that they might always be, for e.g., 5% full.
+  parameter Real min_fraction_tank_volume = 0.05;
 
   //if the tank is plced on ground, ignore surface of bottom of tank
   parameter Real surface = 2 * pi * radius^2 + 2 * pi * radius * height;
@@ -28,13 +30,13 @@ block Buffer
   parameter Real dT = T_supply - T_return;
 
   // Initial values
-  parameter Real init_V_hot_tank = 0.0;
+  parameter Real init_V_hot_tank;
   parameter Real init_T_hot_tank = T_supply;
   parameter Real init_T_cold_tank = T_return;
 
   // Volume of the tanks
-  SI.Volume V_hot_tank(min=0.0, max=volume, nominal=nom_tank_volume);
-  SI.Volume V_cold_tank(min=0.0, max=volume, nominal=nom_tank_volume);
+  SI.Volume V_hot_tank(min=volume * min_fraction_tank_volume, max=volume, nominal=nom_tank_volume);
+  SI.Volume V_cold_tank(min=volume * min_fraction_tank_volume, max=volume, nominal=nom_tank_volume);
 
   // Temperature in the tanks
   SI.Temperature T_hot_tank(min=T_outside, nominal=T_supply);
@@ -58,7 +60,8 @@ equation
   // Q_hot_pipe = Q_cold_pipe.
 
   // Volume
-  ((V_hot_tank + V_cold_tank) - volume) / volume = 0.0;
+  // The total volume between the hot and cold tank is constant and equal to the minimum plus full tank capacity.
+  ((V_hot_tank + V_cold_tank) - (1 + min_fraction_tank_volume) * volume) / volume = 0.0;
   der(V_hot_tank) - Q_hot_pipe = 0.0;
 
   // The following relationships are set in the Python script:
@@ -84,8 +87,7 @@ equation
   QTHOut.T = T_cold_pipe;
 
 initial equation
-  // Set volume and temperatures at t0
-  V_hot_tank - init_V_hot_tank= 0.0;
+  // Set temperatures at t0
   T_hot_tank - init_T_hot_tank = 0.0;
   T_cold_tank - init_T_cold_tank = 0.0;
 
