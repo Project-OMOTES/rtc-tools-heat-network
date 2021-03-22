@@ -1,3 +1,5 @@
+import math
+
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
@@ -21,10 +23,10 @@ class Buffer(QTHTwoPort):
         self.heat_transfer_coeff = 1.0
         self.height = 5.0
         self.radius = 10.0
-        self.volume = 3.14 * self.radius ** 2 * self.height
+        self.volume = math.pi * self.radius ** 2 * self.height
 
         # if the tank is plced on ground, ignore surface of bottom of tank
-        self.surface = 2 * 3.14 * self.radius ** 2 + 2 * 3.14 * self.radius * self.height
+        self.surface = 2 * math.pi * self.radius ** 2 + 2 * math.pi * self.radius * self.height
         self.T_outside = 10.0
 
         # Nominals
