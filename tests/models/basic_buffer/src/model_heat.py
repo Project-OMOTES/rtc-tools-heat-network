@@ -14,8 +14,6 @@ class ModelHeat(_Model):
         super().__init__(None)
 
         # Declare Model Elements
-        self.init_Heat = 0.0
-
         self.Q_nominal = 0.001
 
         self.heat_nominal_cold_pipes = 45.0 * 4200 * 988 * 0.005
@@ -101,8 +99,8 @@ class ModelHeat(_Model):
         self.add_variable(
             Buffer,
             "buffer1",
-            Stored_heat=dict(min=0.0, max=200 * 4200 * 988 * 30),
-            init_Heat=self.init_Heat,
+            height=10,
+            radius=5,
             **supply_return_modifiers,
         )
 

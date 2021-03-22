@@ -14,7 +14,7 @@ class Model(_Model):
         super().__init__(None)
 
         # Declare Model Elements
-        self.init_Heat = 0.0
+        self.min_fraction_tank_volume = 0.0
 
         self.Q_nominal = 0.001
 
@@ -44,8 +44,9 @@ class Model(_Model):
         self.add_variable(
             Buffer,
             "buffer",
-            Stored_heat=dict(min=0.0, max=200 * 4200 * 988 * 30),
-            init_Heat=self.init_Heat,
+            height=10,
+            radius=5,
+            min_fraction_tank_volume=self.min_fraction_tank_volume,
             **supply_return_modifiers,
         )
 

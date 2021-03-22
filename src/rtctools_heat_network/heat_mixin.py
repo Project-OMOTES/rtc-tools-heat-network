@@ -102,23 +102,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
 
-        # Set the stored heat at t0 in the buffer(s) via bounds
-        components = self.heat_network_components
-        buffers = components.get("buffer", [])
-        t = self.times()
-        # We assume that t0 is always equal to self.times()[0]
-        assert self.initial_time == self.times()[0]
-
-        for b in buffers:
-            init_heat = parameters[f"{b}.init_Heat"]
-            stored_heat = f"{b}.Stored_heat"
-
-            lb = np.full_like(t, -np.inf)
-            ub = np.full_like(t, np.inf)
-            lb[0] = init_heat
-            ub[0] = init_heat
-            b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
-            self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
+        # Check that buffer information is logical and
+        # set the stored heat at t0 in the buffer(s) via bounds
+        self.__check_buffer_values_and_set_bounds_at_t0()
 
     def heat_network_options(self):
         r"""
@@ -234,6 +220,71 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             parameters[f"{p}.Heat_loss"] = heat_loss
 
         return parameters
+
+    def __check_buffer_values_and_set_bounds_at_t0(self):
+        t = self.times()
+        # We assume that t0 is always equal to self.times()[0]
+        assert self.initial_time == self.times()[0]
+
+        parameters = self.parameters(0)
+        bounds = self.bounds()
+        components = self.heat_network_components
+        buffers = components.get("buffer", [])
+
+        for b in buffers:
+            min_fract_vol = parameters[f"{b}.min_fraction_tank_volume"]
+            if min_fract_vol < 0.0 or min_fract_vol >= 1.0:
+                raise Exception(
+                    f"Minimum fraction of tank capacity of {b} must be smaller"
+                    "than 1.0 and larger or equal to 0.0"
+                )
+
+            cp = parameters[f"{b}.cp"]
+            rho = parameters[f"{b}.rho"]
+            dt = parameters[f"{b}.dT"]
+            heat_t0 = parameters[f"{b}.init_Heat"]
+            vol_t0 = parameters[f"{b}.init_V_hot_tank"]
+            stored_heat = f"{b}.Stored_heat"
+            if not np.isnan(vol_t0) and not np.isnan(heat_t0):
+                raise Exception(
+                    f"At most one between the initial heat and volume of {b} should be prescribed."
+                )
+
+            if np.isnan(heat_t0):
+                if not np.isnan(vol_t0):
+                    # Extract information from volume
+                    heat_t0 = vol_t0 * dt * cp * rho
+                else:
+                    # Set default value
+                    volume = parameters[f"{b}.volume"]
+                    default_vol_t0 = min_fract_vol * volume
+                    heat_t0 = default_vol_t0 * dt * cp * rho
+
+            # Check that volume/initial stored heat at t0 is within bounds
+            lb_heat, ub_heat = bounds[stored_heat]
+            lb_heat_t0 = np.inf
+            ub_heat_t0 = -np.inf
+            for bound in [lb_heat, ub_heat]:
+                assert not isinstance(
+                    bound, np.ndarray
+                ), f"{b} stored heat cannot be a vector state"
+                if isinstance(bound, Timeseries):
+                    bound_t0 = bound.values[0]
+                else:
+                    bound_t0 = bound
+                lb_heat_t0 = min(lb_heat_t0, bound_t0)
+                ub_heat_t0 = max(ub_heat_t0, bound_t0)
+
+            if heat_t0 < lb_heat_t0 or heat_t0 > ub_heat_t0:
+                raise Exception(f"Initial heat of {b} is not within bounds.")
+
+            # Set heat at t0
+            lb = np.full_like(t, -np.inf)
+            ub = np.full_like(t, np.inf)
+            lb[0] = heat_t0
+            ub[0] = heat_t0
+            b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
+            self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
 
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
         # To avoid sudden change in heat from a timestep to the next,

@@ -32,13 +32,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         assert asset.asset_type == "HeatStorage"
 
-        max_heat = asset.attributes["capacity"]
+        # Assume that the capacity is the relative heat that can be stored in the buffer
+        # and the tanks are always at least 5% full.
+        capacity = asset.attributes["capacity"]
+        min_fraction_tank_volume = 0.05
+        min_heat = capacity * min_fraction_tank_volume
+        max_heat = capacity * (1 + min_fraction_tank_volume)
         assert max_heat > 0.0
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Stored_heat=dict(min=0.0, max=max_heat),
-            init_Heat=0.0,
+            Stored_heat=dict(min=min_heat, max=max_heat),
+            init_Heat=min_heat,
             **self._rho_cp_modifiers,
         )
 

@@ -91,8 +91,10 @@ class HeatBufferHistoryStoredHeat(HeatBuffer):
         history = {}
 
         initial_time = self.initial_time
+        stored_heat_lb = self._HeatMixin__buffer_t0_bounds["buffer.Stored_heat"][0].values[0]
         history["buffer.Stored_heat"] = Timeseries(
-            np.array([initial_time - 1, initial_time]), np.array([1000.0, 0.0])
+            np.array([initial_time - 1, initial_time]),
+            np.array([stored_heat_lb + 1000.0, stored_heat_lb]),
         )
 
         return history
