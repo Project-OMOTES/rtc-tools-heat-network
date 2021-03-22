@@ -948,6 +948,11 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         return options
 
+    def compiler_options(self):
+        options = super().compiler_options()
+        options["resolve_parameter_values"] = True
+        return options
+
     def homotopy_options(self):
         options = super().homotopy_options()
         options["delta_theta_min"] = 1.0
