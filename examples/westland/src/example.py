@@ -158,6 +158,19 @@ class HeatProblem(
 ):
     model_name = "Westland_Heat"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__hot_start = False
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["hot_start"] = self.__hot_start
+        return options
+
+    def priority_completed(self, priority):
+        super().priority_completed(priority)
+        self.__hot_start = True
+
 
 class QTHProblem(
     GoalsAndOptions,

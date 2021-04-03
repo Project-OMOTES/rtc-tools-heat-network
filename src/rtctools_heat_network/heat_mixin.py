@@ -699,7 +699,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 hot_pipe = pipe
 
-            head_loss_sym = self._hn_pipe_to_head_loss_map[hot_pipe]
+            head_loss_sym = self._hn_pipe_to_head_loss_map[pipe]
 
             dh = self.__state_vector_scaled(f"{pipe}.dH", ensemble_member)
             head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)
