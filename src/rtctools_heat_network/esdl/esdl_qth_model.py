@@ -262,7 +262,8 @@ class AssetToQTHComponent(_AssetToComponentBase):
         )
 
         if asset.asset_type == "GeothermalSource":
-            modifiers["target_flow_rate"] = asset.attributes["flowRate"]
+            # Note that the ESDL target flow rate is in kg/s, but we want m3/s
+            modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
             return GeothermalSource, modifiers
         else:
             return Source, modifiers

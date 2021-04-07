@@ -1,9 +1,10 @@
 within WarmingUp.HeatNetwork.QTH;
 
 block GeothermalSource
+  import SI = Modelica.SIunits;
   extends Source;
 
   parameter String component_subtype = "geothermal";
 
-  parameter Real target_flow_rate;
+  parameter SI.VolumeFlowRate target_flow_rate;
  end GeothermalSource;
