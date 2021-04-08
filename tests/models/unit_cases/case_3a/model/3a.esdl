@@ -11,7 +11,7 @@
   </energySystemInformation>
   <instance id="a6350368-fa00-4b9b-81b0-283d35b91de0" name="Untitled Instance" xsi:type="esdl:Instance">
     <area id="f280f1c3-8858-4336-906e-c7608b192bf6" name="Untitled Area" xsi:type="esdl:Area">
-      <asset capacity="100000000000000.0" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" name="HeatStorage_4b0c" xsi:type="esdl:HeatStorage">
+      <asset capacity="100000000000.0" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" name="HeatStorage_4b0c" xsi:type="esdl:HeatStorage">
         <port carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="a7c97b65-6bdd-4a00-b9b7-6c8d214053bd" id="efad2169-5f95-4618-98ce-e89860e2897b" name="In" xsi:type="esdl:InPort"/>
         <port carrier="9ab126bd-7b66-4bed-82cc-4c04282fe859" connectedTo="776e5a76-57a5-4c03-b361-409ccb548b88" id="db555a41-d15b-44fb-b994-f5004eb3bc85" name="out" xsi:type="esdl:OutPort"/>
         <costInformation id="a65059d4-48ab-47a6-a391-9a93134bbcfe" xsi:type="esdl:CostInformation">
