@@ -24,7 +24,7 @@
         </costInformation>
         <geometry CRS="WGS84" lat="51.98322161118308" lon="4.383137226104737" xsi:type="esdl:Point"/>
       </asset>
-      <asset flowRate="0.005" id="b702bda3-632c-43ff-9867-72cda41f442f" maxTemperature="80.0" minTemperature="80.0" name="GeothermalSource_b702" power="10000000.0" xsi:type="esdl:GeothermalSource">
+      <asset flowRate="5.0" id="b702bda3-632c-43ff-9867-72cda41f442f" maxTemperature="80.0" minTemperature="80.0" name="GeothermalSource_b702" power="10000000.0" xsi:type="esdl:GeothermalSource">
         <port carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="7cec87b6-9928-4cfb-9b7b-fe7b51908911" id="f31879b6-efa1-4b2c-8740-80bebb9500a7" name="Out" xsi:type="esdl:OutPort"/>
         <port carrier="9ab126bd-7b66-4bed-82cc-4c04282fe859" connectedTo="53542379-cead-4b7c-97f5-891e1985a8cc" id="02be741c-673b-4c30-8bad-dee320e26924" name="in" xsi:type="esdl:InPort"/>
         <costInformation id="1fd82474-556d-44ff-88a1-d5eda195b218" xsi:type="esdl:CostInformation">
