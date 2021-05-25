@@ -575,7 +575,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                     * (
                         (t_cold_tank_curr * v_cold_tank_curr - t_cold_tank_prev * v_cold_tank_prev)
                         / dt
-                        - q_cold_pipe_curr * t_cold_pipe_curr
+                        + q_cold_pipe_curr * t_cold_pipe_curr
                         + (
                             (2 / radius * v_cold_tank_curr)
                             * heat_transfer_coeff
