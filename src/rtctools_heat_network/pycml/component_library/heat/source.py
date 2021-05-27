@@ -18,6 +18,7 @@ class Source(HeatTwoPort):
         self.cp = 4200.0
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
+        self.price = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero

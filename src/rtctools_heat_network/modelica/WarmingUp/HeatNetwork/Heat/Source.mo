@@ -12,6 +12,7 @@ block Source
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
   parameter Real Heat_nominal = cp * rho * dT * Q_nominal;
+  parameter Real price;
 
   // Assumption: heat in/out and added is nonnegative
   // Heat in the return (i.e. cold) line is zero

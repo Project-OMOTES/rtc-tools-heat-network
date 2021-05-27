@@ -11,6 +11,7 @@ block Source
   parameter Real dT = T_supply - T_return;
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
+  parameter Real price;
 
   parameter Real theta;
 

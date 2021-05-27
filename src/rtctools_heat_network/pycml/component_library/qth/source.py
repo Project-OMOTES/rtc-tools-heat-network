@@ -17,6 +17,7 @@ class Source(QTHTwoPort):
         self.dT = self.T_supply - self.T_return
         self.cp = 4200.0
         self.rho = 988.0
+        self.price = nan
 
         self.add_variable(SymbolicParameter, "theta")
 
