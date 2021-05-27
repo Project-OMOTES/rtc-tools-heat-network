@@ -168,8 +168,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_supply = asset.attributes["power"]
         assert max_supply > 0.0
 
+        # get price per unit of energy,
+        # assume cost of 1. if nothing is given (effectively heat loss minimization)
+        price = 1.0
+        if "costInformation" in asset.attributes.keys():
+            if hasattr(asset.attributes["costInformation"], "variableOperationalCosts"):
+                if hasattr(asset.attributes["costInformation"].variableOperationalCosts, "value"):
+                    price = asset.attributes["costInformation"].variableOperationalCosts.value
+
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            price=price,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,

@@ -250,10 +250,19 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 )
                 maximum_temperature = self.maximum_temperature
 
+        # get price per unit of energy,
+        # assume cost of 1. if nothing is given (effectively heat loss minimization)
+        price = 1.0
+        if "costInformation" in asset.attributes.keys():
+            if hasattr(asset.attributes["costInformation"], "variableOperationalCosts"):
+                if hasattr(asset.attributes["costInformation"].variableOperationalCosts, "value"):
+                    price = asset.attributes["costInformation"].variableOperationalCosts.value
+
         modifiers = dict(
             theta=self.theta,
             Q_nominal=self._get_connected_q_nominal(asset),
             QTHOut=dict(T=dict(min=minimum_temperature, max=maximum_temperature)),
+            price=price,
             Heat_source=dict(
                 min=0.0, max=asset.attributes["power"], nominal=asset.attributes["power"] / 2.0
             ),
