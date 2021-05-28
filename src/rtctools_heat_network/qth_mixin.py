@@ -88,6 +88,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         super().pre()
 
         self.__update_temperature_pipe_theta_zero_bounds()
+        self.__check_source_temperature()
         self.__check_buffer_values()
 
     def heat_network_options(self):
@@ -158,6 +159,30 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             self.__pipe_flow_dir_symbols = set(self.heat_network_pipe_flow_directions.values())
             # Try again
             return self.interpolation_method(variable)
+
+    def __check_source_temperature(self):
+        bounds = self.bounds()
+        components = self.heat_network_components
+        sources = components.get("source", [])
+        demands = components.get("demand", [])
+
+        min_temp_demands = np.inf
+        for d in demands:
+            min_temp = bounds[d + ".QTHIn.T"][0]
+            if np.isscalar(min_temp):
+                min_temp_demands = min(min_temp_demands, min_temp)
+
+        max_temp_sources = -np.inf
+        for s in sources:
+            max_temp = bounds[s + ".QTHOut.T"][1]
+            if np.isscalar(max_temp):
+                max_temp_sources = max(max_temp_sources, max_temp)
+
+        if max_temp_sources < min_temp_demands:
+            raise Exception(
+                "Maximum temperature of a source must be larger"
+                " than the minimum temperature of any demand"
+            )
 
     def __check_buffer_values(self):
         parameters = self.parameters(0)
