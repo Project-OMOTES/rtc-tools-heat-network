@@ -36,7 +36,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # Assume that the capacity is the relative heat that can be stored in the buffer
         # and the tanks are always at least 5% full.
         capacity = asset.attributes["capacity"]
-        min_fraction_tank_volume = 0.05
+        min_fraction_tank_volume = 0.0
         min_heat = capacity * min_fraction_tank_volume
         max_heat = capacity * (1 + min_fraction_tank_volume)
         assert max_heat > 0.0
