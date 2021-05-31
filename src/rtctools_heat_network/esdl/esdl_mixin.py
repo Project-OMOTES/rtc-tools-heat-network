@@ -62,6 +62,8 @@ class ESDLMixin(
             assert isinstance(self, QTHMixin)
             self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
 
+        root_logger = logging.getLogger("")
+
         if self.__run_info.output_diagnostic_file:
             # Add stream handler if it does not already exist.
             if not logger.hasHandlers() and not any(
@@ -73,12 +75,12 @@ class ESDLMixin(
                 logger.addHandler(handler)
 
             # Add pi.DiagHandler. Only add if it doesn't already exist.
-            if not any((isinstance(h, pi.DiagHandler) for h in logger.handlers)):
+            if not any((isinstance(h, pi.DiagHandler) for h in root_logger.handlers)):
                 basename = self.__run_info.output_diagnostic_file.stem
                 folder = self.__run_info.output_diagnostic_file.parent
 
                 handler = pi.DiagHandler(folder, basename)
-                logger.addHandler(handler)
+                root_logger.addHandler(handler)
 
         self.__input_timeseries_file = self.__run_info.input_timeseries_file
         self.__output_timeseries_file = self.__run_info.output_timeseries_file
