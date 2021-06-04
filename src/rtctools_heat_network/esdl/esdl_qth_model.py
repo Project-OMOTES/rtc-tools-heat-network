@@ -149,7 +149,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-    def convert_pipe(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+    def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         assert asset.asset_type == "Pipe"
 
         supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
@@ -200,7 +200,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         return Pipe, modifiers
 
-    def convert_pump(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+    def convert_pump(self, asset: Asset) -> Tuple[Type[Pump], MODIFIERS]:
         assert asset.asset_type == "Pump"
 
         # TODO: Maximum pump head should come from ESDL component
