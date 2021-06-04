@@ -173,6 +173,9 @@ class AssetToQTHComponent(_AssetToComponentBase):
         conductivies_insulation = math.nan
 
         if material is not None:
+            if isinstance(material, esdl.esdl.MatterReference):
+                material = material.reference
+
             assert isinstance(material, esdl.esdl.CompoundMatter)
             components = material.component.items
             if components:
