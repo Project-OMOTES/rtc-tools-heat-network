@@ -495,8 +495,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                         inds = np.arange(len(q_full), dtype=int)
 
                     q = results[f"{pipe}.Q"][inds]
-                    head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
                     head_loss_target = self._hn_pipe_head_loss(pipe, options, parameters, q, None)
+                    if options["head_loss_option"] == HeadLossOption.LINEAR:
+                        head_loss = np.abs(results[f"{pipe}.dH"][inds])
+                    else:
+                        head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
 
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(
