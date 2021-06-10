@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from . import esdl
 
@@ -8,7 +9,7 @@ class Asset:
     asset_type: str
     id: str
     name: str
-    in_port: esdl.InPort
-    out_port: esdl.OutPort
+    in_port: Optional[esdl.InPort]
+    out_port: Optional[esdl.OutPort]
     attributes: dict
     global_properties: dict

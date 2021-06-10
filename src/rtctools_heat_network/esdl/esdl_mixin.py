@@ -457,8 +457,14 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
 
             # For some reason `esdl_element.assetType` is `None`, so use the class name
             asset_type = el.__class__.__name__
-            assert len(el.port) == 2
-            if isinstance(el.port[0], esdl.InPort) and isinstance(el.port[1], esdl.OutPort):
+
+            assert 1 <= len(el.port) <= 2
+
+            if len(el.port) == 1 and isinstance(el.port[0], esdl.InPort):
+                in_port, out_port = el.port[0], None
+            elif len(el.port) == 1 and isinstance(el.port[0], esdl.OutPort):
+                out_port, in_port = el.port[0], None
+            elif isinstance(el.port[0], esdl.InPort) and isinstance(el.port[1], esdl.OutPort):
                 in_port, out_port = el.port
             elif isinstance(el.port[1], esdl.InPort) and isinstance(el.port[0], esdl.OutPort):
                 out_port, in_port = el.port

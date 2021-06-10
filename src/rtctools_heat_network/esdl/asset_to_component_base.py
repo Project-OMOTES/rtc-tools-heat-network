@@ -3,7 +3,7 @@ from typing import Dict, Tuple, Type, Union
 from rtctools_heat_network.pycml import Model as _Model
 
 from .common import Asset
-from .esdl_model_base import _RetryLaterException
+from .esdl_model_base import _RetryLaterException, _SkipAssetException
 
 MODIFIERS = Dict[str, Union[str, int, float]]
 
@@ -21,6 +21,7 @@ class _AssetToComponentBase:
         "Pipe": "pipe",
         "Pump": "pump",
         "HeatStorage": "buffer",
+        "Sensor": "skip",
     }
 
     def __init__(self):
@@ -95,3 +96,6 @@ class _AssetToComponentBase:
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
         supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
         return {"T_supply": supply_temperature, "T_return": return_temperature}
+
+    def convert_skip(self, asset: Asset):
+        raise _SkipAssetException(asset)

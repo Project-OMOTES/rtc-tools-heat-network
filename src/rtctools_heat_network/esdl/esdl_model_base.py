@@ -8,6 +8,10 @@ class _RetryLaterException(Exception):
     pass
 
 
+class _SkipAssetException(Exception):
+    pass
+
+
 class _ESDLModelBase(_Model):
     def _esdl_convert(self, converter, assets, prefix):
 
@@ -15,6 +19,7 @@ class _ESDLModelBase(_Model):
         # another. For example, the nominal discharg of a pipe is used to set
         # the nominal discharge of its connected components.
         retry_assets = list(assets.values())
+        skip_assets = list()
 
         for _ in range(RETRY_LOOP_LIMIT):
 
@@ -24,6 +29,9 @@ class _ESDLModelBase(_Model):
             for asset in current_assets:
                 try:
                     pycml_type, modifiers = converter.convert(asset)
+                except _SkipAssetException:
+                    skip_assets.append(asset)
+                    continue
                 except _RetryLaterException:
                     retry_assets.append(asset)
                     continue
@@ -39,8 +47,13 @@ class _ESDLModelBase(_Model):
         out_suf = f"{prefix}Out"
         node_suf = f"{prefix}Conn"
 
-        node_assets = [a for a in assets.values() if a.asset_type == "Joint"]
-        non_node_assets = [a for a in assets.values() if a.asset_type != "Joint"]
+        skip_asset_ids = {a.id for a in skip_assets}
+        node_assets = [
+            a for a in assets.values() if a.asset_type == "Joint" and a.id not in skip_asset_ids
+        ]
+        non_node_assets = [
+            a for a in assets.values() if a.asset_type != "Joint" and a.id not in skip_asset_ids
+        ]
 
         # First we map all port ids to their respective PyCML ports. We only
         # do this for non-nodes, as for nodes we don't quite know what port
@@ -73,10 +86,20 @@ class _ESDLModelBase(_Model):
                     connections.add(conn)
                     i += 1
 
+        skip_port_ids = set()
+        for a in skip_assets:
+            if a.in_port is not None:
+                skip_port_ids.add(a.in_port.id)
+            if a.out_port is not None:
+                skip_port_ids.add(a.out_port.id)
+
         # All non-Joints/nodes
         for asset in non_node_assets:
             for port in (asset.in_port, asset.out_port):
-                for connected_to in port.connectedTo.items:
+                connected_ports = [p for p in port.connectedTo.items if p.id not in skip_port_ids]
+                assert len(connected_ports) == 1
+
+                for connected_to in connected_ports:
                     conn = (port.id, connected_to.id)
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
