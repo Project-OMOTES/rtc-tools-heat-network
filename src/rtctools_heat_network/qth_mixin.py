@@ -947,6 +947,9 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             cur_pipe_flow_dir_values = [
                 ens_interpolated_flow_dir_values[e][p] for e in range(self.ensemble_size)
             ]
+            if np.any(np.isnan(np.array(cur_pipe_flow_dir_values))):
+                raise Exception(f"Flow direction of pipe '{p}' contains NaNs")
+
             if not np.array_equal(
                 np.amin(cur_pipe_flow_dir_values, 0), np.amax(cur_pipe_flow_dir_values, 0)
             ):
