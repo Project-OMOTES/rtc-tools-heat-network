@@ -21,7 +21,12 @@ from .head_loss_mixin import (
     _HeadLossMixin,
     _MinimizeHeadLosses as _MinimizeHeadLossesBase,
 )
-from .heat_network_common import NodeConnectionDirection, PipeFlowDirection
+from .heat_network_common import (
+    CheckValveStatus,
+    ControlValveDirection,
+    NodeConnectionDirection,
+    PipeFlowDirection,
+)
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -56,7 +61,10 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     def __init__(self, *args, flow_directions=None, **kwargs):
         """
         :param flow_directions: A dictionary mapping a pipe name to a
-            Timeseries of the flow directions of type :py:class:`PipeFlowDirection`.
+            Timeseries of the flow directions of type:
+              - :py:class:`PipeFlowDirection`
+              - :py:class:`ControlValveDirection`
+              - :py:class:`CheckValveStatus`
         """
         super().__init__(*args, **kwargs)
 
@@ -130,7 +138,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         return options
 
     @property
-    def heat_network_pipe_flow_directions(self) -> Dict[str, str]:
+    def heat_network_flow_directions(self) -> Dict[str, str]:
         """
         Maps a pipe name to its corresponding `constant_inputs` Timeseries
         name for the direction.
@@ -139,7 +147,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             return self.__flow_directions_name_map
         else:
             raise NotImplementedError(
-                "Please implement/set the `heat_network_pipe_flow_directions` property"
+                "Please implement/set the `heat_network_flow_directions` property"
             )
 
     def constant_inputs(self, ensemble_member):
@@ -156,7 +164,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             else:
                 return super().interpolation_method(variable)
         except AttributeError:
-            self.__pipe_flow_dir_symbols = set(self.heat_network_pipe_flow_directions.values())
+            self.__pipe_flow_dir_symbols = set(self.heat_network_flow_directions.values())
             # Try again
             return self.interpolation_method(variable)
 
@@ -838,23 +846,30 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         """
         times = self.times()
         constant_inputs = self.constant_inputs(ensemble_member)
+        string_parameters = self.string_parameters(ensemble_member)
 
-        flow_dirs = self.heat_network_pipe_flow_directions
+        flow_dirs = self.heat_network_flow_directions
 
         interpolated_flow_dir_values = {}
 
-        for p in self.heat_network_components["pipe"]:
+        for c in [
+            *self.heat_network_components["pipe"],
+            *self.heat_network_components.get("check_valve", []),
+            *self.heat_network_components.get("control_valve", []),
+        ]:
             try:
-                direction_ts = constant_inputs[flow_dirs[p]]
+                direction_ts = constant_inputs[flow_dirs[c]]
             except KeyError:
+                component_type = string_parameters[f"{c}.component_type"].replace("_", " ")
+
                 raise KeyError(
-                    f"Could not find the direction of pipe {p} for ensemble member "
+                    f"Could not find the direction of {component_type} {c} for ensemble member "
                     f"{ensemble_member}. Please extend or override the "
-                    f"`heat_network_pipe_flow_directions` method. Note that this information "
+                    f"`heat_network_flow_directions` method. Note that this information "
                     f"is necessary before calling `super().pre()`, and cannot change afterwards."
                 )
 
-            interpolated_flow_dir_values[p] = self.interpolate(
+            interpolated_flow_dir_values[c] = self.interpolate(
                 times,
                 direction_ts.times,
                 direction_ts.values,
@@ -901,6 +916,38 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
             direction_bounds[f"{p}.dH"] = b
 
+        for v in self.heat_network_components.get("check_valve", []):
+            dir_values = interpolated_flow_dir_values[v]
+
+            lb = np.zeros_like(dir_values)
+            ub = np.where(dir_values == CheckValveStatus.OPEN, np.inf, 0.0)
+            b = self.merge_bounds(bounds[f"{v}.Q"], (Timeseries(times, lb), Timeseries(times, ub)))
+
+            direction_bounds[f"{v}.Q"] = b
+
+            # Head loss
+            lb = np.zeros_like(dir_values)
+            ub = np.where(dir_values == CheckValveStatus.OPEN, 0.0, np.inf)
+            b = self.merge_bounds(bounds[f"{v}.dH"], (Timeseries(times, lb), Timeseries(times, ub)))
+
+            direction_bounds[f"{v}.dH"] = b
+
+        for v in self.heat_network_components.get("control_valve", []):
+            dir_values = interpolated_flow_dir_values[v]
+
+            lb = np.where(dir_values == ControlValveDirection.NEGATIVE, -np.inf, 0.0)
+            ub = np.where(dir_values == ControlValveDirection.POSITIVE, np.inf, 0.0)
+            b = self.merge_bounds(bounds[f"{v}.Q"], (Timeseries(times, lb), Timeseries(times, ub)))
+
+            direction_bounds[f"{v}.Q"] = b
+
+            # Head loss
+            lb = np.where(dir_values == ControlValveDirection.NEGATIVE, 0.0, -np.inf)
+            ub = np.where(dir_values == ControlValveDirection.POSITIVE, 0.0, np.inf)
+            b = self.merge_bounds(bounds[f"{v}.dH"], (Timeseries(times, lb), Timeseries(times, ub)))
+
+            direction_bounds[f"{v}.dH"] = b
+
         if self.__flow_direction_bounds is None:
             self.__flow_direction_bounds = [{} for _ in range(self.ensemble_size)]
 
@@ -943,18 +990,26 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             self.__get_interpolated_flow_directions(e) for e in range(self.ensemble_size)
         ]
 
-        for p in self.heat_network_components["pipe"]:
+        string_parameters = self.string_parameters(0)
+
+        for c in [
+            *self.heat_network_components["pipe"],
+            *self.heat_network_components.get("check_valve", []),
+            *self.heat_network_components.get("control_valve", []),
+        ]:
             cur_pipe_flow_dir_values = [
-                ens_interpolated_flow_dir_values[e][p] for e in range(self.ensemble_size)
+                ens_interpolated_flow_dir_values[e][c] for e in range(self.ensemble_size)
             ]
+            component_type = string_parameters[f"{c}.component_type"].replace("_", " ")
+
             if np.any(np.isnan(np.array(cur_pipe_flow_dir_values))):
-                raise Exception(f"Flow direction of pipe '{p}' contains NaNs")
+                raise Exception(f"Flow direction of {component_type} '{c}' contains NaNs")
 
             if not np.array_equal(
                 np.amin(cur_pipe_flow_dir_values, 0), np.amax(cur_pipe_flow_dir_values, 0)
             ):
                 raise Exception(
-                    f"Pipe direction of pipe '{p}' differs based on ensemble member. "
+                    f"Flow direction of {component_type} '{c}' differs based on ensemble member. "
                     f"This is not properly supported yet."
                 )
 

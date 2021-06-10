@@ -39,6 +39,14 @@ def run_heat_network_optimization(heat_class, qht_class, *args, log_level=loggin
         cold_pipe = heat_problem.hot_to_cold_pipe(p)
         directions[cold_pipe] = directions[p]
 
+    for v in heat_problem.heat_network_components.get("check_valve", []):
+        status_valve = (results[f"{v}__status_var"]).round().astype(int)
+        directions[v] = Timeseries(times, status_valve)
+
+    for v in heat_problem.heat_network_components.get("control_valve", []):
+        directions_valve = (results[f"{v}__flow_direct_var"]).round().astype(int) * 2 - 1
+        directions[v] = Timeseries(times, directions_valve)
+
     buffer_target_discharges = {}
     parameters = heat_problem.parameters(0)
 

@@ -5,6 +5,8 @@ from typing import Dict, Tuple, Type
 from rtctools_heat_network.pycml import SymbolicParameter
 from rtctools_heat_network.pycml.component_library.qth import (
     Buffer,
+    CheckValve,
+    ControlValve,
     Demand,
     GeothermalSource,
     Node,
@@ -279,6 +281,16 @@ class AssetToQTHComponent(_AssetToComponentBase):
             return GeothermalSource, modifiers
         else:
             return Source, modifiers
+
+    def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
+        assert asset.asset_type == "Valve"
+
+        return ControlValve, {}
+
+    def convert_check_valve(self, asset: Asset) -> Tuple[Type[CheckValve], MODIFIERS]:
+        assert asset.asset_type == "CheckValve"
+
+        return CheckValve, {}
 
 
 class ESDLQTHModel(_ESDLModelBase):

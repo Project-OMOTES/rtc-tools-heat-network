@@ -3,6 +3,8 @@ from typing import Dict, Tuple, Type
 
 from rtctools_heat_network.pycml.component_library.heat import (
     Buffer,
+    CheckValve,
+    ControlValve,
     Demand,
     GeothermalSource,
     Node,
@@ -193,6 +195,28 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return GeothermalSource, modifiers
         else:
             return Source, modifiers
+
+    def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
+        assert asset.asset_type == "Valve"
+
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+        )
+
+        return ControlValve, modifiers
+
+    def convert_check_valve(self, asset: Asset) -> Tuple[Type[CheckValve], MODIFIERS]:
+        assert asset.asset_type == "CheckValve"
+
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+        )
+
+        return CheckValve, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

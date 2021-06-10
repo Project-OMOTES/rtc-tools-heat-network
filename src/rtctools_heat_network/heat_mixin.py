@@ -37,6 +37,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
+        self.__check_valve_status_var = {}
+        self.__check_valve_status_var_bounds = {}
+        self.__check_valve_status_map = {}
+
+        self.__control_valve_direction_var = {}
+        self.__control_valve_direction_var_bounds = {}
+        self.__control_valve_direction_map = {}
+
         self.__buffer_t0_bounds = {}
 
         super().__init__(*args, **kwargs)
@@ -65,7 +73,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         bounds = self.bounds()
 
-        # Mixed-integer formulation applies only to hot pipes.
+        # Mixed-integer formulation applies only to hot pipes, not to cold
+        # pipes.
         for p in self.hot_pipes:
             flow_dir_var = f"{p}__flow_direct_var"
 
@@ -102,9 +111,25 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
 
+        for v in self.heat_network_components.get("check_valve", []):
+            status_var = f"{v}__status_var"
+
+            self.__check_valve_status_map[v] = status_var
+            self.__check_valve_status_var[status_var] = ca.MX.sym(status_var)
+            self.__check_valve_status_var_bounds[status_var] = (0.0, 1.0)
+
+        for v in self.heat_network_components.get("control_valve", []):
+            flow_dir_var = f"{v}__flow_direct_var"
+
+            self.__control_valve_direction_map[v] = flow_dir_var
+            self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+            self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
+
         # Check that buffer information is logical and
         # set the stored heat at t0 in the buffer(s) via bounds
         self.__check_buffer_values_and_set_bounds_at_t0()
+
+        self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
     def heat_network_options(self):
         r"""
@@ -160,10 +185,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables = super().path_variables.copy()
         variables.extend(self.__flow_direct_var.values())
         variables.extend(self.__pipe_disconnect_var.values())
+        variables.extend(self.__check_valve_status_var.values())
+        variables.extend(self.__control_valve_direction_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
-        if variable in self.__flow_direct_var or variable in self.__pipe_disconnect_var:
+        if (
+            variable in self.__flow_direct_var
+            or variable in self.__pipe_disconnect_var
+            or variable in self.__check_valve_status_var
+            or variable in self.__control_valve_direction_var
+        ):
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -172,6 +204,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds = super().bounds()
         bounds.update(self.__flow_direct_bounds)
         bounds.update(self.__pipe_disconnect_var_bounds)
+        bounds.update(self.__check_valve_status_var_bounds)
+        bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         return bounds
 
@@ -220,6 +254,33 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             parameters[f"{p}.Heat_loss"] = heat_loss
 
         return parameters
+
+    def __get_maximum_total_head_loss(self):
+        """
+        Get an upper bound on the maximum total head loss that can be used in
+        big-M formulations of e.g. check valves and disconnectable pipes.
+        """
+
+        options = self.heat_network_options()
+        components = self.heat_network_components
+
+        maximum_total_head_loss = 0.0
+
+        for ensemble_member in range(self.ensemble_size):
+            parameters = self.parameters(ensemble_member)
+
+            head_loss = 0.0
+
+            for pipe in components["pipe"]:
+                area = 0.25 * math.pi * parameters[f"{pipe}.diameter"] ** 2
+                max_discharge = options["maximum_velocity"] * area
+                head_loss += self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+
+            head_loss += options["minimum_pressure_far_point"] * 10.2
+
+            maximum_total_head_loss = max(maximum_total_head_loss, head_loss)
+
+        return maximum_total_head_loss
 
     def __check_buffer_values_and_set_bounds_at_t0(self):
         t = self.times()
@@ -733,6 +794,78 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __check_valve_head_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
+
+        all_pipes = set(self.heat_network_components["pipe"])
+        maximum_velocity = options["maximum_velocity"]
+
+        for v in self.heat_network_components.get("check_valve", []):
+            status_var = self.__check_valve_status_map[v]
+            status = self.state(status_var)
+
+            q = self.state(f"{v}.Q")
+            dh = self.state(f"{v}.dH")
+
+            # Determine the maximum discharge that can go through the Valve
+            # by looking at connected pipes.
+            q_aliases = self.alias_relation.aliases(q.name())
+            connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
+            maximum_diameter = max(parameters[f"{p}.diameter"] for p in connected_pipes)
+            maximum_area = 0.25 * math.pi * maximum_diameter ** 2
+            maximum_discharge = maximum_area * maximum_velocity
+
+            maximum_head_loss = self.__maximum_total_head_loss
+
+            # (Ideal) check valve status:
+            # - 1 means "open", so positive discharge, and dH = 0
+            # - 0 means "closed", so Q = 0 and positive dH
+            # Note that the Q >= 0 and dH >= 0 constraints are part of the bounds.
+            constraints.append((q - status * maximum_discharge, -np.inf, 0.0))
+
+            constraints.append((dh - (1 - status) * maximum_head_loss, -np.inf, 0.0))
+
+        return constraints
+
+    def __control_valve_head_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
+
+        all_pipes = set(self.heat_network_components["pipe"])
+        maximum_velocity = options["maximum_velocity"]
+
+        for v in self.heat_network_components.get("control_valve", []):
+            flow_dir_var = self.__control_valve_direction_map[v]
+            flow_dir = self.state(flow_dir_var)
+
+            q = self.state(f"{v}.Q")
+            dh = self.state(f"{v}.dH")
+
+            # Determine the maximum discharge that can go through the Valve
+            # by looking at connected pipes.
+            q_aliases = self.alias_relation.aliases(q.name())
+            connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
+            maximum_diameter = max(parameters[f"{p}.diameter"] for p in connected_pipes)
+            maximum_area = 0.25 * math.pi * maximum_diameter ** 2
+            maximum_discharge = maximum_area * maximum_velocity
+
+            maximum_head_loss = self.__maximum_total_head_loss
+
+            # Flow direction:
+            # - 1 means positive discharge, and negative dH
+            # - 0 means negative discharge, and positive dH
+            # It's a control valve, so the dH is of arbitrary magnitude.
+            constraints.append((q + (1 - flow_dir) * maximum_discharge, 0.0, np.inf))
+            constraints.append((q - flow_dir * maximum_discharge, -np.inf, 0.0))
+
+            constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
+            constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
@@ -745,6 +878,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
 
         return constraints
 

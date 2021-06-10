@@ -1,6 +1,24 @@
 from enum import IntEnum
 
 
+class CheckValveStatus(IntEnum):
+    """
+    Enumeration for the possible status a check valve can have.
+    """
+
+    CLOSED = 0
+    OPEN = 1
+
+
+class ControlValveDirection(IntEnum):
+    """
+    Enumeration for the possible directions a control valve can have.
+    """
+
+    NEGATIVE = -1
+    POSITIVE = 1
+
+
 class PipeFlowDirection(IntEnum):
     """
     Enumeration for the possible directions a pipe can have.

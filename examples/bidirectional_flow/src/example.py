@@ -150,7 +150,7 @@ class QTHProblem(
             q_ub = np.full_like(times, 0.0)
             q_lb = np.full_like(times, 0.0)
 
-            flow_directions = self.heat_network_pipe_flow_directions
+            flow_directions = self.heat_network_flow_directions
 
             d = constant_inputs[flow_directions[p]].values
 

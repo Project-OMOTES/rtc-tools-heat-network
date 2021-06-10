@@ -22,6 +22,8 @@ class _AssetToComponentBase:
         "Pump": "pump",
         "HeatStorage": "buffer",
         "Sensor": "skip",
+        "Valve": "control_valve",
+        "CheckValve": "check_valve",
     }
 
     def __init__(self):

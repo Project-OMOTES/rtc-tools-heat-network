@@ -96,7 +96,7 @@ class QTHESDL(
     CollocatedIntegratedOptimizationProblem,
 ):
     @property
-    def heat_network_pipe_flow_directions(self):
+    def heat_network_flow_directions(self):
         pipes = self.heat_network_components["pipe"]
         return {p: "__fixed_positive_flow" for p in pipes}
 
