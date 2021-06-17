@@ -15,8 +15,6 @@ class ControlValve(QTHTwoPort):
         self.add_variable(Variable, "H_out")
         self.add_variable(Variable, "dH")
 
-        self.add_variable(Variable, "T")
-
         self.add_equation(self.QTHIn.Q - self.QTHOut.Q)
         self.add_equation(self.QTHIn.Q - self.Q)
 
@@ -25,4 +23,3 @@ class ControlValve(QTHTwoPort):
         self.add_equation(self.dH - (self.QTHOut.H - self.QTHIn.H))
 
         self.add_equation(self.QTHIn.T - self.QTHOut.T)
-        self.add_equation(self.QTHIn.T - self.T)

@@ -9,8 +9,6 @@ model Pump "Pump"
   Modelica.SIunits.Level H_in;
   Modelica.SIunits.Level H_out;
   Modelica.SIunits.Level dH(min=0.0);
-
-  Modelica.SIunits.Temperature T;
 equation
   QTHIn.Q = QTHOut.Q;
   QTHIn.Q = Q;
@@ -20,5 +18,4 @@ equation
   dH = QTHOut.H - QTHIn.H;
 
   QTHIn.T = QTHOut.T;
-  QTHIn.T = T;
 end Pump;
