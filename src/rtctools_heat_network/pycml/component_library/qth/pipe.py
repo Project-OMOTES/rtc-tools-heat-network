@@ -14,11 +14,11 @@ class Pipe(QTHTwoPort):
         super().__init__(
             name,
             **self.merge_modifiers(
-                modifiers,
                 dict(
                     QTHIn=dict(T=dict(nominal=self.temperature)),
                     QTHOut=dict(T=dict(nominal=self.temperature)),
                 ),
+                modifiers,
             ),
         )
 
