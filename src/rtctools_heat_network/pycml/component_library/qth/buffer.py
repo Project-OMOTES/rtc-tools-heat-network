@@ -4,18 +4,16 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
 
-from .qth_two_port import QTHTwoPort
+from ._fluid_properties_component import _FluidPropertiesComponent
 
 
-class Buffer(QTHTwoPort):
+class Buffer(_FluidPropertiesComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
         self.component_type = "buffer"
 
         self.Q_nominal = 1.0
-        self.cp = 4200.0
-        self.rho = 988.0
         self.head_loss = 0.0
 
         # Source for U estimates:
@@ -34,9 +32,6 @@ class Buffer(QTHTwoPort):
 
         # Nominals
         self.nom_tank_volume = self.volume / 2
-        self.T_supply = nan
-        self.T_return = nan
-        self.dT = self.T_supply - self.T_return
         self.nom_heat = self.cp * self.rho * self.dT
 
         # Initial values

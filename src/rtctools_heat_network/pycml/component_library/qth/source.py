@@ -2,21 +2,26 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import SymbolicParameter, Variable
 
-from .qth_two_port import QTHTwoPort
+from ._fluid_properties_component import _FluidPropertiesComponent
+from ._non_storage_component import _NonStorageComponent
 
 
-class Source(QTHTwoPort):
+class Source(_NonStorageComponent, _FluidPropertiesComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
+        self.Q_nominal = 1.0
+
+        super().__init__(
+            name,
+            **self.merge_modifiers(
+                dict(Q=dict(nominal=self.Q_nominal)),
+                modifiers,
+            ),
+        )
 
         self.component_type = "source"
 
         self.Q_nominal = 1.0
-        self.T_supply = nan
-        self.T_return = nan
-        self.dT = self.T_supply - self.T_return
-        self.cp = 4200.0
-        self.rho = 988.0
         self.price = nan
 
         self.add_variable(SymbolicParameter, "theta")
@@ -25,17 +30,8 @@ class Source(QTHTwoPort):
             Variable, "Heat_source", min=0.0, nominal=self.cp * self.rho * self.dT * self.Q_nominal
         )
 
-        self.add_variable(Variable, "Q", nominal=self.Q_nominal)
-
-        self.add_variable(Variable, "H_in")
-        self.add_variable(Variable, "H_out")
         self.add_variable(Variable, "dH", min=0.0)
 
-        self.add_equation(self.QTHIn.Q - self.Q)
-        self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
-
-        self.add_equation(self.QTHIn.H - self.H_in)
-        self.add_equation(self.QTHOut.H - self.H_out)
         self.add_equation(self.dH - (self.QTHOut.H - self.QTHIn.H))
 
         self.add_equation(

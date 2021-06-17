@@ -2,10 +2,11 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
 
-from .qth_two_port import QTHTwoPort
+from ._fluid_properties_component import _FluidPropertiesComponent
+from ._non_storage_component import _NonStorageComponent
 
 
-class Pipe(QTHTwoPort):
+class Pipe(_NonStorageComponent, _FluidPropertiesComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -29,8 +30,6 @@ class Pipe(QTHTwoPort):
         self.length = 1.0
         self.diameter = 1.0
         self.temperature = nan
-        self.cp = 4200.0
-        self.rho = 988.0
 
         # Parameters determining the heat loss
         # All of these have default values in the library function
@@ -41,22 +40,9 @@ class Pipe(QTHTwoPort):
         self.h_surface = nan
         self.pipe_pair_distance = nan
 
-        self.T_supply = nan
-        self.T_return = nan
-        self.dT = self.T_supply - self.T_return
         self.T_ground = 10.0
 
-        self.add_variable(Variable, "Q")
-
-        self.add_variable(Variable, "H_in")
-        self.add_variable(Variable, "H_out")
         self.add_variable(Variable, "dH")
-
-        self.add_equation(self.QTHIn.Q - self.Q)
-        self.add_equation(self.QTHOut.Q - self.QTHIn.Q)
-
-        self.add_equation(self.QTHIn.H - self.H_in)
-        self.add_equation(self.QTHOut.H - self.H_out)
 
         # Heat loss equation is added in the Python script to allow pipes to be disconnected.
         # It assumes constant ground temparature and constant dT at demand

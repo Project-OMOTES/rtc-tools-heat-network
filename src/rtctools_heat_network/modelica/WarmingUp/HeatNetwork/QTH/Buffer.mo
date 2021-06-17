@@ -2,12 +2,10 @@ within WarmingUp.HeatNetwork.QTH;
 
 block Buffer
   import SI = Modelica.SIunits;
-  extends QTHTwoPort;
+  extends _FluidPropertiesComponent;
   parameter String component_type = "buffer";
 
   parameter Real Q_nominal = 1.0;
-  parameter Real cp = 4200.0;
-  parameter Real rho = 988.0;
   constant Real pi = 3.141592653589793;
   parameter Real head_loss = 0.0;
   // Source for U estimates:
@@ -25,9 +23,6 @@ block Buffer
 
   // Nominals
   parameter Real nom_tank_volume = volume/2;
-  parameter Real T_supply;
-  parameter Real T_return;
-  parameter Real dT = T_supply - T_return;
 
   // Initial values
   parameter Real init_V_hot_tank;
