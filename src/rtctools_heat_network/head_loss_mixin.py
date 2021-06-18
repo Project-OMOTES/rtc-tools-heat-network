@@ -310,7 +310,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
-                estimated_velocity, diameter, length, wall_roughness, temperature
+                estimated_velocity, diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
@@ -340,7 +340,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
-                estimated_velocity, diameter, length, wall_roughness, temperature
+                estimated_velocity, diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)

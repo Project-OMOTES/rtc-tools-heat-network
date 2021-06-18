@@ -66,7 +66,7 @@ def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
         raise Exception("Colebrook-White did not converge")
 
 
-def friction_factor(velocity, diameter, length, wall_roughness, temperature):
+def friction_factor(velocity, diameter, wall_roughness, temperature):
     """
     Darcy-weisbach friction factor calculation from both laminar and turbulent
     flow.
@@ -97,7 +97,7 @@ def head_loss(velocity, diameter, length, wall_roughness, temperature):
     Head loss per meter for a circular pipe.
     """
 
-    f = friction_factor(velocity, diameter, length, wall_roughness, temperature)
+    f = friction_factor(velocity, diameter, wall_roughness, temperature)
 
     return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
 
