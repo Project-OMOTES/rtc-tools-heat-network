@@ -94,7 +94,7 @@ def friction_factor(velocity, diameter, wall_roughness, temperature):
 
 def head_loss(velocity, diameter, length, wall_roughness, temperature):
     """
-    Head loss per meter for a circular pipe.
+    Head loss for a circular pipe of given length.
     """
 
     f = friction_factor(velocity, diameter, wall_roughness, temperature)
