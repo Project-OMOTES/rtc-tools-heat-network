@@ -75,17 +75,9 @@ class Buffer(_FluidPropertiesComponent):
         # For convention, we assume that Q_hot_pipe and Q_cold_pipe have the same sign, i.e.,
         # Q_hot_pipe = Q_cold_pipe.
 
-        # Volume
-        # The total volume between the hot and cold tank is constant
-        # and equal to the minimum plus full tank capacity.
-        self.add_equation(
-            (
-                (self.V_hot_tank + self.V_cold_tank)
-                - (1 + self.min_fraction_tank_volume) * self.volume
-            )
-            / self.volume
-        )
-        self.add_equation(self.der(self.V_hot_tank) - self.Q_hot_pipe)
+        # We couple the flows with the volume in the tanks
+        self.add_equation((self.der(self.V_hot_tank) - self.Q_hot_pipe))
+        self.add_equation((self.der(self.V_cold_tank) + self.Q_cold_pipe))
 
         # The following relationships are set in the mixin:
 

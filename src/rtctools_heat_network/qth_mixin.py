@@ -735,6 +735,21 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             constraints.append((ca.vertcat(*t_mix_hot), 0.0, 0.0))
             constraints.append((ca.vertcat(*t_mix_cold), 0.0, 0.0))
 
+            # Ensure that for each buffer the total volume of the tanks is constant.
+            # To avoid overconstraining the problem, we only impose these constraints
+            # for N-1 buffers (where N is the total number of buffers)
+            # The constraint is already imposed at t0, thus we skip this timestep
+            buffers = self.heat_network_components.get("buffer", [])
+            if len(buffers) > 1:
+                for b in buffers[1:]:
+                    vol_hot = self.__state_vector_scaled(f"{b}.V_hot_tank", e)[1:]
+                    vol_cold = self.__state_vector_scaled(f"{b}.V_cold_tank", e)[1:]
+                    volume = parameters[f"{b}.volume"]
+                    min_fract_vol = parameters[f"{b}.min_fraction_tank_volume"]
+                    constraints.append(
+                        (((1.0 + min_fract_vol) * volume - (vol_hot + vol_cold)) / volume, 0.0, 0.0)
+                    )
+
         return constraints
 
     def __max_temp_rate_of_change_constraints(self, ensemble_member):

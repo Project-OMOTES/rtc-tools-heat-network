@@ -54,10 +54,9 @@ equation
   // For convention, we assume that Q_hot_pipe and Q_cold_pipe have the same sign, i.e.,
   // Q_hot_pipe = Q_cold_pipe.
 
-  // Volume
-  // The total volume between the hot and cold tank is constant and equal to the minimum plus full tank capacity.
-  ((V_hot_tank + V_cold_tank) - (1 + min_fraction_tank_volume) * volume) / volume = 0.0;
+  // We couple the flows with the volume in the tanks
   der(V_hot_tank) - Q_hot_pipe = 0.0;
+  der(V_cold_tank) + Q_cold_pipe = 0.0;
 
   // The following relationships are set in the Python script:
 
