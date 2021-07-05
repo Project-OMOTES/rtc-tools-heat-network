@@ -244,18 +244,6 @@ class ESDLMixin(
         # Write output file to disk
         self.__timeseries_export.write()
 
-    def pre(self):
-        super().pre()
-
-        # Make sure that all demands have a Timeseries set
-        for demand in self.heat_network_components["demand"]:
-            try:
-                _ = self.__timeseries_import.get(f"{demand}.target_heat_demand")
-            except KeyError:
-                raise KeyError(
-                    f"Could not find a Timeseries for '{demand}.Heat_demand' in the XML file"
-                )
-
 
 class _ESDLInputDataConfig:
     def __init__(self, id_map):
