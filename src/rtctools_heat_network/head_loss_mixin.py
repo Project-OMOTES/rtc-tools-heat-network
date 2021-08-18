@@ -79,6 +79,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.__pipe_head_bounds = {}
+
         self.__pipe_head_loss_var = {}
         self.__pipe_head_loss_bounds = {}
         self.__pipe_head_loss_nominals = {}
@@ -113,6 +115,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         | ``n_linearization_lines``      | ``int``   | ``5`` (LINEARIZED_DW)             |
         +--------------------------------+-----------+-----------------------------------+
         | ``minimize_head_losses``       | ``bool``  | ``True``                          |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``pipe_minimum_pressure``      | ``float`` | ``-np.inf`                        |
+        +--------------------------------+-----------+-----------------------------------+
+        | ``pipe_maximum_pressure``      | ``float`` | ``np.inf``                        |
         +--------------------------------+-----------+-----------------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
@@ -159,6 +165,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         this option will give warnings in case the found solution is not
         feasible. In case the option is False, both the minimization and
         checks are skipped.
+
+        The ``pipe_minimum_pressure`` is the global minimum pressured allowed
+        in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
+        one.
         """
 
         options = {}
@@ -170,6 +180,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         options["maximum_velocity"] = 2.5
         options["n_linearization_lines"] = 5
         options["minimize_head_losses"] = True
+        options["pipe_minimum_pressure"] = -np.inf
+        options["pipe_maximum_pressure"] = np.inf
 
         return options
 
@@ -212,6 +224,20 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         options = self.heat_network_options()
         parameters = self.parameters(0)
+
+        min_pressure = options["pipe_minimum_pressure"]
+        max_pressure = options["pipe_maximum_pressure"]
+        assert (
+            max_pressure > min_pressure
+        ), "The global maximum pressure must be larger than the minimum one."
+        if np.isfinite(min_pressure) or np.isfinite(max_pressure):
+            for p in self.heat_network_components["pipe"]:
+                # No elevation data available yet. Assume 0 mDAT for now.
+                pipe_elevation = 0.0
+                min_head = min_pressure * 10.2 + pipe_elevation
+                max_head = max_pressure * 10.2 + pipe_elevation
+                self.__pipe_head_bounds[f"{p}.H_in"] = (min_head, max_head)
+                self.__pipe_head_bounds[f"{p}.H_out"] = (min_head, max_head)
 
         head_loss_option = options["head_loss_option"]
         if head_loss_option not in HeadLossOption.__members__.values():
@@ -548,5 +574,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         bounds.update(self.__pipe_head_loss_bounds)
         bounds.update(self.__pipe_head_loss_zero_bounds)
+
+        for k, v in self.__pipe_head_bounds.items():
+            bounds[k] = self.merge_bounds(bounds[k], v)
 
         return bounds
