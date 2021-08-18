@@ -259,12 +259,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         Get an upper bound on the maximum total head loss that can be used in
         big-M formulations of e.g. check valves and disconnectable pipes.
+
+        There are multiple ways to calculate this upper bound, depending on
+        what options are set. We compute all these upper bounds, and return
+        the lowest one of them.
         """
 
         options = self.heat_network_options()
         components = self.heat_network_components
 
-        maximum_total_head_loss = 0.0
+        # Summing head loss in pipes
+        max_sum_dh_pipes = 0.0
 
         for ensemble_member in range(self.ensemble_size):
             parameters = self.parameters(ensemble_member)
@@ -278,9 +283,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
 
-            maximum_total_head_loss = max(maximum_total_head_loss, head_loss)
+            max_sum_dh_pipes = max(max_sum_dh_pipes, head_loss)
 
-        return maximum_total_head_loss
+        # Maximum pressure difference allowed with user options
+        # NOTE: Does not yet take elevation differences into acccount
+        max_dh_network_options = (
+            options["pipe_maximum_pressure"] - options["pipe_minimum_pressure"]
+        ) * 10.2
+
+        return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __check_buffer_values_and_set_bounds_at_t0(self):
         t = self.times()
