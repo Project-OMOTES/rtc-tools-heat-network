@@ -299,6 +299,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         discharge: Union[ca.MX, float, np.ndarray],
         head_loss: Optional[ca.MX] = None,
         dh: Optional[ca.MX] = None,
+        is_disconnected: Union[ca.MX, int] = 0,
+        big_m: Optional[float] = None,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
         This function has two purposes:
@@ -317,6 +319,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         numerical computation of the appropriate head loss formulation is
         returned. Note that this returned numerical value is always positive,
         regardless of the sign of the discharge.
+
+        `is_disconnected` can be used to specify whether a pipe is
+        disconnected or not. This is most useful if a (boolean) ca.MX symbol
+        is passed, which can then be used with a big-M formulation. The big-M
+        itself then also needs to be passed via the `big_m` keyword argument.
         """
 
         if head_loss is None and dh is None:
@@ -339,6 +346,27 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             else:
                 # dH is set to zero in bounds
                 return []
+
+        if isinstance(is_disconnected, ca.MX) and not isinstance(big_m, float):
+            raise ValueError("When `is_disconnected` is symbolic, `big_m` must be passed as well")
+        if not symbolic and isinstance(is_disconnected, ca.MX):
+            raise ValueError(
+                "`is_disconnected` cannot be symbolic if the other dH/Q symbols are numeric"
+            )
+
+        if isinstance(is_disconnected, (float, int)) and is_disconnected == 1.0:
+            if symbolic:
+                # Pipe is always disconnected, so no head loss relationship needed
+                return []
+            else:
+                # By definition we choose the head loss over disconnected
+                # pipes to be zero.
+                return 0.0
+
+        if big_m is None:
+            assert is_disconnected == 0.0
+        else:
+            assert big_m != 0.0
 
         maximum_velocity = heat_network_options["maximum_velocity"]
         estimated_velocity = heat_network_options["estimated_velocity"]
@@ -374,7 +402,24 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                     * q_nominal
                     / linearization_discharge
                 ) ** 0.5
-                return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
+                # Interior point solvers, like IPOPT, do not like linearly dependent
+                # tight inequality constraints. For this reason, we split the
+                # constraints depending whether the Big-M formulation is used or not.
+                if big_m is None:
+                    return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
+                else:
+                    return [
+                        (
+                            (-1 * dh - expr + is_disconnected * big_m) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        ),
+                        (
+                            (-1 * dh - expr - is_disconnected * big_m) / constraint_nominal,
+                            -np.inf,
+                            0.0,
+                        ),
+                    ]
             else:
                 return expr * np.sign(discharge)
 
@@ -393,15 +438,37 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             expr = c_v * v ** 2
 
             if symbolic:
+                q_nominal = self.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
+
                 if head_loss_option == HeadLossOption.CQ2_INEQUALITY:
                     ub = np.inf
                 else:
                     ub = 0.0
 
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
-                constraint_nominal = (head_loss_nominal * c_v * (q_nominal / area) ** 2) ** 0.5
-                return [((head_loss - expr) / constraint_nominal, 0.0, ub)]
+                # Interior point solvers, like IPOPT, do not like linearly dependent
+                # tight inequality constraints. For this reason, we split the
+                # constraints depending whether the Big-M formulation is used or n
+                if big_m is None:
+                    equations = [((head_loss - expr) / constraint_nominal, 0.0, ub)]
+                else:
+                    equations = [
+                        (
+                            (head_loss - expr + is_disconnected * big_m) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    ]
+                    if head_loss_option == HeadLossOption.CQ2_EQUALITY:
+                        equations.append(
+                            (
+                                (head_loss - expr - is_disconnected * big_m) / constraint_nominal,
+                                -np.inf,
+                                0.0,
+                            ),
+                        )
+                return equations
             else:
                 return expr
 
@@ -434,9 +501,22 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 b_vec = np.repeat(b, discharge.size1())
                 constraint_nominal = np.abs(head_loss_nominal * a_vec * q_nominal) ** 0.5
 
+                if big_m is None:
+                    # We write the equation such that big_m is always used, even if
+                    # it is None (i.e. not used). We do have to be sure to set it to 0,
+                    # because we cannot multiple with "None".
+                    big_m_lin = 0.0
+                else:
+                    big_m_lin = big_m
+
                 return [
                     (
-                        (head_loss_vec - (a_vec * discharge_vec + b_vec)) / constraint_nominal,
+                        (
+                            head_loss_vec
+                            - (a_vec * discharge_vec + b_vec)
+                            + is_disconnected * big_m_lin
+                        )
+                        / constraint_nominal,
                         0.0,
                         np.inf,
                     )

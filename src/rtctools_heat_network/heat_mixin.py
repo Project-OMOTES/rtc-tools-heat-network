@@ -796,8 +796,27 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)
             discharge = self.__state_vector_scaled(f"{pipe}.Q", ensemble_member)
 
+            # We need to make sure the dH is decoupled from the discharge when
+            # the pipe is disconnected. Simply put, this means making the
+            # below constraints trivial.
+            is_disconnected_var = self.__pipe_disconnect_map.get(hot_pipe)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.__state_vector_scaled(is_disconnected_var, ensemble_member)
+
             constraints.extend(
-                self._hn_pipe_head_loss(pipe, options, parameters, discharge, head_loss, dh)
+                self._hn_pipe_head_loss(
+                    pipe,
+                    options,
+                    parameters,
+                    discharge,
+                    head_loss,
+                    dh,
+                    is_disconnected,
+                    2 * self.__maximum_total_head_loss,
+                )
             )
 
             # Relate the head loss symbol to the pipe's dH symbol.

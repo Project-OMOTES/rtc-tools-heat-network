@@ -133,3 +133,61 @@ class TestMinMaxPressureOptions(TestCase):
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
         self.assertGreater(case_min_max_pressure.objective_value, base_objective_value * 1.5)
+
+
+class TestDisconnectablePipe(TestCase):
+
+    import models.basic_source_and_demand.src.heat_comparison as heat_comparison
+    from models.basic_source_and_demand.src.heat_comparison import HeatPython
+
+    base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+
+    class ModelConnected(HeatPython):
+        # We allow the pipe to be disconnectable. We need to be sure that
+        # the solution is still feasible (source delivering no heat), so we
+        # lower the lower bound.
+
+        def parameters(self, ensemble_member):
+            parameters = super().parameters(ensemble_member)
+            for p in self.heat_network_components["pipe"]:
+                parameters[f"{p}.disconnectable"] = True
+            return parameters
+
+        def bounds(self):
+            bounds = super().bounds()
+            bounds["source.Heat_source"] = (0.0, 125_000.0)
+            return bounds
+
+    class ModelDisconnected(ModelConnected):
+        def constraints(self, ensemble_member):
+            constraints = super().constraints(ensemble_member)
+
+            # Note that we still enforce a _minimum_ velocity in the pipe, if it
+            # is connected. So if we force the discharge to zero, that means we
+            # force it to be disconnected.
+            times = self.times()
+            q = self.state_at("pipe_hot.Q", times[1], ensemble_member)
+            constraints.append((q, 0.0, 0.0))
+
+            return constraints
+
+    def test_disconnected_network_pipe(self):
+        case_connected = run_optimization_problem(self.ModelConnected, base_folder=self.base_folder)
+        results_connected = case_connected.extract_results()
+        q_connected = results_connected["pipe_hot.Q"]
+
+        case_disconnected = run_optimization_problem(
+            self.ModelDisconnected, base_folder=self.base_folder
+        )
+        results_disconnected = case_disconnected.extract_results()
+        q_disconnected = results_disconnected["pipe_hot.Q"]
+
+        # Sanity check, as we rely on the minimum velocity being strictly
+        # larger than zero for the discharge constraint to disconnect the
+        # pipe.
+        self.assertGreater(case_connected.heat_network_options()["minimum_velocity"], 0.0)
+
+        self.assertLess(q_disconnected[1], q_connected[1])
+        self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
+
+        np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
