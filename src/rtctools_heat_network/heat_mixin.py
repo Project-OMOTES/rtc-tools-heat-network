@@ -1,5 +1,6 @@
 import logging
 import math
+from typing import List
 
 import casadi as ca
 
@@ -14,6 +15,7 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
+from .pipe_class import PipeClass
 
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -47,11 +49,25 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__buffer_t0_bounds = {}
 
+        self.__pipe_topo_diameter_var = {}
+        self.__pipe_topo_diameter_var_bounds = {}
+        self.__pipe_topo_diameter_map = {}
+        self.__pipe_topo_diameter_nominals = {}
+
+        self.__pipe_topo_pipe_class_var = {}
+        self.__pipe_topo_pipe_class_var_bounds = {}
+        self.__pipe_topo_pipe_class_map = {}
+
+        self.__pipe_topo_heat_discharge_bounds = {}
+
+        self.__pipe_topo_diameter_area_parameters = []
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
         super().pre()
 
+        options = self.heat_network_options()
         parameters = self.parameters(0)
 
         def _get_max_bound(bound):
@@ -123,6 +139,131 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__control_valve_direction_map[v] = flow_dir_var
             self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
             self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
+
+        # Pipe topology variables
+
+        # In case the user overrides the pipe class of the pipe with a single
+        # pipe class we update the diameter/area parameters. If there is more
+        # than a single pipe class for a certain pipe, we set the diameter
+        # and area to NaN to prevent erroneous constraints.
+        for _ in range(self.ensemble_size):
+            self.__pipe_topo_diameter_area_parameters.append({})
+
+        for pipe in self.hot_pipes:
+            pipe_classes = self.pipe_classes(pipe)
+            cold_pipe = self.hot_to_cold_pipe(pipe)
+
+            if len([c for c in pipe_classes if c.inner_diameter == 0]) > 1:
+                raise Exception(
+                    f"Pipe {pipe} should not have more than one `diameter = 0` pipe class"
+                )
+
+            # Note that we always make a diameter symbol, even if the diameter
+            # is fixed. This can be convenient when playing around with
+            # different pipe class options, and providing a uniform interface
+            # to the user. Contrary to that, the pipe class booleans are very
+            # much an internal affair.
+            diam_var_name = f"{pipe}__hn_diameter"
+            self.__pipe_topo_diameter_var[diam_var_name] = ca.MX.sym(diam_var_name)
+            self.__pipe_topo_diameter_map[pipe] = diam_var_name
+
+            if not pipe_classes:
+                # No pipe class decision to make for this pipe
+                diameter = parameters[f"{pipe}.diameter"]
+                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                if diameter > 0.0:
+                    self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
+            elif len(pipe_classes) == 1:
+                # No pipe class decision to make for this pipe
+                diameter = pipe_classes[0].inner_diameter
+                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                if diameter > 0.0:
+                    self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
+
+                for ensemble_member in range(self.ensemble_size):
+                    d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
+
+                    for p in [pipe, cold_pipe]:
+                        d[f"{p}.diameter"] = diameter
+                        d[f"{p}.area"] = pipe_classes[0].area
+            else:
+                diameters = [c.inner_diameter for c in pipe_classes]
+                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (
+                    min(diameters),
+                    max(diameters),
+                )
+                self.__pipe_topo_diameter_nominals[diam_var_name] = min(
+                    x for x in diameters if x > 0.0
+                )
+
+                for ensemble_member in range(self.ensemble_size):
+                    d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
+
+                    for p in [pipe, cold_pipe]:
+                        d[f"{p}.diameter"] = np.nan
+                        d[f"{p}.area"] = np.nan
+
+            # Pipe class variables.
+            if not pipe_classes or len(pipe_classes) == 1:
+                # No pipe class decision to make for this pipe
+                pass
+            else:
+                self.__pipe_topo_pipe_class_map[pipe] = {}
+
+                for c in pipe_classes:
+                    pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
+
+                    self.__pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
+                    self.__pipe_topo_pipe_class_var[pipe_class_var_name] = ca.MX.sym(
+                        pipe_class_var_name
+                    )
+                    self.__pipe_topo_pipe_class_var_bounds[pipe_class_var_name] = (0.0, 1.0)
+
+        # Update the bounds of the pipes that will have their diameter
+        # optimized. Note that the flow direction may have already been fixed
+        # based on the original bounds, if that was desired. We can therefore
+        # naively override the bounds without taking this into account.
+        for pipe in self.__pipe_topo_pipe_class_map:
+            pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
+            max_discharge = max(c.maximum_discharge for c in pipe_classes)
+
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (-max_discharge, max_discharge)
+            self.__pipe_topo_heat_discharge_bounds[f"{self.hot_to_cold_pipe(pipe)}.Q"] = (
+                -max_discharge,
+                max_discharge,
+            )
+
+            # Heat on cold side is zero, so no change needed
+            cp = parameters[f"{pipe}.cp"]
+            rho = parameters[f"{pipe}.rho"]
+            dt = parameters[f"{pipe}.dT"]
+
+            max_heat = cp * rho * dt * max_discharge
+
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_in"] = (-max_heat, max_heat)
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_out"] = (-max_heat, max_heat)
+
+        # When optimizing for pipe size, we do not yet support all options
+        if self.__pipe_topo_pipe_class_map:
+            if options["minimum_velocity"] > 0.0:
+                raise Exception(
+                    "When optimizing pipe diameters, "
+                    "the `maximum_velocity` option should be set to zero."
+                )
+
+            if not options["neglect_pipe_heat_losses"]:
+                raise Exception(
+                    "When optimizing pipe diameters, "
+                    "the `neglect_pipe_heat_losses` option should be set to True."
+                )
+
+            if np.isfinite(options["maximum_temperature_der"]) and np.isfinite(
+                options["maximum_flow_der"]
+            ):
+                raise Exception(
+                    "When optimizing pipe diameters, "
+                    "the `maximum_temperature_der` or `maximum_flow_der` should be infinite."
+                )
 
         # Check that buffer information is logical and
         # set the stored heat at t0 in the buffer(s) via bounds
@@ -198,6 +339,30 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return options
 
+    def pipe_classes(self, pipe: str) -> List[PipeClass]:
+        """
+        Note that this method is only queried for _hot_ pipes. Their
+        respective cold pipes are assumed to have the exact same properties.
+
+        If the returned List is:
+        - empty: use the pipe properties from the model
+        - len() == 1: use these pipe properties to overrule that of the model
+        - len() > 1: decide between the pipe class options.
+
+        A pipe class with diameter 0 is interpreted as there being _no_ pipe.
+        """
+        return []
+
+    def pipe_diameter_symbol_name(self, pipe: str) -> str:
+        return self.__pipe_topo_diameter_map[pipe]
+
+    @property
+    def extra_variables(self):
+        variables = super().extra_variables.copy()
+        variables.extend(self.__pipe_topo_diameter_var.values())
+        variables.extend(self.__pipe_topo_pipe_class_var.values())
+        return variables
+
     @property
     def path_variables(self):
         variables = super().path_variables.copy()
@@ -213,10 +378,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             or variable in self.__pipe_disconnect_var
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
+            or variable in self.__pipe_topo_pipe_class_var
         ):
             return True
         else:
             return super().variable_is_discrete(variable)
+
+    def variable_nominal(self, variable):
+        try:
+            return self.__pipe_topo_diameter_nominals[variable]
+        except KeyError:
+            return super().variable_nominal(variable)
 
     def bounds(self):
         bounds = super().bounds()
@@ -225,6 +397,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__check_valve_status_var_bounds)
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
+        bounds.update(self.__pipe_topo_pipe_class_var_bounds)
+        bounds.update(self.__pipe_topo_diameter_var_bounds)
+        bounds.update(self.__pipe_topo_heat_discharge_bounds)
         return bounds
 
     def parameters(self, ensemble_member):
@@ -244,6 +419,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if options["neglect_pipe_heat_losses"]:
                 parameters[f"{p}.Heat_loss"] = 0.0
                 continue
+
+            assert (
+                p not in self.__pipe_topo_pipe_class_map
+            ), "topology optimization requires zero heat loss"
 
             u_kwargs = {
                 "inner_diameter": parameters[f"{p}.diameter"],
@@ -276,6 +455,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             parameters[f"{p}.Heat_loss"] = heat_loss
 
+        # To avoid mistakes by accidentally using the `diameter` and `area`
+        # parameters in e.g. constraints when those are variable, we set them
+        # to NaN in that case. In post(), they are set to their resulting
+        # values once again.
+        if self.__pipe_topo_diameter_area_parameters:
+            parameters.update(self.__pipe_topo_diameter_area_parameters[ensemble_member])
+
         return parameters
 
     def __get_maximum_total_head_loss(self):
@@ -305,9 +491,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             head_loss = 0.0
 
             for pipe in components["pipe"]:
-                area = parameters[f"{pipe}.area"]
-                max_discharge = options["maximum_velocity"] * area
-                head_loss += self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+                if self.is_cold_pipe(pipe):
+                    hot_pipe = self.cold_to_hot_pipe(pipe)
+                else:
+                    hot_pipe = pipe
+
+                try:
+                    pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe].keys()
+                    head_loss += max(
+                        self._hn_pipe_head_loss(
+                            pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
+                        )
+                        for pc in pipe_classes
+                        if pc.maximum_discharge > 0.0
+                    )
+                except KeyError:
+                    area = parameters[f"{pipe}.area"]
+                    max_discharge = options["maximum_velocity"] * area
+                    head_loss += self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
 
@@ -400,7 +601,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         t_change = hn_options["maximum_temperature_der"]
         q_change = hn_options["maximum_flow_der"]
 
+        if np.isfinite(t_change) and np.isfinite(q_change):
+            assert (
+                not self.__pipe_topo_pipe_class_map
+            ), "heat rate change constraints not allowed with topology optimization"
+
         for p in self.hot_pipes:
+
             variable = f"{p}.HeatIn.Heat"
             dt = np.diff(self.times(variable))
 
@@ -580,6 +787,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
 
+        if minimum_velocity > 0.0:
+            assert (
+                not self.__pipe_topo_pipe_class_map
+            ), "non-zero minimum velocity not allowed with topology optimization"
+
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.heat_network_components["pipe"]:
             # FIXME: Enable heat in cold pipes as well.
@@ -599,13 +811,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 is_disconnected = self.state(is_disconnected_var)
 
             q_pipe = self.state(f"{p}.Q")
-            area = parameters[f"{p}.area"]
-            maximum_discharge = maximum_velocity * area
 
-            if math.isfinite(minimum_velocity):
-                minimum_discharge = minimum_velocity * area
-            else:
+            try:
+                pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe].keys()
+                maximum_discharge = max(c.maximum_discharge for c in pipe_classes)
                 minimum_discharge = 0.0
+            except KeyError:
+                maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
+
+                if math.isfinite(minimum_velocity) and minimum_velocity > 0.0:
+                    minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
+                else:
+                    minimum_discharge = 0.0
 
             big_m = maximum_discharge + minimum_discharge
 
@@ -799,6 +1016,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
+    def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+        if self.is_cold_pipe(pipe):
+            hot_pipe = self.cold_to_hot_pipe(pipe)
+        else:
+            hot_pipe = pipe
+
+        try:
+            pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe].keys()
+            area = np.median(c.area for c in pipe_classes)
+        except KeyError:
+            area = parameters[f"{pipe}.area"]
+
+        return area * heat_network_options["estimated_velocity"]
+
     @staticmethod
     def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
         head_loss_option = heat_network_options["head_loss_option"]
@@ -853,23 +1084,83 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 is_disconnected = self.__state_vector_scaled(is_disconnected_var, ensemble_member)
 
-            constraints.extend(
-                self._hn_pipe_head_loss(
-                    pipe,
-                    options,
-                    parameters,
-                    discharge,
-                    head_loss,
-                    dh,
-                    is_disconnected,
-                    2 * self.__maximum_total_head_loss,
+            max_discharge = None
+            max_head_loss = -np.inf
+
+            if hot_pipe in self.__pipe_topo_pipe_class_map:
+                # Multiple diameter options for this pipe
+                pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe]
+                max_discharge = max(c.maximum_discharge for c in pipe_classes)
+
+                for pc, pc_var_name in pipe_classes.items():
+                    if pc.inner_diameter == 0.0:
+                        continue
+
+                    big_m = 2 * max(
+                        self.__maximum_total_head_loss,
+                        self._hn_pipe_head_loss(
+                            pipe, options, parameters, max_discharge, pipe_class=pc
+                        ),
+                    )
+
+                    is_topo_disconnected = 1 - self.extra_variable(pc_var_name, ensemble_member)
+                    is_topo_disconnected = ca.repmat(is_topo_disconnected, dh.size1())
+
+                    # Note that we add the two booleans `is_disconnected` and
+                    # `is_topo_disconnected`. This is allowed because of the way the
+                    # resulting expression is used in the Big-M formulation. We only care
+                    # that the expression (i.e. a single boolean or the sum of the two
+                    # booleans) is either 0 when the pipe is connected, or >= 1 when it
+                    # is disconnected.
+                    constraints.extend(
+                        self._hn_pipe_head_loss(
+                            pipe,
+                            options,
+                            parameters,
+                            discharge,
+                            head_loss,
+                            dh,
+                            is_disconnected + is_topo_disconnected,
+                            big_m,
+                            pc,
+                        )
+                    )
+
+                    # Contrary to the Big-M calculation above, the relation
+                    # between dH and the head loss symbol requires the
+                    # maximum head loss that can be realized effectively. So
+                    # we pass the current pipe class's maximum discharge.
+                    max_head_loss = max(
+                        max_head_loss,
+                        self._hn_pipe_head_loss(
+                            pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
+                        ),
+                    )
+            else:
+                # Only a single diameter for this pipe. Note that we rely on
+                # the diameter parameter being overridden automatically if a
+                # single pipe class is set by the user.
+                area = parameters[f"{pipe}.area"]
+                max_discharge = options["maximum_velocity"] * area
+
+                is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
+
+                constraints.extend(
+                    self._hn_pipe_head_loss(
+                        pipe,
+                        options,
+                        parameters,
+                        discharge,
+                        head_loss,
+                        dh,
+                        is_disconnected + is_topo_disconnected,
+                        2 * self.__maximum_total_head_loss,
+                    )
                 )
-            )
+
+                max_head_loss = self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
             # Relate the head loss symbol to the pipe's dH symbol.
-            area = parameters[f"{pipe}.area"]
-            max_discharge = options["maximum_velocity"] * area
-            max_head_loss = self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
             # their own integers as well.
@@ -914,8 +1205,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # by looking at connected pipes.
             q_aliases = self.alias_relation.aliases(q.name())
             connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
-            maximum_area = max(parameters[f"{p}.area"] for p in connected_pipes)
-            maximum_discharge = maximum_area * maximum_velocity
+
+            maximum_discharge = 0.0
+
+            for p in connected_pipes:
+                try:
+                    pipe_classes = self.__pipe_topo_pipe_class_map[p].keys()
+                    max_discharge_pipe = max(c.maximum_discharge for c in pipe_classes)
+                except KeyError:
+                    max_discharge_pipe = maximum_velocity * parameters[f"{p}.area"]
+
+                maximum_discharge = max(maximum_discharge, max_discharge_pipe)
 
             maximum_head_loss = self.__maximum_total_head_loss
 
@@ -949,8 +1249,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # by looking at connected pipes.
             q_aliases = self.alias_relation.aliases(q.name())
             connected_pipes = {p for p in all_pipes if f"{p}.Q" in q_aliases}
-            maximum_area = max(parameters[f"{p}.area"] for p in connected_pipes)
-            maximum_discharge = maximum_area * maximum_velocity
+
+            maximum_discharge = 0.0
+
+            for p in connected_pipes:
+                try:
+                    pipe_classes = self.__pipe_topo_pipe_class_map[p].keys()
+                    max_discharge_pipe = max(c.maximum_discharge for c in pipe_classes)
+                except KeyError:
+                    max_discharge_pipe = maximum_velocity * parameters[f"{p}.area"]
+
+                maximum_discharge = max(maximum_discharge, max_discharge_pipe)
 
             maximum_head_loss = self.__maximum_total_head_loss
 
@@ -964,6 +1273,64 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
                 constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
+
+        return constraints
+
+    def __pipe_topology_constraints(self, ensemble_member):
+        constraints = []
+
+        for p, pipe_classes in self.__pipe_topo_pipe_class_map.items():
+            v = []
+            for pc_var_name in pipe_classes.values():
+                v.append(self.extra_variable(pc_var_name, ensemble_member))
+
+            # Make sure exactly one indicator is true
+            constraints.append((sum(v), 1.0, 1.0))
+
+            # Match the indicators to the diameter symbol
+            diam_sym_name = self.__pipe_topo_diameter_map[p]
+            diam_sym = self.extra_variable(diam_sym_name, ensemble_member)
+
+            diameters = [c.inner_diameter for c in pipe_classes.keys()]
+
+            diam_expr = sum(s * d for s, d in zip(v, diameters))
+            constraint_nominal = self.variable_nominal(diam_sym_name)
+
+            constraints.append(((diam_sym - diam_expr) / constraint_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __pipe_topology_path_constraints(self, ensemble_member):
+        constraints = []
+
+        # Clip discharge based on pipe class
+        for p, pipe_classes in self.__pipe_topo_pipe_class_map.items():
+            v = []
+            for var_name in pipe_classes.values():
+                v.append(self.__pipe_topo_pipe_class_var[var_name])
+
+            # Match the indicators to the discharge symbol(s)
+            discharge_sym_hot = self.state(f"{p}.Q")
+            discharge_sym_cold = self.state(f"{self.hot_to_cold_pipe(p)}.Q")
+
+            maximum_discharges = [c.maximum_discharge for c in pipe_classes.keys()]
+
+            max_discharge_expr = sum(s * d for s, d in zip(v, maximum_discharges))
+            constraint_nominal = self.variable_nominal(f"{p}.Q")
+
+            constraints.append(
+                ((discharge_sym_hot - max_discharge_expr) / constraint_nominal, -np.inf, 0.0)
+            )
+            constraints.append(
+                ((discharge_sym_hot + max_discharge_expr) / constraint_nominal, 0.0, np.inf)
+            )
+
+            constraints.append(
+                ((discharge_sym_cold - max_discharge_expr) / constraint_nominal, -np.inf, 0.0)
+            )
+            constraints.append(
+                ((discharge_sym_cold + max_discharge_expr) / constraint_nominal, 0.0, np.inf)
+            )
 
         return constraints
 
@@ -981,6 +1348,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
 
         return constraints
 
@@ -988,6 +1356,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = super().constraints(ensemble_member)
 
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
+        constraints.extend(self.__pipe_topology_constraints(ensemble_member))
 
         return constraints
 
@@ -1036,8 +1405,42 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["resolve_parameter_values"] = True
         return options
 
+    def __pipe_diameter_to_parameters(self):
+        for ensemble_member in range(self.ensemble_size):
+            results = self.extract_results(ensemble_member)
+
+            d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
+            for pipe in self.__pipe_topo_pipe_class_map:
+                pipe_class = next(
+                    c
+                    for c, s in self.__pipe_topo_pipe_class_map[pipe].items()
+                    if round(results[s][0]) == 1.0
+                )
+
+                for p in [pipe, self.hot_to_cold_pipe(pipe)]:
+                    d[f"{p}.diameter"] = pipe_class.inner_diameter
+                    d[f"{p}.area"] = pipe_class.area
+
+    def priority_completed(self, priority):
+        options = self.heat_network_options()
+
+        # The head loss mixin wants to do some check for the head loss
+        # minimization priority that involves the diameter/area. We assume
+        # that we're sort of done minimizing/choosing the pipe diameter, and
+        # that we can set the parameters to the optimized values.
+        if (
+            options["minimize_head_losses"]
+            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            and priority == self._hn_minimization_goal_class.priority
+        ):
+            self.__pipe_diameter_to_parameters()
+
+        super().priority_completed(priority)
+
     def post(self):
         super().post()
+
+        self.__pipe_diameter_to_parameters()
 
         results = self.extract_results()
         parameters = self.parameters(0)
@@ -1073,6 +1476,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 hot_pipe = p
             area = parameters[f"{p}.area"]
+
+            if area == 0.0:
+                continue
+
             q = results[f"{p}.Q"]
             q_w_error_margin = q + 1e-5 * np.sign(q) * self.variable_nominal(f"{p}.Q")
             v = q_w_error_margin / area
@@ -1092,6 +1499,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             assert np.all(np.abs(q[inds_disconnected]) / self.variable_nominal(f"{p}.Q") <= 1e-5)
 
         for p in self.hot_pipes:
+            if parameters[f"{p}.diameter"] == 0.0:
+                continue
+
             heat_in = results[f"{p}.HeatIn.Heat"]
             heat_out = results[f"{p}.HeatOut.Heat"]
             inds = np.abs(heat_out) > np.abs(heat_in)

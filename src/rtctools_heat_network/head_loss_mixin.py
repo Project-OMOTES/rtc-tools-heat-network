@@ -15,6 +15,7 @@ import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
 
 from .constants import GRAVITATIONAL_CONSTANT
+from .pipe_class import PipeClass
 
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -273,11 +274,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             ):
                 self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
             else:
-                area = parameters[f"{p}.area"]
-                q_nominal = np.array([area * options["estimated_velocity"]])
-                q_max = np.array([area * options["maximum_velocity"]])
-                head_loss_nominal = self._hn_pipe_head_loss(p, options, parameters, q_nominal)[0]
-                head_loss_max = self._hn_pipe_head_loss(p, options, parameters, q_max)[0]
+                q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
+                head_loss_nominal = self._hn_pipe_head_loss(p, options, parameters, q_nominal)
 
                 self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
 
@@ -289,7 +287,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
 
                 self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
-                self.__pipe_head_loss_bounds[head_loss_var] = (0.0, head_loss_max)
+                self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
+
+    def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+        return parameters[f"{pipe}.area"] * heat_network_options["estimated_velocity"]
 
     def _hn_pipe_head_loss(
         self,
@@ -301,6 +302,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         dh: Optional[ca.MX] = None,
         is_disconnected: Union[ca.MX, int] = 0,
         big_m: Optional[float] = None,
+        pipe_class: Optional[PipeClass] = None,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
         This function has two purposes:
@@ -368,12 +370,18 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         else:
             assert big_m != 0.0
 
-        maximum_velocity = heat_network_options["maximum_velocity"]
         estimated_velocity = heat_network_options["estimated_velocity"]
         wall_roughness = heat_network_options["wall_roughness"]
 
-        diameter = parameters[f"{pipe}.diameter"]
-        area = parameters[f"{pipe}.area"]
+        if pipe_class is not None:
+            diameter = pipe_class.inner_diameter
+            area = pipe_class.area
+            maximum_velocity = pipe_class.maximum_velocity
+        else:
+            diameter = parameters[f"{pipe}.diameter"]
+            area = parameters[f"{pipe}.area"]
+            maximum_velocity = heat_network_options["maximum_velocity"]
+
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
@@ -623,6 +631,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                         inds = q_full != 0.0
                     else:
                         inds = np.arange(len(q_full), dtype=int)
+
+                    if parameters[f"{pipe}.diameter"] == 0.0:
+                        # Pipe is disconnected. Head loss is free, so nothing to check.
+                        continue
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._hn_pipe_head_loss(pipe, options, parameters, q, None)
