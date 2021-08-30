@@ -278,10 +278,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         pipe: str,
         heat_network_options,
         parameters,
-        discharge: Union[ca.MX, np.ndarray],
+        discharge: Union[ca.MX, float, np.ndarray],
         head_loss: Optional[ca.MX] = None,
         dh: Optional[ca.MX] = None,
-    ) -> Union[List[Tuple[ca.MX, BT, BT]], np.ndarray]:
+    ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
         This function has two purposes:
         - return the head loss constraint expression(s) or
@@ -424,7 +424,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                     )
                 ]
             else:
-                return np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
+                ret = np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
+                if isinstance(discharge, float):
+                    ret = ret[0]
+                return ret
 
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
         constraints = []
