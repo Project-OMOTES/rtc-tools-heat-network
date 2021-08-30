@@ -48,3 +48,25 @@ class TestHeadLossCalculation(TestCase):
             ret = m._hn_pipe_head_loss("pipe_hot", options, parameters, np.array([0.05, 0.1, 0.2]))
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 3)
+
+
+class TestHeadLossOptions(TestCase):
+    def test_no_head_loss_mixing_options(self):
+        import models.basic_source_and_demand.src.heat_comparison as heat_comparison
+        from models.basic_source_and_demand.src.heat_comparison import HeatPython
+
+        base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+
+        class Model(HeatPython):
+            def heat_network_options(self):
+                options = super().heat_network_options()
+                options["head_loss_option"] = HeadLossOption.LINEAR
+                return options
+
+            def _hn_get_pipe_head_loss_option(self, *args, **kwargs):
+                return HeadLossOption.NO_HEADLOSS
+
+        with self.assertRaisesRegex(
+            Exception, "Mixing .NO_HEADLOSS with other head loss options is not allowed"
+        ):
+            run_optimization_problem(Model, base_folder=base_folder)

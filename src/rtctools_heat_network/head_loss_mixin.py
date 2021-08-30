@@ -95,6 +95,24 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         self.__initialize_nominals_and_bounds()
 
+        options = self.heat_network_options()
+        parameters = self.parameters(0)
+
+        # It is not allowed to mix NO_HEADLOSS with other head loss options as
+        # that just leads to weird and undefined behavior.
+        head_loss_values = {
+            options["head_loss_option"],
+        }
+        for p in self.heat_network_components["pipe"]:
+            head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
+
+        if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
+            raise Exception(
+                "Mixing .NO_HEADLOSS with other head loss options is not allowed. "
+                "Either all pipes should have .NO_HEADLOSS set, or none. "
+                "The global value returned by heat_network_options() also need to match."
+            )
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
