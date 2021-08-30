@@ -6,7 +6,7 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 
-class TestDoublePipeHeat(TestCase):
+class TestHeat(TestCase):
     def test_heat_loss(self):
         import models.double_pipe_heat.src.double_pipe_heat as double_pipe_heat
         from models.double_pipe_heat.src.double_pipe_heat import DoublePipeEqualHeat
@@ -22,6 +22,25 @@ class TestDoublePipeHeat(TestCase):
         # With non-zero heat losses in pipes, the demand should always be
         # strictly lower than what is produced.
         np.testing.assert_array_less(demand, source)
+
+    def test_zero_heat_loss(self):
+
+        import models.basic_source_and_demand.src.heat_comparison as heat_comparison
+        from models.basic_source_and_demand.src.heat_comparison import HeatPython
+
+        class Model(HeatPython):
+            def parameters(self, ensemble_member):
+                parameters = super().parameters(ensemble_member)
+
+                for pipe in self.heat_network_components["pipe"]:
+                    assert f"{pipe}.Heat_loss" in parameters
+                    parameters[f"{pipe}.Heat_loss"] = 0.0
+
+                return parameters
+
+        base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+
+        run_optimization_problem(Model, base_folder=base_folder)
 
 
 class TestMinMaxPressureOptions(TestCase):

@@ -666,6 +666,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             scaled_heat_in = self.state(f"{p}.HeatIn.Heat") * heat_to_discharge_fac
             scaled_heat_out = self.state(f"{p}.HeatOut.Heat") * heat_to_discharge_fac
             pipe_q = self.state(f"{p}.Q")
+            q_nominal = self.variable_nominal(f"{p}.Q")
 
             # We do not want Big M to be too tight in this case, as it results
             # in a rather hard yes/no constraint as far as feasibility on e.g.
@@ -674,8 +675,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             big_m = 2 * sum_heat_losses * heat_to_discharge_fac
 
             for heat in (scaled_heat_in, scaled_heat_out):
-                constraints.append(((heat - pipe_q + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
-                constraints.append(((heat - pipe_q - big_m * flow_dir) / big_m, -np.inf, 0.0))
+                if sum_heat_losses == 0:
+                    constraints.append(((heat - pipe_q) / q_nominal, 0.0, 0.0))
+                else:
+                    assert big_m > 0.0
+                    constraints.append(
+                        ((heat - pipe_q + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf)
+                    )
+                    constraints.append(((heat - pipe_q - big_m * flow_dir) / big_m, -np.inf, 0.0))
 
         return constraints
 
