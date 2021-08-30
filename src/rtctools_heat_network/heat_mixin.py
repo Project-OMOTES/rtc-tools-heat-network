@@ -280,6 +280,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options = self.heat_network_options()
         components = self.heat_network_components
 
+        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+            # Undefined, and all constraints using this methods value should
+            # be skipped.
+            return np.nan
+
         # Summing head loss in pipes
         max_sum_dh_pipes = 0.0
 
@@ -854,7 +859,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Note that the Q >= 0 and dH >= 0 constraints are part of the bounds.
             constraints.append((q - status * maximum_discharge, -np.inf, 0.0))
 
-            constraints.append((dh - (1 - status) * maximum_head_loss, -np.inf, 0.0))
+            if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+                constraints.append((dh - (1 - status) * maximum_head_loss, -np.inf, 0.0))
 
         return constraints
 
@@ -889,8 +895,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append((q + (1 - flow_dir) * maximum_discharge, 0.0, np.inf))
             constraints.append((q - flow_dir * maximum_discharge, -np.inf, 0.0))
 
-            constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
-            constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
+            if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+                constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
+                constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
 
         return constraints
 
