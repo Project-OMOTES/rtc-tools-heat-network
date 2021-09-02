@@ -144,6 +144,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         +--------------------------------------+-----------+-----------------------------+
         | ``maximum_flow_der``                 | ``float`` | ``np.inf`` m3/s/hour        |
         +--------------------------------------+-----------+-----------------------------+
+        | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
         | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
         +--------------------------------------+-----------+-----------------------------+
         | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
@@ -157,6 +159,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constrain the maximum heat change per hour allowed in the entire
         network. Note the unit for flow is m3/s, but the change is expressed
         on an hourly basis leading to the ``m3/s/hour`` unit.
+
+        The ``neglect_pipe_heat_losses`` option sets the heat loss in pipes to
+        zero. This can be useful when the insulation properties are unknown.
+        Note that other components can still have heat loss, e.g. a buffer.
 
         The ``minimum_velocity`` is the minimum absolute value of the velocity
         in every pipe. It is mostly an option to improve the stability of the
@@ -174,6 +180,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["minimum_pressure_far_point"] = 1.0
         options["maximum_temperature_der"] = 2.0
         options["maximum_flow_der"] = np.inf
+        options["neglect_pipe_heat_losses"] = False
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
@@ -211,6 +218,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
+        options = self.heat_network_options()
 
         # Compute the heat loss of each pipe
         # The heat losses have three components:
@@ -222,6 +230,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # heat that is absorbed by the return line. Note that the term dtemp is
         # positive when the pipe is in the supply line and negative otherwise.
         for p in self.heat_network_components["pipe"]:
+            if options["neglect_pipe_heat_losses"]:
+                parameters[f"{p}.Heat_loss"] = 0.0
+                continue
+
             u_kwargs = {
                 "inner_diameter": parameters[f"{p}.diameter"],
                 "insulation_thicknesses": parameters[f"{p}.insulation_thickness"],
