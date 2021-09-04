@@ -12,6 +12,6 @@ def test_examples(example):
     example_name = example.parent.parent.name
     env = sys.executable
     try:
-        subprocess.check_output([env, example])
+        subprocess.check_output([env, str(example)])
     except Exception:
         pytest.fail(f"Running example '{example_name}' failed")
