@@ -1,4 +1,5 @@
 import logging
+from enum import IntEnum
 from math import isfinite
 from typing import Dict
 
@@ -45,6 +46,17 @@ class _MinimizeHeadLosses(_MinimizeHeadLossesBase):
         return (theta < 1.0) or (not other_goals)
 
 
+class DemandTemperatureOption(IntEnum):
+    """
+    Enumeration for the possible options to describe the temperature drop
+    and/or return temperature at demands.
+    """
+
+    FREE = 0
+    FIXED_DT = 1
+    MIN_RETURN_MAX_DT = 2
+
+
 class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
     Adds handling of QTH heat network objects in your model to your
@@ -87,9 +99,11 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             raise Exception("Class needs to inherit from HomotopyMixin")
 
         self.__flow_direction_bounds = None
+        self.__demand_temperature_bounds = None
 
     def pre(self):
         self.__flow_direction_bounds = None
+        self.__demand_temperature_bounds = None
         self.__temperature_pipe_theta_zero = None
 
         super().pre()
@@ -102,15 +116,17 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         r"""
         Returns a dictionary of heat network specific options.
 
-        +--------------------------------+-----------+-----------------------------------+
-        | Option                         | Type      | Default value                     |
-        +================================+===========+===================================+
-        | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour                   |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                          |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``minimum_velocity``           | ``float`` | ``0.005`` m/s                     |
-        +--------------------------------+-----------+-----------------------------------+
+        +--------------------------------+-----------+--------------------------------------+
+        | Option                         | Type      | Default value                        |
+        +================================+===========+======================================+
+        | ``maximum_temperature_der``    | ``float`` | ``2.0`` °C/hour                      |
+        +--------------------------------+-----------+--------------------------------------+
+        | ``max_t_der_bidirect_pipe``    | ``bool``  | ``True``                             |
+        +--------------------------------+-----------+--------------------------------------+
+        | ``minimum_velocity``           | ``float`` | ``0.005`` m/s                        |
+        +--------------------------------+-----------+--------------------------------------+
+        | ``demand_temperature_option``  | ``bool``  | ``DemandTemperatureOption.FIXED_DT`` |
+        +--------------------------------+-----------+--------------------------------------+
 
         The ``maximum_temperature_der`` is the maximum temperature change
         allowed in the network. It is expressed in °C per hour. Note that this
@@ -126,6 +142,23 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         in every pipe. It is mostly an option to improve the stability of the
         solver: the default value of `0.005` m/s helps the solver by avoiding
         the difficult case where discharges get close to zero.
+
+        The ``demand_temperature_option`` option controls what the temperature
+        drop and/or the return temperature of each demand is.
+
+        When ``DemandTemperatureOption.FIXED_DT`` is used (default), the
+        temperature drop over each demand is fixed to its `<demand>.dT`
+        parameter value. In other words, if the supply temperature drops, so
+        does the return temperature.
+
+        When ``DemandTemperatureOption.MIN_RETURN_MAX_DT`` is used, the return
+        temperature is required to be at least its `<demand.T_return>`
+        parameter value. The temperature drop can be at most `<demand>.dT`,
+        but is allowed to be lower.
+
+        When ``DemandTemperatureOption.FREE`` is used, no relationship is
+        enforced. It is then up to the user to enforce a relationship on a
+        demand's temperature drop, return and/or supply temperature.
         """
 
         options = super().heat_network_options()
@@ -133,6 +166,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         options["maximum_temperature_der"] = 2.0
         options["max_t_der_bidirect_pipe"] = True
         options["minimum_velocity"] = 0.005
+        options["demand_temperature_option"] = DemandTemperatureOption.FIXED_DT
 
         return options
 
@@ -817,6 +851,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         components = self.heat_network_components
         parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
         if theta > 0.0:
@@ -825,8 +860,18 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # of the cold/hot line are constant.
             for d in components["demand"]:
                 dt = parameters[d + ".dT"]
+
+                t_option = options["demand_temperature_option"]
+
+                if t_option == DemandTemperatureOption.FIXED_DT:
+                    lb, ub = dt, dt
+                elif t_option == DemandTemperatureOption.MIN_RETURN_MAX_DT:
+                    lb, ub = 0.0, dt
+                else:
+                    continue
+
                 constraints.append(
-                    (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), dt, dt)
+                    (self.state(d + ".QTHIn.T") - self.state(d + ".QTHOut.T"), lb, ub)
                 )
 
         return constraints
@@ -874,6 +919,27 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             )
 
         return interpolated_flow_dir_values
+
+    def __update_demand_return_bounds(self, ensemble_member):
+        options = self.heat_network_options()
+
+        if options["demand_temperature_option"] != DemandTemperatureOption.MIN_RETURN_MAX_DT:
+            return
+
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+
+        updated_bounds = {}
+
+        for d in self.heat_network_components["demand"]:
+            lb = parameters[f"{d}.T_return"]
+            key = f"{d}.QTHOut.T"
+            updated_bounds[key] = self.merge_bounds(bounds[key], (lb, np.inf))
+
+        if self.__demand_temperature_bounds is None:
+            self.__demand_temperature_bounds = [{} for _ in range(self.ensemble_size)]
+
+        self.__demand_temperature_bounds[ensemble_member] = updated_bounds.copy()
 
     def __update_flow_direction_bounds(self, ensemble_member):
         times = self.times()
@@ -975,6 +1041,10 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # TODO: Per ensemble member
             bounds.update(self.__flow_direction_bounds[0])
 
+        if self.__demand_temperature_bounds is not None:
+            # TODO: Per ensemble member
+            bounds.update(self.__demand_temperature_bounds[0])
+
         # Set the temperature of the pipes in the linear problem
         if theta == 0.0:
             bounds.update(self.__temperature_pipe_theta_zero)
@@ -1012,9 +1082,12 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     def transcribe(self):
         self.__start_transcribe_checks()
 
-        # Update flow direction bounds
         for e in range(self.ensemble_size):
+            # Update flow direction bounds
             self.__update_flow_direction_bounds(e)
+
+            # Update return temperature bounds
+            self.__update_demand_return_bounds(e)
 
         discrete, lbx, ubx, lbg, ubg, x0, nlp = super().transcribe()
 

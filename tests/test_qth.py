@@ -239,3 +239,44 @@ class TestHeadLossEqualities(TestCase):
         # quadratic and linear formulations to have the same result.
         np.testing.assert_allclose(linear_q_1, quadratic_q_1)
         np.testing.assert_allclose(linear_q_2, quadratic_q_2)
+
+
+class TestDemandTemperatureOptions(TestCase):
+    def test_demand_temperature_options(self):
+        import models.basic_source_and_demand.src.qth_minimize_temperatures as qth_minimize_temperatures  # noqa: E501
+        from models.basic_source_and_demand.src.qth_minimize_temperatures import (
+            QTHFixedDeltaTemperature,
+            QTHMinReturnMaxDeltaT,
+        )
+
+        base_folder = Path(qth_minimize_temperatures.__file__).resolve().parent.parent
+
+        fixed_dt = run_optimization_problem(QTHFixedDeltaTemperature, base_folder=base_folder)
+        min_return_max_dt = run_optimization_problem(QTHMinReturnMaxDeltaT, base_folder=base_folder)
+
+        results_fixed_dt = fixed_dt.extract_results()
+        results_min_return_max_dt = min_return_max_dt.extract_results()
+
+        eps = 1e-4
+
+        # Check that the minimum supply temperature is met.
+        demand_tin_fixed_dt = results_fixed_dt["demand.QTHIn.T"]
+        demand_tin_min_return_max_dt = results_min_return_max_dt["demand.QTHIn.T"]
+
+        np.testing.assert_array_less(70.0 - eps, demand_tin_fixed_dt)
+        np.testing.assert_array_less(70.0 - eps, demand_tin_min_return_max_dt)
+
+        # Check that the minimum return temperature is matched for the
+        # MIN_RETURN_MAX_DT case.
+        demand_tout_fixed_dt = results_fixed_dt["demand.QTHOut.T"]
+        demand_tout_min_return_max_dt = results_min_return_max_dt["demand.QTHOut.T"]
+
+        np.testing.assert_array_less(45.0 - eps, demand_tout_min_return_max_dt)
+
+        # Check that the dT is either exactly, or at most 30.0 depending on
+        # the option.
+        demand_dt_fixed_dt = demand_tin_fixed_dt - demand_tout_fixed_dt
+        demand_dt_min_return_max_dt = demand_tin_min_return_max_dt - demand_tout_min_return_max_dt
+
+        np.testing.assert_allclose(demand_dt_fixed_dt, 30.0, atol=eps)
+        np.testing.assert_array_less(demand_dt_min_return_max_dt, 30.0 + eps)
