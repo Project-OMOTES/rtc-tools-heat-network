@@ -142,10 +142,6 @@ class QTHLoopMixin(QTHMixin):
 
         return options
 
-    def read(self):
-        super().read()
-        self.__n_times = len(super().times())
-
     def times(self, variable=None):
         times = super().times(variable)
         if self.__expose_all_results:
@@ -329,6 +325,8 @@ class QTHLoopMixin(QTHMixin):
 
         if preprocessing:
             self.pre()
+
+        self.__n_times = len(super().times())
 
         self.__check_goals()
 
