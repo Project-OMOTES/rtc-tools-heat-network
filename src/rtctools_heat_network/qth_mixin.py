@@ -84,7 +84,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         if not isinstance(self, HomotopyMixin):
             # Note that we inherit ourselves, as there is a certain in which
             # inheritance is required.
-            raise Exception("Class needs inherit from HomotopyMixin")
+            raise Exception("Class needs to inherit from HomotopyMixin")
 
         self.__flow_direction_bounds = None
 
