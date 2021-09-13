@@ -806,16 +806,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 self.__pipe_to_flow_direct_map[hot_pipe], ensemble_member
             )
 
+            # Note that the Big-M should _at least_ cover the maximum
+            # distance between `head_loss` and `dh`. If `head_loss` can be at
+            # most 1.0 (= `max_head_loss`), that means our Big-M should be at
+            # least double (i.e. >= 2.0). And because we do not want Big-Ms to
+            # be overly tight, we include an additional factor of 2.
+            big_m = 2 * 2 * max_head_loss
+
             constraints.append(
                 (
-                    (-dh - head_loss + (1 - flow_dir) * max_head_loss) / max_head_loss,
+                    (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
                     0.0,
                     np.inf,
                 )
             )
-            constraints.append(
-                ((dh - head_loss + flow_dir * max_head_loss) / max_head_loss, 0.0, np.inf)
-            )
+            constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
 
         return constraints
 
