@@ -496,6 +496,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
                 head_loss_vec = ca.repmat(head_loss, len(a))
                 discharge_vec = ca.repmat(discharge, len(a))
+                if isinstance(is_disconnected, ca.MX):
+                    is_disconnected_vec = ca.repmat(is_disconnected, len(a))
+                else:
+                    is_disconnected_vec = is_disconnected
 
                 a_vec = np.repeat(a, discharge.size1())
                 b_vec = np.repeat(b, discharge.size1())
@@ -514,7 +518,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                         (
                             head_loss_vec
                             - (a_vec * discharge_vec + b_vec)
-                            + is_disconnected * big_m_lin
+                            + is_disconnected_vec * big_m_lin
                         )
                         / constraint_nominal,
                         0.0,

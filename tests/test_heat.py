@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.head_loss_mixin import HeadLossOption
+
 
 class TestHeat(TestCase):
     def test_heat_loss(self):
@@ -213,3 +215,29 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertGreater(heat_disconnected[1], 0.0)
         self.assertEqual(heat_disconnected_no_heat_loss[1], 0.0)
+
+    class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
+        def heat_network_options(self):
+            options = super().heat_network_options()
+            options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+            return options
+
+    def test_disconnected_pipe_darcy_weisbach(self):
+        """
+        Just a sanity check that the head loss constraints for disconnectable
+        pipes works with LINEAR as well as LINEARIZED_DW.
+        """
+
+        case_linear = run_optimization_problem(self.ModelDisconnected, base_folder=self.base_folder)
+        results_linear = case_linear.extract_results()
+        q_linear = results_linear["pipe_hot.Q"]
+
+        case_dw = run_optimization_problem(
+            self.ModelDisconnectedDarcyWeisbach, base_folder=self.base_folder
+        )
+        results_dw = case_dw.extract_results()
+        q_dw = results_dw["pipe_hot.Q"]
+
+        # Without any constraints on the maximum or minimum head/pressure
+        # (loss) in the system, we expect equal results.
+        np.testing.assert_allclose(q_linear, q_dw)
