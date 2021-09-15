@@ -171,6 +171,12 @@ class TestDisconnectablePipe(TestCase):
 
             return constraints
 
+    class ModelDisconnectedNoHeatLoss(ModelDisconnected):
+        def heat_network_options(self):
+            options = super().heat_network_options()
+            options["heat_loss_disconnected_pipe"] = False
+            return options
+
     def test_disconnected_network_pipe(self):
         case_connected = run_optimization_problem(self.ModelConnected, base_folder=self.base_folder)
         results_connected = case_connected.extract_results()
@@ -191,3 +197,19 @@ class TestDisconnectablePipe(TestCase):
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
+
+    def test_disconnected_network_pipe_no_heat_loss(self):
+        case_disconnected = run_optimization_problem(
+            self.ModelDisconnected, base_folder=self.base_folder
+        )
+        results_disconnected = case_disconnected.extract_results()
+        heat_disconnected = results_disconnected["pipe_hot.HeatIn.Heat"]
+
+        case_disconnected_no_heat_loss = run_optimization_problem(
+            self.ModelDisconnectedNoHeatLoss, base_folder=self.base_folder
+        )
+        results_disconnected_no_heat_loss = case_disconnected_no_heat_loss.extract_results()
+        heat_disconnected_no_heat_loss = results_disconnected_no_heat_loss["pipe_hot.HeatIn.Heat"]
+
+        self.assertGreater(heat_disconnected[1], 0.0)
+        self.assertEqual(heat_disconnected_no_heat_loss[1], 0.0)

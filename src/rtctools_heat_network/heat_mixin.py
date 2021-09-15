@@ -52,7 +52,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def pre(self):
         super().pre()
 
-        options = self.heat_network_options()
         parameters = self.parameters(0)
 
         def _get_max_bound(bound):
@@ -101,7 +100,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
-            if options["minimum_velocity"] > 0.0 and parameters[f"{p}.disconnectable"]:
+            if parameters[f"{p}.disconnectable"]:
                 disconnected_var = f"{p}__is_disconnected"
 
                 self.__pipe_disconnect_map[p] = disconnected_var
@@ -146,6 +145,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         +--------------------------------------+-----------+-----------------------------+
         | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
+        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
+        +--------------------------------------+-----------+-----------------------------+
         | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
         +--------------------------------------+-----------+-----------------------------+
         | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
@@ -159,6 +160,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constrain the maximum heat change per hour allowed in the entire
         network. Note the unit for flow is m3/s, but the change is expressed
         on an hourly basis leading to the ``m3/s/hour`` unit.
+
+        The ``heat_loss_disconnected_pipe`` option decides whether a
+        disconnectable pipe has heat loss or not when it is disconnected on
+        that particular time step. By default, a pipe has heat loss even if
+        it is disconnected, as it would still contain relatively hot water in
+        reality. We also do not want minimization of heat production to lead
+        to overly disconnecting pipes. In some scenarios it is hydraulically
+        impossible to supply heat to these disconnected pipes (Q is forced to
+        zero), in which case this option can be set to ``False``.
 
         The ``neglect_pipe_heat_losses`` option sets the heat loss in pipes to
         zero. This can be useful when the insulation properties are unknown.
@@ -181,6 +191,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["maximum_temperature_der"] = 2.0
         options["maximum_flow_der"] = np.inf
         options["neglect_pipe_heat_losses"] = False
+        options["heat_loss_disconnected_pipe"] = True
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
@@ -462,6 +473,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def __heat_loss_path_constraints(self, ensemble_member):
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
 
         for p in self.cold_pipes:
             heat_in = self.state(f"{p}.HeatIn.Heat")
@@ -477,8 +489,28 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_in = self.state(f"{p}.HeatIn.Heat")
             heat_out = self.state(f"{p}.HeatOut.Heat")
 
-            # Heat loss constraint
-            constraints.append(((heat_in - heat_out - heat_loss) / heat_nominal, 0.0, 0.0))
+            # Heat loss constraints.
+            if options["heat_loss_disconnected_pipe"]:
+                constraints.append(((heat_in - heat_out - heat_loss) / heat_nominal, 0.0, 0.0))
+            else:
+                # Force heat loss to `heat_loss` when pipe is connected, and zero otherwise.
+                is_disconnected_var = self.__pipe_disconnect_map.get(p)
+
+                if is_disconnected_var is None:
+                    is_disconnected = 0.0
+                else:
+                    is_disconnected = self.state(is_disconnected_var)
+
+                constraint_nominal = (heat_loss * heat_nominal) ** 0.5
+
+                constraints.append(
+                    (
+                        (heat_in - heat_out - heat_loss * (1 - is_disconnected))
+                        / constraint_nominal,
+                        0.0,
+                        0.0,
+                    )
+                )
 
         return constraints
 
@@ -529,6 +561,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # its heat losses.
             constraints.append(((heat_out - big_m * flow_dir) / big_m, -np.inf, 0.0))
             constraints.append(((heat_out + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
+
+            if not options["heat_loss_disconnected_pipe"]:
+                # If this pipe is disconnected, the heat should be zero
+                is_disconnected_var = self.__pipe_disconnect_map.get(p)
+
+                if is_disconnected_var is not None:
+                    is_disconnected = self.state(is_disconnected_var)
+                    is_conn = 1 - is_disconnected
+
+                    # Note that big_m should now cover the range from [-max, max],
+                    # so we need to double it.
+                    big_m_dbl = 2 * big_m
+                    for heat in [heat_in, heat_out]:
+                        constraints.append(((heat + big_m_dbl * is_conn) / big_m_dbl, 0.0, np.inf))
+                        constraints.append(((heat - big_m_dbl * is_conn) / big_m_dbl, -np.inf, 0.0))
 
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
@@ -1054,4 +1101,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             flow_dir_var = np.round(results[self.__pipe_to_flow_direct_map[p]])
 
-            assert np.all(np.sign(heat) == 2 * flow_dir_var - 1)
+            if options["heat_loss_disconnected_pipe"]:
+                np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
+            else:
+                try:
+                    is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
+                except KeyError:
+                    is_disconnected = np.zeros_like(heat_in)
+
+                inds_disconnected = is_disconnected == 1
+
+                np.testing.assert_array_equal(heat[inds_disconnected], 0.0)
+
+                np.testing.assert_array_equal(
+                    np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1
+                )
