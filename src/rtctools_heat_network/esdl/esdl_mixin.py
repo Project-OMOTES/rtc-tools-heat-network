@@ -4,6 +4,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Union
 
+import numpy as np
+
 from pyecore.resources import ResourceSet
 
 import rtctools.data.pi as pi
@@ -39,6 +41,8 @@ class ESDLMixin(
     esdl_pi_input_data_config = None
     esdl_pi_output_data_config = None
 
+    __max_supply_temperature = None
+
     def __init__(self, *args, **kwargs):
 
         if not self.esdl_run_info_path:
@@ -63,6 +67,24 @@ class ESDLMixin(
             self.__model = ESDLHeatModel(assets, **self.esdl_heat_model_options())
         else:
             assert isinstance(self, QTHMixin)
+
+            # Maximum supply temperature is very network dependent, so it is
+            # hard to choose a default. Therefore, we look at the global
+            # properties instead and add 10 degrees on top.
+            global_supply_temperatures = [
+                c["supplyTemperature"]
+                for a in assets.values()
+                for c in a.global_properties["carriers"].values()
+            ]
+            max_global_supply = max(x for x in global_supply_temperatures if np.isfinite(x))
+
+            attribute_temperatures = [
+                a.attributes.get("maxTemperature", -np.inf) for a in assets.values()
+            ]
+            max_attribute = max(x for x in attribute_temperatures if np.isfinite(x))
+
+            self.__max_supply_temperature = max(max_global_supply, max_attribute) + 10.0
+
             self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
 
         root_logger = logging.getLogger("")
@@ -106,9 +128,12 @@ class ESDLMixin(
 
     def esdl_qth_model_options(self) -> Dict:
         heat_network_options = self.heat_network_options()
-        v_nominal = heat_network_options["estimated_velocity"]
-        v_max = heat_network_options["maximum_velocity"]
-        return dict(v_nominal=v_nominal, v_max=v_max)
+        kwargs = {}
+        kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
+        kwargs["v_max"] = heat_network_options["maximum_velocity"]
+        if self.__max_supply_temperature is not None:
+            kwargs["maximum_temperature"] = self.__max_supply_temperature
+        return dict(**kwargs)
 
     def is_hot_pipe(self, pipe: str) -> bool:
         return not self.is_cold_pipe(pipe)
