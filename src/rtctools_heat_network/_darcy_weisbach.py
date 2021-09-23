@@ -77,7 +77,7 @@ def friction_factor(velocity, diameter, wall_roughness, temperature):
 
     assert velocity >= 0
 
-    if velocity == 0.0:
+    if velocity == 0.0 or diameter == 0.0:
         return 0.0
     elif reynolds <= 2000.0:
         friction_factor = 64.0 / reynolds
