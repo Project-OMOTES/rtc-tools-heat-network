@@ -6,6 +6,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.util import run_heat_network_optimization
+
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -280,3 +282,27 @@ class TestDemandTemperatureOptions(TestCase):
 
         np.testing.assert_allclose(demand_dt_fixed_dt, 30.0, atol=eps)
         np.testing.assert_array_less(demand_dt_min_return_max_dt, 30.0 + eps)
+
+
+class TestSourcesEqualTemperature(TestCase):
+    def test_sources_equal_temperature(self):
+        import models.unit_cases.case_2a.src.equal_temperatures as equal_temperatures
+        from models.unit_cases.case_2a.src.equal_temperatures import (
+            HeatProblem,
+            QTHEqualTempSources,
+        )
+
+        base_folder = Path(equal_temperatures.__file__).resolve().parent.parent
+
+        equal_temperatures = run_heat_network_optimization(
+            HeatProblem, QTHEqualTempSources, base_folder=base_folder
+        )
+        results_eq_temp = equal_temperatures[1].extract_results()
+
+        eps = 1e-4
+
+        # Check that sources operate at the same temperature
+        source1_temp = results_eq_temp["GeothermalSource_fafd.QTHOut.T"]
+        source2_temp = results_eq_temp["GeothermalSource_27cb.QTHOut.T"]
+
+        np.testing.assert_allclose(source1_temp, source2_temp, atol=eps)

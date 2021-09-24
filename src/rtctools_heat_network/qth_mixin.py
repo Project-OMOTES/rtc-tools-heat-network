@@ -125,6 +125,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         +--------------------------------+-----------+--------------------------------------+
         | ``minimum_velocity``           | ``float`` | ``0.005`` m/s                        |
         +--------------------------------+-----------+--------------------------------------+
+        | ``sources_equal_output_temp``  | ``bool``  | ``False``                            |
+        +--------------------------------+-----------+--------------------------------------+
         | ``demand_temperature_option``  | ``bool``  | ``DemandTemperatureOption.FIXED_DT`` |
         +--------------------------------+-----------+--------------------------------------+
 
@@ -142,6 +144,11 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         in every pipe. It is mostly an option to improve the stability of the
         solver: the default value of `0.005` m/s helps the solver by avoiding
         the difficult case where discharges get close to zero.
+
+        When the flag ``sources_equal_output_temp`` is set to True, all the
+        sources in the network are forced to have the same output temperature.
+        When it is False, the default, each source can operate its temperature
+        independently from each other.
 
         The ``demand_temperature_option`` option controls what the temperature
         drop and/or the return temperature of each demand is.
@@ -166,6 +173,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         options["maximum_temperature_der"] = 2.0
         options["max_t_der_bidirect_pipe"] = True
         options["minimum_velocity"] = 0.005
+        options["sources_equal_output_temp"] = False
         options["demand_temperature_option"] = DemandTemperatureOption.FIXED_DT
 
         return options
@@ -203,6 +211,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
     def __check_source_temperature(self):
         bounds = self.bounds()
+        options = self.heat_network_options()
         components = self.heat_network_components
         sources = components.get("source", [])
         demands = components.get("demand", [])
@@ -213,17 +222,39 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             if np.isscalar(min_temp):
                 min_temp_demands = min(min_temp_demands, min_temp)
 
-        max_temp_sources = -np.inf
+        list_max_temp_sources = []
+        list_min_temp_sources = []
         for s in sources:
             max_temp = bounds[s + ".QTHOut.T"][1]
+            min_temp = bounds[s + ".QTHOut.T"][0]
             if np.isscalar(max_temp):
-                max_temp_sources = max(max_temp_sources, max_temp)
+                list_max_temp_sources.append(max_temp)
+            if np.isscalar(min_temp):
+                list_min_temp_sources.append(min_temp)
+        if len(list_max_temp_sources) > 0:
+            max_temp_sources = max(list_max_temp_sources)
+            max_temp_sources_minimum = min(list_max_temp_sources)
+        else:
+            max_temp_sources = -np.inf
+            max_temp_sources_minimum = -np.inf
+
+        if len(list_min_temp_sources) > 0:
+            min_temp_sources_maximum = max(list_min_temp_sources)
+        else:
+            min_temp_sources_maximum = -np.inf
 
         if max_temp_sources < min_temp_demands:
             raise Exception(
                 "Maximum temperature of a source must be larger"
                 " than the minimum temperature of any demand"
             )
+
+        if options["sources_equal_output_temp"]:
+            if max_temp_sources_minimum < min_temp_sources_maximum:
+                raise Exception(
+                    "The sources cannot operate at the same temperature. Check the sources output"
+                    " temperature bounds or disable the ``sources_equal_output_temp`` option."
+                )
 
     def __check_buffer_values(self):
         parameters = self.parameters(0)
@@ -854,10 +885,25 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         options = self.heat_network_options()
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
 
+        # Add temperature constraints on sources/demands. Note that such
+        # constraints are trivially satisfied at theta = 0.0 as the temperature
+        # are constants then.
         if theta > 0.0:
-            # Fix dT at demand nodes otherwise
-            # Note that for theta == 0.0, this is trivially satisfied as the temperature
-            # of the cold/hot line are constant.
+
+            # Fix sources output temperatures
+            if options["sources_equal_output_temp"]:
+                sources = self.heat_network_components["source"]
+                if len(sources) > 1:
+                    for s in sources[1:]:
+                        constraints.append(
+                            (
+                                self.state(f"{s}.QTHOut.T") - self.state(f"{sources[0]}.QTHOut.T"),
+                                0.0,
+                                0.0,
+                            )
+                        )
+
+            # Fix dT at demand nodes
             for d in components["demand"]:
                 dt = parameters[d + ".dT"]
 
