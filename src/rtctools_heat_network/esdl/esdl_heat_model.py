@@ -158,7 +158,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             length=asset.attributes["length"],
             diameter=diameter,
             temperature=temperature,
-            disconnectable=self._is_buffer_pipe(asset),
+            disconnectable=self._is_disconnectable_pipe(asset),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max, nominal=hfr_nominal),
                 Q=dict(min=-q_max, max=q_max),

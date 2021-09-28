@@ -44,7 +44,8 @@ class _AssetToComponentBase:
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
 
-    def _is_buffer_pipe(self, asset):
+    def _is_disconnectable_pipe(self, asset):
+        # Source and buffer pipes are disconnectable by default
         connected_type_in = self._port_to_esdl_component_type.get(
             asset.in_port.connectedTo[0], None
         )
@@ -52,11 +53,14 @@ class _AssetToComponentBase:
             asset.out_port.connectedTo[0], None
         )
 
-        if "HeatStorage" in {connected_type_in, connected_type_out}:
+        types = {k for k, v in self.component_map.items() if v in {"source", "buffer"}}
+
+        if types.intersection({connected_type_in, connected_type_out}):
             return True
         elif connected_type_in is None or connected_type_out is None:
             raise _RetryLaterException(
-                f"Could not determine if {asset.asset_type} '{asset.name}' is a buffer pipe"
+                f"Could not determine if {asset.asset_type} '{asset.name}' "
+                f"is a source or buffer pipe"
             )
         else:
             return False

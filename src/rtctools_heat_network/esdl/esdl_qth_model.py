@@ -190,7 +190,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             length=asset.attributes["length"],
             diameter=diameter,
             temperature=temperature,
-            disconnectable=self._is_buffer_pipe(asset),
+            disconnectable=self._is_disconnectable_pipe(asset),
             Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
             QTHIn=dict(T=dict(min=self.minimum_temperature, max=self.maximum_temperature)),
             QTHOut=dict(T=dict(min=self.minimum_temperature, max=self.maximum_temperature)),
