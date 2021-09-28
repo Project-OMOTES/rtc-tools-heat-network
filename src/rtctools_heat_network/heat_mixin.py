@@ -1689,7 +1689,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 inds_disconnected = is_disconnected == 1
 
-                np.testing.assert_array_equal(heat[inds_disconnected], 0.0)
+                np.testing.assert_allclose(heat[inds_disconnected], 0.0, atol=1e-5, rtol=1e-5)
 
                 np.testing.assert_array_equal(
                     np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1
