@@ -60,21 +60,19 @@ class AssetToQTHComponent(_AssetToComponentBase):
         # - the tanks are always at least 5% full;
         # - same height as radius to compute dimensions.
         min_fraction_tank_volume = 0.05
+        capacity = asset.attributes["capacity"]
         r = (
-            asset.attributes["capacity"]
+            capacity
             * (1 + min_fraction_tank_volume)
             / (self.rho * self.cp * (supply_temperature - return_temperature) * math.pi)
         ) ** (1.0 / 3.0)
 
-        # TODO: Where are the dimensions in the ESDL file?
-        # For now assume height = radius and that tanks are always at least 5% full.
-        # What do we do about the other assumptions
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
-            min_fraction_tank_volume=0.05,
+            min_fraction_tank_volume=min_fraction_tank_volume,
             init_T_hot_tank=supply_temperature,
             init_T_cold_tank=return_temperature,
             **self._supply_return_temperature_modifiers(asset),
