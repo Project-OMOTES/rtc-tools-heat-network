@@ -16,16 +16,16 @@ CommodityEnum = EEnum('CommodityEnum', literals=[
                       'UNDEFINED', 'ELECTRICITY', 'GAS', 'HEAT', 'H2', 'BIOGAS', 'CO2', 'ENERGY'])
 
 AreaScopeEnum = EEnum('AreaScopeEnum', literals=['UNDEFINED', 'BUILDING', 'STREET', 'ZIPCODE', 'NEIGHBOURHOOD',
-                                                 'DISTRICT', 'VILLAGE', 'CITY', 'MUNICIPALITY', 'REGION', 'PROVINCE', 'STATE', 'COUNTRY', 'CONTINENT'])
+                      'DISTRICT', 'VILLAGE', 'CITY', 'MUNICIPALITY', 'REGION', 'PROVINCE', 'STATE', 'COUNTRY', 'CONTINENT'])
 
 ProfileTypeEnum = EEnum('ProfileTypeEnum', literals=['UNDEFINED', 'SOLARIRRADIANCE_IN_W_PER_M2', 'WINDSPEED_IN_M_PER_S', 'STATEOFCHARGE_IN_WS', 'ENERGY_IN_WH', 'ENERGY_IN_KWH', 'ENERGY_IN_MWH', 'ENERGY_IN_GWH', 'ENERGY_IN_J', 'ENERGY_IN_KJ', 'ENERGY_IN_MJ', 'ENERGY_IN_GJ', 'ENERGY_IN_TJ',
-                                                     'ENERGY_IN_PJ', 'TEMPERATURE_IN_C', 'TEMPERATURE_IN_K', 'POWER_IN_W', 'POWER_IN_KW', 'POWER_IN_MW', 'POWER_IN_GW', 'POWER_IN_TW', 'MONEY_IN_EUR', 'MONEY_IN_KEUR', 'MONEY_IN_MEUR', 'PERCENTAGE', 'MONEY_IN_EUR_PER_KW', 'MONEY_IN_EUR_PER_KWH', 'VOLUME_IN_M3', 'VOLUME_IN_LITERS'])
+                        'ENERGY_IN_PJ', 'TEMPERATURE_IN_C', 'TEMPERATURE_IN_K', 'POWER_IN_W', 'POWER_IN_KW', 'POWER_IN_MW', 'POWER_IN_GW', 'POWER_IN_TW', 'MONEY_IN_EUR', 'MONEY_IN_KEUR', 'MONEY_IN_MEUR', 'PERCENTAGE', 'MONEY_IN_EUR_PER_KW', 'MONEY_IN_EUR_PER_KWH', 'VOLUME_IN_M3', 'VOLUME_IN_LITERS'])
 
 DurationUnitEnum = EEnum('DurationUnitEnum', literals=[
                          'SECOND', 'MINUTE', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR'])
 
 BuildingTypeEnum = EEnum('BuildingTypeEnum', literals=['UNDEFINED', 'RESIDENTIAL', 'GATHERING', 'PRISON', 'HEALTHCARE',
-                                                       'INDUSTRY', 'OFFICE', 'EDUCATION', 'SPORTS', 'SHOPPING', 'HOTEL', 'AGRICULTURE', 'GREENHOUSE', 'UTILITY', 'OTHER'])
+                         'INDUSTRY', 'OFFICE', 'EDUCATION', 'SPORTS', 'SHOPPING', 'HOTEL', 'AGRICULTURE', 'GREENHOUSE', 'UTILITY', 'OTHER'])
 
 ConsTypeEnum = EEnum('ConsTypeEnum', literals=['PRIMARY', 'FINAL'])
 
@@ -36,7 +36,7 @@ AggrTypeEnum = EEnum('AggrTypeEnum', literals=[
                      'UNDEFINED', 'NOT_AGGREGATED', 'PER_COMMODITY', 'TOTAL_ENERGY', 'TOTAL_CAPABILITY', 'PER_CAPIBILITY'])
 
 AreaTypeEnum = EEnum('AreaTypeEnum', literals=['UNDEFINED', 'ROAD', 'RAILWAY', 'TERRAIN',
-                                               'RURAL_AREA', 'BUILT', 'WATER', 'SEA', 'RIVER', 'CANAL', 'LAKE', 'LAND', 'PARCEL'])
+                     'RURAL_AREA', 'BUILT', 'WATER', 'SEA', 'RIVER', 'CANAL', 'LAKE', 'LAND', 'PARCEL'])
 
 HeatDemandTypeEnum = EEnum('HeatDemandTypeEnum', literals=[
                            'UNDEFINED', 'SPACE_HEATING', 'HOT_TAPWATER', 'SH_AND_HTW', 'COOKING', 'OTHER'])
@@ -48,10 +48,10 @@ RoofTypeEnum = EEnum('RoofTypeEnum', literals=[
                      'UNDEFINED', 'FLATROOF', 'SLANTEDROOF', 'COMBINATION'])
 
 EnergyLabelEnum = EEnum('EnergyLabelEnum', literals=['UNDEFINED', 'LABEL_G', 'LABEL_F', 'LABEL_E',
-                                                     'LABEL_D', 'LABEL_C', 'LABEL_B', 'LABEL_A', 'LABEL_AP', 'LABEL_APP', 'LABEL_APPP', 'LABEL_APPPP'])
+                        'LABEL_D', 'LABEL_C', 'LABEL_B', 'LABEL_A', 'LABEL_AP', 'LABEL_APP', 'LABEL_APPP', 'LABEL_APPPP'])
 
 ResidentialBuildingTypeEnum = EEnum('ResidentialBuildingTypeEnum', literals=['UNDEFINED', 'VRIJSTAANDE_WONING', 'TWEE_ONDER_EEN_KAP_WONING', 'RIJWONING',
-                                                                             'MAISONNETTEWONING', 'GALERIJWONING', 'PORTIEKWONING', 'FLATWONING', 'TUSSENWONING', 'HOEKWONING', 'GALERIJCOMPLEX', 'APPARTEMENTENCOMPLEX', 'APPARTEMENT'])
+                                    'MAISONNETTEWONING', 'GALERIJWONING', 'PORTIEKWONING', 'FLATWONING', 'TUSSENWONING', 'HOEKWONING', 'GALERIJCOMPLEX', 'APPARTEMENTENCOMPLEX', 'APPARTEMENT'])
 
 PowerPlantFuelEnum = EEnum('PowerPlantFuelEnum', literals=[
                            'UNDEFINED', 'COAL', 'BLAST_FURNACE_GAS', 'NATURAL_GAS', 'URANIUM', 'HYDROGEN'])
@@ -95,16 +95,16 @@ MobilityFuelTypeEnum = EEnum('MobilityFuelTypeEnum', literals=[
                              'UNDEFINED', 'PETROL', 'DIESEL', 'HYDROGEN', 'LPG', 'BIOFUEL', 'ELECTRICITY', 'OIL', 'LNG', 'KEROSENE'])
 
 VehicleTypeEnum = EEnum('VehicleTypeEnum', literals=['UNDEFINED', 'CAR', 'TRUCK', 'VAN', 'BUS', 'METRO', 'TRAM', 'TRAIN', 'PASSENGER_TRAIN',
-                                                     'FREIGHT_TRAIN', 'SCOOTER', 'MOTOR_CYCLE', 'NONROAD_VEHICLE', 'AGRARIAN_VEHICLE', 'BARGE', 'INTERNATIONAL_SHIPPING', 'AIRCRAFT', 'OTHER', 'TOTAL'])
+                        'FREIGHT_TRAIN', 'SCOOTER', 'MOTOR_CYCLE', 'NONROAD_VEHICLE', 'AGRARIAN_VEHICLE', 'BARGE', 'INTERNATIONAL_SHIPPING', 'AIRCRAFT', 'OTHER', 'TOTAL'])
 
 MultiplierEnum = EEnum('MultiplierEnum', literals=['NONE', 'ATTO', 'FEMTO', 'PICO', 'NANO', 'MICRO',
-                                                   'MILLI', 'CENTI', 'DECI', 'DEKA', 'HECTO', 'KILO', 'MEGA', 'GIGA', 'TERA', 'TERRA', 'PETA', 'EXA'])
+                       'MILLI', 'CENTI', 'DECI', 'DEKA', 'HECTO', 'KILO', 'MEGA', 'GIGA', 'TERA', 'TERRA', 'PETA', 'EXA'])
 
 PhysicalQuantityEnum = EEnum('PhysicalQuantityEnum', literals=['UNDEFINED', 'ENERGY', 'POWER', 'VOLTAGE', 'PRESSURE', 'TEMPERATURE', 'EMISSION', 'COST', 'TIME', 'LENGTH', 'DISTANCE', 'IRRADIANCE',
-                                                               'SPEED', 'STATE_OF_CHARGE', 'VOLUME', 'AREA', 'POWER_REACTIVE', 'COMPOSITION', 'FLOW', 'STATE', 'HEAD', 'POSITION', 'COEFFICIENT', 'WEIGHT', 'FORCE', 'CURRENT', 'RELATIVE_HUMIDITY', 'DIRECTION'])
+                             'SPEED', 'STATE_OF_CHARGE', 'VOLUME', 'AREA', 'POWER_REACTIVE', 'COMPOSITION', 'FLOW', 'STATE', 'HEAD', 'POSITION', 'COEFFICIENT', 'WEIGHT', 'FORCE', 'CURRENT', 'RELATIVE_HUMIDITY', 'DIRECTION'])
 
 UnitEnum = EEnum('UnitEnum', literals=['NONE', 'JOULE', 'WATTHOUR', 'WATT', 'VOLT', 'BAR', 'PSI', 'DEGREES_CELSIUS', 'KELVIN', 'GRAM', 'EURO', 'DOLLAR', 'SECOND', 'MINUTE', 'QUARTER', 'HOUR', 'DAY',
-                                       'WEEK', 'MONTH', 'YEAR', 'METRE', 'SQUARE_METRE', 'CUBIC_METRE', 'LITRE', 'WATTSECOND', 'ARE', 'HECTARE', 'PERCENT', 'VOLT_AMPERE', 'VOLT_AMPERE_REACTIVE', 'PASCAL', 'NEWTON', 'AMPERE', 'DEGREES'])
+                 'WEEK', 'MONTH', 'YEAR', 'METRE', 'SQUARE_METRE', 'CUBIC_METRE', 'LITRE', 'WATTSECOND', 'ARE', 'HECTARE', 'PERCENT', 'VOLT_AMPERE', 'VOLT_AMPERE_REACTIVE', 'PASCAL', 'NEWTON', 'AMPERE', 'DEGREES'])
 
 TimeUnitEnum = EEnum('TimeUnitEnum', literals=[
                      'NONE', 'SECOND', 'MINUTE', 'QUARTER', 'HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR'])
@@ -145,7 +145,7 @@ InterpolationMethodEnum = EEnum('InterpolationMethodEnum', literals=[
                                 'UNDEFINED', 'NONE', 'LINEAR', 'CUBIC', 'NEAREST', 'PREVIOUS', 'NEXT', 'OTHER'])
 
 PipeDiameterEnum = EEnum('PipeDiameterEnum', literals=['VALUE_SPECIFIED', 'DN6', 'DN8', 'DN10', 'DN15', 'DN20', 'DN25', 'DN32', 'DN40', 'DN50', 'DN65', 'DN80', 'DN100',
-                                                       'DN125', 'DN150', 'DN200', 'DN250', 'DN300', 'DN350', 'DN400', 'DN450', 'DN500', 'DN600', 'DN650', 'DN700', 'DN800', 'DN900', 'DN1000', 'DN1100', 'DN1200'])
+                         'DN125', 'DN150', 'DN200', 'DN250', 'DN300', 'DN350', 'DN400', 'DN450', 'DN500', 'DN600', 'DN650', 'DN700', 'DN800', 'DN900', 'DN1000', 'DN1100', 'DN1200'])
 
 AssetStateEnum = EEnum('AssetStateEnum', literals=['ENABLED', 'DISABLED', 'OPTIONAL'])
 
@@ -164,6 +164,9 @@ TransferFunctionTypeEnum = EEnum('TransferFunctionTypeEnum', literals=[
 
 MeasureTypeEnum = EEnum('MeasureTypeEnum', literals=[
                         'UNDEFINED', 'ADD_GEOMETRY', 'MODEL_RESTRICTION'])
+
+BufferDistanceTypeEnum = EEnum('BufferDistanceTypeEnum', literals=[
+                               'UNDEFINED', 'RISK', 'ENVIRONMENT', 'NOISE', 'PARTICULATE_MATTER', 'NOX_EMISSIONS'])
 
 
 class EnergySystem(EObject, metaclass=MetaEClass):
@@ -1782,6 +1785,43 @@ class AbstractBehaviour(EObject, metaclass=MetaEClass):
             self.name = name
 
 
+class PortRelation(EObject, metaclass=MetaEClass):
+    """Specifies the relation between a port and the main port using a specific ratio."""
+    ratio = EAttribute(eType=EDouble, unique=True, derived=False,
+                       changeable=True, default_value=0.0)
+    port = EReference(ordered=True, unique=True, containment=False, derived=False)
+
+    def __init__(self, *, ratio=None, port=None):
+        # if kwargs:
+        #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
+
+        super().__init__()
+
+        if ratio is not None:
+            self.ratio = ratio
+
+        if port is not None:
+            self.port = port
+
+
+class BufferDistance(EObject, metaclass=MetaEClass):
+    """Buffer distance around an asset that relates to risks, environment, noise, CO2, ..."""
+    type = EAttribute(eType=BufferDistanceTypeEnum, unique=True, derived=False, changeable=True)
+    distance = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+
+    def __init__(self, *, type=None, distance=None):
+        # if kwargs:
+        #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
+
+        super().__init__()
+
+        if type is not None:
+            self.type = type
+
+        if distance is not None:
+            self.distance = distance
+
+
 class InPort(Port):
     """Represents a port with a positive energy direction into the asset, e.g. for a Consumer. See Port for more details"""
     connectedTo = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
@@ -1827,8 +1867,10 @@ class Asset(Item):
     costInformation = EReference(ordered=True, unique=True, containment=True, derived=False)
     KPIs = EReference(ordered=True, unique=True, containment=True, derived=False)
     material = EReference(ordered=True, unique=True, containment=True, derived=False)
+    bufferDistance = EReference(ordered=True, unique=True,
+                                containment=True, derived=False, upper=-1)
 
-    def __init__(self, *, surfaceArea=None, commissioningDate=None, decommissioningDate=None, owner=None, area=None, containingBuilding=None, geometry=None, costInformation=None, technicalLifetime=None, aggregated=None, aggregationCount=None, installationDuration=None, KPIs=None, assetType=None, state=None, material=None, manufacturer=None, **kwargs):
+    def __init__(self, *, surfaceArea=None, commissioningDate=None, decommissioningDate=None, owner=None, area=None, containingBuilding=None, geometry=None, costInformation=None, technicalLifetime=None, aggregated=None, aggregationCount=None, installationDuration=None, KPIs=None, assetType=None, state=None, material=None, manufacturer=None, bufferDistance=None, **kwargs):
 
         super().__init__(**kwargs)
 
@@ -1882,6 +1924,9 @@ class Asset(Item):
 
         if material is not None:
             self.material = material
+
+        if bufferDistance:
+            self.bufferDistance.extend(bufferDistance)
 
 
 class Point(Geometry):
@@ -2662,11 +2707,21 @@ class MatterReference(AbstractMatter):
             self.reference = reference
 
 
-class InputOutputQuantityRelation(AbstractBehaviour):
+class InputOutputRelation(AbstractBehaviour):
+    """Describes the relation between one of the ports of an asset (the mainPort) and all other ports using a specific ratio. Can be used for conversion assets to specify how much of the carrier on the InPorts is required to produce an x amount of the carrier on the OutPort. """
+    mainPortRelation = EReference(ordered=True, unique=True,
+                                  containment=True, derived=False, upper=-1)
+    mainPort = EReference(ordered=True, unique=True, containment=False, derived=False)
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, mainPortRelation=None, mainPort=None, **kwargs):
 
         super().__init__(**kwargs)
+
+        if mainPortRelation:
+            self.mainPortRelation.extend(mainPortRelation)
+
+        if mainPort is not None:
+            self.mainPort = mainPort
 
 
 @abstract
@@ -3389,6 +3444,27 @@ class CombinedTransferFunction(AbstractTransferFunction):
 
         if component:
             self.component.extend(component)
+
+
+class TimeSeriesProfile(StaticProfile):
+    """Describes a profile of which the period between the values is constant. The series of values is indexed in time order as a sequence taken at successive equally spaced points in time. It starts at the startDateTime and every next value has intervalBetweenValues seconds between them."""
+    startDateTime = EAttribute(eType=EDate, unique=True, derived=False, changeable=True)
+    timestep = EAttribute(eType=EInt, unique=True, derived=False,
+                          changeable=True, default_value=3600)
+    values = EAttribute(eType=EDouble, unique=False, derived=False, changeable=True, upper=-1)
+
+    def __init__(self, *, startDateTime=None, timestep=None, values=None, **kwargs):
+
+        super().__init__(**kwargs)
+
+        if startDateTime is not None:
+            self.startDateTime = startDateTime
+
+        if timestep is not None:
+            self.timestep = timestep
+
+        if values:
+            self.values.extend(values)
 
 
 @abstract
@@ -4483,13 +4559,17 @@ class ElectricityNetwork(EnergyNetwork):
 class ElectricityCable(AbstractConductor):
     """Describes a representation of an electricity cable. When defining the geometry of a cable by means of a line, the first point of the line refers to the first port and the last point of the line refers to the second port."""
     length = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    related = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
 
-    def __init__(self, *, length=None, **kwargs):
+    def __init__(self, *, length=None, related=None, **kwargs):
 
         super().__init__(**kwargs)
 
         if length is not None:
             self.length = length
+
+        if related:
+            self.related.extend(related)
 
 
 class HeatNetwork(EnergyNetwork):
@@ -4532,8 +4612,9 @@ class Pipe(AbstractConductor):
     length = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
     roughness = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
     diameter = EAttribute(eType=PipeDiameterEnum, unique=True, derived=False, changeable=True)
+    related = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
 
-    def __init__(self, *, innerDiameter=None, outerDiameter=None, length=None, roughness=None, diameter=None, **kwargs):
+    def __init__(self, *, innerDiameter=None, outerDiameter=None, length=None, roughness=None, diameter=None, related=None, **kwargs):
 
         super().__init__(**kwargs)
 
@@ -4551,6 +4632,9 @@ class Pipe(AbstractConductor):
 
         if diameter is not None:
             self.diameter = diameter
+
+        if related:
+            self.related.extend(related)
 
 
 class GeothermalSource(HeatProducer):
@@ -4818,22 +4902,30 @@ class WaterBuffer(HeatStorage):
 
 class Joint(AbstractConductor):
     """A Joint is a means to connect AbstractConductors, such as Pipes and ElectricalCables. This helps when these conductors have opposite Ports."""
+    related = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, related=None, **kwargs):
 
         super().__init__(**kwargs)
+
+        if related:
+            self.related.extend(related)
 
 
 class Bus(AbstractConductor):
 
     voltage = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    related = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
 
-    def __init__(self, *, voltage=None, **kwargs):
+    def __init__(self, *, voltage=None, related=None, **kwargs):
 
         super().__init__(**kwargs)
 
         if voltage is not None:
             self.voltage = voltage
+
+        if related:
+            self.related.extend(related)
 
 
 class Sensor(AbstractSensor):
@@ -4889,25 +4981,73 @@ class AbstractPassiveSwitch(AbstractSwitch):
         super().__init__(**kwargs)
 
 
+class ATES(HeatStorage):
+
+    aquiferTopDepth = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    aquiferThickness = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    aquiferMidTemperature = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    aquiferNetToGross = EAttribute(eType=EDouble, unique=True,
+                                   derived=False, changeable=True, default_value=0.0)
+    aquiferPorosity = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    aquiferPermeability = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    aquiferAnisotropy = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    salinity = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    wellCasingSize = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    wellDistance = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+
+    def __init__(self, *, aquiferTopDepth=None, aquiferThickness=None, aquiferMidTemperature=None, aquiferNetToGross=None, aquiferPorosity=None, aquiferPermeability=None, aquiferAnisotropy=None, salinity=None, wellCasingSize=None, wellDistance=None, **kwargs):
+
+        super().__init__(**kwargs)
+
+        if aquiferTopDepth is not None:
+            self.aquiferTopDepth = aquiferTopDepth
+
+        if aquiferThickness is not None:
+            self.aquiferThickness = aquiferThickness
+
+        if aquiferMidTemperature is not None:
+            self.aquiferMidTemperature = aquiferMidTemperature
+
+        if aquiferNetToGross is not None:
+            self.aquiferNetToGross = aquiferNetToGross
+
+        if aquiferPorosity is not None:
+            self.aquiferPorosity = aquiferPorosity
+
+        if aquiferPermeability is not None:
+            self.aquiferPermeability = aquiferPermeability
+
+        if aquiferAnisotropy is not None:
+            self.aquiferAnisotropy = aquiferAnisotropy
+
+        if salinity is not None:
+            self.salinity = salinity
+
+        if wellCasingSize is not None:
+            self.wellCasingSize = wellCasingSize
+
+        if wellDistance is not None:
+            self.wellDistance = wellDistance
+
+
 class Valve(AbstractActiveSwitch):
     """Defines a valve, e.g. in a water, gas or heat network"""
     type = EAttribute(eType=ValveTypeEnum, unique=True, derived=False, changeable=True)
-    flowCoefficient = EAttribute(eType=EDouble, unique=True,
-                                 derived=False, changeable=True, default_value=0.0)
     innerDiameter = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
+    flowCoefficient = EReference(ordered=True, unique=True, containment=True, derived=False)
 
-    def __init__(self, *, type=None, flowCoefficient=None, innerDiameter=None, **kwargs):
+    def __init__(self, *, type=None, innerDiameter=None, flowCoefficient=None, **kwargs):
 
         super().__init__(**kwargs)
 
         if type is not None:
             self.type = type
 
-        if flowCoefficient is not None:
-            self.flowCoefficient = flowCoefficient
-
         if innerDiameter is not None:
             self.innerDiameter = innerDiameter
+
+        if flowCoefficient is not None:
+            self.flowCoefficient = flowCoefficient
 
 
 class PVInstallation(PVPanel):
@@ -4969,7 +5109,8 @@ class CheckValve(AbstractPassiveSwitch):
 
     innerDiameter = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
     reopenDeltaP = EAttribute(eType=EDouble, unique=True, derived=False, changeable=True)
-    flowCoefficient = EReference(ordered=True, unique=True, containment=True, derived=False)
+    flowCoefficient = EAttribute(eType=EDouble, unique=True,
+                                 derived=False, changeable=True, default_value=0.0)
 
     def __init__(self, *, innerDiameter=None, reopenDeltaP=None, flowCoefficient=None, **kwargs):
 
