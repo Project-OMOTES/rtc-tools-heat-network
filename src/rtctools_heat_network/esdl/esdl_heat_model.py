@@ -20,13 +20,23 @@ from .esdl_model_base import _ESDLModelBase
 
 
 class AssetToHeatComponent(_AssetToComponentBase):
-    def __init__(self, *args, v_nominal=1.0, v_max=5.0, rho=988.0, cp=4200.0, **kwargs):
+    def __init__(
+        self,
+        *args,
+        v_nominal=1.0,
+        v_max=5.0,
+        rho=988.0,
+        cp=4200.0,
+        min_fraction_tank_volume=0.05,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         self.v_nominal = v_nominal
         self.v_max = v_max
         self.rho = rho
         self.cp = cp
+        self.min_fraction_tank_volume = min_fraction_tank_volume
 
     @property
     def _rho_cp_modifiers(self):
@@ -39,10 +49,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # Assume that:
         # - the capacity is the relative heat that can be stored in the buffer;
-        # - the tanks are always at least 5% full;
+        # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
         capacity = asset.attributes["capacity"]
-        min_fraction_tank_volume = 0.05
+        min_fraction_tank_volume = self.min_fraction_tank_volume
         r = (
             capacity
             * (1 + min_fraction_tank_volume)
@@ -58,7 +68,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
-            min_fraction_tank_volume=0.05,
+            min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),

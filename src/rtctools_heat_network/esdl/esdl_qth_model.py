@@ -34,6 +34,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
         maximum_temperature=110.0,
         rho=988.0,
         cp=4200.0,
+        min_fraction_tank_volume=0.05,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -45,6 +46,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
         self.maximum_temperature = maximum_temperature
         self.rho = rho
         self.cp = cp
+        self.min_fraction_tank_volume = min_fraction_tank_volume
 
     @property
     def _rho_cp_modifiers(self):
@@ -57,9 +59,9 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         # Assume that:
         # - the capacity is the relative heat that can be stored in the buffer;
-        # - the tanks are always at least 5% full;
+        # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
-        min_fraction_tank_volume = 0.05
+        min_fraction_tank_volume = self.min_fraction_tank_volume
         capacity = asset.attributes["capacity"]
         r = (
             capacity
