@@ -105,10 +105,9 @@ class Buffer(_FluidPropertiesComponent):
         # hot_pipe_orientation * QTHIn.Q = Q_hot_pipe;
         # -1 * cold_pipe_orientation * QTHOut.Q = Q_cold_pipe;
 
+        # * Initial conditions at t0:
+        # set volume/temperature of the hot and cold tank as bounds.
+
         # Aliases
         self.add_equation(self.QTHIn.T - self.T_hot_pipe)
         self.add_equation(self.QTHOut.T - self.T_cold_pipe)
-
-        # Set temperatures at t0
-        self.add_initial_equation(self.T_hot_tank - self.init_T_hot_tank)
-        self.add_initial_equation(self.T_cold_tank - self.init_T_cold_tank)

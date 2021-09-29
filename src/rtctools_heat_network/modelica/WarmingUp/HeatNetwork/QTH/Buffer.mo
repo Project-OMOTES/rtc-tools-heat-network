@@ -77,13 +77,11 @@ equation
   // hot_pipe_orientation * QTHIn.Q = Q_hot_pipe;
   // -1 * cold_pipe_orientation * QTHOut.Q = Q_cold_pipe;
 
+  // * Initial conditions at t0:
+  // set volume/temperature of the hot and cold tank as bounds.
+
   // Aliases
   QTHIn.T = T_hot_pipe;
   QTHOut.T = T_cold_pipe;
-
-initial equation
-  // Set temperatures at t0
-  T_hot_tank - init_T_hot_tank = 0.0;
-  T_cold_tank - init_T_cold_tank = 0.0;
 
  end Buffer;

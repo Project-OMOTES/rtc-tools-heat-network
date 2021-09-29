@@ -106,11 +106,13 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         self.__demand_temperature_bounds = None
         self.__temperature_pipe_theta_zero = None
 
+        self.__buffer_t0_bounds = {}
+
         super().pre()
 
         self.__update_temperature_pipe_theta_zero_bounds()
         self.__check_source_temperature()
-        self.__check_buffer_values()
+        self.__check_buffer_values_and_set_bounds_at_t0()
 
     def heat_network_options(self):
         r"""
@@ -256,7 +258,20 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                     " temperature bounds or disable the ``sources_equal_output_temp`` option."
                 )
 
-    def __check_buffer_values(self):
+    def __check_buffer_values_and_set_bounds_at_t0(self):
+        # We assume that t0 is always equal to self.times()[0]
+        assert self.initial_time == self.times()[0]
+
+        def _set_initial_bound(self, bounds, val_t0):
+            t = self.times()
+            lb = np.full_like(t, -np.inf)
+            ub = np.full_like(t, np.inf)
+            lb[0] = val_t0
+            ub[0] = val_t0
+            b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
+            new_bounds = self.merge_bounds(bounds, b_t0)
+            return new_bounds
+
         parameters = self.parameters(0)
         bounds = self.bounds()
         components = self.heat_network_components
@@ -271,28 +286,47 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                 )
 
             volume = parameters[f"{b}.volume"]
-            vol_t0 = parameters[f"{b}.init_V_hot_tank"]
-            vol = f"{b}.V_hot_tank"
-            if np.isnan(vol_t0):
-                default_vol_t0 = min_fract_vol * volume
-                parameters[f"{b}.init_V_hot_tank"] = default_vol_t0
-                logger.info(f"Initial volume of {b} is not provided. It is set to {default_vol_t0}")
+            vol_hot_t0 = parameters[f"{b}.init_V_hot_tank"]
+            vol_hot = f"{b}.V_hot_tank"
+            if np.isnan(vol_hot_t0):
+                default_vol_hot_t0 = min_fract_vol * volume
+                parameters[f"{b}.init_V_hot_tank"] = default_vol_hot_t0
+
+                logger.info(
+                    f"Initial volume of {b} is not provided. It is set to {default_vol_hot_t0}"
+                )
 
             # Check that volume at t0 is within bounds
-            lb_vol, ub_vol = bounds[vol]
-            lb_vol_t0 = np.inf
-            ub_vol_t0 = -np.inf
-            for bound in [lb_vol, ub_vol]:
+            lb_vol_hot, ub_vol_hot = bounds[vol_hot]
+            lb_vol_hot_t0 = np.inf
+            ub_vol_hot_t0 = -np.inf
+            for bound in [lb_vol_hot, ub_vol_hot]:
                 assert not isinstance(bound, np.ndarray), f"{b} volume cannot be a vector state"
                 if isinstance(bound, Timeseries):
                     bound_t0 = bound.values[0]
                 else:
                     bound_t0 = bound
-                lb_vol_t0 = min(lb_vol_t0, bound_t0)
-                ub_vol_t0 = max(ub_vol_t0, bound_t0)
+                lb_vol_hot_t0 = min(lb_vol_hot_t0, bound_t0)
+                ub_vol_hot_t0 = max(ub_vol_hot_t0, bound_t0)
 
-            if vol_t0 < lb_vol_t0 or vol_t0 > ub_vol_t0:
+            if vol_hot_t0 < lb_vol_hot_t0 or vol_hot_t0 > ub_vol_hot_t0:
                 raise Exception(f"Initial volume of {b} is not within bounds.")
+
+            # Set volumes and temperatures at t0
+            vol_hot_t0 = parameters[f"{b}.init_V_hot_tank"]
+            self.__buffer_t0_bounds[vol_hot] = _set_initial_bound(self, bounds[vol_hot], vol_hot_t0)
+            vol_cold = f"{b}.V_cold_tank"
+            vol_cold_t0 = ((1 + min_fract_vol) - vol_hot_t0 / volume) * volume
+            self.__buffer_t0_bounds[vol_cold] = _set_initial_bound(
+                self, bounds[vol_cold], vol_cold_t0
+            )
+
+            t_hot = f"{b}.T_hot_tank"
+            t_hot_t0 = parameters[f"{b}.init_T_hot_tank"]
+            self.__buffer_t0_bounds[t_hot] = _set_initial_bound(self, bounds[t_hot], t_hot_t0)
+            t_cold = f"{b}.T_cold_tank"
+            t_cold_t0 = parameters[f"{b}.init_T_cold_tank"]
+            self.__buffer_t0_bounds[t_cold] = _set_initial_bound(self, bounds[t_cold], t_cold_t0)
 
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
@@ -517,12 +551,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             constraints.append(
                 ((cold_pipe_orientation * q_out + q_cold_pipe) / q_nominal, 0.0, 0.0)
             )
-
-            # Set hot tank volume at t0
-            vol_t0 = parameters[f"{b}.init_V_hot_tank"]
-            v_hot_tank_t0 = self.state_at(f"{b}.V_hot_tank", self.initial_time, e)
-            nominal = self.variable_nominal(f"{b}.V_hot_tank")
-            constraints.append(((v_hot_tank_t0 - vol_t0) / nominal, 0.0, 0.0))
 
             # Temperature of outgoing flows is equal to buffer temperature
             temp_hot_tank_sym = self.__state_vector_scaled(f"{b}.T_hot_tank", e)
@@ -1082,6 +1110,8 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         parameters = self.parameters(0)
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
+
+        bounds.update(self.__buffer_t0_bounds)
 
         if self.__flow_direction_bounds is not None:
             # TODO: Per ensemble member
