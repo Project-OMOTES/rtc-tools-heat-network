@@ -51,7 +51,10 @@ class ESDLMixin(
             self.esdl_pi_output_data_config = _ESDLOutputDataConfig
 
         self.__run_info = _RunInfoReader(self.esdl_run_info_path)
-        assets = self.__run_info.assets
+        self.__esdl_assets = self.__run_info.assets
+
+        # This way we allow users to adjust the parsed ESDL assets
+        assets = self.esdl_assets
 
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
@@ -86,6 +89,10 @@ class ESDLMixin(
         self.__output_timeseries_file = self.__run_info.output_timeseries_file
 
         super().__init__(*args, **kwargs)
+
+    @property
+    def esdl_assets(self):
+        return self.__esdl_assets
 
     @property
     def esdl_asset_id_to_name_map(self):
