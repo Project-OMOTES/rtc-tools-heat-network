@@ -80,12 +80,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
         assert asset.asset_type in {"GenericConsumer", "HeatingDemand"}
 
-        max_demand = asset.attributes["power"]
-        assert max_demand > 0.0
-
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Heat_demand=dict(max=max_demand),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
