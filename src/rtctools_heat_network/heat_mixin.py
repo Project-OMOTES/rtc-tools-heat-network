@@ -1631,10 +1631,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     assert np.allclose(head_diff, 0.0, atol=atol)
                 else:
                     q = results[f"{p}.Q"]
+
+                    if self.is_cold_pipe(p):
+                        hot_pipe = self.cold_to_hot_pipe(p)
+                    else:
+                        hot_pipe = p
+
+                    try:
+                        is_disconnected = np.round(results[self.__pipe_disconnect_map[hot_pipe]])
+                    except KeyError:
+                        is_disconnected = np.zeros_like(q)
+
                     q_nominal = self.variable_nominal(
                         self.alias_relation.canonical_signed(f"{p}.Q")[0]
                     )
-                    inds = np.abs(q) / q_nominal > 1e-4
+                    inds = (np.abs(q) / q_nominal > 1e-4) & (is_disconnected == 0)
                     assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
         minimum_velocity = options["minimum_velocity"]
