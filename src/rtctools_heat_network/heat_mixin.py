@@ -875,6 +875,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_out = self.state(f"{p}.HeatOut.Heat")
             flow_dir = self.state(flow_dir_var)
 
+            heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
+
             big_m = self.__get_abs_max_bounds(
                 *self.merge_bounds(bounds[f"{p}.HeatIn.Heat"], bounds[f"{p}.HeatOut.Heat"])
             )
@@ -882,15 +884,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if not np.isfinite(big_m):
                 raise Exception(f"Heat in pipe {p} must be bounded")
 
+            constraint_nominal = (big_m * heat_nominal) ** 0.5
+
             # Fix flow direction
-            constraints.append(((heat_in - big_m * flow_dir) / big_m, -np.inf, 0.0))
-            constraints.append(((heat_in + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
+            constraints.append(((heat_in - big_m * flow_dir) / constraint_nominal, -np.inf, 0.0))
+            constraints.append(
+                ((heat_in + big_m * (1 - flow_dir)) / constraint_nominal, 0.0, np.inf)
+            )
 
             # Flow direction is the same for In and Out. Note that this
             # ensures that the heat going in and/or out of a pipe is more than
             # its heat losses.
-            constraints.append(((heat_out - big_m * flow_dir) / big_m, -np.inf, 0.0))
-            constraints.append(((heat_out + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf))
+            constraints.append(((heat_out - big_m * flow_dir) / constraint_nominal, -np.inf, 0.0))
+            constraints.append(
+                ((heat_out + big_m * (1 - flow_dir)) / constraint_nominal, 0.0, np.inf)
+            )
 
             if not options["heat_loss_disconnected_pipe"]:
                 # If this pipe is disconnected, the heat should be zero
@@ -904,8 +912,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     # so we need to double it.
                     big_m_dbl = 2 * big_m
                     for heat in [heat_in, heat_out]:
-                        constraints.append(((heat + big_m_dbl * is_conn) / big_m_dbl, 0.0, np.inf))
-                        constraints.append(((heat - big_m_dbl * is_conn) / big_m_dbl, -np.inf, 0.0))
+                        constraints.append(
+                            ((heat + big_m_dbl * is_conn) / constraint_nominal, 0.0, np.inf)
+                        )
+                        constraints.append(
+                            ((heat - big_m_dbl * is_conn) / constraint_nominal, -np.inf, 0.0)
+                        )
 
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
@@ -1019,6 +1031,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for d in self.heat_network_components["demand"]:
             heat_nominal = parameters[f"{d}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{d}.Q")
             cp = parameters[f"{d}.cp"]
             rho = parameters[f"{d}.rho"]
             dt = parameters[f"{d}.dT"]
@@ -1026,8 +1039,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             discharge = self.state(f"{d}.Q")
             heat_consumed = self.state(f"{d}.Heat_demand")
 
+            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+
             constraints.append(
-                ((heat_consumed - cp * rho * dt * discharge) / heat_nominal, 0.0, 0.0)
+                ((heat_consumed - cp * rho * dt * discharge) / constraint_nominal, 0.0, 0.0)
             )
 
         return constraints
@@ -1038,6 +1053,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for s in self.heat_network_components["source"]:
             heat_nominal = parameters[f"{s}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{s}.Q")
             cp = parameters[f"{s}.cp"]
             rho = parameters[f"{s}.rho"]
             dt = parameters[f"{s}.dT"]
@@ -1045,8 +1061,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             discharge = self.state(f"{s}.Q")
             heat_production = self.state(f"{s}.Heat_source")
 
+            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+
             constraints.append(
-                ((heat_production - cp * rho * dt * discharge) / heat_nominal, 0.0, np.inf)
+                ((heat_production - cp * rho * dt * discharge) / constraint_nominal, 0.0, np.inf)
             )
 
         return constraints
@@ -1103,6 +1121,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for b, ((hot_pipe, hot_pipe_orientation), _) in self.heat_network_topology.buffers.items():
             heat_nominal = parameters[f"{b}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{b}.Q")
             cp = parameters[f"{b}.cp"]
             rho = parameters[f"{b}.rho"]
             dt = parameters[f"{b}.dT"]
@@ -1125,16 +1144,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.merge_bounds(bounds[f"{b}.HeatIn.Heat"], bounds[f"{b}.HeatOut.Heat"])
             )
 
+            coefficients = [heat_nominal, cp * rho * dt * q_nominal, big_m]
+            constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
             constraints.append(
                 (
                     (heat_consumed - cp * rho * dt * discharge + (1 - is_buffer_charging) * big_m)
-                    / heat_nominal,
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
             )
+
+            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
             constraints.append(
-                ((heat_consumed - cp * rho * dt * discharge) / heat_nominal, -np.inf, 0.0)
+                ((heat_consumed - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.0)
             )
 
         return constraints

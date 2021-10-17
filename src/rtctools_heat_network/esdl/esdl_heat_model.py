@@ -128,7 +128,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # heat losses in the system to get a proper upper bound. Maybe move
         # calculation of Heat bounds to the HeatMixin?
         delta_temperature = supply_temperature - return_temperature
-        hfr_nominal = self.rho * self.cp * q_nominal * delta_temperature
         hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
 
         assert hfr_max > 0.0
@@ -156,11 +155,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             temperature=temperature,
             disconnectable=self._is_disconnectable_pipe(asset),
             HeatIn=dict(
-                Heat=dict(min=-hfr_max, max=hfr_max, nominal=hfr_nominal),
+                Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
             ),
             HeatOut=dict(
-                Heat=dict(min=-hfr_max, max=hfr_max, nominal=hfr_nominal),
+                Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
             ),
             insulation_thickness=insulation_thicknesses,
