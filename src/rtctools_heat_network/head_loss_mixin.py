@@ -416,6 +416,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 if big_m is None:
                     return [((-1 * dh - expr) / constraint_nominal, 0.0, 0.0)]
                 else:
+                    constraint_nominal = (constraint_nominal * big_m) ** 0.5
+
                     return [
                         (
                             (-1 * dh - expr + is_disconnected * big_m) / constraint_nominal,
@@ -461,6 +463,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 if big_m is None:
                     equations = [((head_loss - expr) / constraint_nominal, 0.0, ub)]
                 else:
+                    constraint_nominal = (constraint_nominal * big_m) ** 0.5
+
                     equations = [
                         (
                             (head_loss - expr + is_disconnected * big_m) / constraint_nominal,
@@ -520,7 +524,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                     big_m_lin = 0.0
                 else:
                     big_m_lin = big_m
-
+                    constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
                 return [
                     (
                         (
