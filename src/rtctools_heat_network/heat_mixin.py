@@ -1248,12 +1248,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     if pc.inner_diameter == 0.0:
                         continue
 
-                    big_m = 2 * max(
-                        self.__maximum_total_head_loss,
-                        self._hn_pipe_head_loss(
-                            pipe, options, parameters, max_discharge, pipe_class=pc
-                        ),
+                    head_loss_max_discharge = self._hn_pipe_head_loss(
+                        pipe, options, parameters, max_discharge, pipe_class=pc
                     )
+
+                    big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
 
                     is_topo_disconnected = 1 - self.extra_variable(pc_var_name, ensemble_member)
                     is_topo_disconnected = ca.repmat(is_topo_disconnected, dh.size1())
@@ -1306,7 +1305,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        2 * self.__maximum_total_head_loss,
+                        1.1 * self.__maximum_total_head_loss,
                     )
                 )
 
