@@ -57,17 +57,24 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
 
+        heat_to_discharge_fac = 1 / (self.rho * self.cp * (supply_temperature - return_temperature))
+
         # Assume that:
         # - the capacity is the relative heat that can be stored in the buffer;
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
         min_fraction_tank_volume = self.min_fraction_tank_volume
         capacity = asset.attributes["capacity"]
-        r = (
-            capacity
-            * (1 + min_fraction_tank_volume)
-            / (self.rho * self.cp * (supply_temperature - return_temperature) * math.pi)
-        ) ** (1.0 / 3.0)
+        r = (capacity * (1 + min_fraction_tank_volume) * heat_to_discharge_fac / math.pi) ** (
+            1.0 / 3.0
+        )
+
+        # Note that these flow constraints are estimations based on the
+        # carrier temperatures, same way as CHESS handles them.
+        hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf) or math.inf
+        hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf) or math.inf
+        q_charge_max = hfr_charge_max * heat_to_discharge_fac
+        q_discharge_max = hfr_discharge_max * heat_to_discharge_fac
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
@@ -77,6 +84,8 @@ class AssetToQTHComponent(_AssetToComponentBase):
             min_fraction_tank_volume=min_fraction_tank_volume,
             init_T_hot_tank=supply_temperature,
             init_T_cold_tank=return_temperature,
+            Q_hot_pipe=dict(min=-q_discharge_max, max=q_charge_max),
+            Q_cold_pipe=dict(min=-q_discharge_max, max=q_charge_max),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )

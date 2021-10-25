@@ -62,6 +62,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         min_heat = capacity * min_fraction_tank_volume
         max_heat = capacity * (1 + min_fraction_tank_volume)
         assert max_heat > 0.0
+        hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf) or math.inf
+        hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf) or math.inf
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
@@ -70,6 +72,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             heat_transfer_coeff=1.0,
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
+            Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
