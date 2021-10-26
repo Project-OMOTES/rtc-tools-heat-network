@@ -1682,8 +1682,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 continue
 
             q = results[f"{p}.Q"]
-            q_w_error_margin = q + 1e-5 * np.sign(q) * self.variable_nominal(f"{p}.Q")
-            v = q_w_error_margin / area
+            v = q / area
             flow_dir = np.round(results[self.__pipe_to_flow_direct_map[hot_pipe]])
             try:
                 is_disconnected = np.round(results[self.__pipe_disconnect_map[hot_pipe]])
@@ -1694,10 +1693,40 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             inds_positive = (flow_dir == 1) & ~inds_disconnected
             inds_negative = (flow_dir == 0) & ~inds_disconnected
 
-            assert np.all(v[inds_positive] >= minimum_velocity)
-            assert np.all(v[inds_negative] <= -1 * minimum_velocity)
+            # We allow a bit of slack in the velocity. If the
+            # exceedence/discrepancy is more than 0.1 mm/s, we log a warning,
+            # if it's more than 1 cm/s, we log an error message.
+            if np.any(inds_positive) or np.any(inds_negative):
+                max_exceedence = max(
+                    np.hstack(
+                        [minimum_velocity - v[inds_positive], v[inds_negative] + minimum_velocity]
+                    )
+                )
 
-            assert np.all(np.abs(q[inds_disconnected]) / self.variable_nominal(f"{p}.Q") <= 1e-5)
+                for criterion, log_level in [(0.01, logging.ERROR), (1e-4, logging.WARNING)]:
+                    if max_exceedence > criterion:
+                        logger.log(
+                            log_level,
+                            f"Velocity in {p} exceeds minimum velocity {minimum_velocity} "
+                            f"by more than {criterion} m/s. ({max_exceedence} m/s)",
+                        )
+
+                        break
+
+            # Similar check for disconnected pipes, where we want the velocity
+            # to be zero but allow the same amount of slack.
+            if np.any(inds_disconnected):
+                max_exceedence = max(np.abs(v[inds_disconnected]))
+
+                for criterion, log_level in [(0.01, logging.ERROR), (1e-4, logging.WARNING)]:
+                    if max_exceedence > criterion:
+                        logger.log(
+                            log_level,
+                            f"Velocity in disconnected pipe {p} exceeds {criterion} m/s. "
+                            f"({max_exceedence} m/s)",
+                        )
+
+                        break
 
         for p in self.hot_pipes:
             if parameters[f"{p}.diameter"] == 0.0:
