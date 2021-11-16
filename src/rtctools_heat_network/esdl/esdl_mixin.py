@@ -55,7 +55,12 @@ class ESDLMixin(
             self.esdl_pi_output_data_config = _ESDLOutputDataConfig
 
         self.__run_info = _RunInfoReader(self.esdl_run_info_path)
-        self.__esdl_assets = self.__run_info.assets
+
+        self.__esdl_assets = _esdl_to_assets(self.__run_info.esdl_file)
+        if self.__run_info.parameters_file is not None:
+            self.__esdl_assets = _overwrite_parameters(
+                self.__run_info.parameters_file, self.__esdl_assets
+            )
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
@@ -343,20 +348,15 @@ class _RunInfoReader:
         if not work_dir.is_absolute():
             work_dir = filepath.parent / work_dir
 
-        self._esdl_path = Path(root.find("pi:properties", ns)[0].attrib["value"])
-        if not self._esdl_path.is_absolute():
-            self._esdl_path = work_dir / self._esdl_path
+        self.esdl_file = Path(root.find("pi:properties", ns)[0].attrib["value"])
+        if not self.esdl_file.is_absolute():
+            self.esdl_file = work_dir / self.esdl_file
 
-        assets = _esdl_to_assets(self._esdl_path)
-
-        parameters_file = root.findtext("pi:inputParameterFile", namespaces=ns)
-        if parameters_file is not None:
-            parameters_file = Path(parameters_file)
-            if not parameters_file.is_absolute():
-                parameters_file = work_dir / parameters_file
-                assets = self._overwrite_parameters(parameters_file, assets)
-
-        self._assets = assets
+        self.parameters_file = root.findtext("pi:inputParameterFile", namespaces=ns)
+        if self.parameters_file is not None:
+            self.parameters_file = Path(self.parameters_file)
+            if not self.parameters_file.is_absolute():
+                self.parameters_file = work_dir / self.parameters_file
 
         try:
             self.input_timeseries_file = Path(root.findall("pi:inputTimeSeriesFile", ns)[0].text)
@@ -379,25 +379,21 @@ class _RunInfoReader:
         except IndexError:
             self.output_diagnostic_file = None
 
-    @property
-    def assets(self):
-        return self._assets
 
-    @staticmethod
-    def _overwrite_parameters(parameters_file, assets):
-        paramroot = ET.parse(parameters_file).getroot()
-        groups = paramroot.findall("pi:group", ns)
+def _overwrite_parameters(parameters_file, assets):
+    paramroot = ET.parse(parameters_file).getroot()
+    groups = paramroot.findall("pi:group", ns)
 
-        for parameter in groups:
-            id_ = parameter.attrib["id"]
-            param_name = parameter[0].attrib["id"]
-            param_value = parameter[0][0].text
+    for parameter in groups:
+        id_ = parameter.attrib["id"]
+        param_name = parameter[0].attrib["id"]
+        param_value = parameter[0][0].text
 
-            asset = assets[id_]
-            type_ = type(asset.attributes[param_name])
-            asset.attributes[param_name] = type_(param_value)
+        asset = assets[id_]
+        type_ = type(asset.attributes[param_name])
+        asset.attributes[param_name] = type_(param_value)
 
-        return assets
+    return assets
 
 
 def _esdl_to_assets(esdl_path: Union[Path, str]):
