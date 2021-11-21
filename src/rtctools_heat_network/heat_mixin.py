@@ -63,6 +63,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_pipe_class_var = {}
         self.__pipe_topo_pipe_class_var_bounds = {}
         self.__pipe_topo_pipe_class_map = {}
+        self.__pipe_topo_pipe_class_result = {}
 
         self.__pipe_topo_heat_discharge_bounds = {}
 
@@ -415,6 +416,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         A pipe class with diameter 0 is interpreted as there being _no_ pipe.
         """
         return []
+
+    def get_optimized_pipe_class(self, pipe: str) -> PipeClass:
+        """
+        Return the optimized pipe class for a specific pipe. If no
+        optimized pipe class is available (yet), a `KeyError` is returned.
+        """
+        return self.__pipe_topo_pipe_class_result[pipe]
 
     def pipe_diameter_symbol_name(self, pipe: str) -> str:
         return self.__pipe_topo_diameter_map[pipe]
@@ -1572,17 +1580,32 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["resolve_parameter_values"] = True
         return options
 
-    def __pipe_diameter_to_parameters(self):
+    def __pipe_class_to_results(self):
         for ensemble_member in range(self.ensemble_size):
             results = self.extract_results(ensemble_member)
 
+            for pipe in self.hot_pipes:
+                pipe_classes = self.pipe_classes(pipe)
+
+                if not pipe_classes:
+                    continue
+                elif len(pipe_classes) == 1:
+                    pipe_class = pipe_classes[0]
+                else:
+                    pipe_class = next(
+                        c
+                        for c, s in self.__pipe_topo_pipe_class_map[pipe].items()
+                        if round(results[s][0]) == 1.0
+                    )
+
+                for p in [pipe, self.hot_to_cold_pipe(pipe)]:
+                    self.__pipe_topo_pipe_class_result[p] = pipe_class
+
+    def __pipe_diameter_to_parameters(self):
+        for ensemble_member in range(self.ensemble_size):
             d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
             for pipe in self.__pipe_topo_pipe_class_map:
-                pipe_class = next(
-                    c
-                    for c, s in self.__pipe_topo_pipe_class_map[pipe].items()
-                    if round(results[s][0]) == 1.0
-                )
+                pipe_class = self.get_optimized_pipe_class(pipe)
 
                 for p in [pipe, self.hot_to_cold_pipe(pipe)]:
                     d[f"{p}.diameter"] = pipe_class.inner_diameter
@@ -1592,16 +1615,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options = self.heat_network_options()
 
         for ensemble_member in range(self.ensemble_size):
-            results = self.extract_results(ensemble_member)
             parameters = self.parameters(ensemble_member)
 
             h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
             for pipe in self.__pipe_topo_heat_losses:
-                pipe_class = next(
-                    c
-                    for c, s in self.__pipe_topo_pipe_class_map[pipe].items()
-                    if round(results[s][0]) == 1.0
-                )
+                pipe_class = self.get_optimized_pipe_class(pipe)
 
                 cold_pipe = self.hot_to_cold_pipe(pipe)
 
@@ -1612,6 +1630,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def priority_completed(self, priority):
         options = self.heat_network_options()
+
+        self.__pipe_class_to_results()
 
         # The head loss mixin wants to do some check for the head loss
         # minimization priority that involves the diameter/area. We assume
@@ -1629,6 +1649,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def post(self):
         super().post()
 
+        self.__pipe_class_to_results()
         self.__pipe_diameter_to_parameters()
         self.__pipe_heat_loss_to_parameters()
 
