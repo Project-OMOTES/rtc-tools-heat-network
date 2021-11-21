@@ -421,15 +421,15 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
     for x in esdl_model.energySystemInformation.carriers.carrier.items:
         if isinstance(x, esdl.esdl.HeatCommodity):
             if x.supplyTemperature != 0.0 and x.returnTemperature == 0.0:
-                type = "supply"
+                type_ = "supply"
             elif x.returnTemperature != 0.0 and x.supplyTemperature == 0.0:
-                type = "return"
+                type_ = "return"
             else:
-                type = "none"
+                type_ = "none"
             global_properties["carriers"][x.id] = dict(
                 supplyTemperature=x.supplyTemperature,
                 returnTemperature=x.returnTemperature,
-                __rtc_type=type,
+                __rtc_type=type_,
             )
 
     # For now, we only support networks with two carries; one hot, one cold.
