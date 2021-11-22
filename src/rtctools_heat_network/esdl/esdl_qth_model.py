@@ -119,14 +119,13 @@ class AssetToQTHComponent(_AssetToComponentBase):
             maximum_temperature = self.maximum_temperature
 
         supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
-
-        heat_nominal = asset.attributes["power"] / 2.0
+        max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         modifiers = dict(
             theta=self.theta,
             Q_nominal=self._get_connected_q_nominal(asset),
             QTHIn=dict(T=dict(min=minimum_temperature, max=maximum_temperature)),
-            Heat_demand=dict(min=0.0, max=asset.attributes["power"], nominal=heat_nominal),
+            Heat_demand=dict(min=0.0, max=max_demand),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
