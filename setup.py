@@ -42,7 +42,7 @@ setup(
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
     packages=find_packages("src"),
     package_dir={"": "src"},
-    install_requires=["pyecore", "pymoca >= 0.9.0", "rtc-tools >= 2.5.0"],
+    install_requires=["pyecore", "pymoca >= 0.9.0", "rtc-tools >= 2.5.0", "pyesdl >= 21.11.0"],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
     python_requires=">=3.7",

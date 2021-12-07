@@ -1,6 +1,8 @@
 import math
 from typing import Dict, Tuple, Type
 
+import esdl
+
 from rtctools_heat_network.pycml.component_library.heat import (
     Buffer,
     CheckValve,
@@ -13,7 +15,6 @@ from rtctools_heat_network.pycml.component_library.heat import (
     Source,
 )
 
-from . import esdl
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
 from .esdl_model_base import _ESDLModelBase

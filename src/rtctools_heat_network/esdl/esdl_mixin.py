@@ -4,6 +4,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Union
 
+import esdl
+
 import numpy as np
 
 from pyecore.resources import ResourceSet
@@ -14,7 +16,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
-import rtctools_heat_network.esdl.esdl as esdl
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
