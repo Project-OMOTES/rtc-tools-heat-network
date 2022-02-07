@@ -81,7 +81,7 @@ def heat_loss_u_values_pipe(
         * math.log(1 + (2 * depth_corrected / pipe_distance) ** 2)
     )
 
-    u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m ** 2)
-    u_2 = r_m / ((r_subsoil + r_ins) ** 2 - r_m ** 2)
+    u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m**2)
+    u_2 = r_m / ((r_subsoil + r_ins) ** 2 - r_m**2)
 
     return u_1, u_2

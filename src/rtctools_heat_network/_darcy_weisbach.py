@@ -99,13 +99,13 @@ def head_loss(velocity, diameter, length, wall_roughness, temperature):
 
     f = friction_factor(velocity, diameter, wall_roughness, temperature)
 
-    return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
+    return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity**2 / diameter
 
 
 def get_linear_pipe_dh_vs_q_fit(
     diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.0
 ):
-    area = math.pi * diameter ** 2 / 4
+    area = math.pi * diameter**2 / 4
 
     v_points = np.linspace(0.0, v_max, n_lines + 1)
     q_points = v_points * area

@@ -24,7 +24,7 @@ class Buffer(HeatTwoPort):
         self.heat_transfer_coeff = 1.0
         self.height = 5.0
         self.radius = 10.0
-        self.volume = math.pi * self.radius ** 2 * self.height
+        self.volume = math.pi * self.radius**2 * self.height
         self.heat_loss_coeff = 2 * self.heat_transfer_coeff / (self.radius * self.rho * self.cp)
         # The hot/cold tank can have a lower bound on its volume.
         # Meaning that they might always be, for e.g., 5% full.

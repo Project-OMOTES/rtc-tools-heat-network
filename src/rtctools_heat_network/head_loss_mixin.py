@@ -37,7 +37,7 @@ class HeadLossOption(IntEnum):
 class _MinimizeHeadLosses(Goal):
     order = 1
 
-    priority = 2 ** 31 - 1
+    priority = 2**31 - 1
 
     def __init__(self, optimization_problem: "_HeadLossMixin", *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -396,7 +396,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             linearization_velocity = estimated_velocity
-            linearization_head_loss = c_v * linearization_velocity ** 2
+            linearization_head_loss = c_v * linearization_velocity**2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
@@ -445,7 +445,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             v = discharge / area
-            expr = c_v * v ** 2
+            expr = c_v * v**2
 
             if symbolic:
                 q_nominal = self.variable_nominal(f"{pipe}.Q")
