@@ -64,7 +64,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 * (supply_temperature - return_temperature)
             )
 
-        raise capacity > 0.0
+        assert capacity > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume
 
         r = (
