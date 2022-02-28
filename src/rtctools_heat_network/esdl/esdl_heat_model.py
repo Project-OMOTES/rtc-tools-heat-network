@@ -52,8 +52,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # - the capacity is the relative heat that can be stored in the buffer;
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
-        capacity = asset.attributes["capacity"]
+        capacity = 0
+        if asset.attributes["capacity"]:
+            capacity = asset.attributes["capacity"]
+        # to override CF specified volume
+        if asset.attributes["volume"]:
+            capacity = (
+                asset.attributes["volume"]
+                * self.rho
+                * self.cp
+                * (supply_temperature - return_temperature)
+            )
+
+        raise capacity > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume
+
         r = (
             capacity
             * (1 + min_fraction_tank_volume)
