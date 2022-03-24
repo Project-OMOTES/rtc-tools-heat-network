@@ -326,11 +326,11 @@ class QTHLoopMixin(QTHMixin):
         if preprocessing:
             self.pre()
 
-        self.__n_times = len(super().times())
+        n_times = len(super().times())
 
         self.__check_goals()
 
-        for self.__tstep in range(self.__n_times - 1):
+        for self.__tstep in range(n_times - 1):
             success = super().optimize(preprocessing=preprocessing, postprocessing=False)
             self.__process_results()
 
