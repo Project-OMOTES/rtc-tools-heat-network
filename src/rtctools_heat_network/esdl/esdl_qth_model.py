@@ -182,33 +182,26 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
 
+        # NaN means the default values will be used
+        insulation_thicknesses = math.nan
+        conductivies_insulation = math.nan
+
         if "_ret" in asset.attributes["name"]:
             temperature = return_temperature
         else:
             temperature = supply_temperature
 
-        diameter = asset.attributes["innerDiameter"]
-        area = math.pi * asset.attributes["innerDiameter"] ** 2 / 4.0
+        (
+            diameter,
+            insulation_thicknesses,
+            conductivies_insulation,
+        ) = self._pipe_get_diameter_and_insulation(asset)
+
+        area = math.pi * diameter**2 / 4.0
         q_nominal = self.v_nominal * area
         q_max = self.v_max * area
 
         self._set_q_nominal(asset, q_nominal)
-
-        # Insulation properties
-        material = asset.attributes["material"]
-        # NaN means the default values will be used
-        insulation_thicknesses = math.nan
-        conductivies_insulation = math.nan
-
-        if material is not None:
-            if isinstance(material, esdl.esdl.MatterReference):
-                material = material.reference
-
-            assert isinstance(material, esdl.esdl.CompoundMatter)
-            components = material.component.items
-            if components:
-                insulation_thicknesses = [x.layerWidth for x in components]
-                conductivies_insulation = [x.matter.thermalConductivity for x in components]
 
         # TODO: We can do better with the temperature bounds.
         # Maybe global ones (temperature_supply_max / min, and temperature_return_max / min?)

@@ -1,14 +1,51 @@
+import json
+import logging
+import math
+import os
+from pathlib import Path
 from typing import Dict, Tuple, Type, Union
+
+import esdl
 
 from rtctools_heat_network.pycml import Model as _Model
 
 from .common import Asset
 from .esdl_model_base import _RetryLaterException, _SkipAssetException
 
+logger = logging.getLogger("rtctools_heat_network")
+
 MODIFIERS = Dict[str, Union[str, int, float]]
 
 
 class _AssetToComponentBase:
+
+    # A map of pipe class name to edr asset in _edr_pipes.json
+    STEEL_S1_PIPE_EDR_ASSETS = {
+        "DN20": "Steel-S1-DN-20",
+        "DN25": "Steel-S1-DN-25",
+        "DN32": "Steel-S1-DN-32",
+        "DN40": "Steel-S1-DN-40",
+        "DN50": "Steel-S1-DN-50",
+        "DN65": "Steel-S1-DN-65",
+        "DN80": "Steel-S1-DN-80",
+        "DN100": "Steel-S1-DN-100",
+        "DN125": "Steel-S1-DN-125",
+        "DN150": "Steel-S1-DN-150",
+        "DN200": "Steel-S1-DN-200",
+        "DN250": "Steel-S1-DN-250",
+        "DN300": "Steel-S1-DN-300",
+        "DN350": "Steel-S1-DN-350",
+        "DN400": "Steel-S1-DN-400",
+        "DN450": "Steel-S1-DN-450",
+        "DN500": "Steel-S1-DN-500",
+        "DN600": "Steel-S1-DN-600",
+        "DN700": "Steel-S1-DN-700",
+        "DN800": "Steel-S1-DN-800",
+        "DN900": "Steel-S1-DN-900",
+        "DN1000": "Steel-S1-DN-1000",
+        "DN1100": "Steel-S1-DN-1100",
+        "DN1200": "Steel-S1-DN-1200",
+    }
 
     component_map = {
         "GenericConsumer": "demand",
@@ -29,6 +66,9 @@ class _AssetToComponentBase:
     def __init__(self):
         self._port_to_q_nominal = {}
         self._port_to_esdl_component_type = {}
+        self._edr_pipes = json.load(
+            open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
+        )
 
     def convert(self, asset: Asset) -> Tuple[Type[_Model], MODIFIERS]:
         """
@@ -43,6 +83,76 @@ class _AssetToComponentBase:
 
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
+
+    def _pipe_get_diameter_and_insulation(self, asset: Asset):
+        # There are multiple ways to specify pipe properties like diameter and
+        # material / insulation. We assume that DN `diameter` takes precedence
+        # over `innerDiameter` and `material` (while logging warnings if both
+        # are specified)
+        full_name = f"{asset.asset_type} '{asset.name}'"
+        if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
+            logger.warning(
+                f"{full_name}' has both 'innerDiameter' and 'diameter' specified. "
+                f"Diameter of {asset.attributes['diameter'].name} will be used."
+            )
+        if asset.attributes["material"] and asset.attributes["diameter"].value > 0:
+            logger.warning(
+                f"{full_name}' has both 'material' and 'diameter' specified. "
+                f"Insulation properties of {asset.attributes['diameter'].name} will be used."
+            )
+        if asset.attributes["material"] and (
+            asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]
+        ):
+            logger.warning(
+                f"{full_name}' has only 'material' specified, but no information on diameter. "
+                f"Diameter and insulation properties of DN200 will be used."
+            )
+        if asset.attributes["diameter"].value == 0 and not asset.attributes["innerDiameter"]:
+            if asset.attributes["material"]:
+                logger.warning(
+                    f"{full_name}' has only 'material' specified, but no information on diameter. "
+                    f"Diameter and insulation properties of DN200 will be used."
+                )
+            else:
+                logger.warning(
+                    f"{full_name}' has no DN size or innerDiameter specified. "
+                    f"Diameter and insulation properties of DN200 will be used. "
+                )
+
+        edr_dn_size = None
+        if asset.attributes["diameter"].value > 0:
+            edr_dn_size = str(asset.attributes["diameter"].name)
+        elif not asset.attributes["innerDiameter"]:
+            edr_dn_size = "DN200"
+
+        # NaN means the default values will be used
+        insulation_thicknesses = math.nan
+        conductivies_insulation = math.nan
+
+        if edr_dn_size:
+            # Get insulation and diameter properties from EDR asset with this size.
+            edr_asset = self._edr_pipes[self.STEEL_S1_PIPE_EDR_ASSETS[edr_dn_size]]
+            diameter = edr_asset["inner_diameter"]
+            insulation_thicknesses = edr_asset["insulation_thicknesses"]
+            conductivies_insulation = edr_asset["conductivies_insulation"]
+        else:
+            assert asset.attributes["innerDiameter"]
+            diameter = asset.attributes["innerDiameter"]
+
+            # Insulation properties
+            material = asset.attributes["material"]
+
+            if material is not None:
+                if isinstance(material, esdl.esdl.MatterReference):
+                    material = material.reference
+
+                assert isinstance(material, esdl.esdl.CompoundMatter)
+                components = material.component.items
+                if components:
+                    insulation_thicknesses = [x.layerWidth for x in components]
+                    conductivies_insulation = [x.matter.thermalConductivity for x in components]
+
+        return diameter, insulation_thicknesses, conductivies_insulation
 
     def _is_disconnectable_pipe(self, asset):
         # Source and buffer pipes are disconnectable by default

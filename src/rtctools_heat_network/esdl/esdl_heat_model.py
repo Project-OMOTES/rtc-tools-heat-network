@@ -144,9 +144,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             temperature = supply_temperature
 
+        (
+            diameter,
+            insulation_thicknesses,
+            conductivies_insulation,
+        ) = self._pipe_get_diameter_and_insulation(asset)
+
         # Compute the maximum heat flow based on an assumed maximum velocity
-        diameter = asset.attributes["innerDiameter"]
-        area = math.pi * asset.attributes["innerDiameter"] ** 2 / 4.0
+        area = math.pi * diameter**2 / 4.0
         q_max = area * self.v_max
         q_nominal = area * self.v_nominal
 
@@ -159,22 +164,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
 
         assert hfr_max > 0.0
-
-        # Insulation properties
-        material = asset.attributes["material"]
-        # NaN means the default values will be used
-        insulation_thicknesses = math.nan
-        conductivies_insulation = math.nan
-
-        if material is not None:
-            if isinstance(material, esdl.esdl.MatterReference):
-                material = material.reference
-
-            assert isinstance(material, esdl.esdl.CompoundMatter)
-            components = material.component.items
-            if components:
-                insulation_thicknesses = [x.layerWidth for x in components]
-                conductivies_insulation = [x.matter.thermalConductivity for x in components]
 
         modifiers = dict(
             Q_nominal=q_nominal,
