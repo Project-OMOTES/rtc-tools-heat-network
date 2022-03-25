@@ -65,7 +65,18 @@ class AssetToQTHComponent(_AssetToComponentBase):
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
         min_fraction_tank_volume = self.min_fraction_tank_volume
-        capacity = asset.attributes["capacity"]
+
+        capacity = 0
+        if asset.attributes["capacity"]:
+            capacity = asset.attributes["capacity"]
+        # to override CF specified volume
+        if asset.attributes["volume"]:
+            capacity = (
+                asset.attributes["volume"]
+                * self.rho
+                * self.cp
+                * (supply_temperature - return_temperature)
+            )
         r = (capacity * (1 + min_fraction_tank_volume) * heat_to_discharge_fac / math.pi) ** (
             1.0 / 3.0
         )
