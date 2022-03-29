@@ -171,7 +171,9 @@ class ESDLMixin(
 
         try:
             self.__timeseries_import = pi.Timeseries(
-                self.esdl_pi_input_data_config(self.__timeseries_id_map),
+                self.esdl_pi_input_data_config(
+                    self.__timeseries_id_map, self.heat_network_components.copy()
+                ),
                 input_folder,
                 timeseries_import_basename,
                 binary=False,
@@ -284,8 +286,10 @@ class ESDLMixin(
 
 
 class _ESDLInputDataConfig:
-    def __init__(self, id_map):
+    def __init__(self, id_map, heat_network_components):
         self.__id_map = id_map
+        self._sources = set(heat_network_components["source"])
+        self._demands = set(heat_network_components["demand"])
 
     def variable(self, pi_header):
         location_id = pi_header.find("pi:locationId", ns).text
@@ -298,7 +302,16 @@ class _ESDLInputDataConfig:
             qualifier_ids = ":".join(q.text for q in qualifiers)
             return f"{location_id}:{parameter_id}:{qualifier_ids}"
 
-        suffix = ".target_heat_demand"
+        if component_name in self._demands:
+            suffix = ".target_heat_demand"
+        elif component_name in self._sources:
+            suffix = ".target_heat_source"
+        else:
+            logger.warning(
+                f"Could not identify '{component_name}' as either source or demand. "
+                f"Using neutral suffix '.target_heat' for its heat timeseries."
+            )
+            suffix = ".target_heat"
 
         # Note that the qualifier id (if any specified) refers to the profile
         # element of the respective ESDL asset->in_port. For now we just
