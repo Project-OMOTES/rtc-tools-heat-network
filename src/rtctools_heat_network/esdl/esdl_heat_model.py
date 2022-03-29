@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Dict, Tuple, Type
 
@@ -18,6 +19,8 @@ from rtctools_heat_network.pycml.component_library.heat import (
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
 from .esdl_model_base import _ESDLModelBase
+
+logger = logging.getLogger("rtctools_heat_network")
 
 
 class AssetToHeatComponent(_AssetToComponentBase):
@@ -52,10 +55,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # - the capacity is the relative heat that can be stored in the buffer;
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
-        capacity = 0
-        if asset.attributes["capacity"]:
-            capacity = asset.attributes["capacity"]
-        # to override CF specified volume
+        if asset.attributes["capacity"] and asset.attributes["volume"]:
+            logger.warning(
+                f"{asset.asset_type} '{asset.name}' has both capacity and volume specified. "
+                f"Volume with value of {asset.attributes['volume']} m3 will be used."
+            )
+
+        capacity = 0.0
         if asset.attributes["volume"]:
             capacity = (
                 asset.attributes["volume"]
@@ -63,6 +69,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 * self.cp
                 * (supply_temperature - return_temperature)
             )
+        elif asset.attributes["capacity"]:
+            capacity = asset.attributes["capacity"]
 
         assert capacity > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume

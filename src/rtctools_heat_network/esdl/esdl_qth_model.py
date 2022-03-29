@@ -66,10 +66,13 @@ class AssetToQTHComponent(_AssetToComponentBase):
         # - same height as radius to compute dimensions.
         min_fraction_tank_volume = self.min_fraction_tank_volume
 
-        capacity = 0
-        if asset.attributes["capacity"]:
-            capacity = asset.attributes["capacity"]
-        # to override CF specified volume
+        if asset.attributes["capacity"] and asset.attributes["volume"]:
+            logger.warning(
+                f"{asset.asset_type} '{asset.name}' has both capacity and volume specified. "
+                f"Volume with value of {asset.attributes['volume']} m3 will be used."
+            )
+
+        capacity = 0.0
         if asset.attributes["volume"]:
             capacity = (
                 asset.attributes["volume"]
@@ -77,6 +80,9 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 * self.cp
                 * (supply_temperature - return_temperature)
             )
+        elif asset.attributes["capacity"]:
+            capacity = asset.attributes["capacity"]
+
         r = (capacity * (1 + min_fraction_tank_volume) * heat_to_discharge_fac / math.pi) ** (
             1.0 / 3.0
         )
