@@ -446,6 +446,8 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
     # When this no longer holds, carriers either have to specify both the
     # supply and return temperature (instead of one being 0.0), or we have to
     # pair them up.
+    if len(global_properties["carriers"]) != 2:
+        logger.error("More than 2 carriers specified, please use model with only two carriers.")
     assert len(global_properties["carriers"]) == 2
     supply_temperature = next(
         x["supplyTemperature"]

@@ -82,6 +82,11 @@ class AssetToQTHComponent(_AssetToComponentBase):
             )
         elif asset.attributes["capacity"]:
             capacity = asset.attributes["capacity"]
+        else:
+            logger.error(
+                f"{asset.asset_type} '{asset.name}' has both not capacity and volume specified. "
+                f"Please specify one of the two"
+            )
 
         r = (capacity * (1 + min_fraction_tank_volume) * heat_to_discharge_fac / math.pi) ** (
             1.0 / 3.0
@@ -282,21 +287,30 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 if hasattr(asset.attributes["costInformation"].variableOperationalCosts, "value"):
                     price = asset.attributes["costInformation"].variableOperationalCosts.value
 
+        max_supply = asset.attributes["power"]
+        if not max_supply:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+        assert max_supply > 0.0
+
         modifiers = dict(
             theta=self.theta,
             Q_nominal=self._get_connected_q_nominal(asset),
             QTHOut=dict(T=dict(min=minimum_temperature, max=maximum_temperature)),
             price=price,
-            Heat_source=dict(
-                min=0.0, max=asset.attributes["power"], nominal=asset.attributes["power"] / 2.0
-            ),
+            Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
 
         if asset.asset_type == "GeothermalSource":
             # Note that the ESDL target flow rate is in kg/s, but we want m3/s
-            modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
+            try:
+                modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
+            except KeyError:
+                logger.warning(
+                    f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
+                    f"'{asset.name}' will not be actuated in a constant manner"
+                )
             return GeothermalSource, modifiers
         else:
             return Source, modifiers

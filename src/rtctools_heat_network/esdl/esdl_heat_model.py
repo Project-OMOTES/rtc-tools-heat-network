@@ -71,6 +71,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         elif asset.attributes["capacity"]:
             capacity = asset.attributes["capacity"]
+        else:
+            logger.error(
+                f"{asset.asset_type} '{asset.name}' has both not capacity and volume specified. "
+                f"Please specify one of the two"
+            )
 
         assert capacity > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume
@@ -207,6 +212,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         }
 
         max_supply = asset.attributes["power"]
+        if not max_supply:
+            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
         assert max_supply > 0.0
 
         # get price per unit of energy,
@@ -227,7 +234,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if asset.asset_type == "GeothermalSource":
             # Note that the ESDL target flow rate is in kg/s, but we want m3/s
-            modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
+            try:
+                modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
+            except KeyError:
+                logger.warning(
+                    f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
+                    f"'{asset.name}' will not be actuated in a constant manner"
+                )
             return GeothermalSource, modifiers
         else:
             return Source, modifiers

@@ -1,4 +1,9 @@
+import logging
+
+
 from rtctools_heat_network.pycml import Model as _Model
+
+logger = logging.getLogger("rtctools_heat_network")
 
 
 RETRY_LOOP_LIMIT = 100
@@ -97,6 +102,11 @@ class _ESDLModelBase(_Model):
         for asset in non_node_assets:
             for port in (asset.in_port, asset.out_port):
                 connected_ports = [p for p in port.connectedTo.items if p.id not in skip_port_ids]
+                if len(connected_ports) != 1:
+                    logger.warning(
+                        f"{asset.asset_type} '{asset.name}' has multiple connections"
+                        f" to a single port. "
+                    )
                 assert len(connected_ports) == 1
 
                 for connected_to in connected_ports:
