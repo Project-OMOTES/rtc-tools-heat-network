@@ -8,6 +8,7 @@ stages:
   - build
   - test
   - documentation
+  - deploy
 
 # style
 style:
@@ -54,3 +55,14 @@ pages:
       - public
   only:
     - master
+
+# deploy
+deploy:
+  stage: deploy
+  dependencies:
+    - build
+  script:
+    - pip install twine
+    - twine upload -u $PYPI_USER -p $PYPI_PASSWORD dist/*
+  only:
+    - tags
