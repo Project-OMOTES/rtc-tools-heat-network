@@ -10,12 +10,12 @@ from .model_base import (
 )
 
 __all__ = [
-    Component,
-    Connector,
-    ConstantInput,
-    ControlInput,
-    FlattenedModel,
-    Model,
-    SymbolicParameter,
-    Variable,
+    "Component",
+    "Connector",
+    "ConstantInput",
+    "ControlInput",
+    "FlattenedModel",
+    "Model",
+    "SymbolicParameter",
+    "Variable",
 ]
