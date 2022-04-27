@@ -71,11 +71,13 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
     def __init__(self, *args, flow_directions=None, **kwargs):
         """
-        :param flow_directions: A dictionary mapping a pipe name to a
+        :param flow_directions:
+            A dictionary mapping a pipe name to a
             Timeseries of the flow directions of type:
-              - :py:class:`PipeFlowDirection`
-              - :py:class:`ControlValveDirection`
-              - :py:class:`CheckValveStatus`
+
+                - :py:class:`PipeFlowDirection`
+                - :py:class:`ControlValveDirection`
+                - :py:class:`CheckValveStatus`
         """
         super().__init__(*args, **kwargs)
 

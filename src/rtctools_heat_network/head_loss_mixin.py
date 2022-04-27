@@ -135,7 +135,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         +--------------------------------+-----------+-----------------------------------+
         | ``minimize_head_losses``       | ``bool``  | ``True``                          |
         +--------------------------------+-----------+-----------------------------------+
-        | ``pipe_minimum_pressure``      | ``float`` | ``-np.inf`                        |
+        | ``pipe_minimum_pressure``      | ``float`` | ``-np.inf``                       |
         +--------------------------------+-----------+-----------------------------------+
         | ``pipe_maximum_pressure``      | ``float`` | ``np.inf``                        |
         +--------------------------------+-----------+-----------------------------------+
@@ -159,7 +159,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         When ``HeadLossOption.LINEARIZED_DW`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
-        relationship from :math:`v = 0` until :math:`v = maximum_velocity`
+        relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
         When ``HeadLossOption.LINEAR`` is used, the wall roughness at
