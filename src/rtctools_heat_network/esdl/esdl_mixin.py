@@ -31,6 +31,10 @@ logger = logging.getLogger("rtctools_heat_network")
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
 
+class _ESDLInputException(Exception):
+    pass
+
+
 class ESDLMixin(
     ModelicaComponentTypeMixin, IOMixin, PyCMLMixin, CollocatedIntegratedOptimizationProblem
 ):
@@ -437,6 +441,7 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
             else:
                 type_ = "none"
             global_properties["carriers"][x.id] = dict(
+                name=x.name.replace("_ret", ""),
                 supplyTemperature=x.supplyTemperature,
                 returnTemperature=x.returnTemperature,
                 __rtc_type=type_,
@@ -446,21 +451,24 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
     # When this no longer holds, carriers either have to specify both the
     # supply and return temperature (instead of one being 0.0), or we have to
     # pair them up.
-    if len(global_properties["carriers"]) != 2:
-        logger.error("More than 2 carriers specified, please use model with only two carriers.")
-    assert len(global_properties["carriers"]) == 2
-    supply_temperature = next(
-        x["supplyTemperature"]
-        for x in global_properties["carriers"].values()
-        if x["supplyTemperature"] != 0.0
-    )
-    return_temperature = next(
-        x["returnTemperature"]
-        for x in global_properties["carriers"].values()
-        if x["returnTemperature"] != 0.0
-    )
+    if (len(global_properties["carriers"]) % 2) != 0:
+        _ESDLInputException(
+            "Odd number of carriers specified, please use model with dedicated supply and return "
+            "carriers. Every hydraulically coupled system should have one carrier for the supply "
+            "side and one for the return side"
+        )
 
     for c in global_properties["carriers"].values():
+        supply_temperature = next(
+            x["supplyTemperature"]
+            for x in global_properties["carriers"].values()
+            if x["supplyTemperature"] != 0.0 and x["name"] == c["name"]
+        )
+        return_temperature = next(
+            x["returnTemperature"]
+            for x in global_properties["carriers"].values()
+            if x["returnTemperature"] != 0.0 and x["name"] == c["name"]
+        )
         c["supplyTemperature"] = supply_temperature
         c["returnTemperature"] = return_temperature
 
@@ -490,24 +498,30 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
             # For some reason `esdl_element.assetType` is `None`, so use the class name
             asset_type = el.__class__.__name__
 
-            assert 1 <= len(el.port) <= 2
+            # Every asset should at least have a port to be connected to another asset
+            assert len(el.port) >= 1
 
-            if len(el.port) == 1 and isinstance(el.port[0], esdl.InPort):
-                in_port, out_port = el.port[0], None
-            elif len(el.port) == 1 and isinstance(el.port[0], esdl.OutPort):
-                out_port, in_port = el.port[0], None
-            elif isinstance(el.port[0], esdl.InPort) and isinstance(el.port[1], esdl.OutPort):
-                in_port, out_port = el.port
-            elif isinstance(el.port[1], esdl.InPort) and isinstance(el.port[0], esdl.OutPort):
-                out_port, in_port = el.port
-            else:
-                raise Exception(f"Unexpected combination of In- and OutPorts for '{el_name}'")
+            in_ports = None
+            out_ports = None
+            for port in el.port:
+                if isinstance(port, esdl.InPort):
+                    if in_ports is None:
+                        in_ports = [port]
+                    else:
+                        in_ports.append(port)
+                elif isinstance(port, esdl.OutPort):
+                    if out_ports is None:
+                        out_ports = [port]
+                    else:
+                        out_ports.append(port)
+                else:
+                    _ESDLInputException(f"The port for {el_name} is neither an IN or OUT port")
 
             # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
             # We therefore built this dict ourselves using 'dir' and 'getattr'
             attributes = {k: getattr(el, k) for k in dir(el)}
             assets[el.id] = Asset(
-                asset_type, el.id, el_name, in_port, out_port, attributes, global_properties
+                asset_type, el.id, el_name, in_ports, out_ports, attributes, global_properties
             )
 
     return assets

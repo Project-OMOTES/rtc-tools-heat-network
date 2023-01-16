@@ -51,8 +51,8 @@
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="b2603da2-16bc-4d29-b4b8-475ae296a23c">
     <carriers xsi:type="esdl:Carriers" id="988bd9bf-ecad-4d0e-89b5-90ab19e5e78d">
-      <carrier xsi:type="esdl:HeatCommodity" id="b8032169-3d40-45c0-8c1f-b57680185c1e" returnTemperature="45.0" name="cold"/>
-      <carrier xsi:type="esdl:HeatCommodity" id="bec60746-19e4-4011-bf4b-9a322cbea396" supplyTemperature="75.0" name="hot"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="b8032169-3d40-45c0-8c1f-b57680185c1e" returnTemperature="45.0" name="heat_ret"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="bec60746-19e4-4011-bf4b-9a322cbea396" supplyTemperature="75.0" name="heat"/>
     </carriers>
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="c7104449-b5eb-49c7-b064-a2a4b16ae6e4">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Power in MW" unit="WATT" physicalQuantity="POWER" multiplier="MEGA" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>

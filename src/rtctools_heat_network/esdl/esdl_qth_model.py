@@ -168,7 +168,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 sum_out += len(x.connectedTo)
 
         # TODO: what do we want if no carrier is specified.
-        carrier = asset.global_properties["carriers"][asset.in_port.carrier.id]
+        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
         if carrier["__rtc_type"] == "supply":
             temp = carrier["supplyTemperature"]
         elif carrier["__rtc_type"] == "return":

@@ -50,10 +50,12 @@ class _AssetToComponentBase:
     component_map = {
         "GenericConsumer": "demand",
         "HeatingDemand": "demand",
+        "HeatPump": "heat_pump",
         "GasHeater": "source",
         "GenericProducer": "source",
         "GeothermalSource": "source",
         "ResidualHeatSource": "source",
+        "GenericConversion": "heat_exchanger",
         "Joint": "node",
         "Pipe": "pipe",
         "Pump": "pump",
@@ -78,7 +80,7 @@ class _AssetToComponentBase:
             Tuple[pycml_heat_component_type, Dict[component_attribute, new_attribute_value]]
         """
 
-        for port in [asset.in_port, asset.out_port]:
+        for port in [*asset.in_ports, *asset.out_ports]:
             self._port_to_esdl_component_type[port] = asset.asset_type
 
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
@@ -156,12 +158,16 @@ class _AssetToComponentBase:
 
     def _is_disconnectable_pipe(self, asset):
         # Source and buffer pipes are disconnectable by default
-        connected_type_in = self._port_to_esdl_component_type.get(
-            asset.in_port.connectedTo[0], None
-        )
-        connected_type_out = self._port_to_esdl_component_type.get(
-            asset.out_port.connectedTo[0], None
-        )
+        assert asset.asset_type == "Pipe"
+        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            connected_type_in = self._port_to_esdl_component_type.get(
+                asset.in_ports[0].connectedTo[0], None
+            )
+            connected_type_out = self._port_to_esdl_component_type.get(
+                asset.out_ports[0].connectedTo[0], None
+            )
+        else:
+            raise RuntimeError("Pipe does not have 1 in port and 1 out port")
 
         types = {k for k, v in self.component_map.items() if v in {"source", "buffer"}}
 
@@ -176,28 +182,55 @@ class _AssetToComponentBase:
             return False
 
     def _set_q_nominal(self, asset, q_nominal):
-        self._port_to_q_nominal[asset.in_port] = q_nominal
-        self._port_to_q_nominal[asset.out_port] = q_nominal
+        self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
+        self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
 
     def _get_connected_q_nominal(self, asset):
-        try:
-            connected_port = asset.in_port.connectedTo[0]
-            q_nominal = self._port_to_q_nominal[connected_port]
-        except KeyError:
-            connected_port = asset.out_port.connectedTo[0]
-            q_nominal = self._port_to_q_nominal.get(connected_port, None)
+        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            try:
+                connected_port = asset.in_ports[0].connectedTo[0]
+                q_nominal = self._port_to_q_nominal[connected_port]
+            except KeyError:
+                connected_port = asset.out_ports[0].connectedTo[0]
+                q_nominal = self._port_to_q_nominal.get(connected_port, None)
 
-        if q_nominal is not None:
-            self._set_q_nominal(asset, q_nominal)
-            return q_nominal
-        else:
-            raise _RetryLaterException(
-                f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
-            )
+            if q_nominal is not None:
+                self._set_q_nominal(asset, q_nominal)
+                return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
+            q_nominals = {}
+            for p in asset.in_ports:
+                out_port = None
+                for p2 in asset.out_ports:
+                    if p2.carrier.name == p.carrier.name:
+                        out_port = p2
+                try:
+                    connected_port = p.connectedTo[0]
+                    q_nominal = self._port_to_q_nominal[connected_port]
+                except KeyError:
+                    connected_port = out_port.connectedTo[0]
+                    q_nominal = self._port_to_q_nominal.get(connected_port, None)
+                if q_nominal is not None:
+                    self._port_to_q_nominal[p] = q_nominal
+                    self._port_to_q_nominal[out_port] = q_nominal
+                    if "_ret" in p.carrier.name:
+                        q_nominals["Secondary"] = {"Q_nominal": q_nominal}
+                    else:
+                        q_nominals["Primary"] = {"Q_nominal": q_nominal}
+                else:
+                    raise _RetryLaterException(
+                        f"Could not determine nominal discharge for {asset.asset_type} {asset.name}"
+                    )
+            return q_nominals
 
     @staticmethod
     def _get_supply_return_temperatures(asset: Asset) -> Tuple[float, float]:
-        carrier = asset.global_properties["carriers"][asset.in_port.carrier.id]
+        assert len(asset.in_ports) == 1 and len(asset.out_ports) == 1
+        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
         supply_temperature = carrier["supplyTemperature"]
         return_temperature = carrier["returnTemperature"]
 
@@ -210,8 +243,43 @@ class _AssetToComponentBase:
         return supply_temperature, return_temperature
 
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
-        return {"T_supply": supply_temperature, "T_return": return_temperature}
+        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+            return {"T_supply": supply_temperature, "T_return": return_temperature}
+        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
+            for p in asset.in_ports:
+                carrier = asset.global_properties["carriers"][p.carrier.id]
+                if "_ret" in p.carrier.name:
+                    # This in the Secondary side carrier
+                    sec_supply_temperature = carrier["supplyTemperature"]
+                    sec_return_temperature = carrier["returnTemperature"]
+                    assert sec_supply_temperature > sec_return_temperature
+                    assert sec_supply_temperature > 0.0
+                else:
+                    # This in the Primary side carrier
+                    prim_supply_temperature = carrier["supplyTemperature"]
+                    prim_return_temperature = carrier["returnTemperature"]
+                    assert prim_supply_temperature > prim_return_temperature
+                    assert prim_supply_temperature > 0.0
+            if not prim_supply_temperature or not sec_supply_temperature:
+                raise RuntimeError(
+                    f"{asset.name} carriers are not specified correctly there should be a "
+                    f"dedicated _ret carrier for each hycraulically coupled network"
+                )
+            temperatures = {
+                "Primary": {
+                    "T_supply": prim_supply_temperature,
+                    "T_return": prim_return_temperature,
+                },
+                "Secondary": {
+                    "T_supply": sec_supply_temperature,
+                    "T_return": sec_return_temperature,
+                },
+            }
+            return temperatures
+        else:
+            # unknown model type
+            return {}
 
     def convert_skip(self, asset: Asset):
         raise _SkipAssetException(asset)

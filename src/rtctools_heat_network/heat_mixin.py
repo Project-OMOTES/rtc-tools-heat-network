@@ -1170,6 +1170,51 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __heat_exchanger_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        # We apply a equality constraint to the primary side, which is essentially consuming heat
+        # from the primary side network. For the secondary side the we apply a inequality constraint
+        # to allow for the heat to be larger than what is required for the discharge. This allows to
+        # compensate for heat losses in the pipes.
+        for heat_exchanger in [
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            q_nominal_prim = self.variable_nominal(f"{heat_exchanger}.HeatInPrimarry.Q")
+            q_nominal_sec = self.variable_nominal(f"{heat_exchanger}.HeatOutSecondary.Q")
+            cp_prim = parameters[f"{heat_exchanger}.Primary.cp"]
+            rho_prim = parameters[f"{heat_exchanger}.Primary.rho"]
+            cp_sec = parameters[f"{heat_exchanger}.Primary.cp"]
+            rho_sec = parameters[f"{heat_exchanger}.Primary.rho"]
+            dt_prim = parameters[f"{heat_exchanger}.Primary.dT"]
+            dt_sec = parameters[f"{heat_exchanger}.Secondary.dT"]
+            discharge_primary = self.state(f"{heat_exchanger}.Primary.HeatIn.Q")
+            discharge_secondary = self.state(f"{heat_exchanger}.Secondary.HeatOut.Q")
+            heat_primary = self.state(f"{heat_exchanger}.Primary_heat")
+            heat_secondary = self.state(f"{heat_exchanger}.Secondary_heat")
+            constraint_nominal = cp_prim * rho_prim * dt_prim * q_nominal_prim
+            constraints.append(
+                (
+                    (heat_primary - cp_prim * rho_prim * dt_prim * discharge_primary)
+                    / constraint_nominal,
+                    0.0,
+                    0.0,
+                )
+            )
+            constraint_nominal = cp_sec * rho_sec * dt_sec * q_nominal_sec
+            constraints.append(
+                (
+                    (heat_secondary - cp_sec * rho_sec * dt_sec * discharge_secondary)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        return constraints
+
     def __state_vector_scaled(self, variable, ensemble_member):
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
@@ -1521,6 +1566,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(
+            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)
+        )
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))

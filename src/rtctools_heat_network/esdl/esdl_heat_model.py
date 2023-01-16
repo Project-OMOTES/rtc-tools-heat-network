@@ -10,6 +10,8 @@ from rtctools_heat_network.pycml.component_library.heat import (
     ControlValve,
     Demand,
     GeothermalSource,
+    HeatExchanger,
+    HeatPump,
     Node,
     Pipe,
     Pump,
@@ -21,6 +23,10 @@ from .common import Asset
 from .esdl_model_base import _ESDLModelBase
 
 logger = logging.getLogger("rtctools_heat_network")
+
+
+class _ESDLInputException(Exception):
+    pass
 
 
 class AssetToHeatComponent(_AssetToComponentBase):
@@ -49,7 +55,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         assert asset.asset_type == "HeatStorage"
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        temperature_modifiers = self._supply_return_temperature_modifiers(asset)
+
+        supply_temperature = temperature_modifiers["T_supply"]
+        return_temperature = temperature_modifiers["T_return"]
 
         # Assume that:
         # - the capacity is the relative heat that can be stored in the buffer;
@@ -127,7 +136,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         sum_in = 0
         sum_out = 0
 
+        node_carrier = None
         for x in asset.attributes["port"].items:
+            if node_carrier is None:
+                node_carrier = x.carrier.name
+            else:
+                if node_carrier != x.carrier.name:
+                    raise _ESDLInputException(
+                        f"{asset.name} has multiple carriers mixing which is not allowed. "
+                        f"Only one carrier (carrier couple) allowed in hydraulicly "
+                        f"coupled system"
+                    )
             if type(x) == esdl.esdl.InPort:
                 sum_in += len(x.connectedTo)
             if type(x) == esdl.esdl.OutPort:
@@ -142,7 +161,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         assert asset.asset_type == "Pipe"
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        temperature_modifiers = self._supply_return_temperature_modifiers(asset)
+
+        supply_temperature = temperature_modifiers["T_supply"]
+        return_temperature = temperature_modifiers["T_return"]
 
         if "_ret" in asset.attributes["name"]:
             temperature = return_temperature
@@ -202,6 +224,54 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return Pump, modifiers
+
+    def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
+        assert asset.asset_type in {
+            "GenericConversion",
+        }
+
+        params_t = self._supply_return_temperature_modifiers(asset)
+        params_q = self._get_connected_q_nominal(asset)
+        params = {}
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
+
+        modifiers = dict(
+            efficiency=asset.attributes["efficiency"],
+            **params,
+        )
+        return HeatExchanger, modifiers
+
+    def convert_heat_pump(self, asset: Asset) -> Tuple[Type[HeatPump], MODIFIERS]:
+        assert asset.asset_type in {
+            "HeatPump",
+        }
+        power_electrical = 0.0
+        cop = 0.0
+        if not asset.attributes["power"]:
+            raise _ESDLInputException(f"{asset.name} has no power specified")
+        else:
+            power_electrical = asset.attributes["power"]
+
+        if not asset.attributes["COP"]:
+            raise _ESDLInputException(
+                f"{asset.name} has not COP specified, this is required for the model"
+            )
+        else:
+            cop = asset.attributes["COP"]
+
+        params_t = self._supply_return_temperature_modifiers(asset)
+        params_q = self._get_connected_q_nominal(asset)
+        params = {}
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
+
+        modifiers = dict(
+            COP=cop,
+            Power_elec=dict(min=0.0, max=power_electrical),
+            **params,
+        )
+        return HeatPump, modifiers
 
     def convert_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
         assert asset.asset_type in {
