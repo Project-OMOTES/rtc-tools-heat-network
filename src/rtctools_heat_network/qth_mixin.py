@@ -518,7 +518,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         return constraints
 
     def __buffer_constraints(self, ensemble_member):
-
         parameters = self.parameters(ensemble_member)
         constraints = []
 
@@ -934,7 +933,6 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         # constraints are trivially satisfied at theta = 0.0 as the temperature
         # are constants then.
         if theta > 0.0:
-
             # Fix sources output temperatures
             if options["sources_equal_output_temp"]:
                 sources = self.heat_network_components["source"]

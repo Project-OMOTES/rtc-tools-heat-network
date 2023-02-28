@@ -1,3 +1,4 @@
+from .ates import ATES
 from .buffer import Buffer
 from .check_valve import CheckValve
 from .control_valve import ControlValve
@@ -14,6 +15,7 @@ from .pump import Pump
 from .source import Source
 
 __all__ = [
+    "ATES",
     "Buffer",
     "CheckValve",
     "ControlValve",

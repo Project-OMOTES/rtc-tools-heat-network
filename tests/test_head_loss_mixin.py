@@ -11,7 +11,6 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 class TestHeadLossCalculation(TestCase):
     def test_scalar_return_type(self):
-
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatPython
 

@@ -9,6 +9,7 @@ class PipeClass:
     inner_diameter: float
     maximum_velocity: float
     u_values: Tuple[float, float]
+    investment_costs: float
 
     @property
     def maximum_discharge(self):

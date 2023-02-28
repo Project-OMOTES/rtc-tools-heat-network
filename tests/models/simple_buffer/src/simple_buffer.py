@@ -19,7 +19,6 @@ else:
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 1
@@ -35,7 +34,6 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeSourceGoal(Goal):
-
     priority = 2
 
     order = 1

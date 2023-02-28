@@ -5,6 +5,7 @@ from typing import Dict, Tuple, Type
 import esdl
 
 from rtctools_heat_network.pycml.component_library.heat import (
+    ATES,
     Buffer,
     CheckValve,
     ControlValve,
@@ -277,6 +278,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {
             "GasHeater",
             "GenericProducer",
+            "HeatProducer",
             "GeothermalSource",
             "ResidualHeatSource",
         }
@@ -303,6 +305,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         if asset.asset_type == "GeothermalSource":
+            try:
+                modifiers["single_doublet_power"] = asset.attributes["single_doublet_power"]
+            except KeyError:
+                modifiers["single_doublet_power"] = 1.5e7
             # Note that the ESDL target flow rate is in kg/s, but we want m3/s
             try:
                 modifiers["target_flow_rate"] = asset.attributes["flowRate"] / self.rho
@@ -314,6 +320,52 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return GeothermalSource, modifiers
         else:
             return Source, modifiers
+
+    def convert_ates(self, asset: Asset) -> Tuple[Type[ATES], MODIFIERS]:
+        assert asset.asset_type in {
+            "ATES",
+        }
+
+        hfr_charge_max = asset.attributes.get("maxChargeRate", math.inf) or math.inf
+        hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf) or math.inf
+
+        max_supply = asset.attributes["power"]
+        if not max_supply:
+            max_supply = hfr_discharge_max
+        else:
+            hfr_charge_max = max_supply
+            hfr_discharge_max = max_supply
+
+        try:
+            single_doublet_power = asset.attributes["single_doublet_power"]
+        except KeyError:
+            single_doublet_power = 1.2e7
+
+        efficiency = asset.attributes["efficiency"]
+        if not efficiency:
+            efficiency = 1.0
+
+        # get price per unit of energy,
+        # assume cost of 1. if nothing is given (effectively heat loss minimization)
+        price = 1.0
+        if "costInformation" in asset.attributes.keys():
+            if hasattr(asset.attributes["costInformation"], "variableOperationalCosts"):
+                if hasattr(asset.attributes["costInformation"].variableOperationalCosts, "value"):
+                    price = asset.attributes["costInformation"].variableOperationalCosts.value
+
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            price=price,
+            single_doublet_power=single_doublet_power,
+            efficiency=efficiency,
+            Heat_ates=dict(
+                min=-hfr_charge_max, max=hfr_discharge_max, nominal=hfr_discharge_max / 2.0
+            ),
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+        )
+
+        return ATES, modifiers
 
     def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
         assert asset.asset_type == "Valve"

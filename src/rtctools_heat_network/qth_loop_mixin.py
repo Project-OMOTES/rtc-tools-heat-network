@@ -158,7 +158,6 @@ class QTHLoopMixin(QTHMixin):
         return parameters
 
     def __check_goals(self):
-
         if not len(self.times()) == 2:
             raise Exception("QTHLoopMixin is only allowed to run with 2 time steps")
 
@@ -320,7 +319,6 @@ class QTHLoopMixin(QTHMixin):
         postprocessing: bool = True,
         log_solver_failure_as_error: bool = True,
     ) -> bool:
-
         self.__tstep = 0
 
         if preprocessing:

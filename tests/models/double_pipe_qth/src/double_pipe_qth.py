@@ -15,7 +15,6 @@ from rtctools_heat_network.qth_mixin import QTHMixin
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 1
@@ -31,7 +30,6 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeProduction(Goal):
-
     priority = 2
     order = 1
     function_nominal = 1e6

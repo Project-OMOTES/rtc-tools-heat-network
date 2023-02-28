@@ -1,0 +1,1367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TimeSeries xmlns="http://www.wldelft.nl/fews/PI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd" version="1.10">
+    <timeZone>0.0</timeZone>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>404684bc-3874-42bf-a0d9-5f184591b57a</locationId>
+            <parameterId>59a43508-4328-4e0a-94e1-fd6036172036</parameterId>
+            <qualifierId>4012d5aa-42b5-4dc3-a1de-5e2fb364c655</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Kleurenbuurt</stationName>
+            <lat>52.04172687268464</lat>
+            <lon>4.313077926635743</lon>
+            <x>4.313077926635743</x>
+            <y>52.04172687268464</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="497550.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="511290.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="518260.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="525940.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="857360.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1000580.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1206860.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3951100.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="5023710.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="7162120.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="5697670.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1790990.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="2462940.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="2128430.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1798890.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="3058060.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3855580.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="3527000.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="8426730.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="6139900.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="4355960.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="4011870.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="2161770.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="623940.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="606120.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>7cfa7e7b-534a-4740-8fd8-f81c294bc24c</locationId>
+            <parameterId>9da9e597-f6fb-4831-b124-6de0044f5a3e</parameterId>
+            <qualifierId>3a55520d-6e30-4998-abeb-9e6b951f9d16</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Artiestbuurt_2</stationName>
+            <lat>52.038644953041</lat>
+            <lon>4.316178560256959</lon>
+            <x>4.316178560256959</x>
+            <y>52.038644953041</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="399620.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="410650.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="416250.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="422420.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="688600.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="803630.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="969300.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3173370.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="4034850.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="5752340.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="4576150.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1438460.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1978140.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1709470.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1444800.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2456120.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3096660.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="2832750.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="6768030.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="4931340.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="3498550.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="3222190.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1736250.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="501120.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="486810.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>a905fe2c-9611-4832-980d-51a0a8c00ae9</locationId>
+            <parameterId>bb93e16a-1131-425f-b438-0a1afd02b5b7</parameterId>
+            <qualifierId>9c707eff-a541-41ae-9038-71ac94c51938</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Artiestenbuurt_1</stationName>
+            <lat>52.037722645629316</lat>
+            <lon>4.318581819534303</lon>
+            <x>4.318581819534303</x>
+            <y>52.037722645629316</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="399620.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="410650.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="416250.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="422420.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="688600.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="803630.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="969300.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3173370.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="4034850.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="5752340.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="4576150.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1438460.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1978140.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1709470.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1444800.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2456120.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3096660.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="2832750.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="6768030.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="4931340.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="3498550.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="3222190.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1736250.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="501120.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="486810.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>6c5208f4-a292-41b9-974d-f8432d363d0e</locationId>
+            <parameterId>8c696b24-1afb-4af2-ab02-4c911a43f9a2</parameterId>
+            <qualifierId>37625ac9-750d-4fde-bbad-27ce20780812</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Muziekbuurt_2</stationName>
+            <lat>52.03491765821515</lat>
+            <lon>4.319719076156617</lon>
+            <x>4.319719076156617</x>
+            <y>52.03491765821515</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>ba67bf8f-47f6-4884-8165-b85f6a49b7fa</locationId>
+            <parameterId>504787dd-d2c9-44ed-afb3-88071b846d9b</parameterId>
+            <qualifierId>687f3ceb-cde0-4862-a47a-a8561363efc1</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Muziekbuurt_3</stationName>
+            <lat>52.033208179577564</lat>
+            <lon>4.3213941156864175</lon>
+            <x>4.3213941156864175</x>
+            <y>52.033208179577564</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>59b7a07e-01ed-4937-8989-23395852dd95</locationId>
+            <parameterId>0148e3f8-6850-4ab4-a3d3-3e49ebd7e137</parameterId>
+            <qualifierId>69039676-73f9-4b16-b800-7c2c34209022</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Muziekbuurt_1</stationName>
+            <lat>52.03182866846768</lat>
+            <lon>4.324289560317994</lon>
+            <x>4.324289560317994</x>
+            <y>52.03182866846768</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>6f01df0b-7c29-467b-93e8-691f3ef43835</locationId>
+            <parameterId>49eb6e79-0f68-44c0-a9ca-3398028e5b5e</parameterId>
+            <qualifierId>cb7c2f40-2db8-48fa-a478-d0e3520f6a5f</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Presidentenbuurt</stationName>
+            <lat>52.03904506381387</lat>
+            <lon>4.30440902709961</lon>
+            <x>4.30440902709961</x>
+            <y>52.03904506381387</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="159889.9968" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="164310.0032" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="166550.0032" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="169009.9968" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="275520.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="321540.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="387830.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1269690.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1614380.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2301560.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1830960.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="575540.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="791470.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="683970.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="578080.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="982710.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1239000.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1133410.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2707950.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1973070.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1399800.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1289220.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="694690.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="200500.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="194780.0064" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>7fc734dc-8ab1-416d-8076-2b7c89508063</locationId>
+            <parameterId>856149d8-c74a-496e-a6fd-b9ed82e843af</parameterId>
+            <qualifierId>a025e058-be62-4100-8827-1794b6dc42ce</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_DeStrijp_2</stationName>
+            <lat>52.036880614888744</lat>
+            <lon>4.298100471496583</lon>
+            <x>4.298100471496583</x>
+            <y>52.036880614888744</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="186019.9936" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="191150.0032" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="193760" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="196630.0032" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="320540.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="374080.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="451200.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1477180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1878190.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2677670.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2130160.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="669590.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="920810.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="795750.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="672540.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1143300.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1441470.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1318620.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3150460.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2295500.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1628540.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1499900.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="808210.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="233270.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="226610.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>15759457-af7f-4c6e-852b-17f6cc935e77</locationId>
+            <parameterId>414973d8-31e5-4237-9ebf-b319c6ec404b</parameterId>
+            <qualifierId>ba6769da-84ab-4226-b941-a08a859a966d</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_DeStrijp_3</stationName>
+            <lat>52.036880614888744</lat>
+            <lon>4.296705722808839</lon>
+            <x>4.296705722808839</x>
+            <y>52.036880614888744</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="186019.9936" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="191150.0032" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="193760" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="196630.0032" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="320540.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="374080.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="451200.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1477180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1878190.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2677670.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2130160.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="669590.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="920810.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="795750.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="672540.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1143300.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1441470.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1318620.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3150460.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2295500.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1628540.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1499900.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="808210.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="233270.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="226610.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>f60821f7-86e2-4ad3-aad2-3faef4a7488c</locationId>
+            <parameterId>70dc27c6-6a93-4801-b83e-140394796527</parameterId>
+            <qualifierId>f155ad8c-4c84-45d3-9935-0a475046a014</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Ministerbuurt_1</stationName>
+            <lat>52.035745557102025</lat>
+            <lon>4.303786754608155</lon>
+            <x>4.303786754608155</x>
+            <y>52.035745557102025</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="221120.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="227220.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="230320.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="233730.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="381020.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="444660.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="536340.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1755890.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="2232570.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="3182890.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2532080.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="795930.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1094550.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="945890.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="799440.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1359020.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1713440.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1567420.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3744890.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2728610.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1935820.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1782900.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="960700.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="277280.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="269360.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>4c0f0eff-1d3c-4e82-8093-bcf49ac3ea9a</locationId>
+            <parameterId>66455895-fbde-4174-a263-86f9586c2fc8</parameterId>
+            <qualifierId>08a98556-01c9-462e-a4d0-4ad22d49f660</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Ministerbuurt_2</stationName>
+            <lat>52.03474245879195</lat>
+            <lon>4.309816360473634</lon>
+            <x>4.309816360473634</x>
+            <y>52.03474245879195</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="336540.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="345830.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="350550.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="355740.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="579910.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="676780.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="816300.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="2672470.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="3397970.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="4844360.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="3853820.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1211400.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1665900.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1439640.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1216740.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2068430.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="2607860.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="2385610.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="5699720.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="4152940.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="2946310.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="2713580.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1462190.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="422020.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="409970.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>39099775-f29c-4757-9409-4ade3408e07f</locationId>
+            <parameterId>fd0f353b-455a-4f90-b8c2-b5643121a8e3</parameterId>
+            <qualifierId>07dc867c-665d-4d0e-bb01-c8394b024b4f</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_DeStrijp_1</stationName>
+            <lat>52.03030743866227</lat>
+            <lon>4.299387931823731</lon>
+            <x>4.299387931823731</x>
+            <y>52.03030743866227</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="186019.9936" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="191150.0032" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="193760" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="196630.0032" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="320540.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="374080.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="451200.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1477180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1878190.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2677670.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2130160.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="669590.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="920810.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="795750.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="672540.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1143300.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1441470.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1318620.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3150460.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2295500.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1628540.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1499900.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="808210.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="233270.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="226610.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>92679c73-bdd4-4e61-ab3f-423a8a095563</locationId>
+            <parameterId>ec81162a-89f8-474f-82e4-760db081a5a1</parameterId>
+            <qualifierId>3e7ac972-39ae-40d0-89a3-1b9edb885662</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stervoorde_2</stationName>
+            <lat>52.03098063967937</lat>
+            <lon>4.310073852539063</lon>
+            <x>4.310073852539063</x>
+            <y>52.03098063967937</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="275300.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="282900.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="286760.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="291010.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="474390.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="553630.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="667770.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="2186190.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="2779680.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="3962890.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="3152590.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="990980.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1362780.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1177680.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="995350.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1692060.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="2133340.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1951530.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="4662610.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="3397280.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="2410210.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="2219820.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1196130.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="345230.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="335370.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>4c5e140c-ef2a-4c8e-a058-c5e6edfeabce</locationId>
+            <parameterId>e6383ee7-aa2a-4c42-97c7-d7c7cdd7937b</parameterId>
+            <qualifierId>84495540-f7dd-4713-aa50-0acc03c57b94</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stervoorde_1</stationName>
+            <lat>52.03211581843917</lat>
+            <lon>4.3117690086364755</lon>
+            <x>4.3117690086364755</x>
+            <y>52.03211581843917</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="185430.0032" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="190550.0032" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="193150.0032" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="196009.9968" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="319520.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="372890.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="449770.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1472480.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1872220.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2669160.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2123390.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="667460.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="917880.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="793220.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="670410.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1139670.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1436890.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1314430.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3140450.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2288200.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1623370.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1495130.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="805640.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="232530.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="225890.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>4e4c1ec6-ea8c-42ac-bd65-8f41df0b51bc</locationId>
+            <parameterId>d937e02c-ce60-4352-90a2-ad6420f3147e</parameterId>
+            <qualifierId>4ceb0423-1978-4ccd-99b1-efbcdfd6a17f</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stervoorde_3</stationName>
+            <lat>52.029753030214444</lat>
+            <lon>4.314708709716798</lon>
+            <x>4.314708709716798</x>
+            <y>52.029753030214444</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="479750.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="492990.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="499720.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="507120.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="826680.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="964770.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1163670.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3809690.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="4843910.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="6905780.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="5493750.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1726890.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="2374790.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="2052250.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1734510.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2948610.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3717590.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="3400770.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="8125130.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="5920150.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="4200060.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="3868290.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="2084400.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="601610.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="584430.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>6125ea38-b2c2-47be-a8d4-2b9cc9f2c300</locationId>
+            <parameterId>fc31e841-4b59-467b-a070-ba95631e977b</parameterId>
+            <qualifierId>b4880b40-1966-4a7f-9e72-5c30278c24aa</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stervoorde_4</stationName>
+            <lat>52.027627734152475</lat>
+            <lon>4.3096661567688</lon>
+            <x>4.3096661567688</x>
+            <y>52.027627734152475</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="136489.9968" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="140259.9936" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="142169.9968" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="144280" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="235190.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="274480.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="331060.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1083860.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1378100.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1964710.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1562980.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="491300.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="675630.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="583870.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="493470.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="838880.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1057660.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="967520.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2311610.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1684290.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1194920.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1100530.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="593010.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="171160" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="166270.0032" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>7c52a9d7-622c-4741-9ce1-a823698b86b9</locationId>
+            <parameterId>412c281b-228b-41f3-bdef-8bc997fd8e6b</parameterId>
+            <qualifierId>4b7fb412-fd4d-42da-837a-92b90a6fb709</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stervoorde_5</stationName>
+            <lat>52.02601719409004</lat>
+            <lon>4.312541484832765</lon>
+            <x>4.312541484832765</x>
+            <y>52.02601719409004</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="173360" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="178140.0064" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="180569.9968" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="183249.9968" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="298720.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="348620.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="420490.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1376640.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1750360.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2495420.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1985180.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="624020.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="858140.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="741580.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="626770.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1065490.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1343360.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1228870.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2936030.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2139260.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1517700.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1397810.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="753200.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="217390.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="211180.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>f26f4a87-a8e8-454d-b041-77b0de3c546f</locationId>
+            <parameterId>056aef7b-b808-46c6-baa1-010a0f4bf11a</parameterId>
+            <qualifierId>5fb22d3f-e059-4044-ae13-16f7d096de6e</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Hoekpolder</stationName>
+            <lat>52.025145894142554</lat>
+            <lon>4.315352439880372</lon>
+            <x>4.315352439880372</x>
+            <y>52.025145894142554</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="160179.9936" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="164600" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="166849.9968" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="169320" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="276010.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="322120.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="388530.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1271980.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1617280.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2305700.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1834250.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="576570.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="792900.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="685210.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="579120.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="984480.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1241230.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1135450.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2712820.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1976620.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1402320.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1291540.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="695940.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="200860.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="195129.9968" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>0a70ec45-35ef-4d7d-a180-58eabd74ae5f</locationId>
+            <parameterId>dcb6b734-6182-4704-bf62-97c6bc0a6cea</parameterId>
+            <qualifierId>2a96449a-f5ec-427a-858a-ac9c2c55470e</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_HuisTeLande</stationName>
+            <lat>52.04313255137357</lat>
+            <lon>4.319053888320924</lon>
+            <x>4.319053888320924</x>
+            <y>52.04313255137357</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="267280.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="274660.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="278400.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="282530.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="460560.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="537500.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="648310.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="2122470.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="2698660.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="3847380.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="3060700.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="962090.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1323060.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1143360.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="966340.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1642750.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="2071160.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1894650.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="4526710.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="3298260.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="2339960.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="2155120.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1161270.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="335170.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="325600.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>5c1560f1-7f7b-4d98-826d-54543e15c87e</locationId>
+            <parameterId>799464bf-4173-450b-b2e4-0c143c0e4394</parameterId>
+            <qualifierId>7da6ff3c-3770-41d1-b7e8-c36c4cf06ff9</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Stationskwartier</stationName>
+            <lat>52.03957592470637</lat>
+            <lon>4.321918487548829</lon>
+            <x>4.321918487548829</x>
+            <y>52.03957592470637</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="220010.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="226080.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="229170.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="232560.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="379110.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="442440.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="533650.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1747090.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="2221380.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="3166940.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="2519390.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="791940.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="1089060.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="941150.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="795430.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="1352210.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1704860.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1559570.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="3726120.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="2714940.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1926120.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1773970.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="955890.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="275890.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="268010.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>ca11a5d4-8c1f-4524-b41f-7c3e768ed1b6</locationId>
+            <parameterId>39af40d7-19ef-4aed-ba38-fd5d034b4cd7</parameterId>
+            <qualifierId>7acadf6c-228a-4eef-abe3-4cd37f9d405d</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_TeWerve_1</stationName>
+            <lat>52.04157528352519</lat>
+            <lon>4.324407577514649</lon>
+            <x>4.324407577514649</x>
+            <y>52.04157528352519</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="157497.4976" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="161847.5008" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="164055.0016" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="166485.0048" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="271395.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="316730.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="382025.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1250702.5" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1590232.5" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2267135.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1803570.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="566930.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="779632.5" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="673742.5" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="569430.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="968015.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1220467.5" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1116455.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2667442.5" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1943557.5" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1378860.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1269940.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="684297.5" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="197504.9984" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="191864.9984" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>d94b2641-6b91-4c7d-a3e3-9ec0e7cd1469</locationId>
+            <parameterId>c480062c-4cba-4b85-a992-db4f6136ffb4</parameterId>
+            <qualifierId>176cd878-45b8-4def-8328-17e4af914dcd</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_TeWerve_2</stationName>
+            <lat>52.0429015415213</lat>
+            <lon>4.326370954513551</lon>
+            <x>4.326370954513551</x>
+            <y>52.0429015415213</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="157497.4976" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="161847.5008" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="164055.0016" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="166485.0048" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="271395.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="316730.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="382025.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1250702.5" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1590232.5" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2267135.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1803570.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="566930.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="779632.5" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="673742.5" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="569430.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="968015.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1220467.5" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1116455.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2667442.5" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1943557.5" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1378860.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1269940.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="684297.5" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="197504.9984" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="191864.9984" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>704fb7af-842f-4823-9ab8-b5a3402e2c58</locationId>
+            <parameterId>eb42ca4e-4b23-4096-bdb4-75f5f6e4d767</parameterId>
+            <qualifierId>af832237-84a1-463f-b0c5-8bc4022a250b</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_TeWerve_3</stationName>
+            <lat>52.04429374016349</lat>
+            <lon>4.328430891036988</lon>
+            <x>4.328430891036988</x>
+            <y>52.04429374016349</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="157497.4976" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="161847.5008" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="164055.0016" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="166485.0048" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="271395.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="316730.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="382025.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1250702.5" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1590232.5" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2267135.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1803570.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="566930.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="779632.5" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="673742.5" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="569430.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="968015.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1220467.5" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1116455.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2667442.5" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1943557.5" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1378860.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1269940.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="684297.5" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="197504.9984" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="191864.9984" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>5eb81d9e-6c44-408d-9b1a-6ea8135e94c9</locationId>
+            <parameterId>612572ec-f6f1-43e9-a5d3-d783cef32723</parameterId>
+            <qualifierId>7422f8a4-0ff8-49ef-8125-dd52bdf5ed61</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_TeWerve_4</stationName>
+            <lat>52.04642484175937</lat>
+            <lon>4.330179691314698</lon>
+            <x>4.330179691314698</x>
+            <y>52.04642484175937</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="157497.4976" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="161847.5008" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="164055.0016" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="166485.0048" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="271395.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="316730.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="382025.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="1250702.5" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="1590232.5" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="2267135.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="1803570.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="566930.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="779632.5" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="673742.5" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="569430.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="968015.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="1220467.5" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="1116455.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="2667442.5" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="1943557.5" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="1378860.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="1269940.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="684297.5" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="197504.9984" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="191864.9984" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>68e28dbe-8780-4cad-8a21-039732ea6b04</locationId>
+            <parameterId>6bc62478-cdab-4c7c-bcb4-c236c475230a</parameterId>
+            <qualifierId>ac6a6bee-7ff6-4cd3-943d-ba10ab2481cd</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Rembrandtkwartier_1</stationName>
+            <lat>52.04959161616739</lat>
+            <lon>4.334771633148194</lon>
+            <x>4.334771633148194</x>
+            <y>52.04959161616739</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="412450.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="423840.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="429620.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="435980.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="710710.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="829430.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1000430.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3275260.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="4164400.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="5937030.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="4723080.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1484640.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="2041650.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1764360.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1491190.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2534980.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3196080.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="2923700.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="6985330.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="5089660.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="3610870.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="3325640.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1791990.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="517210.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="502440.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>fea26cb1-d772-493b-836c-20b9e3362c4a</locationId>
+            <parameterId>f470c680-16ff-449c-9c6d-58e59dd3b478</parameterId>
+            <qualifierId>8f5ef829-ba38-4d94-9c18-90d389dd9f04</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Havenkwartier</stationName>
+            <lat>52.04850966015021</lat>
+            <lon>4.337850809097291</lon>
+            <x>4.337850809097291</x>
+            <y>52.04850966015021</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>2bbdbeb9-abd4-4389-bb5d-4f10c5b7a0d7</locationId>
+            <parameterId>34ea2553-c243-4d3d-b607-9aecd7fdf690</parameterId>
+            <qualifierId>ea9be9a6-2d55-4709-aa7f-cae67791cb2a</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_2bbd</stationName>
+            <lat>52.0511881131729</lat>
+            <lon>4.337314367294312</lon>
+            <x>4.337314367294312</x>
+            <y>52.0511881131729</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>39540a79-e5fc-4e6c-aee4-75357b5fba2f</locationId>
+            <parameterId>02fddd61-e3fb-4ed9-aa92-08694de98345</parameterId>
+            <qualifierId>6d33ced9-9839-46a7-a489-8f055de5aeb0</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_Rembrandtkwartier_2</stationName>
+            <lat>52.05197974342533</lat>
+            <lon>4.332336187362672</lon>
+            <x>4.332336187362672</x>
+            <y>52.05197974342533</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="412450.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="423840.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="429620.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="435980.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="710710.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="829430.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1000430.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="3275260.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="4164400.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="5937030.0" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="4723080.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="1484640.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="2041650.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="1764360.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="1491190.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="2534980.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="3196080.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="2923700.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="6985330.0" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="5089660.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="3610870.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="3325640.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="1791990.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="517210.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="502440.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <locationId>54fbc660-8fa1-4215-a7ba-dd01b04a988f</locationId>
+            <parameterId>3e8bbc50-eb90-4c5d-9035-f77f38b544c4</parameterId>
+            <qualifierId>bfdc3768-4d2d-401b-a2ce-467c50aebe13</qualifierId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-03" time="00:00:00"/>
+            <endDate date="2019-01-04" time="00:00:00"/>
+            <forecastDate date="2019-01-01" time="00:00:00"/>
+            <missVal>-999.0</missVal>
+            <stationName>HeatingDemand_WelGelegen</stationName>
+            <lat>52.054987810473264</lat>
+            <lon>4.3325185775756845</lon>
+            <x>4.3325185775756845</x>
+            <y>52.054987810473264</y>
+            <z>0.0</z>
+            <units>W</units>
+            <creationDate>2022-06-03</creationDate>
+            <creationTime>16:08:51</creationTime>
+        </header>
+        <event date="2019-01-03" time="00:00:00" value="768940.0" flag="0"/>
+        <event date="2019-01-03" time="01:00:00" value="790170.0" flag="0"/>
+        <event date="2019-01-03" time="02:00:00" value="800950.0" flag="0"/>
+        <event date="2019-01-03" time="03:00:00" value="812810.0" flag="0"/>
+        <event date="2019-01-03" time="04:00:00" value="1325000.0" flag="0"/>
+        <event date="2019-01-03" time="05:00:00" value="1546340.0" flag="0"/>
+        <event date="2019-01-03" time="06:00:00" value="1865130.0" flag="0"/>
+        <event date="2019-01-03" time="07:00:00" value="6106180.0" flag="0"/>
+        <event date="2019-01-03" time="08:00:00" value="7763840.0" flag="0"/>
+        <event date="2019-01-03" time="09:00:00" value="1.106862E7" flag="0"/>
+        <event date="2019-01-03" time="10:00:00" value="8805400.0" flag="0"/>
+        <event date="2019-01-03" time="11:00:00" value="2767870.0" flag="0"/>
+        <event date="2019-01-03" time="12:00:00" value="3806330.0" flag="0"/>
+        <event date="2019-01-03" time="13:00:00" value="3289350.0" flag="0"/>
+        <event date="2019-01-03" time="14:00:00" value="2780070.0" flag="0"/>
+        <event date="2019-01-03" time="15:00:00" value="4726050.0" flag="0"/>
+        <event date="2019-01-03" time="16:00:00" value="5958570.0" flag="0"/>
+        <event date="2019-01-03" time="17:00:00" value="5450760.0" flag="0"/>
+        <event date="2019-01-03" time="18:00:00" value="1.3023E7" flag="0"/>
+        <event date="2019-01-03" time="19:00:00" value="9488840.0" flag="0"/>
+        <event date="2019-01-03" time="20:00:00" value="6731880.0" flag="0"/>
+        <event date="2019-01-03" time="21:00:00" value="6200110.0" flag="0"/>
+        <event date="2019-01-03" time="22:00:00" value="3340880.0" flag="0"/>
+        <event date="2019-01-03" time="23:00:00" value="964260.0" flag="0"/>
+        <event date="2019-01-04" time="00:00:00" value="936720.0" flag="0"/>
+    </series>
+</TimeSeries>

@@ -18,7 +18,6 @@ MODIFIERS = Dict[str, Union[str, int, float]]
 
 
 class _AssetToComponentBase:
-
     # A map of pipe class name to edr asset in _edr_pipes.json
     STEEL_S1_PIPE_EDR_ASSETS = {
         "DN20": "Steel-S1-DN-20",
@@ -48,12 +47,14 @@ class _AssetToComponentBase:
     }
 
     component_map = {
+        "ATES": "ates",
         "GenericConsumer": "demand",
         "HeatingDemand": "demand",
         "HeatPump": "heat_pump",
         "GasHeater": "source",
         "GenericProducer": "source",
         "GeothermalSource": "source",
+        "HeatProducer": "source",
         "ResidualHeatSource": "source",
         "GenericConversion": "heat_exchanger",
         "Joint": "node",

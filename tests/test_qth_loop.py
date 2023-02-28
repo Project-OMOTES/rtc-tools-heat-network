@@ -27,7 +27,6 @@ class TestQTHLoop(TestCase):
         )
 
     def test_double_pipe_unequal_length(self):
-
         import models.double_pipe_qth.src.cq2_inequality_vs_equality as cq2_inequality_vs_equality
         from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             UnequalLengthQuadraticEquality,

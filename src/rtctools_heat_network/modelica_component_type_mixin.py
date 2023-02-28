@@ -137,7 +137,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             buffer_connections[b] = []
 
             for k in ["In", "Out"]:
-
                 b_conn = f"{b}.{heat_network_model_type}{k}"
                 prop = "T" if heat_network_model_type == "QTH" else "Heat"
                 aliases = [

@@ -92,7 +92,6 @@ class TestHeadLossEqualities(TestCase):
         cls.base_folder = Path(cq2_inequality_vs_equality.__file__).resolve().parent.parent
 
     def test_equal_length(self):
-
         from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             EqualLengthLinearEquality,
             EqualLengthQuadraticEquality,
@@ -139,7 +138,6 @@ class TestHeadLossEqualities(TestCase):
         np.testing.assert_allclose(quadratic_ratio, 1.0)
 
     def test_unequal_length(self):
-
         from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             UnequalLengthLinearEquality,
             UnequalLengthQuadraticEquality,
@@ -186,7 +184,6 @@ class TestHeadLossEqualities(TestCase):
         np.testing.assert_allclose(quadratic_ratio, 2.0)
 
     def test_unequal_length_valve(self):
-
         from models.double_pipe_qth.src.cq2_inequality_vs_equality import (
             UnequalLengthValveLinearEquality,
             UnequalLengthValveQuadraticEquality,

@@ -14,7 +14,6 @@ from rtctools_heat_network.heat_mixin import HeatMixin
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 2

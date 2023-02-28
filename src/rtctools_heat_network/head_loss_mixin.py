@@ -163,7 +163,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         self.__priority = None
 
     def pre(self):
-
         super().pre()
 
         self.__initialize_nominals_and_bounds()
@@ -265,7 +264,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         options = {}
 
         options["minimum_pressure_far_point"] = 1.0
-        options["wall_roughness"] = 2e-3
+        options["wall_roughness"] = 2e-4
         options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
         options["maximum_velocity"] = 2.5
@@ -442,7 +441,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         else:
             assert big_m != 0.0
 
-        estimated_velocity = heat_network_options["estimated_velocity"]
         wall_roughness = heat_network_options["wall_roughness"]
 
         if pipe_class is not None:
@@ -461,27 +459,20 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
-                estimated_velocity, diameter, wall_roughness, temperature
+                heat_network_options["maximum_velocity"], diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
-            linearization_velocity = estimated_velocity
+            linearization_velocity = heat_network_options["maximum_velocity"]
             linearization_head_loss = c_v * linearization_velocity**2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
-                constraint_nominal = (
-                    head_loss_nominal
-                    * linearization_head_loss
-                    * q_nominal
-                    / linearization_discharge
-                ) ** 0.5
+                constraint_nominal = c_v * heat_network_options["estimated_velocity"] ** 2
                 # Interior point solvers, like IPOPT, do not like linearly dependent
                 # tight inequality constraints. For this reason, we split the
                 # constraints depending whether the Big-M formulation is used or not.
@@ -510,7 +501,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
-                estimated_velocity, diameter, wall_roughness, temperature
+                heat_network_options["estimated_velocity"], diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)

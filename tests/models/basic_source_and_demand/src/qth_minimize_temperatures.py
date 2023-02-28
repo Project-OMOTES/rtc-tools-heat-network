@@ -20,7 +20,6 @@ else:
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 1
@@ -36,7 +35,6 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeSourceTemperature(Goal):
-
     priority = 2
 
     order = 1

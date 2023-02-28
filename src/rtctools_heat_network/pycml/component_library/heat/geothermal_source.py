@@ -10,3 +10,4 @@ class GeothermalSource(Source):
         self.component_subtype = "geothermal"
 
         self.target_flow_rate = nan
+        self.single_doublet_power = nan

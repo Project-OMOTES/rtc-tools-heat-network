@@ -1,3 +1,4 @@
+import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
@@ -7,6 +8,8 @@ from typing import Dict, Union
 import esdl
 
 import numpy as np
+
+import pandas as pd
 
 from pyecore.resources import ResourceSet
 
@@ -38,7 +41,6 @@ class _ESDLInputException(Exception):
 class ESDLMixin(
     ModelicaComponentTypeMixin, IOMixin, PyCMLMixin, CollocatedIntegratedOptimizationProblem
 ):
-
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries = False
@@ -49,7 +51,6 @@ class ESDLMixin(
     __max_supply_temperature = None
 
     def __init__(self, *args, **kwargs):
-
         if not self.esdl_run_info_path:
             self.esdl_run_info_path = Path(kwargs["input_folder"]) / "RunInfo.xml"
 
@@ -130,6 +131,14 @@ class ESDLMixin(
     def esdl_asset_id_to_name_map(self):
         return self.__timeseries_id_map.copy()
 
+    @property
+    def esdl_asset_name_to_id_map(self):
+        return dict(zip(self.__timeseries_id_map.values(), self.__timeseries_id_map.keys()))
+
+    def get_asset_from_asset_name(self, asset_name: str) -> esdl.Asset:
+        asset_id = self.esdl_asset_name_to_id_map[asset_name]
+        return self.esdl_assets[asset_id]
+
     def esdl_heat_model_options(self) -> Dict:
         heat_network_options = self.heat_network_options()
         v_nominal = heat_network_options["estimated_velocity"]
@@ -168,8 +177,49 @@ class ESDLMixin(
 
         input_timeseries_file = Path(self.__input_timeseries_file)
         assert input_timeseries_file.is_absolute()
-        assert input_timeseries_file.suffix == ".xml"
+        assert input_timeseries_file.suffix == ".xml" or input_timeseries_file.suffix == ".csv"
 
+        if input_timeseries_file.suffix == ".xml":
+            self.read_xml(input_timeseries_file)
+        elif input_timeseries_file.suffix == ".csv":
+            self.read_csv(input_timeseries_file)
+
+    def read_csv(self, input_timeseries_file):
+        csv_data = pd.read_csv(input_timeseries_file)
+        try:
+            timeseries_import_times = [
+                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                for entry in csv_data["time"].to_numpy()
+            ]
+        except ValueError:
+            try:
+                timeseries_import_times = [
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
+                    for entry in csv_data["time"].to_numpy()
+                ]
+            except ValueError:
+                logger.error("Date time string is not in supported format")
+
+        self.io.reference_datetime = timeseries_import_times[0]
+        for ensemble_member in range(self.ensemble_size):
+            for demand in self.heat_network_components.get("demand", []):
+                values = csv_data[f"{demand.replace(' ', '')}.target_heat_demand"].to_numpy()
+                self.io.set_timeseries(
+                    demand + ".target_heat_demand", timeseries_import_times, values, ensemble_member
+                )
+            for source in self.heat_network_components.get("source", []):
+                try:
+                    values = csv_data[f"{source.replace(' ', '')}.target_heat_source"].to_numpy()
+                    self.io.set_timeseries(
+                        source + ".target_heat_source",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
+
+    def read_xml(self, input_timeseries_file):
         timeseries_import_basename = input_timeseries_file.stem
         input_folder = input_timeseries_file.parent
 
@@ -480,7 +530,6 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
     # loop through assets
     for el in esdl_model.eAllContents():
         if isinstance(el, esdl.Asset):
-
             if hasattr(el, "name") and el.name:
                 el_name = el.name
             else:

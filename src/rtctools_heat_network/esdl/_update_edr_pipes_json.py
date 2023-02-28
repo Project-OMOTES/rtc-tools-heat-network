@@ -21,6 +21,8 @@ def main():
 
         inner_diameter = float(tree.get("innerDiameter"))
 
+        investmet_cost = float((tree.findall(".//investmentCosts")[0]).get("value"))
+
         components = tree.findall(".//component")
 
         insulation_thicknesses = []
@@ -44,6 +46,7 @@ def main():
             "u_2": u_2,
             "insulation_thicknesses": insulation_thicknesses,
             "conductivies_insulation": conductivities_insulation,
+            "investment_costs": investmet_cost,
             "xml_string": xml_string,
         }
 

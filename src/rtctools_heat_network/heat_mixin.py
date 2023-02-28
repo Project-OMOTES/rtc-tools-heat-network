@@ -12,6 +12,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from rtctools.optimization.timeseries import Timeseries
 
 from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
+from rtctools_heat_network.control_variables import map_comp_type_to_control_variable
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
@@ -22,7 +23,6 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEAR,
@@ -54,6 +54,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_diameter_map = {}
         self.__pipe_topo_diameter_nominals = {}
 
+        self.__pipe_topo_cost_var = {}
+        self.__pipe_topo_cost_var_bounds = {}
+        self.__pipe_topo_cost_map = {}
+        self.__pipe_topo_cost_nominals = {}
+
         self.__pipe_topo_heat_loss_var = {}
         self.__pipe_topo_heat_loss_var_bounds = {}
         self.__pipe_topo_heat_loss_map = {}
@@ -69,6 +74,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__pipe_topo_diameter_area_parameters = []
         self.__pipe_topo_heat_loss_parameters = []
+
+        # Setpoint vars
+        self._timed_setpoints = {}
+        self._change_setpoint_var = {}
+        self._change_setpoint_bounds = {}
+        self._component_to_change_setpoint_map = {}
+
+        if "timed_setpoints" in kwargs and isinstance(kwargs["timed_setpoints"], dict):
+            self._timed_setpoints = kwargs["timed_setpoints"]
 
         super().__init__(*args, **kwargs)
 
@@ -95,6 +109,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 return bound
 
         bounds = self.bounds()
+
+        # Mixed-interger formulation of component setpoint
+        for component_name in self._timed_setpoints.keys():
+            # Make 1 variable per component (so not per control
+            # variable) which represents if the setpoint of the component
+            # is changed (1) is not changed (0) in a timestep
+            change_setpoint_var = f"{component_name}._change_setpoint_var"
+            self._component_to_change_setpoint_map[component_name] = change_setpoint_var
+            self._change_setpoint_var[change_setpoint_var] = ca.MX.sym(change_setpoint_var)
+            self._change_setpoint_bounds[change_setpoint_var] = (0, 1.0)
 
         # Mixed-integer formulation applies only to hot pipes, not to cold
         # pipes.
@@ -177,18 +201,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__pipe_topo_diameter_var[diam_var_name] = ca.MX.sym(diam_var_name)
             self.__pipe_topo_diameter_map[pipe] = diam_var_name
 
+            cost_var_name = f"{pipe}__hn_cost"
+            self.__pipe_topo_cost_var[cost_var_name] = ca.MX.sym(cost_var_name)
+            self.__pipe_topo_cost_map[pipe] = cost_var_name
+
             if not pipe_classes:
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = parameters[f"{pipe}.diameter"]
                 self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (0.0, 0.0)
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
+                    self.__pipe_topo_cost_nominals[cost_var_name] = 1.0
             elif len(pipe_classes) == 1:
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = pipe_classes[0].inner_diameter
                 self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (0.0, 0.0)
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
+                    self.__pipe_topo_cost_nominals[cost_var_name] = 1.0
 
                 for ensemble_member in range(self.ensemble_size):
                     d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
@@ -202,6 +234,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     min(diameters),
                     max(diameters),
                 )
+                costs = [c.investment_costs for c in pipe_classes]
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (
+                    min(costs),
+                    max(costs),
+                )
+                self.__pipe_topo_cost_nominals[cost_var_name] = min(x for x in costs if x > 0.0)
+
                 self.__pipe_topo_diameter_nominals[diam_var_name] = min(
                     x for x in diameters if x > 0.0
                 )
@@ -331,7 +370,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         # Check that buffer information is logical and
         # set the stored heat at t0 in the buffer(s) via bounds
-        self.__check_buffer_values_and_set_bounds_at_t0()
+        if len(self.times()) > 2:
+            self.__check_buffer_values_and_set_bounds_at_t0()
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
@@ -427,10 +467,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def pipe_diameter_symbol_name(self, pipe: str) -> str:
         return self.__pipe_topo_diameter_map[pipe]
 
+    def pipe_cost_symbol_name(self, pipe: str) -> str:
+        return self.__pipe_topo_cost_map[pipe]
+
     @property
     def extra_variables(self):
         variables = super().extra_variables.copy()
         variables.extend(self.__pipe_topo_diameter_var.values())
+        variables.extend(self.__pipe_topo_cost_var.values())
         variables.extend(self.__pipe_topo_heat_loss_var.values())
         variables.extend(self.__pipe_topo_pipe_class_var.values())
         return variables
@@ -442,6 +486,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__pipe_disconnect_var.values())
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
+        variables.extend(self._change_setpoint_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -451,6 +496,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__pipe_topo_pipe_class_var
+            or variable in self._change_setpoint_var
         ):
             return True
         else:
@@ -461,6 +507,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return self.__pipe_topo_diameter_nominals[variable]
         elif variable in self.__pipe_topo_heat_loss_nominals:
             return self.__pipe_topo_heat_loss_nominals[variable]
+        elif variable in self.__pipe_topo_cost_nominals:
+            return self.__pipe_topo_cost_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -473,8 +521,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__pipe_topo_pipe_class_var_bounds)
         bounds.update(self.__pipe_topo_diameter_var_bounds)
+        bounds.update(self.__pipe_topo_cost_var_bounds)
         bounds.update(self.__pipe_topo_heat_loss_var_bounds)
         bounds.update(self.__pipe_topo_heat_discharge_bounds)
+        bounds.update(self._change_setpoint_bounds)
         return bounds
 
     def __pipe_heat_loss(
@@ -686,7 +736,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             ), "heat rate change constraints not allowed with topology optimization"
 
         for p in self.hot_pipes:
-
             variable = f"{p}.HeatIn.Heat"
             dt = np.diff(self.times(variable))
 
@@ -1170,6 +1219,126 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __setpoint_constraint(self, ensemble_member, component_name, windowsize, setpointchanges):
+        r"""Constraints that can switch only every n time steps of setpoint.
+        A component can only switch setpoint every <windowsize> hours.
+        Apply the constraint every timestep from after the first time step onwards [from i=1].
+
+        Inspect example curve below for understanding of dHeat/dt for
+        windowsize 12 with a time domain of 35 timesteps.
+
+        Heat
+        d                               *-------*
+        c                   *-------*
+        b   *
+        a       *---*---*                           *-------*
+
+
+        i   0   1   2   3   4       16  17      29  30      35
+        """
+        assert windowsize <= len(self.times())
+        assert windowsize > 0
+        assert windowsize % 1 == 0
+        assert component_name in sum(self.heat_network_components.values(), [])
+
+        # Find the component type
+        comp_type = next(
+            iter(
+                [
+                    comptype
+                    for comptype, compnames in self.heat_network_components.items()
+                    for compname in compnames
+                    if compname == component_name
+                ]
+            )
+        )
+
+        constraints = []
+        times = self.times()
+        control_vars = map_comp_type_to_control_variable[comp_type]
+        if not isinstance(control_vars, list):
+            control_vars = [control_vars]
+
+        for var_name in control_vars:
+            # Retrieve the relevant variable names
+            variable_name = f"{component_name}{var_name}"
+            var_name_setpoint = self._component_to_change_setpoint_map[component_name]
+
+            # Get the timewise symbolic variables of Heat_source
+            sym_var = self.__state_vector_scaled(variable_name, ensemble_member)
+
+            # Get the timewise symbolic variables of the setpoint
+            canonical, sign = self.alias_relation.canonical_signed(var_name_setpoint)
+            setpoint_is_free = sign * self.state_vector(canonical, ensemble_member)
+
+            # d<variable>/dt expression, forward Euler
+            backward_heat_rate_expression = sym_var[:-1] - sym_var[1:]
+
+            # Compute threshold for what is considered a change in setpoint
+            big_m = 4.0 * max(self.bounds()[variable_name])
+            # Constraint which fixes if the variable is allowed to switch or not.
+            # With a sliding window, shifting one timestep.
+            # Sum the binairy variables in the window. The sum should be <=1 as
+            # only on of the binairy variable is allowed to represent a
+            # switch in operations.
+            for i in range(math.floor(windowsize / 2.0), len(times) - math.floor(windowsize / 2.0)):
+                if i < math.floor(windowsize / 2):
+                    # Start of optim domain
+                    start_idx = 0
+                    end_idx = i + math.ceil(windowsize / 2)
+                elif i >= (len(times) - math.ceil(windowsize / 2)):
+                    # End of optim domain
+                    start_idx = i - math.ceil(windowsize / 2)
+                    end_idx = setpoint_is_free.shape[0] - 1
+                else:
+                    # All inbetween
+                    start_idx = i - math.floor(windowsize / 2)
+                    end_idx = i + math.ceil(windowsize / 2)
+
+                expression = 0.0
+                for j in range(start_idx, end_idx + 1):
+                    expression = expression + setpoint_is_free[j]
+                # This constraint forces that only 1 timestep in the sliding
+                # window can have setpoint_is_free=1. In combination with the
+                # constraints lower in this function we ensure the desired
+                # behavior of limited setpoint changes.
+                constraints.append(((setpointchanges - expression), 0.0, np.inf))
+
+            # Constraints for the allowed heat rate of the component.
+            # Made 2 constraints which each do or do not constrain the value
+            # of the setpoint_is_free var the value of the
+            # backward_heat_expression. So the discrete variable does or does
+            # not have an influence on making the constrained uphold or not.
+
+            # Note: the equations are not apply at t0
+
+            # NOTE: we start from 2 this is to not constrain the derivative at t0
+            for i in range(2, len(times)):
+                # Constraining setpoint_is_free to 1 when value of
+                # backward_heat_rate_expression < 0, otherwise
+                # setpoint_is_free's value can be 0 and 1
+                constraints.append(
+                    (
+                        (backward_heat_rate_expression[i - 1] + setpoint_is_free[i] * big_m)
+                        / big_m,
+                        0.0,
+                        np.inf,
+                    )
+                )
+                # Constraining setpoint_is_free to 1 when value of
+                # backward_heat_rate_expression > 0, otherwise
+                # setpoint_is_free's value can be 0 and 1
+                constraints.append(
+                    (
+                        (backward_heat_rate_expression[i - 1] - setpoint_is_free[i] * big_m)
+                        / big_m,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+
+        return constraints
+
     def __heat_exchanger_heat_to_discharge_path_constraints(self, ensemble_member):
         constraints = []
         parameters = self.parameters(ensemble_member)
@@ -1495,12 +1664,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             diam_sym_name = self.__pipe_topo_diameter_map[p]
             diam_sym = self.extra_variable(diam_sym_name, ensemble_member)
 
+            cost_sym_name = self.__pipe_topo_cost_map[p]
+            cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
+
             diameters = [c.inner_diameter for c in pipe_classes.keys()]
+            investment_costs = [c.investment_costs for c in pipe_classes.keys()]
 
             diam_expr = sum(s * d for s, d in zip(v, diameters))
             constraint_nominal = self.variable_nominal(diam_sym_name)
 
+            costs_expr = sum(s * d for s, d in zip(v, investment_costs))
+            costs_constraint_nominal = self.variable_nominal(cost_sym_name)
+
             constraints.append(((diam_sym - diam_expr) / constraint_nominal, 0.0, 0.0))
+
+            constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
 
         for p, heat_losses in self.__pipe_topo_heat_losses.items():
             assert self.is_hot_pipe(p)
@@ -1581,6 +1759,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
 
+        for component_name, params in self._timed_setpoints.items():
+            constraints.extend(
+                self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
+            )
+
         return constraints
 
     def history(self, ensemble_member):
@@ -1591,7 +1774,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         buffers = self.heat_network_components.get("buffer", [])
 
         for b in buffers:
-
             hist_heat_buffer = history.get(f"{b}.Heat_buffer", empty_timeseries).values
             hist_stored_heat = history.get(f"{b}.Stored_heat", empty_timeseries).values
 
@@ -1776,7 +1958,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     if max_exceedence > criterion:
                         logger.log(
                             log_level,
-                            f"Velocity in {p} exceeds minimum velocity {minimum_velocity} "
+                            f"Velocity in {p} lower than minimum velocity {minimum_velocity} "
                             f"by more than {criterion} m/s. ({max_exceedence} m/s)",
                         )
 

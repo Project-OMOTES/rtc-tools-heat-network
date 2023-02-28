@@ -16,7 +16,6 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 2

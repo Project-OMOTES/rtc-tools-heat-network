@@ -1,0 +1,2 @@
+location,maxPower,numberOfUnits,efficiency,tuneSize
+ATES,10000.0,5,0.7,true

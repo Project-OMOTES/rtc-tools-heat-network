@@ -39,7 +39,6 @@ def _kinematic_viscosity(temperature):
 
 
 def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
-
     for _ in range(1000):
         friction_factor_old = friction_factor
 

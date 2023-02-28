@@ -129,7 +129,6 @@ class HeatProblem(
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-
     model_name = "Example_Heat"
 
 
@@ -284,7 +283,6 @@ class QTHProblem(
         # ****** PLOTS ******
 
         if self.plots:
-
             import matplotlib.pyplot as plt
 
             sum_demands = np.full_like(self.times(), 0.0)

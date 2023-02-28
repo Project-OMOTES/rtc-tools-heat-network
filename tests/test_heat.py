@@ -26,7 +26,6 @@ class TestHeat(TestCase):
         np.testing.assert_array_less(demand, source)
 
     def test_zero_heat_loss(self):
-
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatPython
 
@@ -46,7 +45,6 @@ class TestHeat(TestCase):
 
 
 class TestMinMaxPressureOptions(TestCase):
-
     import models.basic_source_and_demand.src.heat_comparison as heat_comparison
     from models.basic_source_and_demand.src.heat_comparison import HeatPython
 
@@ -138,7 +136,6 @@ class TestMinMaxPressureOptions(TestCase):
 
 
 class TestDisconnectablePipe(TestCase):
-
     import models.basic_source_and_demand.src.heat_comparison as heat_comparison
     from models.basic_source_and_demand.src.heat_comparison import HeatPython
 

@@ -25,7 +25,6 @@ else:
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 1

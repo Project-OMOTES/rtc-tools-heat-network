@@ -16,7 +16,6 @@ from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TargetDemandGoal(Goal):
-
     priority = 1
 
     order = 2
@@ -34,7 +33,6 @@ class TargetDemandGoal(Goal):
 
 
 class ConstantGeothermalSource(Goal):
-
     priority = 2
 
     order = 2
@@ -51,7 +49,6 @@ class ConstantGeothermalSource(Goal):
 
 
 class MinimizeSourcesHeatGoal(Goal):
-
     priority = 3
 
     order = 2
@@ -67,7 +64,6 @@ class MinimizeSourcesHeatGoal(Goal):
 
 
 class MinimizeSourcesQTHGoal(Goal):
-
     priority = 3
 
     order = 2
