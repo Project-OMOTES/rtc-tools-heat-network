@@ -4,7 +4,7 @@ block Demand
   import SI = Modelica.SIunits;
   extends _NonStorageComponent(
     Heat_in(min=0.0),
-    Heat_out(min=0.0, max=0.0)
+    Heat_out(min=0.0)
   );
 
   parameter String component_type = "demand";

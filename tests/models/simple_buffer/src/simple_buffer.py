@@ -5,6 +5,9 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.csv_mixin import CSVMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.linearized_order_goal_programming_mixin import (
+    LinearizedOrderGoalProgrammingMixin,
+)
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
@@ -51,6 +54,7 @@ class MinimizeSourceGoal(Goal):
 class HeatBuffer(
     HeatMixin,
     ModelicaComponentTypeMixin,
+    LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,

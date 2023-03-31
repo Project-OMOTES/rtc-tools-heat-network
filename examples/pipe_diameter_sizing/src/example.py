@@ -106,21 +106,6 @@ class PipeDiameterSizingProblem(
         goals.append(MinimizeLDGoal(self))
         return goals
 
-    def path_constraints(self, ensemble_member):
-        constraints = super().path_constraints(ensemble_member)
-
-        # Apparently there is freedom on the cold side, which results in
-        # warnings. We force the cold pipes to have zero heat at all times.
-        for p in self.cold_pipes:
-            constraints.append(
-                (self.state(f"{p}.Heat_in") / self.variable_nominal(f"{p}.Heat_in"), 0.0, 0.0)
-            )
-            constraints.append(
-                (self.state(f"{p}.Heat_out") / self.variable_nominal(f"{p}.Heat_out"), 0.0, 0.0)
-            )
-
-        return constraints
-
     def priority_completed(self, priority):
         super().priority_completed(priority)
         self._hot_start = True

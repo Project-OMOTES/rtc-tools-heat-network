@@ -9,19 +9,19 @@ from rtctools_heat_network.util import run_optimization_problem
 class TestSetpointConstraints(TestCase):
     def test_setpoint_constraints(self):
         import models.unit_cases.case_3a.src.run_3a as run_3a
-        from models.unit_cases.case_3a.src.run_3a import HeatProblem
+        from models.unit_cases.case_3a.src.run_3a import HeatProblemSetPointConstraints
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
         _heat_problem_3 = run_optimization_problem(
-            HeatProblem,
+            HeatProblemSetPointConstraints,
             base_folder=base_folder,
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
 
         _heat_problem_4 = run_optimization_problem(
-            HeatProblem,
+            HeatProblemSetPointConstraints,
             base_folder=base_folder,
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
         )

@@ -14,9 +14,9 @@ block Buffer
   constant Real pi = 3.141592653589793;
   parameter Real Heat_nominal = cp * rho * dT * Q_nominal;
 
-  parameter Real heat_transfer_coeff = 1;
-  parameter Real height = 5;
-  parameter Real radius= 10;
+  parameter Real heat_transfer_coeff = 1.0;
+  parameter Real height = 5.0;
+  parameter Real radius= 10.0;
   parameter Real volume = pi*radius^2 * height;
   parameter Real heat_loss_coeff = 2 * heat_transfer_coeff / (radius * rho * cp);
   // The hot/cold tank can have a lower bound on its volume. Meaning that they might always be, for e.g., 5% full.

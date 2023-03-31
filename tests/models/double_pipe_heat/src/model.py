@@ -41,7 +41,7 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=0.0, max=0.0)),
+            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
             **supply_return_modifiers,
         )
 
@@ -61,7 +61,7 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=0.0, max=0.0)),
+            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
             **supply_return_modifiers,
         )
 
@@ -81,7 +81,7 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=0.0, max=0.0)),
+            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
             **supply_return_modifiers,
         )
 
@@ -101,7 +101,7 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=0.0, max=0.0)),
+            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
             **supply_return_modifiers,
         )
 

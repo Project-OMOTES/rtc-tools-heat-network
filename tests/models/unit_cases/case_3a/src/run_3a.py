@@ -114,6 +114,28 @@ class HeatProblem(
         return goals
 
 
+class HeatProblemSetPointConstraints(
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        for demand in self.heat_network_components["demand"]:
+            target = self.get_timeseries(f"{demand}.target_heat_demand")
+            state = f"{demand}.Heat_demand"
+
+            goals.append(TargetDemandGoal(state, target))
+
+        for s in self.heat_network_components["source"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
+
+        return goals
+
+
 class QTHProblem(
     _GoalsAndOptions,
     QTHMixin,
