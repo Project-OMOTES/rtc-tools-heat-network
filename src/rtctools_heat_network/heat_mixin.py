@@ -15,9 +15,9 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 from rtctools_heat_network.control_variables import map_comp_type_to_control_variable
 
 from .base_component_type_mixin import BaseComponentTypeMixin
+from .constants import GRAVITATIONAL_CONSTANT
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
 from .pipe_class import PipeClass
-
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -1186,8 +1186,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             q_nominal = self.variable_nominal(f"{d}.Q")
             cp = parameters[f"{d}.cp"]
             rho = parameters[f"{d}.rho"]
+            # TODO: future work - some sort of correction factor to account for temp drop n pipe:
+            # (maximum/average lenght fromm source to demand) * V_nominal * temperature_loss_factor
             dt = parameters[f"{d}.dT"]
-
             discharge = self.state(f"{d}.Q")
             heat_consumed = self.state(f"{d}.Heat_demand")
 
@@ -1219,6 +1220,106 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 ((heat_production - cp * rho * dt * discharge) / constraint_nominal, 0.0, np.inf)
             )
 
+        return constraints
+
+    def __pipe_hydraulic_power_path_constraints(self, ensemble_member):
+        constraints = []
+        options = self.heat_network_options()
+
+        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            parameters = self.parameters(ensemble_member)
+            components = self.heat_network_components
+
+            for pipe in components["pipe"]:
+                if parameters[f"{pipe}.length"] == 0.0:
+                    # If the pipe does not have a control valve, the head loss is
+                    # forced to zero via bounds. If the pipe _does_ have a control
+                    # valve, then there still is no relationship between the
+                    # discharge and the hydraulic_power.
+                    continue
+
+                if self.is_cold_pipe(pipe):
+                    hot_pipe = self.cold_to_hot_pipe(pipe)
+                else:
+                    hot_pipe = pipe
+
+                head_loss_option = self._hn_get_pipe_head_loss_option(pipe, options, parameters)
+                assert (
+                    head_loss_option != HeadLossOption.NO_HEADLOSS
+                ), "This method should be skipped when NO_HEADLOSS is set."
+
+                discharge = self.state(f"{pipe}.Q")
+                hydraulic_power = self.state(f"{pipe}.Hydraulic_power")
+                rho = parameters[f"{pipe}.rho"]
+
+                # 0: pipe is connected, 1: pipe is disconnected
+                is_disconnected_var = self.__pipe_disconnect_map.get(hot_pipe)
+                if is_disconnected_var is None:
+                    is_disconnected = 0.0
+                else:
+                    is_disconnected = self.state(is_disconnected_var)
+
+                max_discharge = None
+
+                flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+                flow_dir = self.state(flow_dir_var)  # 0/1: negative/positive flow direction
+
+                if hot_pipe in self.__pipe_topo_pipe_class_map:
+                    # Multiple diameter options for this pipe
+                    pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe]
+                    max_discharge = max(c.maximum_discharge for c in pipe_classes)
+                    for pc, pc_var_name in pipe_classes.items():
+                        if pc.inner_diameter == 0.0:
+                            continue
+
+                        # Calc max hydraulic power based on maximum_total_head_loss =
+                        # f(max_sum_dh_pipes, max_dh_network_options)
+                        max_total_hydraulic_power = 2.0 * (
+                            rho
+                            * GRAVITATIONAL_CONSTANT
+                            * self.__maximum_total_head_loss
+                            * max_discharge
+                        )
+
+                        # is_topo_disconnected - 0: pipe selected, 1: pipe disconnected/not selected
+                        # self.__pipe_topo_pipe_class_var - value 0: pipe is not selected, 1: pipe
+                        # is selected
+                        is_topo_disconnected = 1 - self.__pipe_topo_pipe_class_var[pc_var_name]
+
+                        constraints.extend(
+                            self._hydraulic_power(
+                                pipe,
+                                options,
+                                parameters,
+                                discharge,
+                                hydraulic_power,
+                                is_disconnected=is_topo_disconnected + is_disconnected,
+                                big_m=max_total_hydraulic_power,
+                                pipe_class=pc,
+                                flow_dir=flow_dir,
+                            )
+                        )
+                else:
+                    is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
+                    max_total_hydraulic_power = 2.0 * (
+                        rho
+                        * GRAVITATIONAL_CONSTANT
+                        * self.__maximum_total_head_loss
+                        * parameters[f"{pipe}.area"]
+                        * options["maximum_velocity"]
+                    )
+                    constraints.extend(
+                        self._hydraulic_power(
+                            pipe,
+                            options,
+                            parameters,
+                            discharge,
+                            hydraulic_power,
+                            is_disconnected=is_disconnected + is_topo_disconnected,
+                            big_m=max_total_hydraulic_power,
+                            flow_dir=flow_dir,
+                        )
+                    )
         return constraints
 
     def __pipe_heat_to_discharge_path_constraints(self, ensemble_member):
@@ -1374,7 +1475,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # Compute threshold for what is considered a change in setpoint
             big_m = 4.0 * max(self.bounds()[variable_name])
-            nominal = self.variable_nominal(variable_name)
+            nominal = self.variable_nominal(variable_name) * 1.0e-4
             # Constraint which fixes if the variable is allowed to switch or not.
             # With a sliding window, shifting one timestep.
             # Sum the binairy variables in the window. The sum should be <=1 as
@@ -1520,7 +1621,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
         components = self.heat_network_components
-
         # Set the head loss according to the direction in the pipes. Note that
         # the `.__head_loss` symbol is always positive by definition, but that
         # `.dH` is not (positive when flow is negative, and vice versa).
@@ -1528,6 +1628,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # (and it has no physical meaning). We also do not set any discharge
         # relationship in this case (but dH is still equal to Out - In of
         # course).
+
         for pipe in components["pipe"]:
             if parameters[f"{pipe}.length"] == 0.0:
                 # If the pipe does not have a control valve, the head loss is
@@ -1849,6 +1950,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
 
         return constraints
 

@@ -15,7 +15,13 @@ def heat_loss_u_values_pipe(
 ) -> Tuple[float, float]:
     """
     Calculate the U_1 and U_2 heat loss values for a pipe based for either
-    single- or multi-layer insultion.
+    single- or multi-layer insulation. The heat loss calculation for two parallel pipes in the
+    ground is based on the literature of Benny Böhm:
+        - Original reference (paid article): B. Bohm, On transient heat losses from buried district
+        heating pipes, International Journal of Energy Research 24, 1311 (2000))
+        - Used in Master's degree: Jort de Boer, Optimization of a District Heating Network with the
+        focus on heat loss, TU Delft Mechanical, Maritime and Materials Engineering, 2018,
+        http://resolver.tudelft.nl/uuid:7be9fcdd-49e4-4e0c-b36c-69d8b713a874 (access to pdf)
 
     If the `insulation_thicknesses` is provided as a list, the length should be
     equal to the length of `conductivities_insulation`. If both are floats, a
@@ -56,16 +62,13 @@ def heat_loss_u_values_pipe(
     if pipe_distance is None:
         pipe_distance = 2 * diam_outer
     depth_center = depth + 0.5 * diam_outer
-    depth_corrected = depth_center + conductivity_subsoil / h_surface
 
     # NOTE: We neglect the heat resistance due to convection inside the pipe,
     # i.e. we assume perfect mixing, or that this resistance is much lower
     # than the resistance of the outer insulation layers.
 
     # Heat resistance of the subsoil
-    r_subsoil = (
-        1 / (2 * math.pi * conductivity_subsoil) * math.log(4.0 * depth_corrected / diam_outer)
-    )
+    r_subsoil = 1 / (2 * math.pi * conductivity_subsoil) * math.log(4.0 * depth_center / diam_outer)
 
     # Heat resistance due to insulation
     outer_diameters = diam_inner + 2.0 * np.cumsum(insulation_thicknesses)
@@ -78,7 +81,7 @@ def heat_loss_u_values_pipe(
     r_m = (
         1
         / (4 * math.pi * conductivity_subsoil)
-        * math.log(1 + (2 * depth_corrected / pipe_distance) ** 2)
+        * math.log(1 + (2 * depth_center / pipe_distance) ** 2)
     )
 
     u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m**2)

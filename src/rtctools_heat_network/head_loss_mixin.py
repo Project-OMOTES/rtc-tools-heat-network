@@ -144,6 +144,38 @@ class _MinimizeHeadLosses(Goal):
         return sum_
 
 
+class _MinimizeHydraulicPower(Goal):
+    order = 1
+
+    priority = 2**31 - 1
+
+    def __init__(
+        self,
+        optimization_problem: "_HeadLossMixin",
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.optimization_problem = optimization_problem
+
+    def function(self, optimization_problem: "_HeadLossMixin", ensemble_member):
+        sum_ = 0.0
+
+        parameters = optimization_problem.parameters(ensemble_member)
+        options = optimization_problem.heat_network_options()
+
+        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+
+        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+            if (
+                not parameters[f"{pipe}.has_control_valve"]
+                and not parameters[f"{pipe}.length"] == 0.0
+            ):
+                sum_ += optimization_problem.state(f"{pipe}.Hydraulic_power")
+
+        return sum_
+
+
 class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, OptimizationProblem):
     """
     Adds handling of discharge - head (loss) relationship to the model.
@@ -194,7 +226,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         +================================+===========+===================================+
         | ``minimum_pressure_far_point`` | ``float`` | ``1.0`` bar                       |
         +--------------------------------+-----------+-----------------------------------+
-        | ``wall_roughness``             | ``float`` | ``0.002`` m                       |
+        | ``wall_roughness``             | ``float`` | ``0.0002`` m                      |
         +--------------------------------+-----------+-----------------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
         +--------------------------------+-----------+-----------------------------------+
@@ -247,7 +279,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
 
         When ``minimize_head_losses`` is set to True (default), a last
-        priority is inserted where the head losses in the system are
+        priority is inserted where the head losses and hydraulic power in the system are
         minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
         This is related to the assumption that control valves are
         present in the system to steer water in the right direction the case
@@ -308,6 +340,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
     @property
     def _hn_minimization_goal_class(self) -> Type[Goal]:
         return _MinimizeHeadLosses
+
+    @property
+    def _hpwr_minimization_goal_class(self) -> Type[Goal]:
+        return _MinimizeHydraulicPower
 
     def __initialize_nominals_and_bounds(self):
         self.__pipe_head_loss_nominals = AliasDict(self.alias_relation)
@@ -606,6 +642,249 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                     ret = ret[0]
                 return ret
 
+    def _hydraulic_power(
+        self,
+        pipe: str,
+        heat_network_options,
+        parameters,
+        discharge: Union[ca.MX, float, np.ndarray],
+        hydraulic_power: Optional[Union[ca.MX, float, np.ndarray]] = None,
+        dh: Optional[ca.MX] = None,
+        is_disconnected: Union[ca.MX, int] = 0,
+        big_m: Optional[float] = None,
+        pipe_class: Optional[PipeClass] = None,
+        flow_dir: Union[ca.MX, int] = 0,
+    ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
+        """
+        This function has two purposes:
+        - return the hydraulic power constraint expression(s) or
+        - compute the hydraulic power numerically (always positive).
+
+        Note: the discharge value can be negative. In such a case the hydraulic_power in the
+        constraint expression(s) will ensure that hydraulic_power is always positive. When a
+        numerical value of hydraulic power is returned, it will always be a positive value, even
+        when the discharge value is negative.
+
+        Returning linearized hydraulic power or hydraulic power constraint expressions:
+        - linearized hydraulic power (1 segment):
+            = max hydraulic power * (discharge / maximum discharge)
+            where hydraulic power:
+                = delta pressure * discharge
+                = rho * g * head loss * discharge
+                = rho * g * (friction factor * length * velocity**2)/(diameter * 2 * g) * discharge
+        - hydraulic power constraint expressions, n_number of linear line segments:
+            = b + (a * discharge vector)
+            where the discharge vector represents the volumetric flow rates for each segment
+
+        `is_disconnected` can be used to specify whether a pipe is
+        disconnected or not. This is most useful if a (boolean) ca.MX symbol
+        is passed, which can then be used with a big-M formulation. The big-M
+        itself then also needs to be passed via the `big_m` keyword argument.
+        """
+
+        if hydraulic_power is None:
+            symbolic = False
+        else:
+            symbolic = True
+
+        head_loss_option = self._hn_get_pipe_head_loss_option(
+            pipe, heat_network_options, parameters
+        )
+        assert (
+            head_loss_option != HeadLossOption.NO_HEADLOSS
+        ), "This method should be skipped when NO_HEADLOSS is set."
+
+        length = parameters[f"{pipe}.length"]
+
+        if length == 0.0:
+            if not symbolic:
+                return np.zeros_like(discharge)
+            else:
+                return []
+
+        if isinstance(is_disconnected, ca.MX) and not isinstance(big_m, float):
+            raise ValueError("When `is_disconnected` is symbolic, `big_m` must be passed as well")
+        if not symbolic and isinstance(is_disconnected, ca.MX):
+            raise ValueError(
+                "`is_disconnected` cannot be symbolic if the hydraulic_power symbol is numeric"
+            )
+        if isinstance(is_disconnected, (float, int)) and is_disconnected == 1.0:
+            if symbolic:
+                # Pipe is always disconnected, so no hydraulic power relationship needed
+                return []
+            else:
+                # By definition we choose the hydraulic power over disconnected
+                # pipes to be zero.
+                return 0.0
+
+        if big_m is None:
+            assert is_disconnected == 0.0
+        else:
+            assert big_m != 0.0
+
+        wall_roughness = heat_network_options["wall_roughness"]
+        temperature = parameters[f"{pipe}.temperature"]
+        rho = parameters[f"{pipe}.rho"]
+
+        if pipe_class is not None:
+            diameter = pipe_class.inner_diameter
+            area = pipe_class.area
+            maximum_velocity = pipe_class.maximum_velocity
+        else:
+            diameter = parameters[f"{pipe}.diameter"]
+            area = parameters[f"{pipe}.area"]
+            maximum_velocity = heat_network_options["maximum_velocity"]
+
+        constraint_nominal = abs(
+            parameters[f"{pipe}.rho"]
+            * GRAVITATIONAL_CONSTANT
+            * self.variable_nominal(f"{pipe}.dH")
+            * self.variable_nominal(f"{pipe}.Q")
+        )
+
+        if head_loss_option == HeadLossOption.LINEAR:
+            # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
+            # calc)
+            ff = darcy_weisbach.friction_factor(
+                maximum_velocity, diameter, wall_roughness, temperature
+            )
+            # Compute c_k constant (where |hydraulic power| ~ c_k * v^3)
+            c_k = rho * ff * length * area / 2.0 / diameter
+            # Compute linearized value
+            max_hydraulic_power = c_k * maximum_velocity**3
+            maximum_discharge = maximum_velocity * area
+            hydraulic_power_linearized = max_hydraulic_power * discharge / maximum_discharge
+
+            if symbolic:
+                if big_m is None:
+                    return [
+                        (
+                            (hydraulic_power - hydraulic_power_linearized) / constraint_nominal,
+                            0.0,
+                            0.0,
+                        )
+                    ]
+                else:
+                    constraint_nominal = (constraint_nominal * big_m) ** 0.5
+                    # Add constraints to enforce hydraulic_power == hydraulic_power_linearized, by
+                    # via the big_m method. The value of hydraulic_power must always be a positive
+                    # value. Therefore, the flow direction is taken into account for the situation
+                    # when the hydraulic_power_linearized is negative (hydraulic_power_linearized =
+                    # f(discharge))
+                    return [
+                        (
+                            (
+                                hydraulic_power
+                                - hydraulic_power_linearized
+                                + (is_disconnected + (1.0 - flow_dir)) * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        ),
+                        (
+                            (
+                                hydraulic_power
+                                - hydraulic_power_linearized
+                                - (is_disconnected + (1.0 - flow_dir)) * big_m
+                            )
+                            / constraint_nominal,
+                            -np.inf,
+                            0.0,
+                        ),
+                        (
+                            (
+                                hydraulic_power
+                                + hydraulic_power_linearized
+                                + (is_disconnected + flow_dir) * big_m
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        ),
+                        (
+                            (
+                                hydraulic_power
+                                + hydraulic_power_linearized
+                                - (is_disconnected + flow_dir) * big_m
+                            )
+                            / constraint_nominal,
+                            -np.inf,
+                            0.0,
+                        ),
+                    ]
+            else:
+                return abs(hydraulic_power_linearized)
+
+        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+            n_lines = heat_network_options["n_linearization_lines"]
+            a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
+                rho,
+                diameter,
+                length,
+                wall_roughness,
+                temperature=temperature,
+                n_lines=n_lines,
+                v_max=maximum_velocity,
+            )
+            discharge_vec = ca.repmat(discharge, len(a_coef))
+            hydraulic_power_linearized_vec = a_coef * discharge_vec + b_coef
+
+            if symbolic:
+                hydraulic_power_vec = ca.repmat(hydraulic_power, len(a_coef))
+
+                if isinstance(is_disconnected, ca.MX):
+                    is_disconnected_vec = ca.repmat(is_disconnected, len(a_coef))
+                else:
+                    is_disconnected_vec = is_disconnected
+
+                if big_m is None:
+                    # We write the equation such that big_m is always used, even if
+                    # it is None (i.e. not used). We do have to be sure to set it to 0,
+                    # because we cannot multiple with "None".
+                    big_m_lin = 0.0
+                else:
+                    big_m_lin = big_m
+                    constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
+                    # Add constraints to enforce hydraulic_power_vec >=
+                    # hydraulic_power_linearized_vec. The value of hydraulic_power_vec must always
+                    # be a positive value. Therefore, the flow direction is taken into account for
+                    # the situation when the hydraulic_power_linearized_vec is negative
+                    # (hydraulic_power_linearized_vec = f(discharge))
+                return [
+                    (
+                        (
+                            hydraulic_power_vec
+                            - hydraulic_power_linearized_vec
+                            + (is_disconnected_vec + (1.0 - flow_dir)) * big_m_lin
+                        )
+                        / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    ),
+                    (
+                        (
+                            hydraulic_power_vec
+                            + hydraulic_power_linearized_vec
+                            + (is_disconnected_vec + flow_dir) * big_m_lin
+                        )
+                        / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    ),
+                ]
+            else:
+                # Calc the max hydraulic power out of all the linear sections
+                max_hydraulic_power_linearized = np.amax(hydraulic_power_linearized_vec, axis=1)
+                if isinstance(discharge, float):
+                    max_hydraulic_power_linearized = max_hydraulic_power_linearized[0]
+                return abs(max_hydraulic_power_linearized)
+        else:
+            assert (
+                head_loss_option == HeadLossOption.LINEARIZED_DW
+                or head_loss_option == HeadLossOption.LINEAR
+            ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
+
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
         constraints = []
 
@@ -738,6 +1017,12 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
             g.append(self._hn_minimization_goal_class(self))
+
+            if (
+                options["head_loss_option"] == HeadLossOption.LINEAR
+                or options["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+            ):
+                g.append(self._hpwr_minimization_goal_class(self))
 
         return g
 

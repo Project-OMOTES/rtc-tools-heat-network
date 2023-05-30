@@ -20,6 +20,7 @@ from .head_loss_mixin import (
     HeadLossOption,
     _HeadLossMixin,
     _MinimizeHeadLosses as _MinimizeHeadLossesBase,
+    _MinimizeHydraulicPower as _MinimizeHydraulicPowerBase,
 )
 from .heat_network_common import (
     CheckValveStatus,
@@ -46,6 +47,14 @@ class _MinimizeHeadLosses(_MinimizeHeadLossesBase):
         return (theta < 1.0) or (not other_goals)
 
 
+class _MinimizeHydraulicPower(_MinimizeHydraulicPowerBase):
+    @property
+    def is_empty(self):
+        # Note that we do not check if there are any other non-linear goals for this goal
+        # as it is by definition linear
+        return 1.0
+
+
 class DemandTemperatureOption(IntEnum):
     """
     Enumeration for the possible options to describe the temperature drop
@@ -68,6 +77,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     """
 
     _hn_minimization_goal_class = _MinimizeHeadLosses
+    _hpwr_minimization_goal_class = _MinimizeHydraulicPower
 
     def __init__(self, *args, flow_directions=None, **kwargs):
         """

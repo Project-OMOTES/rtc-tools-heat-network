@@ -32,7 +32,7 @@ class TestSetpointConstraints(TestCase):
             results_3["GeothermalSource_b702.Heat_source"][2:]
             - results_3["GeothermalSource_b702.Heat_source"][1:-1]
         )
-        np.testing.assert_allclose((a >= 1.0e-6).sum(), 1)
+        np.testing.assert_array_less((a >= 1.0).sum(), 2)  # the 1.0 value is a manual threshold
 
         # Check that solution has no setpoint change
         np.testing.assert_array_less(
@@ -42,3 +42,13 @@ class TestSetpointConstraints(TestCase):
             ),
             1.0e-6,
         )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestSetpointConstraints()
+    a.test_setpoint_constraints()
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

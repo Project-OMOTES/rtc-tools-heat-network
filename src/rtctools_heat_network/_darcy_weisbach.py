@@ -102,7 +102,7 @@ def head_loss(velocity, diameter, length, wall_roughness, temperature):
 
 
 def get_linear_pipe_dh_vs_q_fit(
-    diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.0
+    diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
 ):
     area = math.pi * diameter**2 / 4
 
@@ -115,5 +115,32 @@ def get_linear_pipe_dh_vs_q_fit(
 
     a = np.diff(h_points) / np.diff(q_points)
     b = h_points[1:] - a * q_points[1:]
+
+    return a, b
+
+
+def get_linear_pipe_power_hydraulic_vs_q_fit(
+    rho, diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
+):
+    """
+    power_hydraulic = b + (a * Q)
+    """
+    area = math.pi * diameter**2 / 4.0
+
+    v_points = np.linspace(0.0, v_max, n_lines + 1)
+    q_points = v_points * area
+    power_hydraulic_points = np.array(
+        [
+            rho
+            * GRAVITATIONAL_CONSTANT
+            * abs(head_loss(v, diameter, length, wall_roughness, temperature))
+            * v
+            * area
+            for v in v_points
+        ]
+    )
+
+    a = np.diff(power_hydraulic_points) / np.diff(q_points)  # calc gradients for n_line segments
+    b = power_hydraulic_points[1:] - a * q_points[1:]
 
     return a, b

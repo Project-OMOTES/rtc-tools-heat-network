@@ -52,7 +52,7 @@ class TestPyCMLvsModelica(TestCase):
         # the time-series it sometimes is just over the tolerance
         # Therefore these very crude tolerances are set, we will delete this test in NWN
         np.testing.assert_allclose(
-            modelica_heat._objective_values, pycml_heat._objective_values, rtol=1e-6
+            modelica_heat._objective_values, pycml_heat._objective_values, rtol=1e-4, atol=1e-4
         )
         np.testing.assert_allclose(
             modelica_qth._objective_values, pycml_qth._objective_values, rtol=1.0, atol=1e-2

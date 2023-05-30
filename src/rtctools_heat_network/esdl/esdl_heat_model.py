@@ -212,6 +212,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
+        if "T_ground" in asset.attributes.keys():
+            modifiers["T_ground"] = asset.attributes["T_ground"]
 
         return Pipe, modifiers
 

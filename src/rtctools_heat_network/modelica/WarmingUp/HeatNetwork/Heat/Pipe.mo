@@ -24,6 +24,7 @@ block Pipe
   parameter Real T_ground = 10.0;
 
   Modelica.SIunits.Level dH;
+  Modelica.SIunits.Level Hydraulic_power;
 
   parameter Real Heat_loss;
 equation

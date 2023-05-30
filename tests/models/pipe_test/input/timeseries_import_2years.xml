@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TimeSeries xmlns="http://www.wldelft.nl/fews/PI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd" version="1.8">
+    <timeZone>0.0</timeZone>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <!-- HeatingDemand_2ab9 -->
+            <locationId>3ff29919-9b95-4f79-881a-554698744ffc</locationId>
+            <parameterId>78fcb7b2-1c2c-4c0a-a45c-4b70ef366883</parameterId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2019-01-01" time="00:00:00"/>
+            <endDate date="2020-12-30" time="23:00:00"/>
+            <missVal>-999.0</missVal>
+            <units>W</units>
+        </header>
+        <event date="2013-05-20" time="00:00:00" value="1000000.0" flag="0"/>
+        <event date="2013-05-21" time="00:00:00" value="1000000.0" flag="0"/>
+    </series>
+</TimeSeries>

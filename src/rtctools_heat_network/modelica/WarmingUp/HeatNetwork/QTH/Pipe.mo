@@ -31,6 +31,7 @@ block Pipe
   parameter Real T_ground = 10.0;
 
   Modelica.SIunits.Level dH;
+  Modelica.SIunits.Level Hydraulic_power;
 equation
   // Heat loss equation is added in the Python script to allow pipes to be disconnected.
   // It assumes constant ground temparature and constant dT at demand

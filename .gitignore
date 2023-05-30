@@ -24,3 +24,6 @@ src/*.egg-info
 .idea
 .ipynb_checkpoints
 .vscode
+
+# Kobus van Rooyen
+run_pipe_compare.py
