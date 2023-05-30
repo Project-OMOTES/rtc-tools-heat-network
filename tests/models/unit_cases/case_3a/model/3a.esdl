@@ -3,26 +3,32 @@
   <instance xsi:type="esdl:Instance" id="a6350368-fa00-4b9b-81b0-283d35b91de0" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f280f1c3-8858-4336-906e-c7608b192bf6" name="Untitled Area">
       <asset xsi:type="esdl:HeatStorage" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" capacity="100000000000.0" name="HeatStorage_4b0c">
-        <costInformation xsi:type="esdl:CostInformation" id="a65059d4-48ab-47a6-a391-9a93134bbcfe">
-          <variableMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="10a07c71-5d3b-43fd-a99d-d58acd0fe11e" value="1.0"/>
-          <investmentCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="b6a15da1-af36-4444-8134-20c97ae9c6cc" value="1.0"/>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="7abef6d7-5eb9-448f-b842-69402037e68c" value="1.0"/>
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="a638e42a-fb7d-472d-bffb-f2e240295cc2" value="1.0"/>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="f2e339d6-5c27-4293-aacd-e47457a673cc" value="1.0"/>
-          <installationCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="1466ee38-91b9-4245-a44e-83a3e5a86fba" value="1.0"/>
+        <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" value="1.0" id="f6c38846-7906-4749-a844-b10ad5556aef">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/kW" unit="EURO" physicalQuantity="COST" perMultiplier="KILO" id="cbcbe35a-719d-4cd7-870a-0c2edaca3683" perUnit="WATT"/>
+          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" id="1c42a11a-0765-4a57-b03a-d65bb5bda7b2" value="10000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/EUR" unit="EURO" physicalQuantity="COST" id="7eafb8a5-c594-447f-b9a2-787d9159b999"/>
+          </installationCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98322161118308" lon="4.383137226104737"/>
         <port xsi:type="esdl:InPort" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="a7c97b65-6bdd-4a00-b9b7-6c8d214053bd" name="In" id="efad2169-5f95-4618-98ce-e89860e2897b"/>
         <port xsi:type="esdl:OutPort" carrier="9ab126bd-7b66-4bed-82cc-4c04282fe859" connectedTo="776e5a76-57a5-4c03-b361-409ccb548b88" name="out" id="db555a41-d15b-44fb-b994-f5004eb3bc85"/>
       </asset>
       <asset xsi:type="esdl:GeothermalSource" id="b702bda3-632c-43ff-9867-72cda41f442f" minTemperature="80.0" maxTemperature="80.0" flowRate="5.0" power="10000000.0" name="GeothermalSource_b702">
-        <costInformation xsi:type="esdl:CostInformation" id="1fd82474-556d-44ff-88a1-d5eda195b218">
-          <variableMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="ecd886c4-566e-4419-a352-9d0e2ea1eb0f" value="1.0"/>
-          <investmentCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="3c4cf9fe-659a-417e-a38b-1fec58b903be" value="1.0"/>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="8d2bde1f-708e-4e0f-a0eb-bf4e7d922f90" value="1.0"/>
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="e45de843-8f57-429e-a914-c12a4189aff0" value="1.0"/>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="130deb1b-98aa-4215-9d28-675a4271cf67" value="1.0"/>
-          <installationCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="c684f250-61bc-4593-b480-bce9461dc572" value="1.0"/>
+        <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" value="1.0" id="f6c38846-7906-4749-a844-b10ad5556aef">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/kW" unit="EURO" physicalQuantity="COST" perMultiplier="KILO" id="cbcbe35a-719d-4cd7-870a-0c2edaca3683" perUnit="WATT"/>
+          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" id="1c42a11a-0765-4a57-b03a-d65bb5bda7b2" value="10000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/EUR" unit="EURO" physicalQuantity="COST" id="7eafb8a5-c594-447f-b9a2-787d9159b999"/>
+          </installationCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98491978527026" lon="4.3822574615478525"/>
         <port xsi:type="esdl:OutPort" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="7cec87b6-9928-4cfb-9b7b-fe7b51908911" name="Out" id="f31879b6-efa1-4b2c-8740-80bebb9500a7"/>
@@ -115,12 +121,16 @@
         <port xsi:type="esdl:OutPort" carrier="9ab126bd-7b66-4bed-82cc-4c04282fe859" connectedTo="b1476c2d-cb2c-4efe-b854-7435ee1789e8" name="Out" id="06a60970-d7d0-4e0f-827c-b3accf4048ae"/>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" id="a3b88fb6-b4a7-4986-8233-32ca05a5df9f" minTemperature="70.0" power="1000000.0" name="HeatingDemand_a3b8">
-        <costInformation xsi:type="esdl:CostInformation" id="a6bf5ed3-d145-40e7-b058-98047b1baf65">
-          <variableMaintenanceCosts xsi:type="esdl:SingleValue" name="variablemaintenance" id="bcbd02a0-10de-4cf3-ba37-b37cc55e4768" value="1.0"/>
-          <investmentCosts xsi:type="esdl:SingleValue" name="Investmentcost" id="a2b8f132-ddc5-4bcc-8005-4a61c2fd9c45" value="1.0"/>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" name="fixedoperational" id="b6df3b60-02dd-4d43-a9b5-ee71eae05f23" value="1.0"/>
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" name="fixedmaintenance" id="97f326fc-4bd0-47ee-a79e-e1ef8fb6e85a" value="1.0"/>
-          <installationCosts xsi:type="esdl:SingleValue" name="installationcost" id="657e1b24-5312-4424-8d65-c2dc240764f2" value="1.0"/>
+        <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" value="1.0" id="f6c38846-7906-4749-a844-b10ad5556aef">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/kW" unit="EURO" physicalQuantity="COST" perMultiplier="KILO" id="cbcbe35a-719d-4cd7-870a-0c2edaca3683" perUnit="WATT"/>
+          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" id="1c42a11a-0765-4a57-b03a-d65bb5bda7b2" value="10000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/EUR" unit="EURO" physicalQuantity="COST" id="7eafb8a5-c594-447f-b9a2-787d9159b999"/>
+          </installationCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98544177915329" lon="4.387986660003663"/>
         <port xsi:type="esdl:InPort" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="0f61b1e9-cf22-403c-8788-a0b00963dc5f" name="In" id="18b90d93-5005-45d0-b558-ece8994d39ae">
@@ -132,13 +142,16 @@
         <KPIs xsi:type="esdl:KPIs" id="da2ac53f-3c9c-46a8-a57c-dddb2d93d5a0"/>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" id="d1217097-9b71-4af9-8d14-df08d3ed1edb" minTemperature="70.0" power="1000000.0" name="HeatingDemand_d121">
-        <costInformation xsi:type="esdl:CostInformation" id="600defac-6d42-4405-af6a-d51469fe32c4">
-          <variableMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="5873bf6f-27f4-47dc-b369-535019981a2e" value="1.0"/>
-          <investmentCosts xsi:type="esdl:SingleValue" name="investmetcost" id="913b674d-caeb-4c73-a88d-a6428aa96bfa" value="1.0"/>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="a07891c6-d661-4973-b447-5264ea0ce01b" value="1.0"/>
-          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="4c2ede2b-2503-43e9-aa9b-614cfc3b92ed" value="1.0"/>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="352ef2c4-b465-4476-9d73-ef54a4d6507c" value="1.0"/>
-          <installationCosts xsi:type="esdl:SingleValue" name="NewSingleValue" id="84d54b33-4b9e-413c-9a41-613e9dc030c5" value="1.0"/>
+        <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" value="1.0" id="f6c38846-7906-4749-a844-b10ad5556aef">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/kW" unit="EURO" physicalQuantity="COST" perMultiplier="KILO" id="cbcbe35a-719d-4cd7-870a-0c2edaca3683" perUnit="WATT"/>
+          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" id="1c42a11a-0765-4a57-b03a-d65bb5bda7b2" value="10000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/EUR" unit="EURO" physicalQuantity="COST" id="7eafb8a5-c594-447f-b9a2-787d9159b999"/>
+          </installationCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98435813948783" lon="4.3883728981018075"/>
         <port xsi:type="esdl:InPort" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="618a8f33-60c9-4265-83e2-13916fc28e75" name="In" id="f5eb43f1-fb71-4d82-97cc-3fb0eb2c209d">

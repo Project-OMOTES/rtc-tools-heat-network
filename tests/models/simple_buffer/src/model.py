@@ -44,6 +44,7 @@ class Model(_Model):
         self.add_variable(
             Buffer,
             "buffer",
+            Heat_buffer=dict(min=-1e6, max=1e6, nominal=1e5),
             height=10,
             radius=5,
             min_fraction_tank_volume=self.min_fraction_tank_volume,

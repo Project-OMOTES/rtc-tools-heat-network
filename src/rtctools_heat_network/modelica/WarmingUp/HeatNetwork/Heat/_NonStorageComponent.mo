@@ -10,6 +10,13 @@ model _NonStorageComponent
   parameter Real cp = 4200.0;
   parameter Real rho = 988.0;
 
+  parameter Real state = 1.0;
+
+  parameter Real variable_operational_cost_coefficient = 0.0;
+  parameter Real fixed_operational_cost_coefficient = 0.0;
+  parameter Real investment_cost_coefficient = 0.0;
+  parameter Real installation_cost = 0.0;
+
   // NOTE: We move a factor of 100.0 of the heat to the state entry, to
   // reduce the coefficient in front of the heat variables. This
   // particularly helps the scaling/range of the constraints that relate

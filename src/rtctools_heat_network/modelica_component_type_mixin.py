@@ -193,7 +193,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             components = {}
             for c in component_types:
-                components[c] = sorted({k[:-15] for k, v in string_parameters.items() if v == c})
+                components[c] = sorted(
+                    {k.split(".")[0] for k, v in string_parameters.items() if v == c}
+                )
 
             self.__hn_component_types = components
 

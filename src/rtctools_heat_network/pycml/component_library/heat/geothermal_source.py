@@ -11,3 +11,4 @@ class GeothermalSource(Source):
 
         self.target_flow_rate = nan
         self.single_doublet_power = nan
+        self.nr_of_doublets = 1.0

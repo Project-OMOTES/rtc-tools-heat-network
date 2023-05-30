@@ -25,3 +25,5 @@ class Demand(_NonStorageComponent):
         self.add_equation(
             (self.HeatOut.Heat - (self.HeatIn.Heat - self.Heat_demand)) / self.Heat_nominal
         )
+
+        self.add_equation((self.Heat_flow - self.Heat_demand) / self.Heat_nominal)

@@ -11,6 +11,7 @@ map_comp_type_to_rangegoal_variable = {
 map_comp_type_to_control_variable = {
     "demand": ".Heat_demand",
     "source": ".Heat_source",
+    "geothermal": ".Heat_source",
     "heat_pump": [
         ".Power_elec",
         ".Primary_heat",

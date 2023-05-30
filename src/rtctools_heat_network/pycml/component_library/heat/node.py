@@ -1,10 +1,10 @@
 from rtctools_heat_network.pycml import Variable
 
-from ._internal import HeatComponent
+from ._internal import BaseAsset, HeatComponent
 from .heat_port import HeatPort
 
 
-class Node(HeatComponent):
+class Node(HeatComponent, BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

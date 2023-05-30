@@ -43,6 +43,7 @@ setup(
     packages=find_packages("src"),
     package_dir={"": "src"},
     install_requires=[
+        "influxdb >= 5.3.1",
         "pyecore",
         "pymoca >= 0.9.0",
         "rtc-tools >= 2.5.0",

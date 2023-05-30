@@ -6,6 +6,8 @@ block Node
 
   replaceable parameter Integer n(min = 2) = 2 "Number of flows";
 
+  parameter Real state = 1.0;
+
   HeatPort HeatConn[n];
   output SI.Position H;
 equation

@@ -19,8 +19,12 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
+from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
 from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
 
@@ -50,9 +54,13 @@ class ESDLMixin(
 
     __max_supply_temperature = None
 
+    # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
+    __minimum_pipe_size_name = "DN150"
+
     def __init__(self, *args, **kwargs):
-        if not self.esdl_run_info_path:
-            self.esdl_run_info_path = Path(kwargs["input_folder"]) / "RunInfo.xml"
+        self.esdl_run_info_path = kwargs.get(
+            "esdl_run_info_path", Path(kwargs["input_folder"]) / "RunInfo.xml"
+        )
 
         if not self.esdl_pi_input_data_config:
             self.esdl_pi_input_data_config = _ESDLInputDataConfig
@@ -62,7 +70,7 @@ class ESDLMixin(
 
         self.__run_info = _RunInfoReader(self.esdl_run_info_path)
 
-        self.__esdl_assets = _esdl_to_assets(self.__run_info.esdl_file)
+        self.__esdl_assets, self._profiles = _esdl_to_assets(self.__run_info.esdl_file)
         if self.__run_info.parameters_file is not None:
             self.__esdl_assets = _overwrite_parameters(
                 self.__run_info.parameters_file, self.__esdl_assets
@@ -121,7 +129,75 @@ class ESDLMixin(
         self.__input_timeseries_file = self.__run_info.input_timeseries_file
         self.__output_timeseries_file = self.__run_info.output_timeseries_file
 
+        self._override_pipe_classes = dict()
+        self.override_pipe_classes()
+
+        self.name_to_esdl_id_map = dict()
+
         super().__init__(*args, **kwargs)
+
+    def pre(self):
+        super().pre()
+        for esdl_id, esdl_asset in self.esdl_assets.items():
+            if esdl_asset.name in self.name_to_esdl_id_map:
+                raise RuntimeWarning(
+                    f"Found multiple ESDL assets with name {esdl_asset.name} in the "
+                    f"input ESDL. This is not supported in the optimization."
+                )
+            self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
+
+    def override_pipe_classes(self):
+        maximum_velocity = self.heat_network_options()["maximum_velocity"]
+
+        no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
+        pipe_classes = [
+            EDRPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
+            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+        ]
+
+        # We assert the pipe classes are monotonically increasing in size
+        assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
+
+        for asset in self.esdl_assets.values():
+            if asset.asset_type == "Pipe":
+                p = asset.name
+                if self.is_cold_pipe(p):
+                    continue
+
+                if asset.attributes["state"].name == "OPTIONAL":
+                    c = self._override_pipe_classes[p] = []
+                    c.append(no_pipe_class)
+
+                    min_size = self.__minimum_pipe_size_name
+                    min_size_idx = [
+                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
+                    ]
+                    assert len(min_size_idx) == 1
+                    min_size_idx = min_size_idx[0]
+
+                    max_size = asset.attributes["diameter"].name
+                    max_size_idx = [
+                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
+                    ]
+                    assert len(max_size_idx) == 1
+                    max_size_idx = max_size_idx[0]
+
+                    if max_size_idx < min_size_idx:
+                        logger.error(
+                            f"{p} has an upper DN size smaller than the used minimum size "
+                            f"of {self.__minimum_pipe_size_name}, choose at least "
+                            f"{self.__minimum_pipe_size_name}"
+                        )
+                    elif min_size_idx == max_size_idx:
+                        c.append(pipe_classes[min_size_idx])
+                    else:
+                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+                elif asset.attributes["state"].name == "DISABLED":
+                    c = self._override_pipe_classes[p] = []
+                    c.append(no_pipe_class)
+
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
 
     @property
     def esdl_assets(self):
@@ -172,41 +248,76 @@ class ESDLMixin(
     def read(self):
         super().read()
 
-        if self.__input_timeseries_file is None:
-            return
+        if self._profiles:
+            for ensemble_member in range(self.ensemble_size):
+                timesteps = None
+                for id, profile in self._profiles.items():
+                    variable = f"{self.esdl_asset_id_to_name_map[id]}.target_heat_demand"
+                    values = profile.values
+                    flat_list = []
+                    for sublist in values:
+                        for item in sublist:
+                            # if not math.isnan(item):
+                            flat_list.append(item)
+                    if timesteps is None:
+                        timesteps = profile.index.tz_convert(None).to_pydatetime()
+                    elif len(profile.index.tz_convert(None).to_pydatetime()) != len(timesteps):
+                        logger.error(f"Unequal profile lengths for {variable}")
+                    self.io.set_timeseries(
+                        variable, timesteps, flat_list, ensemble_member=ensemble_member
+                    )
+                    if self.io.reference_datetime is None:
+                        self.io.reference_datetime = (
+                            profile.index.tz_convert(None).to_pydatetime()
+                        )[0]
+        else:
+            if self.__input_timeseries_file is None:
+                return
 
-        input_timeseries_file = Path(self.__input_timeseries_file)
-        assert input_timeseries_file.is_absolute()
-        assert input_timeseries_file.suffix == ".xml" or input_timeseries_file.suffix == ".csv"
+            input_timeseries_file = Path(self.__input_timeseries_file)
+            assert input_timeseries_file.is_absolute()
+            assert input_timeseries_file.suffix == ".xml" or input_timeseries_file.suffix == ".csv"
 
-        if input_timeseries_file.suffix == ".xml":
-            self.read_xml(input_timeseries_file)
-        elif input_timeseries_file.suffix == ".csv":
-            self.read_csv(input_timeseries_file)
+            if input_timeseries_file.suffix == ".xml":
+                self.read_xml(input_timeseries_file)
+            elif input_timeseries_file.suffix == ".csv":
+                self.read_csv(input_timeseries_file)
 
     def read_csv(self, input_timeseries_file):
         csv_data = pd.read_csv(input_timeseries_file)
         try:
             timeseries_import_times = [
-                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
-                for entry in csv_data["time"].to_numpy()
+                datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                for entry in csv_data["DateTime"].to_numpy()
             ]
         except ValueError:
             try:
                 timeseries_import_times = [
-                    datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
-                    for entry in csv_data["time"].to_numpy()
+                    datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                    for entry in csv_data["DateTime"].to_numpy()
                 ]
             except ValueError:
-                logger.error("Date time string is not in supported format")
+                try:
+                    timeseries_import_times = [
+                        datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
+                        for entry in csv_data["DateTime"].to_numpy()
+                    ]
+                except ValueError:
+                    logger.error("Date time string is not in supported format")
 
         self.io.reference_datetime = timeseries_import_times[0]
         for ensemble_member in range(self.ensemble_size):
             for demand in self.heat_network_components.get("demand", []):
-                values = csv_data[f"{demand.replace(' ', '')}.target_heat_demand"].to_numpy()
-                self.io.set_timeseries(
-                    demand + ".target_heat_demand", timeseries_import_times, values, ensemble_member
-                )
+                try:
+                    values = csv_data[f"{demand}"].to_numpy()
+                    self.io.set_timeseries(
+                        demand + ".target_heat_demand",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
             for source in self.heat_network_components.get("source", []):
                 try:
                     values = csv_data[f"{source.replace(' ', '')}.target_heat_source"].to_numpy()
@@ -572,5 +683,6 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
             assets[el.id] = Asset(
                 asset_type, el.id, el_name, in_ports, out_ports, attributes, global_properties
             )
+    profiles = parse_esdl_profiles(esdl_model)
 
-    return assets
+    return assets, profiles

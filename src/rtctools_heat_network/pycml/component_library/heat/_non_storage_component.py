@@ -2,10 +2,11 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
 
+from ._internal.heat_component import BaseAsset
 from .heat_two_port import HeatTwoPort
 
 
-class _NonStorageComponent(HeatTwoPort):
+class _NonStorageComponent(HeatTwoPort, BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -30,6 +31,8 @@ class _NonStorageComponent(HeatTwoPort):
 
         self.add_variable(Variable, "H_in")
         self.add_variable(Variable, "H_out")
+
+        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
         self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
         self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)

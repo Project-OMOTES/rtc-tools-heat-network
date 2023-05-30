@@ -4,10 +4,11 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
 
+from ._internal.heat_component import BaseAsset
 from .heat_two_port import HeatTwoPort
 
 
-class Buffer(HeatTwoPort):
+class Buffer(HeatTwoPort, BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -70,6 +71,7 @@ class Buffer(HeatTwoPort):
         self.add_variable(Variable, "Heat_loss", min=0.0, nominal=self._nominal_heat_loss)
         self.add_variable(Variable, "HeatHot", nominal=self.Heat_nominal)
         self.add_variable(Variable, "HeatCold", min=0.0, max=0.0, nominal=self.Heat_nominal)
+        self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
         self._heat_loss_eq_nominal_buf = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
 
@@ -90,3 +92,5 @@ class Buffer(HeatTwoPort):
         # pipe.
         # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
         # (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
+
+        self.add_equation((self.Heat_flow - self.Heat_buffer) / self.Heat_nominal)

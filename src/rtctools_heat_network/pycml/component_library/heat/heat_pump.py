@@ -1,10 +1,11 @@
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
+from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
 from rtctools_heat_network.pycml.component_library.heat.heat_four_port import HeatFourPort
 
 
-class HeatPump(HeatFourPort):
+class HeatPump(HeatFourPort, BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(
             name,
@@ -24,6 +25,7 @@ class HeatPump(HeatFourPort):
 
         self.add_variable(Variable, "Primary_heat", min=0.0)
         self.add_variable(Variable, "Secondary_heat", min=0.0)
+        self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
         self.add_variable(Variable, "Power_elec", min=0.0)
         self.add_variable(Variable, "dH_prim")
         self.add_variable(Variable, "dH_sec")
@@ -50,3 +52,4 @@ class HeatPump(HeatFourPort):
                 / self.nominal
             )
         )
+        self.add_equation((self.Heat_flow - self.Secondary_heat) / self.nominal)

@@ -29,7 +29,7 @@ class RangeGoal(Goal):
         target_max,
         priority,
         state_bounds=None,
-        order=2,
+        order=1,
         weight=1.0,
     ):
         self.state = state
@@ -139,7 +139,7 @@ class GoalsAndOptions:
                     state=s + ".Heat_source",
                     priority=2,
                     order=2,
-                    weight=1 / (len(self.times()) ** 2),
+                    weight=1.0,
                 )
             )
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, Tuple, Type, Union
 
 import esdl
+from esdl import TimeUnitEnum, UnitEnum
 
 from rtctools_heat_network.pycml import Model as _Model
 
@@ -15,6 +16,30 @@ from .esdl_model_base import _RetryLaterException, _SkipAssetException
 logger = logging.getLogger("rtctools_heat_network")
 
 MODIFIERS = Dict[str, Union[str, int, float]]
+
+HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS = 4200 * 998
+WATTHOUR_TO_JOULE = 3600
+
+MULTI_ENUM_NAME_TO_FACTOR = {
+    esdl.MultiplierEnum.ATTO: 1e-18,
+    esdl.MultiplierEnum.FEMTO: 1e-15,
+    esdl.MultiplierEnum.PICO: 1e-12,
+    esdl.MultiplierEnum.NANO: 1e-9,
+    esdl.MultiplierEnum.MICRO: 1e-6,
+    esdl.MultiplierEnum.MILLI: 1e-3,
+    esdl.MultiplierEnum.CENTI: 1e-2,
+    esdl.MultiplierEnum.DECI: 1e-1,
+    esdl.MultiplierEnum.NONE: 1e0,
+    esdl.MultiplierEnum.DEKA: 1e1,
+    esdl.MultiplierEnum.HECTO: 1e2,
+    esdl.MultiplierEnum.KILO: 1e3,
+    esdl.MultiplierEnum.MEGA: 1e6,
+    esdl.MultiplierEnum.GIGA: 1e9,
+    esdl.MultiplierEnum.TERA: 1e12,
+    esdl.MultiplierEnum.TERRA: 1e12,
+    esdl.MultiplierEnum.PETA: 1e15,
+    esdl.MultiplierEnum.EXA: 1e18,
+}
 
 
 class _AssetToComponentBase:
@@ -207,7 +232,7 @@ class _AssetToComponentBase:
             for p in asset.in_ports:
                 out_port = None
                 for p2 in asset.out_ports:
-                    if p2.carrier.name == p.carrier.name:
+                    if p2.carrier.name.replace("_ret", "") == p.carrier.name.replace("_ret", ""):
                         out_port = p2
                 try:
                     connected_port = p.connectedTo[0]
@@ -227,6 +252,40 @@ class _AssetToComponentBase:
                         f"Could not determine nominal discharge for {asset.asset_type} {asset.name}"
                     )
             return q_nominals
+
+    def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
+        modifiers = {}
+
+        if asset.attributes["costInformation"] is None:
+            RuntimeWarning(f"{asset.name} has no cost information specified")
+            return modifiers
+
+        if asset.asset_type == "HeatStorage":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                asset, per_unit=UnitEnum.JOULE
+            )
+            modifiers["installation_cost"] = self.get_installation_costs(asset)
+        elif asset.asset_type == "Pipe":
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                asset, per_unit=UnitEnum.METRE
+            )
+            modifiers["installation_cost"] = self.get_installation_costs(asset)
+        elif asset.asset_type == "HeatingDemand":
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                asset, per_unit=UnitEnum.WATT
+            )
+            modifiers["installation_cost"] = self.get_installation_costs(asset)
+        else:
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(
+                asset, per_unit=UnitEnum.WATT
+            )
+            modifiers["installation_cost"] = self.get_installation_costs(asset)
+
+        return modifiers
 
     @staticmethod
     def _get_supply_return_temperatures(asset: Asset) -> Tuple[float, float]:
@@ -265,7 +324,7 @@ class _AssetToComponentBase:
             if not prim_supply_temperature or not sec_supply_temperature:
                 raise RuntimeError(
                     f"{asset.name} carriers are not specified correctly there should be a "
-                    f"dedicated _ret carrier for each hycraulically coupled network"
+                    f"dedicated _ret carrier for each hydraulically coupled network"
                 )
             temperatures = {
                 "Primary": {
@@ -281,6 +340,257 @@ class _AssetToComponentBase:
         else:
             # unknown model type
             return {}
+
+    @staticmethod
+    def get_state(asset: Asset):
+        if asset.attributes["state"].name == "DISABLED":
+            value = 0.0
+        elif asset.attributes["state"].name == "OPTIONAL":
+            value = 2.0
+        else:
+            value = 1.0
+        return value
+
+    def get_variable_opex_costs(self, asset: Asset):
+        """
+        Returns the variable opex costs of an asset in Euros per Wh
+        """
+        cost_infos = dict()
+        cost_infos["variableOperationalAndMaintenanceCosts"] = asset.attributes[
+            "costInformation"
+        ].variableOperationalAndMaintenanceCosts
+        cost_infos["variableOperationalCosts"] = asset.attributes[
+            "costInformation"
+        ].variableOperationalCosts
+        cost_infos["variableMaintenanceCosts"] = asset.attributes[
+            "costInformation"
+        ].variableMaintenanceCosts
+
+        if all(cost_info is None for cost_info in cost_infos.values()):
+            RuntimeWarning(f"No variable OPEX cost information specified for asset {asset}")
+
+        value = 0.0
+        for cost_info in cost_infos.values():
+            if cost_info is None:
+                continue
+            cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+            if unit != UnitEnum.EURO:
+                RuntimeWarning(f"Expected cost information {cost_info} to provide a cost in euros.")
+                continue
+            if per_time != TimeUnitEnum.NONE:
+                RuntimeWarning(
+                    f"Specified OPEX for asset {asset.name} include a "
+                    f"component per time, which we cannot handle."
+                )
+                continue
+            if per_unit != UnitEnum.WATTHOUR:
+                RuntimeWarning(
+                    f"Expected the specified OPEX for asset "
+                    f"{asset.name} to be per Wh, but they are provided "
+                    f"in {per_unit} instead."
+                )
+                continue
+            value += cost_value
+
+        return value
+
+    def get_fixed_opex_costs(self, asset: Asset):
+        """
+        Returns the fixed opex costs of an asset in Euros per W
+        """
+        cost_infos = dict()
+        cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
+            "costInformation"
+        ].fixedOperationalAndMaintenanceCosts
+        cost_infos["fixedOperationalCosts"] = asset.attributes[
+            "costInformation"
+        ].fixedOperationalCosts
+        cost_infos["fixedMaintenanceCosts"] = asset.attributes[
+            "costInformation"
+        ].fixedMaintenanceCosts
+
+        if all(cost_info is None for cost_info in cost_infos.values()):
+            logger.warning(f"No fixed OPEX cost information specified for asset {asset.name}")
+            value = 0.0
+        else:
+            value = 0.0
+            for cost_info in cost_infos.values():
+                if cost_info is None:
+                    continue
+                cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+                if unit != UnitEnum.EURO:
+                    RuntimeWarning(
+                        f"Expected cost information {cost_info} to " f"provide a cost in euros."
+                    )
+                    continue
+                if per_unit == UnitEnum.CUBIC_METRE:
+                    # index is 0 because buffers only have one in out port
+                    supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                        "supplyTemperature"
+                    ]
+                    return_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                        "returnTemperature"
+                    ]
+                    delta_temp = supply_temp - return_temp
+                    m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                    cost_value = cost_value / m3_to_joule_factor
+                elif per_unit == UnitEnum.NONE:
+                    if asset.asset_type == "HeatStorage":
+                        size = asset.attributes["capacity"]
+                        if size == 0.0:
+                            # index is 0 because buffers only have one in out port
+                            supply_temp = asset.global_properties["carriers"][
+                                asset.in_ports[0].carrier.id
+                            ]["supplyTemperature"]
+                            return_temp = asset.global_properties["carriers"][
+                                asset.in_ports[0].carrier.id
+                            ]["returnTemperature"]
+                            delta_temp = supply_temp - return_temp
+                            m3_to_joule_factor = (
+                                delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                            )
+                            size = asset.attributes["volume"] * m3_to_joule_factor
+                            if size == 0.0:
+                                RuntimeWarning(f"{asset.name} has not capacity or volume set")
+                                return 0.0
+                    else:
+                        try:
+                            size = asset.attributes["power"]
+                            if size == 0.0:
+                                continue
+                        except KeyError:
+                            return 0.0
+                    cost_value = cost_value / size
+                elif per_unit != UnitEnum.WATT:
+                    RuntimeWarning(
+                        f"Expected the specified OPEX for asset "
+                        f"{asset.name} to be per W or m3, but they are provided "
+                        f"in {per_unit} instead."
+                    )
+                    continue
+                value += cost_value
+        return value
+
+    @staticmethod
+    def get_cost_value_and_unit(cost_info: esdl.SingleValue):
+        cost_value = cost_info.value
+        unit_info = cost_info.profileQuantityAndUnit
+        unit = unit_info.unit
+        per_time_uni = unit_info.perTimeUnit
+        per_unit = unit_info.perUnit
+        multiplier = unit_info.multiplier
+        per_multiplier = unit_info.perMultiplier
+
+        cost_value *= MULTI_ENUM_NAME_TO_FACTOR[multiplier]
+        cost_value /= MULTI_ENUM_NAME_TO_FACTOR[per_multiplier]
+
+        return cost_value, unit, per_unit, per_time_uni
+
+    def get_installation_costs(self, asset: Asset):
+        cost_info = asset.attributes["costInformation"].installationCosts
+        if cost_info is None:
+            RuntimeWarning(f"No installation cost info provided for asset " f"{asset.name}.")
+            return 0.0
+        cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
+        if unit != UnitEnum.EURO:
+            RuntimeWarning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            return 0.0
+        if not per_time == TimeUnitEnum.NONE:
+            RuntimeWarning(
+                f"Specified installation costs of asset {asset.name}"
+                f" include a component per time, which we "
+                f"cannot handle."
+            )
+            return 0.0
+        if not per_unit == UnitEnum.NONE:
+            RuntimeWarning(
+                f"Specified installation costs of asset {asset.name}"
+                f" include a component per unit {per_unit}, which we "
+                f"cannot handle."
+            )
+            return 0.0
+        return cost_value
+
+    def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT):
+        """
+        Returns the investment costs of an asset in Euros per W.
+        """
+        cost_info = asset.attributes["costInformation"].investmentCosts
+        if cost_info is None:
+            RuntimeWarning(f"No investment costs provided for asset " f"{asset.name}.")
+            return 0.0
+        (
+            cost_value,
+            unit_provided,
+            per_unit_provided,
+            per_time_provided,
+        ) = self.get_cost_value_and_unit(cost_info)
+        if unit_provided != UnitEnum.EURO:
+            RuntimeWarning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            return 0.0
+        if not per_time_provided == TimeUnitEnum.NONE:
+            RuntimeWarning(
+                f"Specified investment costs for asset {asset.name}"
+                f" include a component per time, which we "
+                f"cannot handle."
+            )
+            return 0.0
+        if per_unit == UnitEnum.WATT:
+            if not per_unit_provided == UnitEnum.WATT:
+                RuntimeWarning(
+                    f"Expected the specified investment costs "
+                    f"of asset {asset.name} to be per W, but they "
+                    f"are provided in {per_unit_provided} "
+                    f"instead."
+                )
+            return cost_value
+        elif per_unit == UnitEnum.WATTHOUR:
+            if not per_unit_provided == UnitEnum.WATTHOUR:
+                RuntimeWarning(
+                    f"Expected the specified investment costs "
+                    f"of asset {asset.name} to be per Wh, but they "
+                    f"are provided in {per_unit_provided} "
+                    f"instead."
+                )
+                return 0.0
+            return cost_value
+        elif per_unit == UnitEnum.METRE:
+            if not per_unit_provided == UnitEnum.METRE:
+                RuntimeWarning(
+                    f"Expected the specified investment costs "
+                    f"of asset {asset.name} to be per meter, but they "
+                    f"are provided in {per_unit_provided} "
+                    f"instead."
+                )
+                return 0.0
+            return cost_value
+        elif per_unit == UnitEnum.JOULE:
+            if per_unit_provided == UnitEnum.WATTHOUR:
+                return cost_value / WATTHOUR_TO_JOULE
+            elif per_unit_provided == UnitEnum.CUBIC_METRE:
+                # index is 0 because buffers only have one in out port
+                supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                    "supplyTemperature"
+                ]
+                return_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
+                    "returnTemperature"
+                ]
+                delta_temp = supply_temp - return_temp
+                m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
+                return cost_value / m3_to_joule_factor
+            else:
+                RuntimeWarning(
+                    f"Expected the specified investment costs "
+                    f"of asset {asset.name} to be per Wh or m3, but "
+                    f"they are provided in {per_unit_provided} "
+                    f"instead."
+                )
+                return 0.0
+        else:
+            RuntimeWarning(
+                f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
+            )
+            return 0.0
 
     def convert_skip(self, asset: Asset):
         raise _SkipAssetException(asset)

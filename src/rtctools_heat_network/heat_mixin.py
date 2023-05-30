@@ -14,6 +14,7 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 from rtctools_heat_network.control_variables import map_comp_type_to_control_variable
 
+
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
@@ -38,6 +39,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_disconnect_var = {}
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
+
+        self.__asset_aggregation_count_var = {}
+        self.__asset_aggregation_count_var_bounds = {}
+        self.__asset_aggregation_count_var_map = {}
 
         self.__check_valve_status_var = {}
         self.__check_valve_status_var_bounds = {}
@@ -74,6 +79,31 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__pipe_topo_diameter_area_parameters = []
         self.__pipe_topo_heat_loss_parameters = []
+
+        self._asset_fixed_operational_cost_map = {}
+        self.__asset_fixed_operational_cost_var = {}
+        self.__asset_fixed_operational_cost_nominals = {}
+        self.__asset_fixed_operational_cost_bounds = {}
+
+        self._asset_variable_operational_cost_map = {}
+        self.__asset_variable_operational_cost_var = {}
+        self.__asset_variable_operational_cost_bounds = {}
+        self.__asset_variable_operational_cost_nominals = {}
+
+        self._asset_investment_cost_map = {}
+        self.__asset_investment_cost_var = {}
+        self.__asset_investment_cost_nominals = {}
+        self.__asset_investment_cost_bounds = {}
+
+        self._asset_installation_cost_map = {}
+        self.__asset_installation_cost_var = {}
+        self.__asset_installation_cost_bounds = {}
+        self.__asset_installation_cost_nominals = {}
+
+        self._asset_max_size_map = {}
+        self.__asset_max_size_var = {}
+        self.__asset_max_size_bounds = {}
+        self.__asset_max_size_nominals = {}
 
         # Setpoint vars
         self._timed_setpoints = {}
@@ -183,7 +213,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__pipe_topo_heat_loss_parameters.append({})
 
         for pipe in self.hot_pipes:
-            cold_pipe = self.hot_to_cold_pipe(pipe)
             pipe_classes = self.pipe_classes(pipe)
             cold_pipe = self.hot_to_cold_pipe(pipe)
 
@@ -208,19 +237,23 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if not pipe_classes:
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = parameters[f"{pipe}.diameter"]
+                investment_cost = parameters[f"{pipe}.investment_cost_coefficient"]
                 self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
-                self.__pipe_topo_cost_var_bounds[cost_var_name] = (0.0, 0.0)
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (investment_cost, investment_cost)
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
-                    self.__pipe_topo_cost_nominals[cost_var_name] = 1.0
+                    self.__pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
             elif len(pipe_classes) == 1:
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = pipe_classes[0].inner_diameter
+                investment_cost = pipe_classes[0].investment_costs
                 self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
-                self.__pipe_topo_cost_var_bounds[cost_var_name] = (0.0, 0.0)
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (investment_cost, investment_cost)
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
-                    self.__pipe_topo_cost_nominals[cost_var_name] = 1.0
+                    self.__pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
+                    if investment_cost == 0.0:
+                        RuntimeWarning(f"{pipe} has an investment cost of 0. €/m")
 
                 for ensemble_member in range(self.ensemble_size):
                     d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
@@ -375,6 +408,168 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
+        # Making the variables for max size
+        for asset in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            asset_max_size_var = f"{asset}__max_size"
+            self._asset_max_size_map[asset] = asset_max_size_var
+            self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(asset_max_size_var)
+            if asset in self.heat_network_components.get("source", []):
+                self.__asset_max_size_bounds[asset_max_size_var] = (
+                    0.0,
+                    bounds[f"{asset}.Heat_source"][1],
+                )
+                self.__asset_max_size_nominals[asset_max_size_var] = (
+                    bounds[f"{asset}.Heat_source"][1] / 2.0
+                )
+            elif asset in self.heat_network_components.get("demand", []):
+                self.__asset_max_size_bounds[asset_max_size_var] = (
+                    0.0,
+                    min(bounds[f"{asset}.Heat_demand"][1], bounds[f"{asset}.HeatIn.Heat"][1]),
+                )
+                self.__asset_max_size_nominals[asset_max_size_var] = (
+                    min(bounds[f"{asset}.Heat_demand"][1], bounds[f"{asset}.HeatIn.Heat"][1]) / 2.0
+                )
+            elif asset in self.heat_network_components.get("ates", []):
+                self.__asset_max_size_bounds[asset_max_size_var] = (
+                    0.0,
+                    bounds[f"{asset}.Heat_ates"][1],
+                )
+                self.__asset_max_size_nominals[asset_max_size_var] = (
+                    bounds[f"{asset}.Heat_ates"][1] / 2.0
+                )
+            elif asset in self.heat_network_components.get("buffer", []):
+                self.__asset_max_size_bounds[asset_max_size_var] = (
+                    0.0,
+                    bounds[f"{asset}.Stored_heat"][1],
+                )
+                self.__asset_max_size_nominals[asset_max_size_var] = self.variable_nominal(
+                    f"{asset}.Stored_heat"
+                )
+
+        # Making the __aggregation_count variable for each asset
+        for asset_list in self.heat_network_components.values():
+            for asset in asset_list:
+                aggr_count_var = f"{asset}_aggregation_count"
+                self.__asset_aggregation_count_var_map[asset] = aggr_count_var
+                self.__asset_aggregation_count_var[aggr_count_var] = ca.MX.sym(aggr_count_var)
+                try:
+                    aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
+                except KeyError:
+                    aggr_count_max = 1.0
+                if parameters[f"{asset}.state"] == 0:
+                    aggr_count_max = 0.0
+                self.__asset_aggregation_count_var_bounds[aggr_count_var] = (0.0, aggr_count_max)
+
+        # Making the cost variables; fixed_operational_cost, variable_operational_cost,
+        # installation_cost and investment_cost
+        for asset_name in [
+            asset_name
+            for asset_name_list in self.heat_network_components.values()
+            for asset_name in asset_name_list
+        ]:
+            if asset_name in [*self.heat_network_components.get("node", [])]:
+                continue
+            elif asset_name in [*self.heat_network_components.get("ates", [])]:
+                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("demand", [])]:
+                nominal_fixed_operational = min(
+                    bounds[f"{asset_name}.Heat_demand"][1], bounds[f"{asset_name}.HeatIn.Heat"][1]
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("source", [])]:
+                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("pipe", [])]:
+                nominal_fixed_operational = parameters[f"{asset_name}.length"]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("buffer", [])]:
+                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Stored_heat")
+                nominal_variable_operational = self.variable_nominal(f"{asset_name}.Heat_buffer")
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [
+                *self.heat_network_components.get("heat_exchanger", []),
+                *self.heat_network_components.get("heat_pump", []),
+            ]:
+                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Secondary_heat")
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            else:
+                logger.warning(
+                    f"Asset {asset_name} has type for which "
+                    f"we cannot determine bounds and nominals on the costs, "
+                    f"skipping it."
+                )
+                continue
+
+            # fixed operational cost
+            asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
+            self._asset_fixed_operational_cost_map[asset_name] = asset_fixed_operational_cost_var
+            self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = ca.MX.sym(
+                asset_fixed_operational_cost_var
+            )
+            self.__asset_fixed_operational_cost_bounds[asset_fixed_operational_cost_var] = (
+                0.0,
+                np.inf,
+            )
+            self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = max(
+                parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
+                * nominal_fixed_operational,
+                1.0,
+            )
+
+            # variable operational cost
+            variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
+            self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
+            self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
+                variable_operational_cost_var
+            )
+            self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
+                0.0,
+                np.inf,
+            )
+            self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = max(
+                parameters[f"{asset_name}.variable_operational_cost_coefficient"]
+                * nominal_variable_operational
+                * 24.0
+                * 365.0,
+                1.0,
+            )
+
+            # installation cost
+            asset_installation_cost_var = f"{asset_name}__installation_cost"
+            self._asset_installation_cost_map[asset_name] = asset_installation_cost_var
+            self.__asset_installation_cost_var[asset_installation_cost_var] = ca.MX.sym(
+                asset_installation_cost_var
+            )
+            self.__asset_installation_cost_bounds[asset_installation_cost_var] = (0.0, np.inf)
+            self.__asset_installation_cost_nominals[asset_installation_cost_var] = max(
+                parameters[f"{asset_name}.installation_cost"], 1.0
+            )
+
+            # investment cost
+            asset_investment_cost_var = f"{asset_name}__investment_cost"
+            self._asset_investment_cost_map[asset_name] = asset_investment_cost_var
+            self.__asset_investment_cost_var[asset_investment_cost_var] = ca.MX.sym(
+                asset_investment_cost_var
+            )
+            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, np.inf)
+            self.__asset_investment_cost_nominals[asset_investment_cost_var] = max(
+                parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
+                1.0,
+            )
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
@@ -477,6 +672,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__pipe_topo_cost_var.values())
         variables.extend(self.__pipe_topo_heat_loss_var.values())
         variables.extend(self.__pipe_topo_pipe_class_var.values())
+        variables.extend(self.__asset_fixed_operational_cost_var.values())
+        variables.extend(self.__asset_investment_cost_var.values())
+        variables.extend(self.__asset_installation_cost_var.values())
+        variables.extend(self.__asset_variable_operational_cost_var.values())
+        variables.extend(self.__asset_max_size_var.values())
+        variables.extend(self.__asset_aggregation_count_var.values())
         return variables
 
     @property
@@ -497,6 +698,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             or variable in self.__control_valve_direction_var
             or variable in self.__pipe_topo_pipe_class_var
             or variable in self._change_setpoint_var
+            or variable in self.__asset_aggregation_count_var
         ):
             return True
         else:
@@ -509,6 +711,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return self.__pipe_topo_heat_loss_nominals[variable]
         elif variable in self.__pipe_topo_cost_nominals:
             return self.__pipe_topo_cost_nominals[variable]
+        elif variable in self.__asset_fixed_operational_cost_nominals:
+            return self.__asset_fixed_operational_cost_nominals[variable]
+        elif variable in self.__asset_investment_cost_nominals:
+            return self.__asset_investment_cost_nominals[variable]
+        elif variable in self.__asset_variable_operational_cost_nominals:
+            return self.__asset_variable_operational_cost_nominals[variable]
+        elif variable in self.__asset_max_size_nominals:
+            return self.__asset_max_size_nominals[variable]
+        elif variable in self.__asset_installation_cost_nominals:
+            return self.__asset_installation_cost_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -525,6 +737,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__pipe_topo_heat_loss_var_bounds)
         bounds.update(self.__pipe_topo_heat_discharge_bounds)
         bounds.update(self._change_setpoint_bounds)
+        bounds.update(self.__asset_fixed_operational_cost_bounds)
+        bounds.update(self.__asset_investment_cost_bounds)
+        bounds.update(self.__asset_installation_cost_bounds)
+        bounds.update(self.__asset_variable_operational_cost_bounds)
+        bounds.update(self.__asset_max_size_bounds)
+        bounds.update(self.__asset_aggregation_count_var_bounds)
         return bounds
 
     def __pipe_heat_loss(
@@ -949,7 +1167,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         ((heat_in_cold - heat_out_cold - heat_loss_cold) / heat_nominal, 0.0, 0.0)
                     )
                 else:
-                    constraint_nominal = (heat_loss * heat_nominal) ** 0.5
+                    if heat_loss == 0.0:
+                        constraint_nominal = heat_nominal
+                    else:
+                        constraint_nominal = (heat_loss * heat_nominal) ** 0.5
                     constraints.append(
                         (
                             (heat_in - heat_out - heat_loss * (1 - is_disconnected))
@@ -1083,7 +1304,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
                 else:
                     minimum_discharge = 0.0
-
+            if maximum_discharge == 0.0:
+                maximum_discharge = 1.0
             big_m = maximum_discharge + minimum_discharge
 
             if minimum_discharge > 0.0 and is_disconnected_var is not None:
@@ -1474,7 +1696,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             backward_heat_rate_expression = sym_var[:-1] - sym_var[1:]
 
             # Compute threshold for what is considered a change in setpoint
-            big_m = 4.0 * max(self.bounds()[variable_name])
+            big_m = 2.0 * max(self.bounds()[variable_name])
             nominal = self.variable_nominal(variable_name) * 1.0e-4
             # Constraint which fixes if the variable is allowed to switch or not.
             # With a sliding window, shifting one timestep.
@@ -1932,6 +2154,320 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __max_size_constraints(self, ensemble_member):
+        constraints = []
+        # This function makes sure that the __max_size variable is at least as large as needed
+        # a goal should minimize the size of this variable.
+        bounds = self.bounds()
+
+        for b in self.heat_network_components.get("buffer", []):
+            max_var = self._asset_max_size_map[b]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
+            constraint_nominal = self.variable_nominal(max_var)
+
+            constraints.append(((max_heat - stored_heat) / constraint_nominal, 0.0, np.inf))
+
+            # Same as for the buffer but now for the source
+        for s in self.heat_network_components.get("source", []):
+            max_var = self._asset_max_size_map[s]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
+
+            constraints.append(((max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
+
+        for hx in [
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            max_var = self._asset_max_size_map[hx]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_secondary = self.__state_vector_scaled(f"{hx}.Secondary_heat", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{hx}.Secondary_heat")
+
+            constraints.append(((max_heat - heat_secondary) / constraint_nominal, 0.0, np.inf))
+
+        for d in self.heat_network_components.get("demand", []):
+            max_var = self._asset_max_size_map[d]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
+            constraint_nominal = max(
+                self.variable_nominal(f"{d}.Heat_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
+            )
+
+            constraints.append(((max_heat - heat_demand) / constraint_nominal, 0.0, np.inf))
+
+        for a in self.heat_network_components.get("ates", []):
+            max_var = self._asset_max_size_map[a]
+            max_heat = self.extra_variable(max_var, ensemble_member)
+            heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+            constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+
+            constraints.append(((max_heat - heat_ates) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((max_heat + heat_ates) / constraint_nominal, 0.0, np.inf))
+
+        return constraints
+
+    def __investment_cost_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+
+        for asset_name in [
+            asset_name
+            for asset_name_list in self.heat_network_components.values()
+            for asset_name in asset_name_list
+        ]:
+            if asset_name in [
+                *self.heat_network_components.get("node", []),
+                *self.heat_network_components.get("pump", []),
+                *self.heat_network_components.get("check_valve", []),
+            ]:
+                # TODO: add support for joints?
+                continue
+
+            investment_cost_var = self._asset_investment_cost_map[asset_name]
+            investment_costs = self.extra_variable(investment_cost_var, ensemble_member)
+            investment_cost_coefficient = parameters[f"{asset_name}.investment_cost_coefficient"]
+            nominal = self.variable_nominal(investment_cost_var)
+
+            if parameters[f"{asset_name}.state"] == 1:
+                if asset_name in [*self.heat_network_components.get("demand", [])]:
+                    asset_size = min(
+                        bounds[f"{asset_name}.Heat_demand"][1],
+                        bounds[f"{asset_name}.HeatIn.Heat"][1],
+                    )
+                elif asset_name in [*self.heat_network_components.get("source", [])]:
+                    asset_size = bounds[f"{asset_name}.Heat_source"][1]
+                elif asset_name in [*self.heat_network_components.get("pipe", [])]:
+                    investment_cost_coefficient = parameters[
+                        f"{asset_name}.investment_cost_coefficient"
+                    ]
+                    asset_size = parameters[f"{asset_name}.length"] * 2.0
+                    nominal = max(
+                        parameters[f"{asset_name}.investment_cost_coefficient"]
+                        * parameters[f"{asset_name}.length"],
+                        1.0,
+                    )
+                elif asset_name in [*self.heat_network_components.get("ates", [])]:
+                    asset_size = bounds[f"{asset_name}.Heat_ates"][1]
+                elif asset_name in [*self.heat_network_components.get("buffer", [])]:
+                    asset_size = min(
+                        bounds[f"{asset_name}.Heat_buffer"][1],
+                        bounds[f"{asset_name}.HeatIn.Heat"][1],
+                    )
+                elif asset_name in [
+                    *self.heat_network_components.get("heat_exchanger", []),
+                    *self.heat_network_components.get("heat_pump", []),
+                ]:
+                    asset_size = bounds[f"{asset_name}.Secondary_heat"][1]
+                else:
+                    asset_size = 0.0
+                    logger.warning(
+                        f"Unknown type for asset {asset_name}, cannot "
+                        f"set constraints for its investment costs, thus forced to zero"
+                    )
+            elif parameters[f"{asset_name}.state"] == 2:
+                if asset_name in [*self.heat_network_components.get("pipe", [])]:
+                    if asset_name in self.cold_pipes:
+                        # we optimize purely on hot pipes
+                        continue
+                    investment_cost_coefficient = self.extra_variable(
+                        self.__pipe_topo_cost_map[asset_name], ensemble_member
+                    )
+                    asset_size = parameters[f"{asset_name}.length"] * 2.0
+                    nominal = max(
+                        parameters[f"{asset_name}.investment_cost_coefficient"]
+                        * parameters[f"{asset_name}.length"],
+                        1.0,
+                    )
+                else:
+                    max_var = self._asset_max_size_map[asset_name]
+                    asset_size = self.extra_variable(max_var, ensemble_member)
+            else:
+                # asset is disabled and has no cost
+                asset_size = 0.0
+
+            constraints.append(
+                (
+                    (investment_costs - asset_size * investment_cost_coefficient) / nominal,
+                    0.0,
+                    0.0,
+                )
+            )
+
+        return constraints
+
+    def __fixed_operational_cost_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for asset_name in [
+            asset_name
+            for asset_name_list in self.heat_network_components.values()
+            for asset_name in asset_name_list
+        ]:
+            if asset_name in [
+                *self.heat_network_components.get("node", []),
+                *self.heat_network_components.get("pipe", []),
+                *self.heat_network_components.get("pump", []),
+                *self.heat_network_components.get("check_valve", []),
+            ]:
+                # currently no support for joints
+                continue
+            fixed_operational_cost_var = self._asset_fixed_operational_cost_map[asset_name]
+            fixed_operational_cost = self.extra_variable(
+                fixed_operational_cost_var, ensemble_member
+            )
+            max_var = self._asset_max_size_map[asset_name]
+            asset_size = self.extra_variable(max_var, ensemble_member)
+            fixed_operational_cost_coefficient = parameters[
+                f"{asset_name}.fixed_operational_cost_coefficient"
+            ]
+
+            nominal = self.variable_nominal(fixed_operational_cost_var)
+
+            constraints.append(
+                (
+                    (fixed_operational_cost - asset_size * fixed_operational_cost_coefficient)
+                    / nominal,
+                    0.0,
+                    0.0,
+                )
+            )
+
+        return constraints
+
+    def __variable_operational_cost_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for s in self.heat_network_components.get("source", []):
+            heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{s}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600.0
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
+            constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+
+        for _ in self.heat_network_components.get("buffer", []):
+            pass
+
+        for _ in self.heat_network_components.get("ates", []):
+            pass
+
+        return constraints
+
+    def __installation_cost_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for asset_name in [
+            asset_name
+            for asset_name_list in self.heat_network_components.values()
+            for asset_name in asset_name_list
+        ]:
+            if asset_name in [
+                *self.heat_network_components.get("node", []),
+                *self.heat_network_components.get("pump", []),
+                *self.heat_network_components.get("check_valve", []),
+            ]:
+                # no support for joints right now
+                continue
+            installation_cost_sym = self.extra_variable(
+                self._asset_installation_cost_map[asset_name]
+            )
+            nominal = self.variable_nominal(self._asset_installation_cost_map[asset_name])
+            installation_cost = parameters[f"{asset_name}.installation_cost"]
+            aggregation_count_sym = self.extra_variable(
+                self.__asset_aggregation_count_var_map[asset_name]
+            )
+            constraints.append(
+                (
+                    (installation_cost_sym - aggregation_count_sym * installation_cost) / nominal,
+                    0.0,
+                    0.0,
+                )
+            )
+
+        return constraints
+
+    def __optional_asset_path_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+
+        for asset_name in [
+            asset_name
+            for asset_name_list in self.heat_network_components.values()
+            for asset_name in asset_name_list
+        ]:
+            if parameters[f"{asset_name}.state"] == 0 or parameters[f"{asset_name}.state"] == 2:
+                if asset_name in [*self.heat_network_components.get("ates", [])]:
+                    state_var = self.state(f"{asset_name}.Heat_ates")
+                    single_power = parameters[f"{asset_name}.single_doublet_power"]
+                    nominal_value = 2.0 * bounds[f"{asset_name}.Heat_ates"][1]
+                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_ates")
+                elif asset_name in [*self.heat_network_components.get("buffer", [])]:
+                    state_var = self.state(f"{asset_name}.HeatIn.Q")
+                    single_power = parameters[f"{asset_name}.volume"]
+                    nominal_value = single_power
+                    nominal_var = self.variable_nominal(f"{asset_name}.HeatIn.Q")
+                elif asset_name in [*self.heat_network_components.get("node", [])]:
+                    # TODO: can we generalize to all possible components to avoid having to skip
+                    #  joints and other components in the future?
+                    continue
+                else:
+                    state_var = self.state(f"{asset_name}.Heat_flow")
+                    single_power = bounds[f"{asset_name}.Heat_flow"][1]
+                    nominal_value = single_power
+                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
+                aggregation_count = self.__asset_aggregation_count_var[
+                    self.__asset_aggregation_count_var_map[asset_name]
+                ]
+
+                constraint_nominal = (nominal_value * nominal_var) ** 0.5
+
+                constraints.append(
+                    (
+                        (single_power * aggregation_count - state_var) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (-single_power * aggregation_count - state_var) / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+            elif parameters[f"{asset_name}.state"] == 1:
+                aggregation_count = self.__asset_aggregation_count_var[
+                    self.__asset_aggregation_count_var_map[asset_name]
+                ]
+                aggr_bound = self.__asset_aggregation_count_var_bounds[
+                    asset_name + "_aggregation_count"
+                ][1]
+                constraints.append(((aggregation_count - aggr_bound), 0.0, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
@@ -1950,6 +2486,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
+        constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
 
         return constraints
@@ -1959,6 +2496,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
+        constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
+        constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
+        constraints.extend(self.__investment_cost_constraints(ensemble_member))
+        constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__max_size_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(
