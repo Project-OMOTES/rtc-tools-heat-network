@@ -39,9 +39,6 @@ class MinimizeLDGoal(Goal):
 
     order = 1
 
-    def __init__(self, source):
-        self.source = source
-
     def function(self, optimization_problem, ensemble_member):
         obj = 0.0
         parameters = optimization_problem.parameters(ensemble_member)
@@ -103,7 +100,7 @@ class PipeDiameterSizingProblem(
 
     def goals(self):
         goals = super().goals().copy()
-        goals.append(MinimizeLDGoal(self))
+        goals.append(MinimizeLDGoal())
         return goals
 
     def priority_completed(self, priority):
@@ -112,8 +109,58 @@ class PipeDiameterSizingProblem(
 
     def solver_options(self):
         options = super().solver_options()
+        # options["solver"] = "gurobi"
         options["hot_start"] = getattr(self, "_hot_start", False)
+        cbc_options = options["cbc"] = {}
+        cbc_options["seconds"] = 500.0
         return options
+
+
+class PipeDiameterSizingProblemTvar(PipeDiameterSizingProblem):
+    def temperature_carriers(self):
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["hot_start"] = getattr(self, "_hot_start", True)
+        return options
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == 761602374459208051248:
+            # supply
+            temperatures = [70.0, 90.0]
+
+        if carrier == 761602374459208051248000:
+            # return
+            temperatures = [30.0, 40.0]
+
+        return temperatures
+
+    # def constraints(self, ensemble_member):
+    #     constraints = super().constraints(ensemble_member)
+    #     # These constraints are added to allow for a quicker solve
+    #     for carrier, temperatures in self.temperature_carriers().items():
+    #         number_list = [int(s) for s in carrier if s.isdigit()]
+    #         number = ""
+    #         for nr in number_list:
+    #             number = number + str(nr)
+    #         carrier_type = temperatures["__rtc_type"]
+    #         if carrier_type == "return":
+    #             number = number + "000"
+    #         carrier_id_number_mapping = number
+    #         temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+    #         if len(temperature_regimes) > 0:
+    #             for temperature in temperature_regimes:
+    #                 selected_temp_vec = self.state_vector(
+    #                     f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
+    #                 )
+    #                 for i in range(1, len(self.times())):
+    #                     constraints.append(
+    #                         (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
+    #                     )
+    #
+    #     return constraints
 
 
 if __name__ == "__main__":

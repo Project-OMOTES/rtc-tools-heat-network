@@ -263,23 +263,31 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
         params = {}
-        prim_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Q_nominal=max_power / (2 * 998 * 4200 * 50),
-        )
-        sec_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Q_nominal=max_power / (2 * 998 * 4200 * 40),
-        )
-        params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
+
+        if params_t["Primary"]["T_supply"] < params_t["Secondary"]["T_supply"]:
+            logger.error(
+                f"{asset.name} has a primary side supply temperature that is higher than the "
+                f"secondary supply temperature. This is not possible as the HEX can only transfer "
+                f"heat from primary to secondary."
+            )
+            assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
+        if params_t["Primary"]["T_return"] < params_t["Secondary"]["T_return"]:
+            logger.error(
+                f"{asset.name} has a primary side return temperature that is lower than the "
+                f"secondary return temperature. This is not possible as the HEX can only transfer "
+                f"heat from primary to secondary."
+            )
+            assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
+
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
 
         if not asset.attributes["efficiency"]:
             efficiency = 1.0
         else:
             efficiency = asset.attributes["efficiency"]
+
+        max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         modifiers = dict(
             efficiency=efficiency,

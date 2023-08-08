@@ -9,7 +9,7 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="75a9a056-987d-41dc-9ecf-ca3edfef31d8" name="Out" id="d86d3ed7-77d8-4766-bfa1-ed9209edf0b6"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="75a9a056-987d-41dc-9ecf-ca3edfef31d8" name="Out" id="d86d3ed7-77d8-4766-bfa1-ed9209edf0b6"/>
       </asset>
       <asset xsi:type="esdl:HeatingDemand" id="6662aebb-f85e-4df3-9f7e-c58993586fba" minTemperature="70.0" power="1000000.0" name="HeatingDemand_6662">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.985484727746204" lon="4.381640553474427"/>
@@ -18,12 +18,12 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="27daf107-0ce8-4870-bb8c-45421a62ed83" name="Out" id="560eb546-6e19-4fb7-9dce-741ed12310a6"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="27daf107-0ce8-4870-bb8c-45421a62ed83" name="Out" id="560eb546-6e19-4fb7-9dce-741ed12310a6"/>
       </asset>
       <asset xsi:type="esdl:ResidualHeatSource" id="8172d5d3-61a4-4d0b-a26f-5e61c2a22c64" minTemperature="65.0" maxTemperature="85.0" power="2000000.0" name="GenericProducer_8172">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98561687700459" lon="4.379387497901917"/>
         <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed" connectedTo="3c182b9c-006d-4ac1-b817-dc884e36c0b0" name="Out" id="974230fb-e753-4fc1-a762-82de7d960e62"/>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="237e32d1-2434-4b23-988b-a0b288f858bb" name="In" id="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="237e32d1-2434-4b23-988b-a0b288f858bb" name="In" id="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c"/>
       </asset>
       <asset xsi:type="esdl:Joint" id="ed9a2b96-2fff-4650-b875-41c6f05a6e44" name="Joint_9580_ret">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.985749025873034" lon="4.3802350759506234"/>
@@ -32,8 +32,8 @@
       </asset>
       <asset xsi:type="esdl:Joint" id="95802cf8-61d6-4773-bb99-e275c3bf26cc" name="Joint_9580">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98563669935972" lon="4.380224347114564"/>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="388ae7b7-2a05-4b50-acf7-adebf4c24ab4 1f153f2f-adf6-4e3b-94ca-aef1644e8c7d c7ef3ba2-332e-4c8d-bc53-449179a4bc22" name="In" id="e3bbc000-98be-43d7-898e-7a503871786f"/>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="1ad8a362-195d-458b-86c2-8c94b3993547" name="Out" id="ba6017c5-bedf-411c-9e49-72f0b5053991"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="388ae7b7-2a05-4b50-acf7-adebf4c24ab4 1f153f2f-adf6-4e3b-94ca-aef1644e8c7d c7ef3ba2-332e-4c8d-bc53-449179a4bc22" name="In" id="e3bbc000-98be-43d7-898e-7a503871786f"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="1ad8a362-195d-458b-86c2-8c94b3993547" name="Out" id="ba6017c5-bedf-411c-9e49-72f0b5053991"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="275a0b40-b6ce-4e7d-b954-efeff0f25734" length="72.13358767664306" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_275a">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -118,39 +118,39 @@
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="e3839971-e5b0-4b3a-9c55-ac2baab8966a" name="Out" id="a4d4447f-683c-4daf-aafd-f20efc13bd43"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="e3839971-e5b0-4b3a-9c55-ac2baab8966a" name="Out" id="a4d4447f-683c-4daf-aafd-f20efc13bd43"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="22771285-490c-42e3-a6be-82c383b5f21e" length="72.13358767664306" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_275a_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.98607261110622" lon="4.381325510482789"/>
           <point xsi:type="esdl:Point" lat="51.98577197417133" lon="4.380392101745606"/>
         </geometry>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="d86d3ed7-77d8-4766-bfa1-ed9209edf0b6" name="In" id="75a9a056-987d-41dc-9ecf-ca3edfef31d8"/>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="c7ef3ba2-332e-4c8d-bc53-449179a4bc22"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="d86d3ed7-77d8-4766-bfa1-ed9209edf0b6" name="In" id="75a9a056-987d-41dc-9ecf-ca3edfef31d8"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="c7ef3ba2-332e-4c8d-bc53-449179a4bc22"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="e68bff9f-422c-4a1b-90b0-80a5bfc1cabf" length="70.32745329931934" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_5871_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.98573893702245" lon="4.381443527679444"/>
           <point xsi:type="esdl:Point" lat="51.98569598869247" lon="4.380418923835755"/>
         </geometry>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="a4d4447f-683c-4daf-aafd-f20efc13bd43" name="In" id="e3839971-e5b0-4b3a-9c55-ac2baab8966a"/>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="1f153f2f-adf6-4e3b-94ca-aef1644e8c7d"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="a4d4447f-683c-4daf-aafd-f20efc13bd43" name="In" id="e3839971-e5b0-4b3a-9c55-ac2baab8966a"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="1f153f2f-adf6-4e3b-94ca-aef1644e8c7d"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="4605c1d2-62fc-40f3-8451-c6335b8d822a" length="73.56064145043287" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_b5ba_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.98547794268959" lon="4.381405976753236"/>
           <point xsi:type="esdl:Point" lat="51.98561339563447" lon="4.380354550819398"/>
         </geometry>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="560eb546-6e19-4fb7-9dce-741ed12310a6" name="In" id="27daf107-0ce8-4870-bb8c-45421a62ed83"/>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="388ae7b7-2a05-4b50-acf7-adebf4c24ab4"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="560eb546-6e19-4fb7-9dce-741ed12310a6" name="In" id="27daf107-0ce8-4870-bb8c-45421a62ed83"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="e3bbc000-98be-43d7-898e-7a503871786f" name="Out" id="388ae7b7-2a05-4b50-acf7-adebf4c24ab4"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="69b66347-386f-48fb-920b-0fa1fe872bf6" length="31.412804660774878" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_e6c6_ret">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.985669558930475" lon="4.38004341457367"/>
           <point xsi:type="esdl:Point" lat="51.985616699359724" lon="4.379592803459168"/>
         </geometry>
-        <port xsi:type="esdl:InPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="ba6017c5-bedf-411c-9e49-72f0b5053991" name="In" id="1ad8a362-195d-458b-86c2-8c94b3993547"/>
-        <port xsi:type="esdl:OutPort" carrier="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" connectedTo="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c" name="Out" id="237e32d1-2434-4b23-988b-a0b288f858bb"/>
+        <port xsi:type="esdl:InPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="ba6017c5-bedf-411c-9e49-72f0b5053991" name="In" id="1ad8a362-195d-458b-86c2-8c94b3993547"/>
+        <port xsi:type="esdl:OutPort" carrier="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" connectedTo="4b5d5d6c-82ef-441b-9e0b-478cf3c8031c" name="Out" id="237e32d1-2434-4b23-988b-a0b288f858bb"/>
       </asset>
     </area>
   </instance>
@@ -159,7 +159,7 @@
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" description="Power in MW" physicalQuantity="POWER" unit="WATT" multiplier="MEGA"/>
     </quantityAndUnits>
     <carriers xsi:type="esdl:Carriers" id="823f0f5a-89a9-498e-a6b7-482a08ad95b2">
-      <carrier xsi:type="esdl:HeatCommodity" id="1abfe4c6-7fce-4bd2-bcbc-618f668cfb41" name="Heat_ret" returnTemperature="45.0"/>
+      <carrier xsi:type="esdl:HeatCommodity" id="c362f53a-3eaf-4d96-8ee6-944e77359fed_ret" name="Heat_ret" returnTemperature="45.0"/>
       <carrier xsi:type="esdl:HeatCommodity" id="c362f53a-3eaf-4d96-8ee6-944e77359fed" name="Heat" supplyTemperature="75.0"/>
     </carriers>
   </energySystemInformation>

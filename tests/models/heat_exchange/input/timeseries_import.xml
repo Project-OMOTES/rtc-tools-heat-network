@@ -57,7 +57,7 @@
         <event date="2013-05-21" time="15:00:00" value="350000.0" flag="0"/>
         <event date="2013-05-21" time="16:00:00" value="350000.0" flag="0"/>
         <event date="2013-05-21" time="17:00:00" value="350000.0" flag="0"/>
-        <event date="2013-05-21" time="18:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="18:00:00" value="0.0" flag="0"/>
     </series>
     <series>
         <header>
@@ -115,6 +115,6 @@
         <event date="2013-05-21" time="15:00:00" value="350000.0" flag="0"/>
         <event date="2013-05-21" time="16:00:00" value="350000.0" flag="0"/>
         <event date="2013-05-21" time="17:00:00" value="350000.0" flag="0"/>
-        <event date="2013-05-21" time="18:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="18:00:00" value="0.0" flag="0"/>
     </series>
 </TimeSeries>

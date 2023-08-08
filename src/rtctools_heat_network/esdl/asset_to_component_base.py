@@ -294,24 +294,46 @@ class _AssetToComponentBase:
         supply_temperature = carrier["supplyTemperature"]
         return_temperature = carrier["returnTemperature"]
 
+        if carrier["__rtc_type"] == "supply":
+            supply_temperature_id = carrier["id_number_mapping"]
+            return_temperature_id = asset.global_properties["carriers"][
+                asset.in_ports[0].carrier.id + "_ret"
+            ]["id_number_mapping"]
+        else:
+            supply_temperature_id = asset.global_properties["carriers"][
+                asset.in_ports[0].carrier.id[:-4]
+            ]["id_number_mapping"]
+            return_temperature_id = carrier["id_number_mapping"]
+
         assert supply_temperature > return_temperature
         # This is a bit dangerous, but the default (not-set) value is 0.0. We
         # however require it to be explicitly set.
         assert supply_temperature != 0.0
         assert return_temperature != 0.0
 
-        return supply_temperature, return_temperature
+        return supply_temperature, return_temperature, supply_temperature_id, return_temperature_id
 
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
-            supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
-            return {"T_supply": supply_temperature, "T_return": return_temperature}
+            (
+                supply_temperature,
+                return_temperature,
+                supply_temperature_id,
+                return_temperature_id,
+            ) = self._get_supply_return_temperatures(asset)
+            return {
+                "T_supply": supply_temperature,
+                "T_return": return_temperature,
+                "T_supply_id": supply_temperature_id,
+                "T_return_id": return_temperature_id,
+            }
         elif len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
             for p in asset.in_ports:
                 carrier = asset.global_properties["carriers"][p.carrier.id]
                 if "_ret" in p.carrier.name:
                     # This in the Secondary side carrier
                     sec_supply_temperature = carrier["supplyTemperature"]
+                    sec_return_temperature_id = carrier["id_number_mapping"]
                     sec_return_temperature = carrier["returnTemperature"]
                     assert sec_supply_temperature > sec_return_temperature
                     assert sec_supply_temperature > 0.0
@@ -319,8 +341,15 @@ class _AssetToComponentBase:
                     # This in the Primary side carrier
                     prim_supply_temperature = carrier["supplyTemperature"]
                     prim_return_temperature = carrier["returnTemperature"]
+                    prim_supply_temperature_id = carrier["id_number_mapping"]
                     assert prim_supply_temperature > prim_return_temperature
                     assert prim_supply_temperature > 0.0
+            for p in asset.out_ports:
+                carrier = asset.global_properties["carriers"][p.carrier.id]
+                if "_ret" in p.carrier.name:
+                    prim_return_temperature_id = carrier["id_number_mapping"]
+                else:
+                    sec_supply_temperature_id = carrier["id_number_mapping"]
             if not prim_supply_temperature or not sec_supply_temperature:
                 raise RuntimeError(
                     f"{asset.name} carriers are not specified correctly there should be a "
@@ -330,10 +359,14 @@ class _AssetToComponentBase:
                 "Primary": {
                     "T_supply": prim_supply_temperature,
                     "T_return": prim_return_temperature,
+                    "T_supply_id": prim_supply_temperature_id,
+                    "T_return_id": prim_return_temperature_id,
                 },
                 "Secondary": {
                     "T_supply": sec_supply_temperature,
                     "T_return": sec_return_temperature,
+                    "T_supply_id": sec_supply_temperature_id,
+                    "T_return_id": sec_return_temperature_id,
                 },
             }
             return temperatures

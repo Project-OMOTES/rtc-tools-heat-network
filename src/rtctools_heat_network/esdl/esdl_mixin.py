@@ -70,7 +70,10 @@ class ESDLMixin(
 
         self.__run_info = _RunInfoReader(self.esdl_run_info_path)
 
-        self.__esdl_assets, self._profiles = _esdl_to_assets(self.__run_info.esdl_file)
+        self.__esdl_assets, self._profiles, self.__esdl_carriers = _esdl_to_assets(
+            self.__run_info.esdl_file
+        )
+
         if self.__run_info.parameters_file is not None:
             self.__esdl_assets = _overwrite_parameters(
                 self.__run_info.parameters_file, self.__esdl_assets
@@ -202,6 +205,10 @@ class ESDLMixin(
     @property
     def esdl_assets(self):
         return self.__esdl_assets
+
+    @property
+    def esdl_carriers(self):
+        return self.__esdl_carriers
 
     @property
     def esdl_asset_id_to_name_map(self):
@@ -592,6 +599,7 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
     # global properties
     global_properties = {}
     global_properties["carriers"] = {}
+    id_to_idnumber_map = {}
 
     for x in esdl_model.energySystemInformation.carriers.carrier.items:
         if isinstance(x, esdl.esdl.HeatCommodity):
@@ -601,8 +609,19 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
                 type_ = "return"
             else:
                 type_ = "none"
+            if x.id not in id_to_idnumber_map:
+                number_list = [int(s) for s in x.id if s.isdigit()]
+                number = ""
+                for nr in number_list:
+                    number = number + str(nr)
+                if type_ == "return":
+                    number = number + "000"
+                id_to_idnumber_map[x.id] = int(number)
+
             global_properties["carriers"][x.id] = dict(
                 name=x.name.replace("_ret", ""),
+                id=x.id,
+                id_number_mapping=id_to_idnumber_map[x.id],
                 supplyTemperature=x.supplyTemperature,
                 returnTemperature=x.returnTemperature,
                 __rtc_type=type_,
@@ -685,4 +704,4 @@ def _esdl_to_assets(esdl_path: Union[Path, str]):
             )
     profiles = parse_esdl_profiles(esdl_model)
 
-    return assets, profiles
+    return assets, profiles, global_properties["carriers"]

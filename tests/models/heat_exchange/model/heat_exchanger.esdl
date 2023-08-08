@@ -2,10 +2,10 @@
 <esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="5" name="Untitled EnergySystem with return network" id="0735d19f-39a4-463d-bf28-cf0b28b88bef_with_return_network" esdlVersion="v2207" description="">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="b7ebaafe-597c-4055-bc88-b47cdfa84e34">
     <carriers xsi:type="esdl:Carriers" id="5d5909a4-18ec-4aa3-a08a-1e9539a20be2">
-      <carrier xsi:type="esdl:HeatCommodity" name="heat1" id="d336e381-ca6f-442e-985e-9f4c2bec1efe" supplyTemperature="70.0"/>
-      <carrier xsi:type="esdl:HeatCommodity" name="heat2" id="72126c73-87e9-4bf6-99cf-d02a6c07010c" supplyTemperature="90.0"/>
-      <carrier xsi:type="esdl:HeatCommodity" name="heat1_ret" returnTemperature="40.0" id="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret"/>
-      <carrier xsi:type="esdl:HeatCommodity" name="heat2_ret" returnTemperature="50.0" id="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret"/>
+      <carrier xsi:type="esdl:HeatCommodity" name="heat1" id="d336e381-ca6f-442e-985e-9f4c2bec1efe" supplyTemperature="90.0"/>
+      <carrier xsi:type="esdl:HeatCommodity" name="heat2" id="72126c73-87e9-4bf6-99cf-d02a6c07010c" supplyTemperature="70.0"/>
+      <carrier xsi:type="esdl:HeatCommodity" name="heat1_ret" returnTemperature="50.0" id="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret"/>
+      <carrier xsi:type="esdl:HeatCommodity" name="heat2_ret" returnTemperature="40.0" id="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" name="MultipleCarrierTest" id="82399ebf-5e52-465d-830a-b502d6c1012b">
@@ -25,7 +25,7 @@
         <port xsi:type="esdl:OutPort" name="Out" id="c932c77b-d5e5-40eb-b9c8-c67b8d0e25e9" connectedTo="309f0881-e58e-4a63-a3c2-c9ca971d2150" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe"/>
         <port xsi:type="esdl:InPort" name="In" connectedTo="167022d9-0487-4acf-80ae-c7268c44724a" id="7c3e792b-9c73-49af-9845-1ee16dcb2a27" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret"/>
       </asset>
-      <asset xsi:type="esdl:ResidualHeatSource" power="100000.0" name="ResidualHeatSource_aec9" id="aec9bf5f-ce40-4a6e-b2d6-d64e566ce147">
+      <asset xsi:type="esdl:ResidualHeatSource" power="200000.0" name="ResidualHeatSource_aec9" id="aec9bf5f-ce40-4a6e-b2d6-d64e566ce147">
         <geometry xsi:type="esdl:Point" lon="4.400711059570313" CRS="WGS84" lat="52.08245983569832"/>
         <port xsi:type="esdl:OutPort" name="Out" id="b466eb33-ed48-4685-bd88-63499e8e36db" connectedTo="5692ae05-f9c4-4f28-8a53-21bcafedf9a9" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c"/>
         <port xsi:type="esdl:InPort" name="In" connectedTo="5f1b694c-4562-469e-a8b8-531cc9ea143b" id="12e2b556-699f-497e-aa86-2284936c3658" carrier="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret"/>

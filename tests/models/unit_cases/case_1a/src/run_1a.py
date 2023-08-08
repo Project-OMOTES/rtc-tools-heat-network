@@ -56,6 +56,55 @@ class HeatProblem(
     pass
 
 
+class HeatProblemTvar(HeatProblem):
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
+        # this is to avoid specifying a new demand profile
+        options["maximum_velocity"] = 0.25
+        return options
+
+    def temperature_carriers(self):
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == 3625334968694477359:
+            # supply
+            temperatures = [70.0, 75.0]
+
+        if carrier == 3625334968694477359000:
+            # return
+            temperatures = [60.0, 65.0]
+
+        return temperatures
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+        # These constraints are added to allow for a quicker solve
+        for carrier, temperatures in self.temperature_carriers().items():
+            number_list = [int(s) for s in carrier if s.isdigit()]
+            number = ""
+            for nr in number_list:
+                number = number + str(nr)
+            carrier_type = temperatures["__rtc_type"]
+            if carrier_type == "return":
+                number = number + "000"
+            carrier_id_number_mapping = number
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            if len(temperature_regimes) > 0:
+                for temperature in temperature_regimes:
+                    selected_temp_vec = self.state_vector(
+                        f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
+                    )
+                    for i in range(1, len(self.times())):
+                        constraints.append(
+                            (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
+                        )
+
+        return constraints
+
+
 class QTHProblem(
     _GoalsAndOptions,
     QTHMixin,

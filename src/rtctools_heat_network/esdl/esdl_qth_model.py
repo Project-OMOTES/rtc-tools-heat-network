@@ -56,7 +56,12 @@ class AssetToQTHComponent(_AssetToComponentBase):
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         assert asset.asset_type == "HeatStorage"
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        (
+            supply_temperature,
+            return_temperature,
+            supply_temperature_id,
+            return_temperature_id,
+        ) = self._get_supply_return_temperatures(asset)
 
         heat_to_discharge_fac = 1 / (self.rho * self.cp * (supply_temperature - return_temperature))
 
@@ -141,7 +146,12 @@ class AssetToQTHComponent(_AssetToComponentBase):
             )
             maximum_temperature = self.maximum_temperature
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        (
+            supply_temperature,
+            return_temperature,
+            supply_temperature_id,
+            return_temperature_id,
+        ) = self._get_supply_return_temperatures(asset)
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         modifiers = dict(
@@ -185,7 +195,12 @@ class AssetToQTHComponent(_AssetToComponentBase):
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         assert asset.asset_type == "Pipe"
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        (
+            supply_temperature,
+            return_temperature,
+            supply_temperature_id,
+            return_temperature_id,
+        ) = self._get_supply_return_temperatures(asset)
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan
@@ -251,7 +266,12 @@ class AssetToQTHComponent(_AssetToComponentBase):
             "ResidualHeatSource",
         }
 
-        supply_temperature, return_temperature = self._get_supply_return_temperatures(asset)
+        (
+            supply_temperature,
+            return_temperature,
+            supply_temperature_id,
+            return_temperature_id,
+        ) = self._get_supply_return_temperatures(asset)
 
         # TODO: Why is the default zero for both, that's just weird. What if I
         # actually want a minimum of 0.0 (instead of treating it as a
