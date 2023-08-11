@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta as td
 
 import esdl
@@ -5,6 +6,12 @@ import esdl
 from influxdb import InfluxDBClient
 
 import pandas as pd
+
+import requests.exceptions
+
+
+logger = logging.getLogger()
+
 
 data_set = {}
 influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
@@ -82,8 +89,8 @@ def get_mw_multiplier(profile: esdl.GenericProfile):
 
 
 def parse_esdl_profiles(es, start_date=None, end_date=None):
-    print("***********************")
-    print("Caching profiles...")
+    logger.info("Caching profiles...")
+    error_neighbourhoods = list()
     for profile in [x for x in es.eAllContents() if isinstance(x, esdl.InfluxDBProfile)]:
         # if profile.eContainer().carrier.id == self.carrier_id:
         profile_host = profile.host
@@ -111,6 +118,7 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             password=password,
             ssl=ssl_setting,
             verify_ssl=ssl_setting,
+            timeout=1,
         )
         client.switch_database(profile.database)
         # TODO: check these timebounds how they work.
@@ -132,6 +140,7 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             filter_suffix = " AND {}".format(profile.filters)
         else:
             filter_suffix = ""
+
         query = 'SELECT MEAN("{}") FROM "{}" WHERE time >= \'{}\'{}{} GROUP BY time({})'.format(
             profile.field,
             profile.measurement,
@@ -140,10 +149,21 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             filter_suffix,
             time_step_notation,
         )
-        # print('Executing query...\n{}'.format(query))
-        data = client.query(query=query)
+        logger.debug("Executing query...\n{}".format(query))
+        try:
+            data = client.query(query=query)
+        except requests.exceptions.ConnectTimeout:
+            error_neighbourhoods.append(profile.field)
+            logger.error(
+                f"Timeout on query for {profile.field}, probably because either the host "
+                f"{profile_host} can't be reached or the {profile.port} is wrong."
+            )
         data_points = {t[0]: t[1] for t in data.raw["series"][0]["values"]}
         df = pd.DataFrame.from_dict(data_points, orient="index")
         df.index = pd.to_datetime(df.index, utc=True)
         data_set[containing_asset_id] = df * profile.multiplier * to_mw_multiplier * 1.0e6
+        client.close()
+
+        if len(error_neighbourhoods) > 0:
+            raise RuntimeError(f"Encountered errors loading data for {error_neighbourhoods}")
     return data_set

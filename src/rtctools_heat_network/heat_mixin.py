@@ -42,7 +42,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__asset_aggregation_count_var = {}
         self.__asset_aggregation_count_var_bounds = {}
-        self.__asset_aggregation_count_var_map = {}
+        self._asset_aggregation_count_var_map = {}
 
         self.__check_valve_status_var = {}
         self.__check_valve_status_var_bounds = {}
@@ -363,46 +363,56 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 self.__pipe_heat_loss(options, parameters, pipe, c.u_values) for c in pipe_classes
             ]
 
-            if not pipe_classes or options["neglect_pipe_heat_losses"]:
-                # No pipe class decision to make for this pipe w.r.t. heat loss
-                heat_loss = self.__pipe_heat_loss(options, parameters, pipe)
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (heat_loss, heat_loss)
-                if heat_loss > 0:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
-
-                for ensemble_member in range(self.ensemble_size):
-                    h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                    for p in [pipe, cold_pipe]:
-                        h[f"{p}.Heat_loss"] = self.__pipe_heat_loss(options, parameters, p)
-            elif len(pipe_classes) == 1:
-                # No pipe class decision to make for this pipe w.r.t. heat loss
-                u_values = pipe_classes[0].u_values
-                heat_loss = self.__pipe_heat_loss(options, parameters, pipe, u_values)
-
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (heat_loss, heat_loss)
-                if heat_loss > 0:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
-
-                for ensemble_member in range(self.ensemble_size):
-                    h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                    h[f"{pipe}.Heat_loss"] = heat_loss
-                    h[f"{cold_pipe}.Heat_loss"] = self.__pipe_heat_loss(
-                        options, parameters, cold_pipe, u_values
+            for heat_loss_var_name in [
+                f"{pipe}__hn_heat_loss",
+                f"{self.hot_to_cold_pipe(pipe)}__hn_heat_loss",
+            ]:
+                if not pipe_classes or options["neglect_pipe_heat_losses"]:
+                    # No pipe class decision to make for this pipe w.r.t. heat loss
+                    heat_loss = self.__pipe_heat_loss(options, parameters, pipe)
+                    self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                        heat_loss,
+                        heat_loss,
                     )
-            else:
-                self.__pipe_topo_heat_losses[pipe] = heat_losses
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
-                    min(heat_losses),
-                    max(heat_losses),
-                )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = min(
-                    x for x in heat_losses if x > 0
-                )
+                    if heat_loss > 0:
+                        self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
 
-                for ensemble_member in range(self.ensemble_size):
-                    h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                    h[f"{pipe}.Heat_loss"] = np.nan
-                    h[f"{cold_pipe}.Heat_loss"] = np.nan
+                    for ensemble_member in range(self.ensemble_size):
+                        h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
+                        for p in [pipe, cold_pipe]:
+                            h[f"{p}.Heat_loss"] = self.__pipe_heat_loss(options, parameters, p)
+                elif len(pipe_classes) == 1:
+                    # No pipe class decision to make for this pipe w.r.t. heat loss
+                    u_values = pipe_classes[0].u_values
+                    heat_loss = self.__pipe_heat_loss(options, parameters, pipe, u_values)
+
+                    self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                        heat_loss,
+                        heat_loss,
+                    )
+                    if heat_loss > 0:
+                        self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
+
+                    for ensemble_member in range(self.ensemble_size):
+                        h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
+                        h[f"{pipe}.Heat_loss"] = heat_loss
+                        h[f"{cold_pipe}.Heat_loss"] = self.__pipe_heat_loss(
+                            options, parameters, cold_pipe, u_values
+                        )
+                else:
+                    self.__pipe_topo_heat_losses[pipe] = heat_losses
+                    self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                        min(heat_losses),
+                        max(heat_losses),
+                    )
+                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = min(
+                        x for x in heat_losses if x > 0
+                    )
+
+                    for ensemble_member in range(self.ensemble_size):
+                        h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
+                        h[f"{pipe}.Heat_loss"] = np.nan
+                        h[f"{cold_pipe}.Heat_loss"] = np.nan
 
             # Pipe class variables.
             if not pipe_classes or len(pipe_classes) == 1:
@@ -476,70 +486,50 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size
-        for asset in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("demand", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
+
+        def _make_max_size_var(name, lb, ub, nominal):
+            asset_max_size_var = f"{name}__max_size"
+            self._asset_max_size_map[name] = asset_max_size_var
+            self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(asset_max_size_var)
+            self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
+            self.__asset_max_size_nominals[asset_max_size_var] = nominal
+
+        for asset_name in self.heat_network_components.get("source", []):
+            ub = bounds[f"{asset_name}.Heat_source"][1]
+            _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("demand", []):
+            ub = min(bounds[f"{asset_name}.Heat_demand"][1], bounds[f"{asset_name}.HeatIn.Heat"][1])
+            _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("ates", []):
+            ub = bounds[f"{asset_name}.Heat_ates"][1]
+            _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("buffer", []):
+            _make_max_size_var(
+                name=asset_name,
+                lb=0.0,
+                ub=bounds[f"{asset_name}.Stored_heat"][1],
+                nominal=self.variable_nominal(f"{asset_name}.Stored_heat"),
+            )
+
+        for asset_name in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
         ]:
-            asset_max_size_var = f"{asset}__max_size"
-            self._asset_max_size_map[asset] = asset_max_size_var
-            self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(asset_max_size_var)
-            if asset in self.heat_network_components.get("source", []):
-                self.__asset_max_size_bounds[asset_max_size_var] = (
-                    0.0,
-                    bounds[f"{asset}.Heat_source"][1],
-                )
-                self.__asset_max_size_nominals[asset_max_size_var] = (
-                    bounds[f"{asset}.Heat_source"][1] / 2.0
-                )
-            elif asset in self.heat_network_components.get("demand", []):
-                self.__asset_max_size_bounds[asset_max_size_var] = (
-                    0.0,
-                    min(bounds[f"{asset}.Heat_demand"][1], bounds[f"{asset}.HeatIn.Heat"][1]),
-                )
-                self.__asset_max_size_nominals[asset_max_size_var] = (
-                    min(bounds[f"{asset}.Heat_demand"][1], bounds[f"{asset}.HeatIn.Heat"][1]) / 2.0
-                )
-            elif asset in self.heat_network_components.get("ates", []):
-                self.__asset_max_size_bounds[asset_max_size_var] = (
-                    0.0,
-                    bounds[f"{asset}.Heat_ates"][1],
-                )
-                self.__asset_max_size_nominals[asset_max_size_var] = (
-                    bounds[f"{asset}.Heat_ates"][1] / 2.0
-                )
-            elif asset in self.heat_network_components.get("buffer", []):
-                self.__asset_max_size_bounds[asset_max_size_var] = (
-                    0.0,
-                    bounds[f"{asset}.Stored_heat"][1],
-                )
-                self.__asset_max_size_nominals[asset_max_size_var] = self.variable_nominal(
-                    f"{asset}.Stored_heat"
-                )
-            elif asset in [
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("heat_pump", []),
-            ]:
-                self.__asset_max_size_bounds[asset_max_size_var] = (
-                    0.0,
-                    bounds[f"{asset}.Secondary_heat"][1],
-                )
-                self.__asset_max_size_nominals[asset_max_size_var] = self.variable_nominal(
-                    f"{asset}.Secondary_heat"
-                )
-            else:
-                logger.warning(
-                    f"Asset {asset} has no nominal or bounds set for its max sizing " f"variable"
-                )
+            _make_max_size_var(
+                name=asset_name,
+                lb=0.0,
+                ub=bounds[f"{asset_name}.Secondary_heat"][1],
+                nominal=self.variable_nominal(f"{asset_name}.Secondary_heat"),
+            )
 
         # Making the __aggregation_count variable for each asset
         for asset_list in self.heat_network_components.values():
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
-                self.__asset_aggregation_count_var_map[asset] = aggr_count_var
+                self._asset_aggregation_count_var_map[asset] = aggr_count_var
                 self.__asset_aggregation_count_var[aggr_count_var] = ca.MX.sym(aggr_count_var)
                 try:
                     aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
@@ -605,10 +595,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 0.0,
                 np.inf,
             )
-            self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = max(
-                parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
-                * nominal_fixed_operational,
-                1.0,
+            self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = (
+                max(
+                    parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
+                    * nominal_fixed_operational,
+                    1.0e2,
+                )
+                if nominal_fixed_operational is not None
+                else 1.0e2
             )
 
             # variable operational cost
@@ -621,12 +615,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 0.0,
                 np.inf,
             )
-            self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = max(
-                parameters[f"{asset_name}.variable_operational_cost_coefficient"]
-                * nominal_variable_operational
-                * 24.0
-                * 365.0,
-                1.0,
+            self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
+                max(
+                    parameters[f"{asset_name}.variable_operational_cost_coefficient"]
+                    * nominal_variable_operational
+                    * 24.0,
+                    1.0e2,
+                )
+                if nominal_variable_operational is not None
+                else 1.0e2
             )
 
             # installation cost
@@ -637,7 +634,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             )
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (0.0, np.inf)
             self.__asset_installation_cost_nominals[asset_installation_cost_var] = max(
-                parameters[f"{asset_name}.installation_cost"], 1.0
+                parameters[f"{asset_name}.installation_cost"], 1.0e2
             )
 
             # investment cost
@@ -647,9 +644,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 asset_investment_cost_var
             )
             self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, np.inf)
-            self.__asset_investment_cost_nominals[asset_investment_cost_var] = max(
-                parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
-                1.0,
+            self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
+                max(
+                    parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
+                    1.0e2,
+                )
+                if nominal_investment is not None
+                else 1.0e2
             )
 
     def heat_network_options(self):
@@ -1789,7 +1790,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             (_cold_pipe, cold_orient),
         ) in self.heat_network_topology.buffers.items():
             heat_nominal = self.variable_nominal(f"{b}.HeatIn.Heat")
-            big_m = 1.0e7  # 2. * self.bounds()[f"{b}.Heat_buffer"][1]
+            big_m = 2.0 * self.bounds()[f"{b}.Heat_buffer"][1]
 
             heat_in = self.state(f"{b}.HeatIn.Heat")
             heat_out = self.state(f"{b}.HeatOut.Heat")
@@ -2511,13 +2512,70 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
-    def __setpoint_constraint(self, ensemble_member, component_name, windowsize, setpointchanges):
+    def __ates_heat_to_discharge_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
+
+        for a, (
+            (_cold_pipe, _cold_pipe_orientation),
+            (hot_pipe, _hot_pipe_orientation),
+        ) in self.heat_network_topology.ates.items():
+            heat_nominal = parameters[f"{a}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{a}.Q")
+            cp = parameters[f"{a}.cp"]
+            rho = parameters[f"{a}.rho"]
+            dt = parameters[f"{a}.dT"]
+
+            discharge = self.state(f"{a}.HeatIn.Q")
+            # Note that `heat_hot` can be negative for the buffer; in that case we
+            # are extracting heat from it.
+            heat_ates = self.state(f"{a}.Heat_ates")
+
+            # We want an _equality_ constraint between discharge and heat if the buffer is
+            # consuming (i.e. behaving like a "demand"). We want an _inequality_
+            # constraint (`|heat| >= |f(Q)|`) just like a "source" component if heat is
+            # extracted from the buffer. We accomplish this by disabling one of
+            # the constraints with a boolean. Note that `discharge` and `heat_hot`
+            # are guaranteed to have the same sign.
+            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+            is_ates_charging = 1 - self.state(flow_dir_var)
+
+            big_m = self.__get_abs_max_bounds(
+                *self.merge_bounds(bounds[f"{a}.HeatIn.Heat"], bounds[f"{a}.HeatOut.Heat"])
+            )
+
+            coefficients = [heat_nominal, cp * rho * dt * q_nominal, big_m]
+            constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
+            constraints.append(
+                (
+                    (heat_ates - cp * rho * dt * discharge) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+            constraints.append(
+                (
+                    (heat_ates - cp * rho * dt * discharge - (1 - is_ates_charging) * big_m)
+                    / constraint_nominal,
+                    -np.inf,
+                    0.0,
+                )
+            )
+
+        return constraints
+
+    def __setpoint_constraint(
+        self, ensemble_member, component_name, windowsize_hr, setpointchanges
+    ):
         r"""Constraints that can switch only every n time steps of setpoint.
-        A component can only switch setpoint every <windowsize> hours.
+        A component can only switch setpoint every <windowsize_hr> hours.
         Apply the constraint every timestep from after the first time step onwards [from i=1].
 
         Inspect example curve below for understanding of dHeat/dt for
-        windowsize 12 with a time domain of 35 timesteps.
+        windowsize_hr 12 with a time domain of 35 hourly timesteps.
 
         Heat
         d                               *-------*
@@ -2528,9 +2586,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         i   0   1   2   3   4       16  17      29  30      35
         """
-        assert windowsize <= len(self.times())
-        assert windowsize > 0
-        assert windowsize % 1 == 0
+        assert windowsize_hr > 0
+        assert windowsize_hr % 1 == 0
         assert component_name in sum(self.heat_network_components.values(), [])
 
         # Find the component type
@@ -2569,28 +2626,39 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Compute threshold for what is considered a change in setpoint
             big_m = 2.0 * max(self.bounds()[variable_name])
             nominal = self.variable_nominal(variable_name) * 1.0e-4
+
             # Constraint which fixes if the variable is allowed to switch or not.
-            # With a sliding window, shifting one timestep.
-            # Sum the binairy variables in the window. The sum should be <=1 as
-            # only on of the binairy variable is allowed to represent a
-            # switch in operations.
-            for i in range(math.floor(windowsize / 2.0), len(times) - math.floor(windowsize / 2.0)):
-                if i < math.floor(windowsize / 2):
-                    # Start of optim domain
-                    start_idx = 0
-                    end_idx = i + math.ceil(windowsize / 2)
-                elif i >= (len(times) - math.ceil(windowsize / 2)):
-                    # End of optim domain
-                    start_idx = i - math.ceil(windowsize / 2)
-                    end_idx = setpoint_is_free.shape[0] - 1
+            # With a dynamic sliding window, shifting one timestep.
+            # Sum the binairy variables in the window. The sum should be <=1 as only on of the
+            # binairy variable is allowed to represent a switch in operations.
+            duration_s = 3600 * windowsize_hr
+
+            # Number of elements to be included in a sliding window over time elements
+            # Definition of elements: 23 time steps between 24 elements in the times object
+            windowsize_dynamic = []
+            # TODO: Better/improved/faster search function to be written
+            for ij in range(0, len(times)):
+                for ii in range(0 + ij, len(times)):
+                    if (times[ii] - times[0 + ij]) >= duration_s:
+                        windowsize_dynamic.append(ii - (0 + ij) - 1)
+                        break
                 else:
-                    # All inbetween
-                    start_idx = i - math.floor(windowsize / 2)
-                    end_idx = i + math.ceil(windowsize / 2)
+                    windowsize_dynamic.append(len(times) - 1 - (0 + ij))
+                    break
+
+            if len(windowsize_dynamic) == 0:
+                windowsize_dynamic.append(len(times))
+
+            for iw in range(0, len(windowsize_dynamic)):
+                start_idx = iw
+                if windowsize_dynamic[iw] > (len(times) - 1):
+                    end_idx = len(times) - 1
+                else:
+                    end_idx = start_idx + windowsize_dynamic[iw]
 
                 expression = 0.0
                 for j in range(start_idx, end_idx + 1):
-                    expression = expression + setpoint_is_free[j]
+                    expression += setpoint_is_free[j]
                 # This constraint forces that only 1 timestep in the sliding
                 # window can have setpoint_is_free=1. In combination with the
                 # constraints lower in this function we ensure the desired
@@ -3639,7 +3707,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     asset_size = self.extra_variable(max_var, ensemble_member)
             else:
                 # asset is disabled and has no cost
-                asset_size = 0.0
+                continue
 
             constraints.append(
                 (
@@ -3717,8 +3785,29 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for _ in self.heat_network_components.get("buffer", []):
             pass
 
-        for _ in self.heat_network_components.get("ates", []):
-            pass
+        # for a in self.heat_network_components.get("ates", []):
+        # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
+        #  then ates varopex also needs to be added to the mnimize_tco_goal
+        # heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
+        # variable_operational_cost_var = self._asset_variable_operational_cost_map[a]
+        # variable_operational_cost = self.extra_variable(
+        #     variable_operational_cost_var, ensemble_member
+        # )
+        # nominal = self.variable_nominal(variable_operational_cost_var)
+        # variable_operational_cost_coefficient = parameters[
+        #     f"{a}.variable_operational_cost_coefficient"
+        # ]
+        # timesteps = np.diff(self.times()) / 3600.0
+        #
+        # sum = 0.0
+        #
+        # for i in range(1, len(self.times())):
+        #     varOPEX_dt = (variable_operational_cost_coefficient * heat_ates[i]
+        #     * timesteps[i - 1])
+        #     constraints.append(((varOPEX-varOPEX_dt)/nominal,0.0, np,inf))
+        #     #varOPEX would be a variable>0 for everyt timestep
+        #     sum += varOPEX
+        # constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
         return constraints
 
@@ -3745,7 +3834,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             nominal = self.variable_nominal(self._asset_installation_cost_map[asset_name])
             installation_cost = parameters[f"{asset_name}.installation_cost"]
             aggregation_count_sym = self.extra_variable(
-                self.__asset_aggregation_count_var_map[asset_name]
+                self._asset_aggregation_count_var_map[asset_name]
             )
             constraints.append(
                 (
@@ -3774,6 +3863,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     single_power = parameters[f"{asset_name}.single_doublet_power"]
                     nominal_value = 2.0 * bounds[f"{asset_name}.Heat_ates"][1]
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_ates")
+                elif asset_name in [*self.heat_network_components.get("geothermal", [])]:
+                    state_var = self.state(f"{asset_name}.Heat_source")
+                    single_power = parameters[f"{asset_name}.single_doublet_power"]
+                    nominal_value = 2.0 * bounds[f"{asset_name}.Heat_source"][1]
+                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_source")
                 elif asset_name in [*self.heat_network_components.get("buffer", [])]:
                     state_var = self.state(f"{asset_name}.HeatIn.Q")
                     single_power = parameters[f"{asset_name}.volume"]
@@ -3789,9 +3883,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
                 aggregation_count = self.__asset_aggregation_count_var[
-                    self.__asset_aggregation_count_var_map[asset_name]
+                    self._asset_aggregation_count_var_map[asset_name]
                 ]
-
                 constraint_nominal = (nominal_value * nominal_var) ** 0.5
 
                 constraints.append(
@@ -3810,7 +3903,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
             elif parameters[f"{asset_name}.state"] == 1:
                 aggregation_count = self.__asset_aggregation_count_var[
-                    self.__asset_aggregation_count_var_map[asset_name]
+                    self._asset_aggregation_count_var_map[asset_name]
                 ]
                 aggr_bound = self.__asset_aggregation_count_var_bounds[
                     asset_name + "_aggregation_count"
@@ -3823,27 +3916,22 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__heat_loss_path_constraints(ensemble_member))  # fixed
+        constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__buffer_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(
-            self.__demand_heat_to_discharge_path_constraints(ensemble_member)
-        )  # fixed
-        constraints.extend(
-            self.__source_heat_to_discharge_path_constraints(ensemble_member)
-        )  # fixed
-        constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))  # fixed
-        constraints.extend(
-            self.__buffer_heat_to_discharge_path_constraints(ensemble_member)
-        )  # fixed
-        constraints.extend(
-            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)  # fixed
+            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)
         )
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
-        constraints.extend(self.__network_temperature_path_constraints(ensemble_member))  # fixed
+        constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
 

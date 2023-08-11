@@ -1,3 +1,4 @@
+import logging
 from typing import Dict
 
 from pymoca.backends.casadi.alias_relation import AliasRelation
@@ -6,13 +7,22 @@ from .base_component_type_mixin import BaseComponentTypeMixin
 from .heat_network_common import NodeConnectionDirection
 from .topology import Topology
 
+logger = logging.getLogger("rtctools_heat_network")
+
 
 class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def pre(self):
         components = self.heat_network_components
         nodes = components.get("node", [])
-        pipes = components["pipe"]
+        try:
+            pipes = components["pipe"]
+        except KeyError:
+            logger.error(
+                "A valid network should have at least one pipe, "
+                "assets cannot be connected directly"
+            )
         buffers = components.get("buffer", [])
+        atess = components.get("ates", [])
 
         # Figure out which pipes are connected to which nodes, which pipes
         # are connected in series, and which pipes are connected to which buffers.
@@ -152,6 +162,51 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
                 out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                alias = aliases[0]
+                if alias.endswith(out_suffix):
+                    pipe_w_orientation = (
+                        alias[: -len(out_suffix)],
+                        NodeConnectionDirection.IN,
+                    )
+                else:
+                    assert alias.endswith(in_suffix)
+                    pipe_w_orientation = (
+                        alias[: -len(in_suffix)],
+                        NodeConnectionDirection.OUT,
+                    )
+
+                assert pipe_w_orientation[0] in pipes_set
+
+                if k == "In":
+                    assert self.is_hot_pipe(pipe_w_orientation[0])
+                else:
+                    assert self.is_cold_pipe(pipe_w_orientation[0])
+
+                buffer_connections[b].append(pipe_w_orientation)
+
+            buffer_connections[b] = tuple(buffer_connections[b])
+
+        ates_connections = {}
+
+        for a in atess:
+            ates_connections[a] = []
+
+            for k in ["In", "Out"]:
+                a_conn = f"{a}.{heat_network_model_type}{k}"
+                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                aliases = [
+                    x
+                    for x in self.alias_relation.aliases(f"{a_conn}.{prop}")
+                    if not x.startswith(a) and x.endswith(f".{prop}")
+                ]
+
+                if len(aliases) > 1:
+                    raise Exception(f"More than one connection to {a_conn}")
+                elif len(aliases) == 0:
+                    raise Exception(f"Found no connection to {a_conn}")
+
+                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
 
                 if aliases[0].endswith(out_suffix):
                     pipe_w_orientation = (
@@ -167,16 +222,18 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
                 assert pipe_w_orientation[0] in pipes_set
 
-                if k == "In":
+                if k == "Out":
                     assert self.is_hot_pipe(pipe_w_orientation[0])
                 else:
                     assert self.is_cold_pipe(pipe_w_orientation[0])
 
-                buffer_connections[b].append(pipe_w_orientation)
+                ates_connections[a].append(pipe_w_orientation)
 
-            buffer_connections[b] = tuple(buffer_connections[b])
+            ates_connections[a] = tuple(ates_connections[a])
 
-        self.__topology = Topology(node_connections, pipe_series, buffer_connections)
+        self.__topology = Topology(
+            node_connections, pipe_series, buffer_connections, ates_connections
+        )
 
         super().pre()
 

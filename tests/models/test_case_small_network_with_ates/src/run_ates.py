@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -24,7 +26,7 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values))
+        self.function_range = (-1.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
     def function(self, optimization_problem, ensemble_member):
@@ -135,5 +137,166 @@ class HeatProblem(
             self.io = new_datastore
 
 
+class HeatProblemSetPoints(
+    _GoalsAndOptions,
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        return goals
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0
+        return options
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for a in self.heat_network_components.get("ates", []):
+            stored_heat = self.state_vector(f"{a}.Stored_heat")
+            constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+
+        return constraints
+
+    # TODO: place this and the _set_data_with_averages_and_peak_day function in an appropriate place
+    #  in the rtctools-heat-network package. Should have a unit test.
+    def read(self):
+        """
+        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
+        except for the day with the peak demand.
+        """
+        super().read()
+
+        demands = self.heat_network_components.get("demand", [])
+        new_datastore = DataStore(self)
+        new_datastore.reference_datetime = self.io.datetimes[0]
+
+        for ensemble_member in range(self.ensemble_size):
+            parameters = self.parameters(ensemble_member)
+
+            total_demand = None
+            for demand in demands:
+                try:
+                    demand_values = self.get_timeseries(
+                        f"{demand}.target_heat_demand", ensemble_member
+                    ).values
+                except KeyError:
+                    continue
+                if total_demand is None:
+                    total_demand = demand_values
+                else:
+                    total_demand += demand_values
+
+            # TODO: the approach of picking one peak day was introduced for a network with a tree
+            #  layout and all big sources situated at the root of the tree. It is not guaranteed
+            #  that an optimal solution is reached in different network topologies.
+            idx_max = int(np.argmax(total_demand))
+            max_day = idx_max // 24
+            nr_of_days = len(total_demand) // 24
+            new_date_times = list()
+            day_steps = 5
+
+            self.__indx_max_peak = max_day // day_steps
+            if max_day % day_steps > 0:
+                self.__indx_max_peak += 1.0
+
+            for day in range(0, nr_of_days, day_steps):
+                if day == max_day // day_steps * day_steps:
+                    if max_day > day:
+                        new_date_times.append(self.io.datetimes[day * 24])
+                    new_date_times.extend(self.io.datetimes[max_day * 24 : max_day * 24 + 24])
+                    if (day + day_steps - 1) > max_day:
+                        new_date_times.append(self.io.datetimes[max_day * 24 + 24])
+                    # if day == nr_of_days - day_steps:
+                    #     new_date_times.append(self.io.datetimes[-1] + datetime.timedelta(hours=1))
+                else:
+                    new_date_times.append(self.io.datetimes[day * 24])
+                    # if day == nr_of_days - day_steps:
+            new_date_times.append(self.io.datetimes[-1] + datetime.timedelta(hours=1))
+
+            new_date_times = np.asarray(new_date_times)
+            parameters["times"] = [x.timestamp() for x in new_date_times]
+
+            for demand in demands:
+                var_name = f"{demand}.target_heat_demand"
+                self._set_data_with_averages_and_peak_day(
+                    datastore=new_datastore,
+                    variable_name=var_name,
+                    ensemble_member=ensemble_member,
+                    new_date_times=new_date_times,
+                )
+
+            # TODO: this has not been tested but is required if a production profile is included
+            #  in the data
+            for source in self.heat_network_components.get("source", []):
+                try:
+                    self.get_timeseries(f"{source}.target_heat_source_year", ensemble_member)
+                except KeyError:
+                    continue
+                var_name = f"{source}.target_heat_source_year"
+                self._set_data_with_averages_and_peak_day(
+                    datastore=new_datastore,
+                    variable_name=var_name,
+                    ensemble_member=ensemble_member,
+                    new_date_times=new_date_times,
+                )
+
+        self.io = new_datastore
+
+    def _set_data_with_averages_and_peak_day(
+        self,
+        datastore: DataStore,
+        variable_name: str,
+        ensemble_member: int,
+        new_date_times: np.array,
+    ):
+        try:
+            data = self.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
+        except KeyError:
+            datastore.set_timeseries(
+                variable=variable_name,
+                datetimes=new_date_times,
+                values=np.asarray([0.0] * len(new_date_times)),
+                ensemble_member=ensemble_member,
+                check_duplicates=True,
+            )
+            return
+
+        new_data = list()
+        data_timestamps = data.times
+        data_datetimes = [
+            self.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
+        ]
+        assert new_date_times[0] == data_datetimes[0]
+        data_values = data.values
+
+        values_for_mean = [0.0]
+        for dt, val in zip(data_datetimes, data_values):
+            if dt in new_date_times:
+                new_data.append(np.mean(values_for_mean))
+                values_for_mean = [val]
+            else:
+                values_for_mean.append(val)
+
+        # last datetime is not in input data, so we need to take the mean of the last bit
+        new_data.append(np.mean(values_for_mean))
+
+        datastore.set_timeseries(
+            variable=variable_name,
+            datetimes=new_date_times,
+            values=np.asarray(new_data),
+            ensemble_member=ensemble_member,
+            check_duplicates=True,
+        )
+
+
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(
+        HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}
+    )

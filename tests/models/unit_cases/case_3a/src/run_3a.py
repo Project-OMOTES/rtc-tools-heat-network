@@ -75,7 +75,7 @@ class MinimizeSourcesFlowGoal(Goal):
         self.function_nominal = 1.0
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.dH")
+        return optimization_problem.state(f"{self.source}.Q")
 
 
 class MinimizeSourcesQTHGoal(Goal):

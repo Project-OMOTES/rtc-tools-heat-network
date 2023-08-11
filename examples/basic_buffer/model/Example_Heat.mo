@@ -36,7 +36,7 @@ model Example_Heat
   WarmingUp.HeatNetwork.Heat.Demand demand91(Heat_demand(min=0.0, max=heat_max_abs), T_supply=75.0, T_return=45.0, Q_nominal=Q_nominal);
   WarmingUp.HeatNetwork.Heat.Demand demand92(Heat_demand(min=0.0, max=heat_max_abs), T_supply=75.0, T_return=45.0, Q_nominal=Q_nominal);
 
-  WarmingUp.HeatNetwork.Heat.Buffer buffer1(height = 10, radius = 5, T_supply=75.0, T_return=45.0, Q_nominal=Q_nominal);
+  WarmingUp.HeatNetwork.Heat.Buffer buffer1(height = 10, radius = 5, T_supply=75.0, T_return=45.0, Q_nominal=Q_nominal, Heat_buffer(min=-heat_max_abs, max=heat_max_abs));
 
   WarmingUp.HeatNetwork.Heat.Pipe pipe1a_hot(length = 170.365, diameter = 0.15, temperature=75.0, T_supply=75.0, T_return=45.0, HeatOut.Heat(min=-heat_max_abs, max=heat_max_abs, nominal=heat_nominal_hot_pipes), HeatIn.Heat(min=-heat_max_abs, max=heat_max_abs, nominal=heat_nominal_hot_pipes), Q_nominal=Q_nominal);
   WarmingUp.HeatNetwork.Heat.Pipe pipe1b_hot(length = 309.635, diameter = 0.15, temperature=75.0, T_supply=75.0, T_return=45.0, HeatOut.Heat(min=-heat_max_abs, max=heat_max_abs, nominal=heat_nominal_hot_pipes), HeatIn.Heat(min=-heat_max_abs, max=heat_max_abs, nominal=heat_nominal_hot_pipes), Q_nominal=Q_nominal);

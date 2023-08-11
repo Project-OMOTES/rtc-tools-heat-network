@@ -400,7 +400,7 @@ class _AssetToComponentBase:
         ].variableMaintenanceCosts
 
         if all(cost_info is None for cost_info in cost_infos.values()):
-            RuntimeWarning(f"No variable OPEX cost information specified for asset {asset}")
+            logger.warning(f"No variable OPEX cost information specified for asset {asset.name}")
 
         value = 0.0
         for cost_info in cost_infos.values():
@@ -408,16 +408,16 @@ class _AssetToComponentBase:
                 continue
             cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
             if unit != UnitEnum.EURO:
-                RuntimeWarning(f"Expected cost information {cost_info} to provide a cost in euros.")
+                logger.warning(f"Expected cost information {cost_info} to provide a cost in euros.")
                 continue
             if per_time != TimeUnitEnum.NONE:
-                RuntimeWarning(
+                logger.warning(
                     f"Specified OPEX for asset {asset.name} include a "
                     f"component per time, which we cannot handle."
                 )
                 continue
             if per_unit != UnitEnum.WATTHOUR:
-                RuntimeWarning(
+                logger.warning(
                     f"Expected the specified OPEX for asset "
                     f"{asset.name} to be per Wh, but they are provided "
                     f"in {per_unit} instead."
@@ -486,6 +486,17 @@ class _AssetToComponentBase:
                             if size == 0.0:
                                 RuntimeWarning(f"{asset.name} has not capacity or volume set")
                                 return 0.0
+                    elif asset.asset_type == "ATES":
+                        size = asset.attributes["maxChargeRate"]
+                        if size == 0.0:
+                            size = asset.attributes["capacity"] / (
+                                365 * 24 * 3600 / 2
+                            )  # only half a year it can load
+                            if size == 0.0:
+                                RuntimeWarning(
+                                    f"{asset.name} has not capacity or maximum charge rate set"
+                                )
+                                return 0.0
                     else:
                         try:
                             size = asset.attributes["power"]
@@ -522,21 +533,21 @@ class _AssetToComponentBase:
     def get_installation_costs(self, asset: Asset):
         cost_info = asset.attributes["costInformation"].installationCosts
         if cost_info is None:
-            RuntimeWarning(f"No installation cost info provided for asset " f"{asset.name}.")
+            logger.warning(f"No installation cost info provided for asset " f"{asset.name}.")
             return 0.0
         cost_value, unit, per_unit, per_time = self.get_cost_value_and_unit(cost_info)
         if unit != UnitEnum.EURO:
-            RuntimeWarning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
             return 0.0
         if not per_time == TimeUnitEnum.NONE:
-            RuntimeWarning(
+            logger.warning(
                 f"Specified installation costs of asset {asset.name}"
                 f" include a component per time, which we "
                 f"cannot handle."
             )
             return 0.0
         if not per_unit == UnitEnum.NONE:
-            RuntimeWarning(
+            logger.warning(
                 f"Specified installation costs of asset {asset.name}"
                 f" include a component per unit {per_unit}, which we "
                 f"cannot handle."
@@ -559,10 +570,10 @@ class _AssetToComponentBase:
             per_time_provided,
         ) = self.get_cost_value_and_unit(cost_info)
         if unit_provided != UnitEnum.EURO:
-            RuntimeWarning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
+            logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
             return 0.0
         if not per_time_provided == TimeUnitEnum.NONE:
-            RuntimeWarning(
+            logger.warning(
                 f"Specified investment costs for asset {asset.name}"
                 f" include a component per time, which we "
                 f"cannot handle."
@@ -570,7 +581,7 @@ class _AssetToComponentBase:
             return 0.0
         if per_unit == UnitEnum.WATT:
             if not per_unit_provided == UnitEnum.WATT:
-                RuntimeWarning(
+                logger.warning(
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per W, but they "
                     f"are provided in {per_unit_provided} "
@@ -579,7 +590,7 @@ class _AssetToComponentBase:
             return cost_value
         elif per_unit == UnitEnum.WATTHOUR:
             if not per_unit_provided == UnitEnum.WATTHOUR:
-                RuntimeWarning(
+                logger.warning(
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh, but they "
                     f"are provided in {per_unit_provided} "
@@ -589,7 +600,7 @@ class _AssetToComponentBase:
             return cost_value
         elif per_unit == UnitEnum.METRE:
             if not per_unit_provided == UnitEnum.METRE:
-                RuntimeWarning(
+                logger.warning(
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per meter, but they "
                     f"are provided in {per_unit_provided} "
@@ -612,7 +623,7 @@ class _AssetToComponentBase:
                 m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
                 return cost_value / m3_to_joule_factor
             else:
-                RuntimeWarning(
+                logger.warning(
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per Wh or m3, but "
                     f"they are provided in {per_unit_provided} "
@@ -620,7 +631,7 @@ class _AssetToComponentBase:
                 )
                 return 0.0
         else:
-            RuntimeWarning(
+            logger.warning(
                 f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
             )
             return 0.0

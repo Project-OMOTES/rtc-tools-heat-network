@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 import esdl
+from esdl.esdl_handler import EnergySystemHandler
 
 import numpy as np
 
@@ -58,23 +60,31 @@ class ESDLMixin(
     __minimum_pipe_size_name = "DN150"
 
     def __init__(self, *args, **kwargs):
-        self.esdl_run_info_path = kwargs.get(
-            "esdl_run_info_path", Path(kwargs["input_folder"]) / "RunInfo.xml"
-        )
+        esdl_string = kwargs.get("esdl_string", None)
+        if esdl_string is not None:
+            esdl_path = None
+            self.esdl_string = base64.b64decode(esdl_string).decode("utf-8")
+            self.__run_info = None
+        else:
+            self.esdl_string = None
+            self.esdl_run_info_path = kwargs.get(
+                "esdl_run_info_path", Path(kwargs["input_folder"]) / "RunInfo.xml"
+            )
 
-        if not self.esdl_pi_input_data_config:
-            self.esdl_pi_input_data_config = _ESDLInputDataConfig
+            if not self.esdl_pi_input_data_config:
+                self.esdl_pi_input_data_config = _ESDLInputDataConfig
 
-        if not self.esdl_pi_output_data_config:
-            self.esdl_pi_output_data_config = _ESDLOutputDataConfig
+            if not self.esdl_pi_output_data_config:
+                self.esdl_pi_output_data_config = _ESDLOutputDataConfig
 
-        self.__run_info = _RunInfoReader(self.esdl_run_info_path)
+            self.__run_info = _RunInfoReader(self.esdl_run_info_path)
+            esdl_path = self.__run_info.esdl_file
 
         self.__esdl_assets, self._profiles, self.__esdl_carriers = _esdl_to_assets(
-            self.__run_info.esdl_file
+            self.esdl_string, esdl_path
         )
 
-        if self.__run_info.parameters_file is not None:
+        if self.__run_info is not None and self.__run_info.parameters_file is not None:
             self.__esdl_assets = _overwrite_parameters(
                 self.__run_info.parameters_file, self.__esdl_assets
             )
@@ -111,7 +121,7 @@ class ESDLMixin(
 
         root_logger = logging.getLogger("")
 
-        if self.__run_info.output_diagnostic_file:
+        if self.__run_info is not None and self.__run_info.output_diagnostic_file:
             # Add stream handler if it does not already exist.
             if not logger.hasHandlers() and not any(
                 (isinstance(h, logging.StreamHandler) for h in logger.handlers)
@@ -129,8 +139,9 @@ class ESDLMixin(
                 handler = pi.DiagHandler(folder, basename)
                 root_logger.addHandler(handler)
 
-        self.__input_timeseries_file = self.__run_info.input_timeseries_file
-        self.__output_timeseries_file = self.__run_info.output_timeseries_file
+        if self.__run_info is not None:
+            self.__input_timeseries_file = self.__run_info.input_timeseries_file
+            self.__output_timeseries_file = self.__run_info.output_timeseries_file
 
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
@@ -179,6 +190,7 @@ class ESDLMixin(
                     min_size_idx = min_size_idx[0]
 
                     max_size = asset.attributes["diameter"].name
+
                     max_size_idx = [
                         idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
                     ]
@@ -186,7 +198,7 @@ class ESDLMixin(
                     max_size_idx = max_size_idx[0]
 
                     if max_size_idx < min_size_idx:
-                        logger.error(
+                        logger.warning(
                             f"{p} has an upper DN size smaller than the used minimum size "
                             f"of {self.__minimum_pipe_size_name}, choose at least "
                             f"{self.__minimum_pipe_size_name}"
@@ -198,9 +210,6 @@ class ESDLMixin(
                 elif asset.attributes["state"].name == "DISABLED":
                     c = self._override_pipe_classes[p] = []
                     c.append(no_pipe_class)
-
-    def pipe_classes(self, p):
-        return self._override_pipe_classes.get(p, [])
 
     @property
     def esdl_assets(self):
@@ -264,8 +273,21 @@ class ESDLMixin(
                     flat_list = []
                     for sublist in values:
                         for item in sublist:
-                            # if not math.isnan(item):
-                            flat_list.append(item)
+                            if not np.isnan(item):
+                                flat_list.append(item)
+                            else:
+                                if len(flat_list) > 0:
+                                    logger.warning(
+                                        f"Found NaN value in profile for {variable},  "
+                                        f"using value of previous timestep"
+                                    )
+                                    flat_list.append(flat_list[-1])
+                                else:
+                                    logger.error(
+                                        f"Found NaN value as first value in profile for "
+                                        f"{variable}, using 0 instead"
+                                    )
+                                    flat_list.append(0.0)
                     if timesteps is None:
                         timesteps = profile.index.tz_convert(None).to_pydatetime()
                     elif len(profile.index.tz_convert(None).to_pydatetime()) != len(timesteps):
@@ -371,7 +393,7 @@ class ESDLMixin(
     def write(self):
         super().write()
 
-        if self.__output_timeseries_file is None:
+        if getattr(self, "__output_timeseries_file", None) is None:
             return
 
         output_timeseries_file = Path(self.__output_timeseries_file)
@@ -582,19 +604,23 @@ def _overwrite_parameters(parameters_file, assets):
     return assets
 
 
-def _esdl_to_assets(esdl_path: Union[Path, str]):
-    # correct profile attribute
-    esdl.ProfileElement.from_.name = "from"
-    setattr(esdl.ProfileElement, "from", esdl.ProfileElement.from_)
+def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
+    if esdl_string is None:
+        # correct profile attribute
+        esdl.ProfileElement.from_.name = "from"
+        setattr(esdl.ProfileElement, "from", esdl.ProfileElement.from_)
 
-    # using esdl as resourceset
-    rset_existing = ResourceSet()
+        # using esdl as resourceset
+        rset_existing = ResourceSet()
 
-    # read esdl energy system
-    resource_existing = rset_existing.get_resource(str(esdl_path))
-    created_energy_system = resource_existing.contents[0]
+        # read esdl energy system
+        resource_existing = rset_existing.get_resource(str(esdl_path))
+        created_energy_system = resource_existing.contents[0]
 
-    esdl_model = created_energy_system
+        esdl_model = created_energy_system
+    else:
+        esh = EnergySystemHandler()
+        esdl_model = esh.load_from_string(esdl_string)
 
     # global properties
     global_properties = {}

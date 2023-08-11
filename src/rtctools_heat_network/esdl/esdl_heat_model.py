@@ -121,6 +121,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
+            Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -137,6 +138,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             Heat_demand=dict(max=max_demand),
+            Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -229,6 +231,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
             ),
+            Heat_flow=dict(min=-hfr_max, max=hfr_max, nominal=hfr_max),
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
             state=self.get_state(asset),
@@ -279,8 +282,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
 
-        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
+        prim_heat = dict(
+            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            Q_nominal=max_power
+            / (
+                2
+                * self.rho
+                * self.cp
+                * (params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"])
+            ),
+        )
+        sec_heat = dict(
+            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            Q_nominal=max_power
+            / (
+                2
+                * self.cp
+                * self.rho
+                * (params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"])
+            ),
+        )
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
 
         if not asset.attributes["efficiency"]:
             efficiency = 1.0
@@ -294,7 +319,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             nominal=max_power / 2.0,
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             state=self.get_state(asset),
+            **self._get_cost_figure_modifiers(asset),
             **params,
         )
         return HeatExchanger, modifiers
@@ -327,7 +354,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Power_elec=dict(min=0.0, max=power_electrical),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
             state=self.get_state(asset),
+            **self._get_cost_figure_modifiers(asset),
             **params,
         )
         return HeatPump, modifiers
@@ -359,12 +388,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
         )
 
         if asset.asset_type == "GeothermalSource":
+            modifiers["nr_of_doublets"] = asset.attributes["aggregationCount"]
+            modifiers["Heat_source"] = dict(
+                min=0.0,
+                max=max_supply * asset.attributes["aggregationCount"],
+                nominal=max_supply / 2.0,
+            )
+            modifiers["Heat_flow"] = dict(
+                min=0.0,
+                max=max_supply * asset.attributes["aggregationCount"],
+                nominal=max_supply / 2.0,
+            )
             try:
                 modifiers["single_doublet_power"] = asset.attributes["single_doublet_power"]
             except KeyError:
@@ -377,12 +418,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     f"{asset.asset_type} '{asset.name}' has no desired flow rate specified. "
                     f"'{asset.name}' will not be actuated in a constant manner"
                 )
-                modifiers["nr_of_doublets"] = asset.attributes["aggregationCount"]
-                modifiers["Heat_source"] = dict(
-                    min=0.0,
-                    max=max_supply * asset.attributes["aggregationCount"],
-                    nominal=max_supply / 2.0,
-                )
+
             return GeothermalSource, modifiers
         else:
             return Source, modifiers

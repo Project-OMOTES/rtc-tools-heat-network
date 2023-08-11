@@ -99,6 +99,7 @@ class ModelHeat(_Model):
         self.add_variable(
             Buffer,
             "buffer1",
+            Heat_buffer=dict(min=-self.heat_max_abs, max=self.heat_max_abs),
             height=10,
             radius=5,
             **supply_return_modifiers,

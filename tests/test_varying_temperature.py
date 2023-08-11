@@ -49,7 +49,7 @@ class TestVaryingTemperature(TestCase):
 
         # optimization with two choices in return temp 30 and 40 deg
         # lowest temperature should be selected because of larger dT causing lowest flow rates
-        # and we apply source dH minimization goal
+        # and we apply source Q minimization goal
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (30.0) is the outputted temperature
