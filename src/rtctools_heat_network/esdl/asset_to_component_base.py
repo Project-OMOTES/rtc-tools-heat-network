@@ -73,6 +73,10 @@ class _AssetToComponentBase:
 
     component_map = {
         "ATES": "ates",
+        "ElectricityCable": "electricity_cable",
+        "ElectricityDemand": "electricity_demand",
+        "ElectricityProducer": "electricity_source",
+        "Bus": "electricity_node",
         "GenericConsumer": "demand",
         "HeatingDemand": "demand",
         "HeatPump": "heat_pump",
@@ -105,8 +109,14 @@ class _AssetToComponentBase:
         With more descriptive variable names the return type would be:
             Tuple[pycml_heat_component_type, Dict[component_attribute, new_attribute_value]]
         """
+        ports = []
+        if asset.in_ports is not None:
+            ports.extend(asset.in_ports)
+        if asset.out_ports is not None:
+            ports.extend(asset.out_ports)
+        assert len(ports) > 0
 
-        for port in [*asset.in_ports, *asset.out_ports]:
+        for port in ports:
             self._port_to_esdl_component_type[port] = asset.asset_type
 
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"

@@ -40,8 +40,8 @@ class BaseComponentTypeMixin:
 
     @property
     def hot_pipes(self) -> List[str]:
-        return [p for p in self.heat_network_components["pipe"] if self.is_hot_pipe(p)]
+        return [p for p in self.heat_network_components.get("pipe", []) if self.is_hot_pipe(p)]
 
     @property
     def cold_pipes(self) -> List[str]:
-        return [p for p in self.heat_network_components["pipe"] if self.is_cold_pipe(p)]
+        return [p for p in self.heat_network_components.get("pipe", []) if self.is_cold_pipe(p)]

@@ -10,6 +10,10 @@ from rtctools_heat_network.pycml.component_library.heat import (
     CheckValve,
     ControlValve,
     Demand,
+    ElectricityCable,
+    ElectricityDemand,
+    ElectricityNode,
+    ElectricitySource,
     GeothermalSource,
     HeatExchanger,
     HeatPump,
@@ -487,6 +491,58 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return CheckValve, modifiers
+
+    def convert_electricity_demand(self, asset: Asset) -> Tuple[Type[ElectricityDemand], MODIFIERS]:
+        assert asset.asset_type in {"ElectricityDemand"}
+
+        max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
+
+        modifiers = dict(Electricity_demand=dict(max=max_demand))
+
+        return ElectricityDemand, modifiers
+
+    def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
+        assert asset.asset_type in {"ElectricityProducer"}
+
+        max_supply = asset.attributes["power"] if asset.attributes["power"] else math.inf
+
+        modifiers = dict(
+            Electricity_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            ElectricityOut=dict(V=dict(min=0.0), I=dict(min=0.0)),
+        )
+
+        return ElectricitySource, modifiers
+
+    def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
+        assert asset.asset_type in {"Bus"}
+
+        sum_in = 0
+        sum_out = 0
+
+        node_carrier = None
+        for x in asset.attributes["port"].items:
+            if node_carrier is None:
+                node_carrier = x.carrier.name
+            else:
+                if node_carrier != x.carrier.name:
+                    raise _ESDLInputException(
+                        f"{asset.name} has multiple carriers mixing which is not allowed. "
+                    )
+            if type(x) == esdl.esdl.InPort:
+                sum_in += len(x.connectedTo)
+            if type(x) == esdl.esdl.OutPort:
+                sum_out += len(x.connectedTo)
+
+        modifiers = dict(n=sum_in + sum_out)
+
+        return ElectricityNode, modifiers
+
+    def convert_electricity_cable(self, asset: Asset) -> Tuple[Type[ElectricityCable], MODIFIERS]:
+        assert asset.asset_type in {"ElectricityCable"}
+
+        modifiers = dict(length=asset.attributes["length"])
+
+        return ElectricityCable, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

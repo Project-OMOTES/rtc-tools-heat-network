@@ -358,6 +358,32 @@ class ESDLMixin(
                     )
                 except KeyError:
                     pass
+            for demand in self.heat_network_components.get("electricity_demand", []):
+                try:
+                    values = csv_data[
+                        f"{demand.replace(' ', '')}.target_electricity_demand"
+                    ].to_numpy()
+                    self.io.set_timeseries(
+                        demand + ".target_electricity_demand",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
+            for source in self.heat_network_components.get("electricity_source", []):
+                try:
+                    values = csv_data[
+                        f"{source.replace(' ', '')}.target_electricity_source"
+                    ].to_numpy()
+                    self.io.set_timeseries(
+                        source + ".target_electricity_source",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
 
     def read_xml(self, input_timeseries_file):
         timeseries_import_basename = input_timeseries_file.stem
@@ -677,6 +703,13 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
         )
         c["supplyTemperature"] = supply_temperature
         c["returnTemperature"] = return_temperature
+
+    for x in esdl_model.energySystemInformation.carriers.carrier.items:
+        if isinstance(x, esdl.esdl.ElectricityCommodity):
+            global_properties["carriers"][x.id] = dict(
+                name=x.name,
+                voltage=x.voltage,
+            )
 
     assets = {}
 

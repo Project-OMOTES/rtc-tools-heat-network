@@ -583,7 +583,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     f"we cannot determine bounds and nominals on the costs, "
                     f"skipping it."
                 )
-                continue
+                nominal_fixed_operational = 1.0
+                nominal_variable_operational = 1.0
+                nominal_investment = 1.0
 
             # fixed operational cost
             asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
@@ -935,7 +937,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             head_loss = 0.0
 
-            for pipe in components["pipe"]:
+            for pipe in components.get("pipe", []):
                 if self.is_cold_pipe(pipe):
                     hot_pipe = self.cold_to_hot_pipe(pipe)
                 else:
@@ -1703,7 +1705,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             ), "non-zero minimum velocity not allowed with topology optimization"
 
         # Also ensure that the discharge has the same sign as the heat.
-        for p in self.heat_network_components["pipe"]:
+        for p in self.heat_network_components.get("pipe", []):
             # FIXME: Enable heat in cold pipes as well.
             if self.is_cold_pipe(p):
                 hot_pipe = self.cold_to_hot_pipe(p)
@@ -1832,7 +1834,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for d in self.heat_network_components["demand"]:
+        for d in self.heat_network_components.get("demand", []):
             heat_nominal = parameters[f"{d}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{d}.Q")
             cp = parameters[f"{d}.cp"]
@@ -1974,7 +1976,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for s in self.heat_network_components["source"]:
+        for s in self.heat_network_components.get("source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{s}.Q")
             cp = parameters[f"{s}.cp"]
@@ -2076,7 +2078,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             parameters = self.parameters(ensemble_member)
             components = self.heat_network_components
 
-            for pipe in components["pipe"]:
+            for pipe in components.get("pipe", []):
                 if parameters[f"{pipe}.length"] == 0.0:
                     # If the pipe does not have a control valve, the head loss is
                     # forced to zero via bounds. If the pipe _does_ have a control
@@ -3223,7 +3225,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # relationship in this case (but dH is still equal to Out - In of
         # course).
 
-        for pipe in components["pipe"]:
+        for pipe in components.get("pipe", []):
             if parameters[f"{pipe}.length"] == 0.0:
                 # If the pipe does not have a control valve, the head loss is
                 # forced to zero via bounds. If the pipe _does_ have a control
@@ -3358,7 +3360,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
 
-        all_pipes = set(self.heat_network_components["pipe"])
+        all_pipes = set(self.heat_network_components.get("pipe", []))
         maximum_velocity = options["maximum_velocity"]
 
         for v in self.heat_network_components.get("check_valve", []):
@@ -3402,7 +3404,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
 
-        all_pipes = set(self.heat_network_components["pipe"])
+        all_pipes = set(self.heat_network_components.get("pipe", []))
         maximum_velocity = options["maximum_velocity"]
 
         for v in self.heat_network_components.get("control_valve", []):
@@ -3573,6 +3575,61 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __electricity_node_heat_mixing_path_constraints(self, ensemble_member):
+        constraints = []
+
+        for bus, connected_cables in self.heat_network_topology.busses.items():
+            power_sum = 0.0
+            i_sum = 0.0
+            power_nominal = []
+
+            for i_conn, (_cable, orientation) in connected_cables.items():
+                heat_conn = f"{bus}.ElectricityConn[{i_conn + 1}].Power"
+                i_port = f"{bus}.ElectricityConn[{i_conn + 1}].I"
+                power_sum += orientation * self.state(heat_conn)
+                i_sum += orientation * self.state(i_port)
+                power_nominal.append(self.variable_nominal(heat_conn))
+
+            power_nominal = np.median(power_nominal)
+            constraints.append((power_sum / power_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __electricity_cable_heat_mixing_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for cable in self.heat_network_components.get("electricity_cable", []):
+            current = self.state(f"{cable}.ElectricityIn.I")
+            power_in = self.state(f"{cable}.ElectricityIn.Power")
+            power_out = self.state(f"{cable}.ElectricityOut.Power")
+            power_loss = self.state(f"{cable}.Power_loss")
+            r = parameters[f"{cable}.r"]
+            i_max = parameters[f"{cable}.max_current"]
+            v_nom = parameters[f"{cable}.nominal_voltage"]
+            v_max = parameters[f"{cable}.max_voltage"]
+            v_min = parameters[f"{cable}.min_voltage"]
+
+            # Ensure that the current is sufficient to transport the power
+            constraints.append(((power_in - current * v_min) / (i_max * v_max), -np.inf, 0.0))
+            constraints.append(((power_out - current * v_min) / (i_max * v_max), -np.inf, 0.0))
+
+            # Power loss constraint
+            constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom), 0.0, 0.0))
+
+        return constraints
+
+    def __electricitydemand_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for elec_demand in self.heat_network_components.get("electricity_demand", []):
+            min_voltage = parameters[f"{elec_demand}.min_voltage"]
+            voltage = self.state(f"{elec_demand}.ElectricityIn.V")
+            constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
+
+        return constraints
+
     def __max_size_constraints(self, ensemble_member):
         constraints = []
         # This function makes sure that the __max_size variable is at least as large as needed
@@ -3732,6 +3789,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if asset_name in [
                 *self.heat_network_components.get("node", []),
                 *self.heat_network_components.get("pipe", []),
+                *self.heat_network_components.get("electricity_cable", []),
+                *self.heat_network_components.get("electricity_node", []),
+                *self.heat_network_components.get("electricity_demand", []),
+                *self.heat_network_components.get("electricity_source", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
             ]:
@@ -3931,6 +3992,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
+        constraints.extend(self.__electricitydemand_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
@@ -4086,7 +4150,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
 
         if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-            for p in self.heat_network_components["pipe"]:
+            for p in self.heat_network_components.get("pipe", []):
                 head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
                 if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
                     atol = self.variable_nominal(f"{p}.HeatIn.H") * 1e-5
@@ -4111,7 +4175,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
         minimum_velocity = options["minimum_velocity"]
-        for p in self.heat_network_components["pipe"]:
+        for p in self.heat_network_components.get("pipe", []):
             if self.is_cold_pipe(p):
                 hot_pipe = self.cold_to_hot_pipe(p)
             else:

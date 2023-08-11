@@ -1,5 +1,6 @@
 import logging
 
+import esdl
 from esdl import InPort
 
 
@@ -51,16 +52,24 @@ class _ESDLModelBase(_Model):
         in_suf = f"{prefix}In"
         out_suf = f"{prefix}Out"
         node_suf = f"{prefix}Conn"
+        elec_in_suf = "ElectricityIn"
+        elec_out_suf = "ElectricityOut"
+        elec_node_suf = "ElectricityConn"
 
         skip_asset_ids = {a.id for a in skip_assets}
         pipe_assets = [
             a for a in assets.values() if a.asset_type == "Pipe" and a.id not in skip_asset_ids
         ]
         node_assets = [
-            a for a in assets.values() if a.asset_type == "Joint" and a.id not in skip_asset_ids
+            a for a in assets.values() if (a.asset_type == "Joint") and a.id not in skip_asset_ids
+        ]
+        bus_assets = [
+            a for a in assets.values() if (a.asset_type == "Bus") and a.id not in skip_asset_ids
         ]
         non_node_assets = [
-            a for a in assets.values() if a.asset_type != "Joint" and a.id not in skip_asset_ids
+            a
+            for a in assets.values()
+            if (a.asset_type != "Joint" and a.asset_type != "Bus") and a.id not in skip_asset_ids
         ]
 
         # Here we check that every pipe and node has the correct coupled carrier for their _ret
@@ -112,9 +121,32 @@ class _ESDLModelBase(_Model):
                                 port_map[p.id] = getattr(component.Secondary, out_suf)
                 else:
                     raise Exception(f"{asset.name} has does not have 2 in_ports and 2 out_ports")
-            elif len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            elif (
+                asset.in_ports is None
+                and len(asset.out_ports) == 1
+                and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
+            ):
+                port_map[asset.out_ports[0].id] = getattr(component, elec_out_suf)
+            elif (
+                len(asset.in_ports) == 1
+                and asset.out_ports is None
+                and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+            ):
+                port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
+            elif (
+                len(asset.in_ports) == 1
+                and len(asset.out_ports) == 1
+                and isinstance(asset.in_ports[0].carrier, esdl.HeatCommodity)
+            ):
                 port_map[asset.in_ports[0].id] = getattr(component, in_suf)
                 port_map[asset.out_ports[0].id] = getattr(component, out_suf)
+            elif (
+                len(asset.in_ports) == 1
+                and len(asset.out_ports) == 1
+                and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+            ):
+                port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
+                port_map[asset.out_ports[0].id] = getattr(component, elec_out_suf)
             else:
                 raise Exception(f"Unsupported ports for asset type {asset.name}.")
 
@@ -124,7 +156,7 @@ class _ESDLModelBase(_Model):
         # after.
         connections = set()
 
-        for asset in node_assets:
+        for asset in [*node_assets, *bus_assets]:
             component = getattr(self, asset.name)
 
             i = 1
@@ -138,10 +170,20 @@ class _ESDLModelBase(_Model):
                     conn = (port.id, connected_to.id)
                     if conn in connections or tuple(reversed(conn)) in connections:
                         continue
-
-                    self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
-                    connections.add(conn)
-                    i += 1
+                    if isinstance(port.carrier, esdl.HeatCommodity):
+                        self.connect(getattr(component, node_suf)[i], port_map[connected_to.id])
+                        connections.add(conn)
+                        i += 1
+                    elif isinstance(port.carrier, esdl.ElectricityCommodity):
+                        self.connect(
+                            getattr(component, elec_node_suf)[i], port_map[connected_to.id]
+                        )
+                        connections.add(conn)
+                        i += 1
+                    else:
+                        logger.error(
+                            f"asset {asset.name} has an unsupported carrier type for a node"
+                        )
 
         skip_port_ids = set()
         for a in skip_assets:
@@ -154,7 +196,13 @@ class _ESDLModelBase(_Model):
 
         # All non-Joints/nodes
         for asset in non_node_assets:
-            for port in [*asset.in_ports, *asset.out_ports]:
+            ports = []
+            if asset.in_ports is not None:
+                ports.extend(asset.in_ports)
+            if asset.out_ports is not None:
+                ports.extend(asset.out_ports)
+            assert len(ports) > 0
+            for port in ports:
                 connected_ports = [p for p in port.connectedTo.items if p.id not in skip_port_ids]
                 if len(connected_ports) != 1:
                     logger.warning(

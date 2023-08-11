@@ -207,7 +207,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         head_loss_values = {
             options["head_loss_option"],
         }
-        for p in self.heat_network_components["pipe"]:
+        for p in self.heat_network_components.get("pipe", []):
             head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
@@ -369,7 +369,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
-        for p in self.heat_network_components["pipe"]:
+        for p in self.heat_network_components.get("pipe", []):
             length = parameters[f"{p}.length"]
             if length < 0.0:
                 raise ValueError("Pipe length has to be larger than or equal to zero")
@@ -891,7 +891,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         # We set this constraint relating .dH to the upstream and downstream
         # heads here in the Mixin for scaling purposes (dH nominal is
         # calculated in pre()).
-        for pipe in self.heat_network_components["pipe"]:
+        for pipe in self.heat_network_components.get("pipe", []):
             dh = self.state(f"{pipe}.dH")
             h_down = self.state(f"{pipe}.H_out")
             h_up = self.state(f"{pipe}.H_in")
@@ -912,7 +912,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
-        for d in components["demand"]:
+        for d in components.get("demand", []):
             constraints.append(
                 (
                     self.state(f"{d}.H_in") - self.state(f"{d}.H_out"),

@@ -14,47 +14,73 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def pre(self):
         components = self.heat_network_components
         nodes = components.get("node", [])
-        try:
-            pipes = components["pipe"]
-        except KeyError:
-            logger.error(
-                "A valid network should have at least one pipe, "
-                "assets cannot be connected directly"
-            )
+        busses = components.get("electricity_node", [])
         buffers = components.get("buffer", [])
         atess = components.get("ates", [])
+        try:
+            pipes = components["pipe"]
+            cables = components.get("electricity_cable", [])
+        except KeyError:
+            try:
+                cables = components["electricity_cable"]
+                pipes = []
+            except KeyError:
+                logger.error(
+                    "A valid network should have at least one pipe/cable, "
+                    "assets cannot be connected directly"
+                )
 
         # Figure out which pipes are connected to which nodes, which pipes
         # are connected in series, and which pipes are connected to which buffers.
 
         pipes_set = set(pipes)
+        cables_set = set(cables)
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
+        bus_connections = {}
 
         # Figure out if we are dealing with a Heat model, or a QTH model
         try:
-            _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
-            heat_network_model_type = "Heat"
+            if len(pipes):
+                _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
+                heat_network_model_type = "Heat"
+            else:
+                _ = self.variable(f"{cables[0]}.ElectricityIn.V")
+                heat_network_model_type = "Heat"
         except KeyError:
             heat_network_model_type = "QTH"
 
-        for n in nodes:
+        for n in [*nodes, *busses]:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
 
             if len(set(n_connections)) > 1:
                 raise Exception(
-                    "Nodes cannot have differing number of connections per ensemble member"
+                    "Nodes and busses cannot have differing number of connections per "
+                    "ensemble member"
                 )
 
             n_connections = n_connections[0]
 
             # Note that we do this based on temperature, because discharge may
             # be an alias of yet some other further away connected pipe.
-            node_connections[n] = connected_pipes = {}
+            if n in nodes:
+                node_connections[n] = connected_pipes = {}
+            elif n in busses:
+                bus_connections[n] = connected_pipes = {}
 
             for i in range(n_connections):
-                cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
-                prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                if n in nodes:
+                    cur_port = f"{n}.{heat_network_model_type}Conn[{i + 1}]"
+                    prop = "T" if heat_network_model_type == "QTH" else "Heat"
+                    in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
+                    out_suffix = (
+                        ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
+                    )
+                elif n in busses:
+                    cur_port = f"{n}.ElectricityConn[{i + 1}]"
+                    prop = "Power"
+                    in_suffix = ".ElectricityIn.Power"
+                    out_suffix = ".ElectricityOut.Power"
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
@@ -65,9 +91,6 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     raise Exception(f"More than one connection to {cur_port}")
                 elif len(aliases) == 0:
                     raise Exception(f"Found no connection to {cur_port}")
-
-                in_suffix = ".QTHIn.T" if heat_network_model_type == "QTH" else ".HeatIn.Heat"
-                out_suffix = ".QTHOut.T" if heat_network_model_type == "QTH" else ".HeatOut.Heat"
 
                 if aliases[0].endswith(out_suffix):
                     pipe_w_orientation = (
@@ -81,7 +104,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set
+                assert pipe_w_orientation[0] in pipes_set or pipe_w_orientation[0] in cables_set
 
                 connected_pipes[i] = pipe_w_orientation
 
@@ -232,7 +255,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             ates_connections[a] = tuple(ates_connections[a])
 
         self.__topology = Topology(
-            node_connections, pipe_series, buffer_connections, ates_connections
+            node_connections, pipe_series, buffer_connections, ates_connections, bus_connections
         )
 
         super().pre()
