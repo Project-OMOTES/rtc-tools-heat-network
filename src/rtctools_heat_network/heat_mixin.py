@@ -165,6 +165,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for hex in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             disabeld_hex_var = f"{hex}__disabled"
             self.__disabled_hex_map[hex] = disabeld_hex_var
@@ -517,6 +518,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for asset_name in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             _make_max_size_var(
                 name=asset_name,
@@ -573,6 +575,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             elif asset_name in [
                 *self.heat_network_components.get("heat_exchanger", []),
                 *self.heat_network_components.get("heat_pump", []),
+                *self.heat_network_components.get("heat_pump_elec", []),
             ]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Secondary_heat")
                 nominal_variable_operational = nominal_fixed_operational
@@ -2741,9 +2744,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # from the primary side network. For the secondary side the we apply a inequality constraint
         # to allow for the heat to be larger than what is required for the discharge. This allows to
         # compensate for heat losses in the pipes.
+
         for heat_exchanger in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             cp_prim = parameters[f"{heat_exchanger}.Primary.cp"]
             rho_prim = parameters[f"{heat_exchanger}.Primary.rho"]
@@ -2777,6 +2782,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 * rho_prim
                 * dt_prim
             )
+            small_m = 0  # 0W
+            tol = big_m * 1e-5  # W
 
             # Getting var for disabled constraints
             is_disabled = self.state(self.__disabled_hex_map[heat_exchanger])
@@ -2799,15 +2806,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m) / big_m, -np.inf, 0.0)
-                )
-                minimum_hex_power = 0.01 * self.bounds()[f"{heat_exchanger}.Primary_heat"][1]
-                constraints.append(
-                    (
-                        ((1.0 - is_disabled) * minimum_hex_power - heat_primary) / big_m,
-                        -np.inf,
-                        0.0,
-                    )
+                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m, 0.0, np.inf)
                 )
             elif len(supply_temperatures_prim) == 0:
                 supply_temperature = parameters[f"{heat_exchanger}.Primary.T_supply"]
@@ -2818,7 +2817,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
+                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
                 )
                 for return_temperature in return_temperatures_prim:
                     ret_temperature_is_selected = self.state(
@@ -2862,7 +2861,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
+                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
                 )
                 for supply_temperature in supply_temperatures_prim:
                     sup_temperature_is_selected = self.state(
@@ -2910,7 +2909,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
+                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
                 )
                 for supply_temperature in supply_temperatures_prim:
                     sup_temperature_is_selected = self.state(
@@ -3608,25 +3607,33 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             i_max = parameters[f"{cable}.max_current"]
             v_nom = parameters[f"{cable}.nominal_voltage"]
             v_max = parameters[f"{cable}.max_voltage"]
-            v_min = parameters[f"{cable}.min_voltage"]
 
             # Ensure that the current is sufficient to transport the power
-            constraints.append(((power_in - current * v_min) / (i_max * v_max), -np.inf, 0.0))
-            constraints.append(((power_out - current * v_min) / (i_max * v_max), -np.inf, 0.0))
+            constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
+            constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
 
             # Power loss constraint
-            constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom), 0.0, 0.0))
+            constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0))
 
         return constraints
 
-    def __electricitydemand_path_constraints(self, ensemble_member):
+    def __electricity_demand_path_constraints(self, ensemble_member):
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for elec_demand in self.heat_network_components.get("electricity_demand", []):
+        for elec_demand in [
+            *self.heat_network_components.get("electricity_demand", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
+        ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")
+            # to ensure that voltage entering is equal or larger than the minimum voltage
             constraints.append(((voltage - min_voltage) / min_voltage, 0.0, np.inf))
+
+            elec_nom = parameters[f"{elec_demand}.elec_power_nominal"]
+            power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
+            current_in = self.state(f"{elec_demand}.ElectricityIn.I")
+            constraints.append(((power_in - min_voltage * current_in) / elec_nom, 0, 0))
 
         return constraints
 
@@ -3656,6 +3663,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for hx in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             max_var = self._asset_max_size_map[hx]
             max_heat = self.extra_variable(max_var, ensemble_member)
@@ -3737,6 +3745,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 elif asset_name in [
                     *self.heat_network_components.get("heat_exchanger", []),
                     *self.heat_network_components.get("heat_pump", []),
+                    *self.heat_network_components.get("heat_pump_elec", []),
                 ]:
                     asset_size = bounds[f"{asset_name}.Secondary_heat"][1]
                 else:
@@ -3992,7 +4001,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
-        constraints.extend(self.__electricitydemand_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))

@@ -17,6 +17,7 @@ from rtctools_heat_network.pycml.component_library.heat import (
     GeothermalSource,
     HeatExchanger,
     HeatPump,
+    HeatPumpElec,
     Node,
     Pipe,
     Pump,
@@ -351,11 +352,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params = {}
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
         params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
-        max_power = power_electrical * (1.0 + cop)
+        max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
 
         modifiers = dict(
             COP=cop,
-            Power_elec=dict(min=0.0, max=power_electrical),
+            Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
@@ -363,7 +364,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
             **params,
         )
-        return HeatPump, modifiers
+        if len(asset.in_ports) == 2:
+            return HeatPump, modifiers
+        elif len(asset.in_ports) == 3:
+            return HeatPumpElec, modifiers
 
     def convert_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
         assert asset.asset_type in {
@@ -495,20 +499,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_electricity_demand(self, asset: Asset) -> Tuple[Type[ElectricityDemand], MODIFIERS]:
         assert asset.asset_type in {"ElectricityDemand"}
 
-        max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
+        max_demand = asset.attributes.get("power", math.inf)
 
-        modifiers = dict(Electricity_demand=dict(max=max_demand))
+        modifiers = dict(Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0))
 
         return ElectricityDemand, modifiers
 
     def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
         assert asset.asset_type in {"ElectricityProducer"}
 
-        max_supply = asset.attributes["power"] if asset.attributes["power"] else math.inf
+        max_supply = asset.attributes.get(
+            "power", math.inf
+        )  # I think it would break with math.inf as input
 
         modifiers = dict(
             Electricity_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
-            ElectricityOut=dict(V=dict(min=0.0), I=dict(min=0.0)),
+            ElectricityOut=dict(
+                V=dict(min=0.0), I=dict(min=0.0), Power=dict(nominal=max_supply / 2.0)
+            ),
         )
 
         return ElectricitySource, modifiers
@@ -540,8 +548,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_electricity_cable(self, asset: Asset) -> Tuple[Type[ElectricityCable], MODIFIERS]:
         assert asset.asset_type in {"ElectricityCable"}
 
-        modifiers = dict(length=asset.attributes["length"])
-
+        modifiers = dict(
+            length=asset.attributes["length"],
+            ElectricityOut=dict(
+                V=dict(min=0.0), I=dict(min=-142.0, max=142.0), Power=dict(nominal=1e2)
+            ),
+        )
         return ElectricityCable, modifiers
 
 

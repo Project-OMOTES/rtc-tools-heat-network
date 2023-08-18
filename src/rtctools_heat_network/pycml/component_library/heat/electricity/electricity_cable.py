@@ -28,7 +28,7 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.add_equation(
             (
                 (self.ElectricityOut.V - (self.ElectricityIn.V - self.r * self.ElectricityIn.I))
-                / self.nominal_voltage
+                / ((self.nominal_voltage * self.r * self.nominal_current) ** 0.5)
             )
         )
         self.add_equation(((self.ElectricityIn.I - self.ElectricityOut.I) / self.nominal_current))

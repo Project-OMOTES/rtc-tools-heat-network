@@ -16,10 +16,11 @@ class HeatPump(HeatFourPort, BaseAsset):
         )
 
         self.component_type = "heat_pump"
-        self.COP = nan
+        self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
         )
+        self.elec_power_nominal = self.nominal / self.COP
 
         # Assumption: heat in/out and added is nonnegative
 
@@ -31,6 +32,7 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.add_variable(Variable, "dH_sec")
 
         # Hydraulically decoupled so Heads remain the same
+        # #TODO: can't these two equations be moved to the non_storagecomponent?
         self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))
         self.add_equation(self.dH_sec - (self.Secondary.HeatOut.H - self.Secondary.HeatIn.H))
 

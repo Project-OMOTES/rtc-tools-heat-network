@@ -58,6 +58,37 @@ class ElectricityProblem(
         return goals
 
 
+class ElectricityProblemMaxCurr(
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        for demand in self.heat_network_components["electricity_demand"]:
+            target = self.get_timeseries(f"{demand}.target_electricity_demand")
+            i = 0
+            for value in target.values:
+                target.values[i] = value * 50
+                i += 1
+
+            state = f"{demand}.Electricity_demand"
+
+            goals.append(TargetDemandGoal(state, target))
+
+        return goals
+
+    def bounds(self):
+        bounds = super().bounds()
+        bounds["ElectricityProducer_b95d.Electricity_source"] = (0.0, 100000.0)
+        bounds["ElectricityCable_238f.ElectricityIn.Power"] = (0.0, 100000.0)
+        bounds["ElectricityCable_238f.ElectricityOut.Power"] = (0.0, 100000.0)
+        return bounds
+
+
 if __name__ == "__main__":
     elect = run_optimization_problem(ElectricityProblem)
     r = elect.extract_results()

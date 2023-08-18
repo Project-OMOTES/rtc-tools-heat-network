@@ -204,7 +204,8 @@ class _AssetToComponentBase:
             )
         else:
             raise RuntimeError("Pipe does not have 1 in port and 1 out port")
-
+        # TODO: add other components which can be disabled and thus of which the pipes are allowed
+        #  to be disabled: , "heat_exchanger", "heat_pump", "ates"
         types = {k for k, v in self.component_map.items() if v in {"source", "buffer"}}
 
         if types.intersection({connected_type_in, connected_type_out}):
@@ -237,30 +238,34 @@ class _AssetToComponentBase:
                 raise _RetryLaterException(
                     f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
                 )
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
+        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             q_nominals = {}
             for p in asset.in_ports:
-                out_port = None
-                for p2 in asset.out_ports:
-                    if p2.carrier.name.replace("_ret", "") == p.carrier.name.replace("_ret", ""):
-                        out_port = p2
-                try:
-                    connected_port = p.connectedTo[0]
-                    q_nominal = self._port_to_q_nominal[connected_port]
-                except KeyError:
-                    connected_port = out_port.connectedTo[0]
-                    q_nominal = self._port_to_q_nominal.get(connected_port, None)
-                if q_nominal is not None:
-                    self._port_to_q_nominal[p] = q_nominal
-                    self._port_to_q_nominal[out_port] = q_nominal
-                    if "_ret" in p.carrier.name:
-                        q_nominals["Secondary"] = {"Q_nominal": q_nominal}
+                if isinstance(p.carrier, esdl.HeatCommodity):
+                    out_port = None
+                    for p2 in asset.out_ports:
+                        if p2.carrier.name.replace("_ret", "") == p.carrier.name.replace(
+                            "_ret", ""
+                        ):
+                            out_port = p2
+                    try:
+                        connected_port = p.connectedTo[0]
+                        q_nominal = self._port_to_q_nominal[connected_port]
+                    except KeyError:
+                        connected_port = out_port.connectedTo[0]
+                        q_nominal = self._port_to_q_nominal.get(connected_port, None)
+                    if q_nominal is not None:
+                        self._port_to_q_nominal[p] = q_nominal
+                        self._port_to_q_nominal[out_port] = q_nominal
+                        if "_ret" in p.carrier.name:
+                            q_nominals["Secondary"] = {"Q_nominal": q_nominal}
+                        else:
+                            q_nominals["Primary"] = {"Q_nominal": q_nominal}
                     else:
-                        q_nominals["Primary"] = {"Q_nominal": q_nominal}
-                else:
-                    raise _RetryLaterException(
-                        f"Could not determine nominal discharge for {asset.asset_type} {asset.name}"
-                    )
+                        raise _RetryLaterException(
+                            f"Could not determine nominal discharge for {asset.asset_type} "
+                            f"{asset.name}"
+                        )
             return q_nominals
 
     def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
@@ -337,29 +342,31 @@ class _AssetToComponentBase:
                 "T_supply_id": supply_temperature_id,
                 "T_return_id": return_temperature_id,
             }
-        elif len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
+        elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             for p in asset.in_ports:
-                carrier = asset.global_properties["carriers"][p.carrier.id]
-                if "_ret" in p.carrier.name:
-                    # This in the Secondary side carrier
-                    sec_supply_temperature = carrier["supplyTemperature"]
-                    sec_return_temperature_id = carrier["id_number_mapping"]
-                    sec_return_temperature = carrier["returnTemperature"]
-                    assert sec_supply_temperature > sec_return_temperature
-                    assert sec_supply_temperature > 0.0
-                else:
-                    # This in the Primary side carrier
-                    prim_supply_temperature = carrier["supplyTemperature"]
-                    prim_return_temperature = carrier["returnTemperature"]
-                    prim_supply_temperature_id = carrier["id_number_mapping"]
-                    assert prim_supply_temperature > prim_return_temperature
-                    assert prim_supply_temperature > 0.0
+                if isinstance(p.carrier, esdl.HeatCommodity):
+                    carrier = asset.global_properties["carriers"][p.carrier.id]
+                    if "_ret" in p.carrier.name:
+                        # This in the Secondary side carrier
+                        sec_supply_temperature = carrier["supplyTemperature"]
+                        sec_return_temperature_id = carrier["id_number_mapping"]
+                        sec_return_temperature = carrier["returnTemperature"]
+                        assert sec_supply_temperature > sec_return_temperature
+                        assert sec_supply_temperature > 0.0
+                    else:
+                        # This in the Primary side carrier
+                        prim_supply_temperature = carrier["supplyTemperature"]
+                        prim_return_temperature = carrier["returnTemperature"]
+                        prim_supply_temperature_id = carrier["id_number_mapping"]
+                        assert prim_supply_temperature > prim_return_temperature
+                        assert prim_supply_temperature > 0.0
             for p in asset.out_ports:
-                carrier = asset.global_properties["carriers"][p.carrier.id]
-                if "_ret" in p.carrier.name:
-                    prim_return_temperature_id = carrier["id_number_mapping"]
-                else:
-                    sec_supply_temperature_id = carrier["id_number_mapping"]
+                if isinstance(p.carrier, esdl.HeatCommodity):
+                    carrier = asset.global_properties["carriers"][p.carrier.id]
+                    if "_ret" in p.carrier.name:
+                        prim_return_temperature_id = carrier["id_number_mapping"]
+                    else:
+                        sec_supply_temperature_id = carrier["id_number_mapping"]
             if not prim_supply_temperature or not sec_supply_temperature:
                 raise RuntimeError(
                     f"{asset.name} carriers are not specified correctly there should be a "

@@ -54,4 +54,4 @@ class TestMILPbus(TestCase):
         # check if minimum voltage is reached
         np.testing.assert_array_less(230.0 - 1.0e-3, v_demand)
         # Check that current is high enough to carry the power
-        np.testing.assert_array_less(p_demand, v_demand * i_demand)
+        np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)

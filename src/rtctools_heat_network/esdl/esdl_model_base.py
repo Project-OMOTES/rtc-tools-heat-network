@@ -109,18 +109,51 @@ class _ESDLModelBase(_Model):
                 # check for expected number of ports
                 if len(asset.in_ports) == 2 and len(asset.out_ports) == 2:
                     for p in [*asset.in_ports, *asset.out_ports]:
-                        if isinstance(p, InPort):
-                            if "_ret" in p.carrier.name:
-                                port_map[p.id] = getattr(component.Secondary, in_suf)
-                            else:
-                                port_map[p.id] = getattr(component.Primary, in_suf)
-                        else:  # OutPort
-                            if "_ret" in p.carrier.name:
-                                port_map[p.id] = getattr(component.Primary, out_suf)
-                            else:
-                                port_map[p.id] = getattr(component.Secondary, out_suf)
+                        if isinstance(p.carrier, esdl.HeatCommodity):
+                            if isinstance(p, InPort):
+                                if "_ret" in p.carrier.name:
+                                    port_map[p.id] = getattr(component.Secondary, in_suf)
+                                else:
+                                    port_map[p.id] = getattr(component.Primary, in_suf)
+                            else:  # OutPort
+                                if "_ret" in p.carrier.name:
+                                    port_map[p.id] = getattr(component.Primary, out_suf)
+                                else:
+                                    port_map[p.id] = getattr(component.Secondary, out_suf)
+                        else:
+                            raise Exception(
+                                f"{asset.name} has does not have 2 Heat in_ports and 2 Heat "
+                                f"out_ports "
+                            )
+                elif len(asset.in_ports) == 3 and len(asset.out_ports) == 2:
+                    p_heat = 0
+                    p_elec = 0
+                    for p in [*asset.in_ports, *asset.out_ports]:
+                        if isinstance(p.carrier, esdl.HeatCommodity) and p_heat <= 3:
+                            if isinstance(p, InPort):
+                                if "_ret" in p.carrier.name:
+                                    port_map[p.id] = getattr(component.Secondary, in_suf)
+                                else:
+                                    port_map[p.id] = getattr(component.Primary, in_suf)
+                            else:  # OutPort
+                                if "_ret" in p.carrier.name:
+                                    port_map[p.id] = getattr(component.Primary, out_suf)
+                                else:
+                                    port_map[p.id] = getattr(component.Secondary, out_suf)
+                            p_heat += 1
+                        elif isinstance(p.carrier, esdl.ElectricityCommodity) and p_elec == 0:
+                            port_map[p.id] = getattr(component, elec_in_suf)
+                            p_elec += 1
+                        else:
+                            raise Exception(
+                                f"{asset.name} has total of 5 ports, but no proper split between "
+                                f"heat(4) and electricity (1) ports"
+                            )
+
                 else:
-                    raise Exception(f"{asset.name} has does not have 2 in_ports and 2 out_ports")
+                    raise Exception(
+                        f"{asset.name} has does not have 2 or 3 in_ports and 2 " f"out_ports "
+                    )
             elif (
                 asset.in_ports is None
                 and len(asset.out_ports) == 1

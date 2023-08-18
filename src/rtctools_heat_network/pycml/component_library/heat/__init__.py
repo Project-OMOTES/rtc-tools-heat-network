@@ -7,6 +7,7 @@ from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
+from .electricity.heat_pump_elec import HeatPumpElec
 from .geothermal_source import GeothermalSource
 from .heat_exchanger import HeatExchanger
 from .heat_four_port import HeatFourPort
@@ -33,6 +34,7 @@ __all__ = [
     "HeatFourPort",
     "HeatPort",
     "HeatPump",
+    "HeatPumpElec",
     "HeatTwoPort",
     "Node",
     "Pipe",

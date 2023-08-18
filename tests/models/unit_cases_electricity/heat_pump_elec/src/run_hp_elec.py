@@ -13,6 +13,8 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
+# TODO: check if this run script is still valid as test case for electric heatpump and update with
+# functions
 class TargetDemandGoal(Goal):
     priority = 1
 
@@ -45,10 +47,14 @@ class _GoalsAndOptions:
     def heat_network_options(self):
         options = super().heat_network_options()
         options["heat_loss_disconnected_pipe"] = False
+        options["minimum_velocity"] = 0.0
 
         return options
 
 
+# this goal will result in the sources at the primary side of the heatpump to be utilised as much
+# as possible as this requires less heat_source because it is upgraded with electricity, heat_source
+# is a variable that heatpumps don't have
 class MinimizeSourcesHeatGoal(Goal):
     priority = 2
 
@@ -67,6 +73,9 @@ class MinimizeSourcesHeatGoal(Goal):
         return sum_heat_prod
 
 
+# this goal will minimise the electricty use and thus minimise the use of the heatpump, should use
+# the heatsource at the secondary side of the heatpump as much as possible to provide heat for
+# that heating demand.
 class MinimizeElectricityGoal(Goal):
     priority = 2
 
@@ -96,11 +105,57 @@ class HeatProblem(
         s = self.heat_network_components["source"]
         goals.append(MinimizeSourcesHeatGoal(s))
 
-        # for s in self.heat_network_components["heat_pump"]:
-        #     goals.append(MinimizeElectricityGoal(s))
+        return goals
+
+
+class HeatProblem2(
+    _GoalsAndOptions,
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def read(self):
+        super().read()
+
+        for d in self.heat_network_components["demand"]:
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
+            self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
+
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        s = self.heat_network_components["source"]
+        goals.append(MinimizeSourcesHeatGoal(s))
+
+        return goals
+
+
+class ElectricityProblem(
+    _GoalsAndOptions,
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def read(self):
+        super().read()
+
+        # for d in self.heat_network_components["demand"]:
+        #     new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values*.01
+        #     self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
+
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        for s in self.heat_network_components["heat_pump_elec"]:
+            goals.append(MinimizeElectricityGoal(s))
 
         return goals
 
 
 if __name__ == "__main__":
     run_optimization_problem(HeatProblem)
+    run_optimization_problem(ElectricityProblem)

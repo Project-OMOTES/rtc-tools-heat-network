@@ -63,6 +63,9 @@ class TestHP(TestCase):
         prim_q = results["GenericConversion_3d3f.Primary.HeatIn.Q"]
         sec_q = results["GenericConversion_3d3f.Secondary.HeatOut.Q"]
 
+        # TODO: we should also check if heatdemand target is matched
+        # TODO: check if the primary source utilisisation is maximised and secondary minimised
+
         # Values used in non_storage_component.py
         cp = 4200.0
         rho = 988.0

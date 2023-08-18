@@ -14,5 +14,6 @@ class ElectricityDemand(ElectricityComponent, BaseAsset):
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Electricity_demand", min=0.0)
+        self.elec_power_nominal = self.Electricity_demand.nominal
 
         self.add_equation((self.ElectricityIn.Power - self.Electricity_demand))
