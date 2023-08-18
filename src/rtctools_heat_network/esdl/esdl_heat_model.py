@@ -169,9 +169,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                         f"Only one carrier (carrier couple) allowed in hydraulicly "
                         f"coupled system"
                     )
-            if type(x) == esdl.esdl.InPort:
+            if isinstance(x, esdl.esdl.InPort):
                 sum_in += len(x.connectedTo)
-            if type(x) == esdl.esdl.OutPort:
+            if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
         modifiers = dict(
@@ -536,9 +536,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                     raise _ESDLInputException(
                         f"{asset.name} has multiple carriers mixing which is not allowed. "
                     )
-            if type(x) == esdl.esdl.InPort:
+            if isinstance(x, esdl.esdl.InPort):
                 sum_in += len(x.connectedTo)
-            if type(x) == esdl.esdl.OutPort:
+            if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
         modifiers = dict(n=sum_in + sum_out)

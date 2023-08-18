@@ -172,9 +172,9 @@ class AssetToQTHComponent(_AssetToComponentBase):
         sum_out = 0
 
         for x in asset.attributes["port"].items:
-            if type(x) == esdl.esdl.InPort:
+            if isinstance(x, esdl.esdl.InPort):
                 sum_in += len(x.connectedTo)
-            if type(x) == esdl.esdl.OutPort:
+            if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
         # TODO: what do we want if no carrier is specified.

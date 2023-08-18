@@ -43,7 +43,7 @@ def heat_loss_u_values_pipe(
     if insulation_thicknesses is None:
         insulation_thicknesses = 0.5 * inner_diameter
 
-    if not type(insulation_thicknesses) == type(conductivities_insulation):
+    if not isinstance(insulation_thicknesses, type(conductivities_insulation)):
         raise Exception("Insulation thicknesses and conductivities should have the same type.")
 
     if hasattr(insulation_thicknesses, "__iter__"):
