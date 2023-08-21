@@ -94,6 +94,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         assert capacity > 0.0
         min_fraction_tank_volume = self.min_fraction_tank_volume
+        if self.get_state(asset) == 0 or self.get_state(asset) == 2:
+            min_fraction_tank_volume = 0.0
         # We assume that the height equals the radius of the buffer.
         r = (
             capacity

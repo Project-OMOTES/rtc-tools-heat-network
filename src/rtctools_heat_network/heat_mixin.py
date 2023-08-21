@@ -3928,16 +3928,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             for asset_name in asset_name_list
         ]:
             if parameters[f"{asset_name}.state"] == 0 or parameters[f"{asset_name}.state"] == 2:
-                if asset_name in [*self.heat_network_components.get("ates", [])]:
-                    state_var = self.state(f"{asset_name}.Heat_ates")
+                if asset_name in [
+                    *self.heat_network_components.get("geothermal", []),
+                    *self.heat_network_components.get("ates", []),
+                ]:
+                    state_var = self.state(f"{asset_name}.Heat_flow")
                     single_power = parameters[f"{asset_name}.single_doublet_power"]
-                    nominal_value = 2.0 * bounds[f"{asset_name}.Heat_ates"][1]
-                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_ates")
-                elif asset_name in [*self.heat_network_components.get("geothermal", [])]:
-                    state_var = self.state(f"{asset_name}.Heat_source")
-                    single_power = parameters[f"{asset_name}.single_doublet_power"]
-                    nominal_value = 2.0 * bounds[f"{asset_name}.Heat_source"][1]
-                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_source")
+                    nominal_value = 2.0 * bounds[f"{asset_name}.Heat_flow"][1]
+                    nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
                 elif asset_name in [*self.heat_network_components.get("buffer", [])]:
                     state_var = self.state(f"{asset_name}.HeatIn.Q")
                     single_power = parameters[f"{asset_name}.volume"]
@@ -4258,17 +4256,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if options["heat_loss_disconnected_pipe"]:
                 np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
             else:
-                try:
-                    is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
-                except KeyError:
-                    is_disconnected = np.zeros_like(heat_in)
+                if not options["neglect_pipe_heat_losses"]:
+                    try:
+                        is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
+                    except KeyError:
+                        is_disconnected = np.zeros_like(heat_in)
 
-                inds_disconnected = is_disconnected == 1
+                    inds_disconnected = is_disconnected == 1
 
-                np.testing.assert_allclose(
-                    heat[inds_disconnected] / nominal, 0.0, atol=1e-5, rtol=0
-                )
+                    np.testing.assert_allclose(
+                        heat[inds_disconnected] / nominal, 0.0, atol=1e-5, rtol=0
+                    )
 
-                np.testing.assert_array_equal(
-                    np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1
-                )
+                    np.testing.assert_array_equal(
+                        np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1
+                    )
