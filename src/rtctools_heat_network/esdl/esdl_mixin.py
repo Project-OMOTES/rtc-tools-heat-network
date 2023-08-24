@@ -25,7 +25,9 @@ from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponent
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.modelica_component_type_mixin import (
+    ModelicaComponentTypeMixin,
+)
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
@@ -38,6 +40,8 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
+DEFAULT_START_TIMESTAMP = "2017-01-01T00:00:00+00:00"
+DEFAULT_END_TIMESTAMP = "2018-01-01T00:00:00+00:00"
 
 
 class _ESDLInputException(Exception):
@@ -45,7 +49,10 @@ class _ESDLInputException(Exception):
 
 
 class ESDLMixin(
-    ModelicaComponentTypeMixin, IOMixin, PyCMLMixin, CollocatedIntegratedOptimizationProblem
+    ModelicaComponentTypeMixin,
+    IOMixin,
+    PyCMLMixin,
+    CollocatedIntegratedOptimizationProblem,
 ):
     esdl_run_info_path: Path = None
 
@@ -140,7 +147,7 @@ class ESDLMixin(
                 root_logger.addHandler(handler)
 
         if self.__run_info is not None:
-            self.__input_timeseries_file = self.__run_info.input_timeseries_file
+            self._input_timeseries_file = self.__run_info.input_timeseries_file
             self.__output_timeseries_file = self.__run_info.output_timeseries_file
 
         self._override_pipe_classes = dict()
@@ -265,45 +272,79 @@ class ESDLMixin(
         super().read()
 
         if self._profiles:
-            for ensemble_member in range(self.ensemble_size):
-                timesteps = None
-                for id, profile in self._profiles.items():
-                    variable = f"{self.esdl_asset_id_to_name_map[id]}.target_heat_demand"
-                    values = profile.values
-                    flat_list = []
-                    for sublist in values:
-                        for item in sublist:
-                            if not np.isnan(item):
-                                flat_list.append(item)
+            datetimes = None
+            for id, profile in self._profiles.items():
+                variable = f"{self.esdl_asset_id_to_name_map[id]}.target_heat_demand"
+                values = profile.values
+                flat_list = []
+                for sublist in values:
+                    for item in sublist:
+                        if not np.isnan(item):
+                            flat_list.append(item)
+                        else:
+                            if len(flat_list) > 0:
+                                logger.warning(
+                                    f"Found NaN value in profile for {variable},  "
+                                    f"using value of previous timestep"
+                                )
+                                flat_list.append(flat_list[-1])
                             else:
-                                if len(flat_list) > 0:
-                                    logger.warning(
-                                        f"Found NaN value in profile for {variable},  "
-                                        f"using value of previous timestep"
-                                    )
-                                    flat_list.append(flat_list[-1])
-                                else:
-                                    logger.error(
-                                        f"Found NaN value as first value in profile for "
-                                        f"{variable}, using 0 instead"
-                                    )
-                                    flat_list.append(0.0)
-                    if timesteps is None:
-                        timesteps = profile.index.tz_convert(None).to_pydatetime()
-                    elif len(profile.index.tz_convert(None).to_pydatetime()) != len(timesteps):
-                        logger.error(f"Unequal profile lengths for {variable}")
+                                logger.error(
+                                    f"Found NaN value as first value in profile for "
+                                    f"{variable}, using 0 instead"
+                                )
+                                flat_list.append(0.0)
+                if datetimes is None:
+                    datetimes = profile.index.tz_convert(None).to_pydatetime()
+                elif len(profile.index.tz_convert(None).to_pydatetime()) != len(datetimes):
+                    logger.error(f"Unequal profile lengths for {variable}")
+                for ensemble_member in range(self.ensemble_size):
                     self.io.set_timeseries(
-                        variable, timesteps, flat_list, ensemble_member=ensemble_member
+                        variable, datetimes, flat_list, ensemble_member=ensemble_member
                     )
-                    if self.io.reference_datetime is None:
-                        self.io.reference_datetime = (
-                            profile.index.tz_convert(None).to_pydatetime()
-                        )[0]
+                if self.io.reference_datetime is None:
+                    self.io.reference_datetime = (profile.index.tz_convert(None).to_pydatetime())[0]
+        if not hasattr(self, "_input_timeseries_file"):
+            demand_assets = [
+                asset for asset in self.esdl_assets.values() if asset.asset_type == "HeatingDemand"
+            ]
+            try:
+                datetimes = self.io.datetimes
+            except AttributeError:
+                logger.warning(
+                    f"No profiles provided for demands, could not infer the period over "
+                    f"which to optimize, using the period between "
+                    f"{DEFAULT_START_TIMESTAMP} and {DEFAULT_END_TIMESTAMP}."
+                )
+                start_time = datetime.datetime.fromisoformat(DEFAULT_START_TIMESTAMP)
+                end_time = datetime.datetime.fromisoformat(DEFAULT_END_TIMESTAMP)
+                datetimes = pd.date_range(start=start_time, end=end_time, freq="H").to_pydatetime()
+                if self.io.reference_datetime is None:
+                    self.io.reference_datetime = start_time
+            for demand in demand_assets:
+                if self._profiles and demand.name in self._profiles:
+                    continue
+                logger.warning(
+                    f"No demand profile specified for {demand} in an influxdb "
+                    f"profile and no file provided with profiles. Using the asset "
+                    f"power instead to generate a constant profile, with default "
+                    f"asset power of 0.0"
+                )
+                demand_power = demand.attributes["power"]
+                profile = [demand_power] * len(datetimes)
+                for ensemble_member in range(self.ensemble_size):
+                    self.io.set_timeseries(
+                        variable=f"{demand.name}.target_heat_demand",
+                        datetimes=datetimes,
+                        values=profile,
+                        ensemble_member=ensemble_member,
+                        check_duplicates=True,
+                    )
         else:
-            if self.__input_timeseries_file is None:
+            if self._input_timeseries_file is None:
                 return
 
-            input_timeseries_file = Path(self.__input_timeseries_file)
+            input_timeseries_file = Path(self._input_timeseries_file)
             assert input_timeseries_file.is_absolute()
             assert input_timeseries_file.suffix == ".xml" or input_timeseries_file.suffix == ".csv"
 
@@ -483,7 +524,10 @@ class ESDLMixin(
                     values = results[variable]
                     if len(values) != len(times):
                         values = self.interpolate(
-                            times, self.times(variable), values, self.interpolation_method(variable)
+                            times,
+                            self.times(variable),
+                            values,
+                            self.interpolation_method(variable),
                         )
                 except KeyError:
                     try:
@@ -759,7 +803,13 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
             # We therefore built this dict ourselves using 'dir' and 'getattr'
             attributes = {k: getattr(el, k) for k in dir(el)}
             assets[el.id] = Asset(
-                asset_type, el.id, el_name, in_ports, out_ports, attributes, global_properties
+                asset_type,
+                el.id,
+                el_name,
+                in_ports,
+                out_ports,
+                attributes,
+                global_properties,
             )
     profiles = parse_esdl_profiles(esdl_model)
 
