@@ -71,8 +71,6 @@ class Buffer(HeatTwoPort, BaseAsset):
             self._nominal_stored_heat * self.heat_loss_coeff * self._heat_loss_error_to_state_factor
         )
         self.add_variable(Variable, "Heat_loss", min=0.0, nominal=self._nominal_heat_loss)
-        self.add_variable(Variable, "HeatHot", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "HeatCold", min=0.0, max=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
         self._heat_loss_eq_nominal_buf = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
@@ -87,12 +85,7 @@ class Buffer(HeatTwoPort, BaseAsset):
         self.add_equation(
             (self.Heat_loss - self.Stored_heat * self.heat_loss_coeff) / self._nominal_heat_loss
         )
-        self.add_equation((self.Heat_buffer - (self.HeatHot - self.HeatCold)) / self.Heat_nominal)
-
-        # Set in Mixin. We want HeatHot to be positive when the buffer is
-        # charging, which means we need to know the orientation of the connected
-        # pipe.
-        # (HeatCold + cold_pipe_orientation * HeatOut.Heat) / Heat_nominal = 0.0;
-        # (HeatHot - hot_pipe_orientation * HeatIn.Heat) / Heat_nominal = 0.0;
-
+        self.add_equation(
+            (self.Heat_buffer - (self.HeatIn.Heat - self.HeatOut.Heat)) / self.Heat_nominal
+        )
         self.add_equation((self.Heat_flow - self.Heat_buffer) / self.Heat_nominal)

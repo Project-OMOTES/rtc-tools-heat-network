@@ -390,7 +390,7 @@ class ESDLMixin(
                     pass
             for source in self.heat_network_components.get("source", []):
                 try:
-                    values = csv_data[f"{source.replace(' ', '')}.target_heat_source"].to_numpy()
+                    values = csv_data[f"{source.replace(' ', '')}"].to_numpy()
                     self.io.set_timeseries(
                         source + ".target_heat_source",
                         timeseries_import_times,

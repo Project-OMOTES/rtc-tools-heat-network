@@ -361,16 +361,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)] = heat_loss_var_name
 
             heat_losses = [
-                self.__pipe_heat_loss(options, parameters, pipe, c.u_values) for c in pipe_classes
+                self._pipe_heat_loss(options, parameters, pipe, c.u_values) for c in pipe_classes
             ]
 
             for heat_loss_var_name in [
                 f"{pipe}__hn_heat_loss",
-                f"{self.hot_to_cold_pipe(pipe)}__hn_heat_loss",
+                f"{cold_pipe}__hn_heat_loss",
             ]:
+                pipe_name = pipe
+                if cold_pipe in heat_loss_var_name:
+                    pipe_name = cold_pipe
                 if not pipe_classes or options["neglect_pipe_heat_losses"]:
                     # No pipe class decision to make for this pipe w.r.t. heat loss
-                    heat_loss = self.__pipe_heat_loss(options, parameters, pipe)
+                    heat_loss = self._pipe_heat_loss(options, parameters, pipe_name)
                     self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
                         heat_loss,
                         heat_loss,
@@ -380,12 +383,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                     for ensemble_member in range(self.ensemble_size):
                         h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                        for p in [pipe, cold_pipe]:
-                            h[f"{p}.Heat_loss"] = self.__pipe_heat_loss(options, parameters, p)
+                        h[f"{pipe_name}.Heat_loss"] = self._pipe_heat_loss(
+                            options, parameters, pipe_name
+                        )
+
                 elif len(pipe_classes) == 1:
                     # No pipe class decision to make for this pipe w.r.t. heat loss
                     u_values = pipe_classes[0].u_values
-                    heat_loss = self.__pipe_heat_loss(options, parameters, pipe, u_values)
+                    heat_loss = self._pipe_heat_loss(options, parameters, pipe_name, u_values)
 
                     self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
                         heat_loss,
@@ -396,12 +401,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                     for ensemble_member in range(self.ensemble_size):
                         h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                        h[f"{pipe}.Heat_loss"] = heat_loss
-                        h[f"{cold_pipe}.Heat_loss"] = self.__pipe_heat_loss(
-                            options, parameters, cold_pipe, u_values
-                        )
+                        h[f"{pipe_name}.Heat_loss"] = heat_loss
                 else:
-                    self.__pipe_topo_heat_losses[pipe] = heat_losses
+                    self.__pipe_topo_heat_losses[pipe_name] = heat_losses
                     self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
                         min(heat_losses),
                         max(heat_losses),
@@ -412,8 +414,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                     for ensemble_member in range(self.ensemble_size):
                         h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                        h[f"{pipe}.Heat_loss"] = np.nan
-                        h[f"{cold_pipe}.Heat_loss"] = np.nan
+                        h[f"{pipe_name}.Heat_loss"] = np.nan
 
             # Pipe class variables.
             if not pipe_classes or len(pipe_classes) == 1:
@@ -461,7 +462,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # e.g. all diameters have a heat loss of zero, we don't have any
         # decision to make w.r.t heat loss.
         for p in self.__pipe_topo_heat_losses:
-            assert p in self.__pipe_topo_pipe_class_map
+            pipe_name = p if p in self.hot_pipes else self.cold_to_hot_pipe(p)
+            assert pipe_name in self.__pipe_topo_pipe_class_map
 
         # When optimizing for pipe size, we do not yet support all options
         if self.__pipe_topo_pipe_class_map:
@@ -841,7 +843,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__asset_aggregation_count_var_bounds)
         return bounds
 
-    def __pipe_heat_loss(
+    def _pipe_heat_loss(
         self,
         options,
         parameters,
@@ -1312,7 +1314,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         (heat_loss * heat_nominal) ** 0.5 if heat_loss else heat_nominal
                     )
                     for return_temperature in return_temperatures:
-                        heat_loss_cold = self.__pipe_heat_loss(
+                        heat_loss_cold = self._pipe_heat_loss(
                             self.heat_network_options(),
                             self.parameters(ensemble_member),
                             self.hot_to_cold_pipe(p),
@@ -1403,7 +1405,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         (heat_loss_cold * heat_nominal) ** 0.5 if heat_loss_cold else heat_nominal
                     )
                     for temperature in supply_temperatures:
-                        heat_loss = self.__pipe_heat_loss(
+                        heat_loss = self._pipe_heat_loss(
                             self.heat_network_options(),
                             self.parameters(ensemble_member),
                             p,
@@ -1491,7 +1493,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             )
                 else:
                     for temperature in supply_temperatures:
-                        heat_loss = self.__pipe_heat_loss(
+                        heat_loss = self._pipe_heat_loss(
                             self.heat_network_options(),
                             self.parameters(ensemble_member),
                             p,
@@ -1501,7 +1503,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (heat_loss * heat_nominal) ** 0.5 if heat_loss else heat_nominal
                         )
                         for return_temperature in return_temperatures:
-                            heat_loss_cold = self.__pipe_heat_loss(
+                            heat_loss_cold = self._pipe_heat_loss(
                                 self.heat_network_options(),
                                 self.parameters(ensemble_member),
                                 self.hot_to_cold_pipe(p),
@@ -1784,52 +1786,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             for p in pipes[1:]:
                 flow_dir_var = self.state(self.__pipe_to_flow_direct_map[p])
                 constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
-
-        return constraints
-
-    def __buffer_path_constraints(self, ensemble_member):
-        constraints = []
-
-        for b, (
-            (hot_pipe, hot_orient),
-            (_cold_pipe, cold_orient),
-        ) in self.heat_network_topology.buffers.items():
-            heat_nominal = self.variable_nominal(f"{b}.HeatIn.Heat")
-            big_m = 2.0 * self.bounds()[f"{b}.Heat_buffer"][1]
-
-            heat_in = self.state(f"{b}.HeatIn.Heat")
-            heat_out = self.state(f"{b}.HeatOut.Heat")
-            heat_buf = self.state(f"{b}.Heat_buffer")
-
-            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
-            is_buffer_charging = hot_orient * self.state(flow_dir_var)
-
-            # Note that in the conventional scenario, where the hot pipe out-port is connected
-            # to the buffer's in-port and the buffer's out-port is connected to the cold pipe
-            # in-port, the orientation of the hot/cold pipe is 1/-1 respectively.
-
-            # Note that we allow the during charging that the heat buffer is compensating
-            # for heat losses in the return network
-            constraints.append(
-                (
-                    (
-                        heat_buf
-                        - (hot_orient * heat_in)
-                        + cold_orient * heat_out
-                        + (is_buffer_charging) * big_m
-                    )
-                    / heat_nominal,
-                    0.0,
-                    np.inf,
-                )
-            )
-            constraints.append(
-                (
-                    (heat_buf - (hot_orient * heat_in) + cold_orient * heat_out) / heat_nominal,
-                    -np.inf,
-                    0.0,
-                )
-            )
 
         return constraints
 
@@ -2359,7 +2315,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             discharge = self.state(f"{b}.HeatIn.Q") * hot_pipe_orientation
             # Note that `heat_hot` can be negative for the buffer; in that case we
             # are extracting heat from it.
-            heat_hot = self.state(f"{b}.HeatHot")
+            heat_hot = self.state(f"{b}.Heat_buffer")
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
@@ -3476,9 +3432,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
 
         for p, heat_losses in self.__pipe_topo_heat_losses.items():
-            assert self.is_hot_pipe(p)
+            # assert self.is_hot_pipe(p)
 
-            pipe_classes = self.__pipe_topo_pipe_class_map[p]
+            pipe_classes = self.__pipe_topo_pipe_class_map[
+                p if p in self.hot_pipes else self.cold_to_hot_pipe(p)
+            ]
             v = []
             for pc_var_name in pipe_classes.values():
                 v.append(self.extra_variable(pc_var_name, ensemble_member))
@@ -3488,7 +3446,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraint_nominal = self.variable_nominal(heat_loss_sym_name)
 
-            carrier = self.parameters(ensemble_member)[f"{p}.T_supply_id"]
+            carrier = self.parameters(ensemble_member)[
+                f"{p}.T_supply_id" if p in self.hot_pipes else f"{p}.T_return_id"
+            ]
             supply_temperatures = self.temperature_regimes(carrier)
 
             if len(supply_temperatures) == 0:
@@ -3499,7 +3459,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 for temperature in supply_temperatures:
                     heat_losses = [
-                        self.__pipe_heat_loss(
+                        self._pipe_heat_loss(
                             self.heat_network_options(),
                             self.parameters(ensemble_member),
                             p,
@@ -3658,7 +3618,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
-            constraints.append(((max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
+            try:
+                profile = self.get_timeseries(f"{s}.target_heat_source").values
+                profile_scaled = profile / max(profile)
+                for i in range(0, len(self.times())):
+                    constraints.append(
+                        (
+                            (profile_scaled[i] * max_heat - heat_source[i]) / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+            except KeyError:
+                constraints.append(((max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
 
         for hx in [
             *self.heat_network_components.get("heat_exchanger", []),
@@ -3986,7 +3958,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
-        constraints.extend(self.__buffer_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
@@ -4101,7 +4072,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     d[f"{p}.diameter"] = pipe_class.inner_diameter
                     d[f"{p}.area"] = pipe_class.area
 
-    def __pipe_heat_loss_to_parameters(self):
+    def _pipe_heat_loss_to_parameters(self):
         options = self.heat_network_options()
 
         for ensemble_member in range(self.ensemble_size):
@@ -4111,12 +4082,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             for pipe in self.__pipe_topo_heat_losses:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
-                cold_pipe = self.hot_to_cold_pipe(pipe)
-
-                for p in [pipe, cold_pipe]:
-                    h[f"{p}.Heat_loss"] = self.__pipe_heat_loss(
-                        options, parameters, p, pipe_class.u_values
-                    )
+                h[f"{pipe}.Heat_loss"] = self._pipe_heat_loss(
+                    options, parameters, pipe, pipe_class.u_values
+                )
 
     def priority_completed(self, priority):
         options = self.heat_network_options()
@@ -4141,7 +4109,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         self.__pipe_class_to_results()
         self.__pipe_diameter_to_parameters()
-        self.__pipe_heat_loss_to_parameters()
+        self._pipe_heat_loss_to_parameters()
 
         results = self.extract_results()
         parameters = self.parameters(0)

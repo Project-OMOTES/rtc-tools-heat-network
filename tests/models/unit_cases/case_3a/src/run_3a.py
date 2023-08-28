@@ -12,7 +12,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
-from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TargetDemandGoal(Goal):
@@ -51,7 +50,7 @@ class ConstantGeothermalSource(Goal):
 class MinimizeSourcesHeatGoal(Goal):
     priority = 3
 
-    order = 2
+    order = 1
 
     def __init__(self, source):
         self.target_max = 0.0
@@ -68,14 +67,14 @@ class MinimizeSourcesFlowGoal(Goal):
 
     order = 2
 
-    def __init__(self, source):
+    def __init__(self, source, nominal=1.0):
         self.target_max = 0.0
         self.function_range = (0.0, 1.0e3)
         self.source = source
-        self.function_nominal = 1.0
+        self.function_nominal = nominal
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Q")
+        return optimization_problem.state(f"{self.source}.Q") * 1.0e3
 
 
 class MinimizeSourcesQTHGoal(Goal):
@@ -274,6 +273,38 @@ class HeatProblemTvarret(
         return constraints
 
 
+class HeatProblemProdProfile(
+    HeatMixin,
+    LinearizedOrderGoalProgrammingMixin,
+    GoalProgrammingMixin,
+    ESDLMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
+    def read(self):
+        super().read()
+
+        for s in self.heat_network_components["source"]:
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
+            ind_hlf = int(len(demand_timeseries.values) / 2)
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.05
+            self.set_timeseries(f"{s}.target_heat_source", new_timeseries)
+
+    def path_goals(self):
+        goals = super().path_goals().copy()
+
+        for demand in self.heat_network_components["demand"]:
+            target = self.get_timeseries(f"{demand}.target_heat_demand")
+            state = f"{demand}.Heat_demand"
+
+            goals.append(TargetDemandGoal(state, target))
+
+        for s in self.heat_network_components["source"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
+
+        return goals
+
+
 class QTHProblem(
     _GoalsAndOptions,
     QTHMixin,
@@ -290,6 +321,18 @@ class QTHProblem(
 
         return goals
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        from rtctools_heat_network.head_loss_mixin import HeadLossOption
+
+        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return options
+
 
 if __name__ == "__main__":
-    run_heat_network_optimization(HeatProblem, QTHProblem)
+    from rtctools.util import run_optimization_problem
+
+    sol = run_optimization_problem(HeatProblemTvarsup)
+    results = sol.extract_results()
+    a = 1
+    # run_heat_network_optimization(HeatProblem, QTHProblem)

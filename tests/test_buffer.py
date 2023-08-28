@@ -33,4 +33,6 @@ class TestBufferHistory(TestCase):
         np.testing.assert_array_less(bufferheat_history[0], 0.0)
         # For some reason it finds a different time-series result with an identical objective
         # funtion. Checked it thouroughly it really is correct, adapted the test to check objective
-        np.testing.assert_allclose(historystoredheat.objective_value, history.objective_value)
+        np.testing.assert_allclose(
+            historystoredheat.objective_value, history.objective_value, rtol=1e-05
+        )

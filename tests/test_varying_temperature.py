@@ -39,6 +39,13 @@ class TestVaryingTemperature(TestCase):
         # heat production minimization goal
         results = heat_problem.extract_results()
 
+        # Check whehter the heat demand is matched
+        for d in heat_problem.heat_network_components.get("demand", []):
+            target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
+                : len(heat_problem.times())
+            ]
+            np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
+
         # Check that the lowest temperature (80.0) is the outputted temperature
         np.testing.assert_allclose(results[f"{4195016129475469474608}__supply_temperature"], 80.0)
         # Verify that also the integer is correctly set
@@ -51,6 +58,13 @@ class TestVaryingTemperature(TestCase):
         # lowest temperature should be selected because of larger dT causing lowest flow rates
         # and we apply source Q minimization goal
         results = heat_problem.extract_results()
+
+        # Check whehter the heat demand is matched
+        for d in heat_problem.heat_network_components.get("demand", []):
+            target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
+                : len(heat_problem.times())
+            ]
+            np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check that the lowest temperature (30.0) is the outputted temperature
         np.testing.assert_allclose(

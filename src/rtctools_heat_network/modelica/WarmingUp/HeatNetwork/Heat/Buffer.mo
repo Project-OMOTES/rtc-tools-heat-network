@@ -42,10 +42,10 @@ block Buffer
   // Stored_heat is the heat that is contained in the buffer.
   // Heat_buffer is the amount of heat added to or extracted from the buffer
   // per timestep.
-  // HeatHot (resp. HeatCold) is the amount of heat added or extracted from
-  // the hot (resp. cold) line. 
+  // HeatIn.Heat (resp. HeatOut.Heat) is the amount of heat added or extracted from
+  // the supply (resp. return) line.
   // As by construction the cold line should have zero heat, we fix HeatCold to zero.
-  // Thus Heat_buffer = HeatHot = der(Stored_heat).
+  // Thus Heat_buffer = HeatIn.Heat = der(Stored_heat)-Heat_loss.
   Modelica.SIunits.Heat Heat_buffer(nominal=Heat_nominal);
   // Assume the storage fills in about an hour at typical rate
   parameter Modelica.SIUnits.Duration _typical_fill_time = 3600.0;
@@ -57,8 +57,6 @@ block Buffer
   parameter Real _heat_loss_error_to_state_factor = 10.0;
   parameter Modelica.SIunits.Heat _nominal_heat_loss = _nominal_stored_heat * heat_loss_coeff * _heat_loss_error_to_state_factor;
   Modelica.SIunits.Heat Heat_loss(min = 0.0, nominal=_nominal_heat_loss);
-  Modelica.SIunits.Heat HeatHot(nominal=Heat_nominal);
-  Modelica.SIunits.Heat HeatCold(min=0.0, max=0.0, nominal=Heat_nominal);
 
   parameter Real _heat_loss_eq_nominal_buf = sqrt(Heat_nominal * _nominal_heat_loss);
 equation
@@ -67,7 +65,7 @@ equation
   // Heat stored in the buffer
   (der(Stored_heat) - Heat_buffer + Heat_loss) / _heat_loss_eq_nominal_buf = 0.0;
   (Heat_loss - Stored_heat * heat_loss_coeff) / _nominal_heat_loss = 0.0;
-  (Heat_buffer - (HeatHot - HeatCold))/Heat_nominal = 0.0;
+  (Heat_buffer - (HeatIn.Heat - HeatOut.Heat)) / Heat_nominal = 0.0;
 
   // Set in Mixin. We want HeatHot to be positive when the buffer is
   // charging, which means we need to know the orientation of the connected
