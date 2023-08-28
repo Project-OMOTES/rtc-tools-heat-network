@@ -1,5 +1,7 @@
 import datetime
 
+import esdl
+
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -135,6 +137,50 @@ class HeatProblem(
                 )
 
             self.io = new_datastore
+
+
+class HeatProblemPlacingOverTime(HeatProblem):
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["neglect_pipe_heat_losses"] = True
+
+        return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+
+        asset = next(a for a in assets.values() if a.name == "HeatProducer_1")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "HeatProducer_2")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset.attributes["power"] = 20.0e6
+
+        return assets
+
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        # Constraints for investment speed, please note that we need to enforce index 0 to be 0.
+        for s in self.heat_network_components.get("source", []):
+            inv_made = self.state_vector(f"{s}__cumulative_investments_made_in_eur")
+            nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
+            inv_cap = 2.5e5
+            constraints.append((inv_made[0], 0.0, 0.0))
+            for i in range(1, len(self.times())):
+                constraints.append(
+                    (((inv_made[i] - inv_made[i - 1]) * nominal - inv_cap) / nominal, -np.inf, 0.0)
+                )
+
+        # to avoid ates in short problem
+        for a in self.heat_network_components.get("ates", []):
+            heat_ated = self.state_vector(f"{a}.Heat_ates")
+            constraints.append((heat_ated, 0.0, 0.0))
+
+        return constraints
+
+    def times(self, variable=None):
+        return super().times(variable)[:25]
 
 
 class HeatProblemSetPoints(

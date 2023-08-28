@@ -17,4 +17,5 @@ block Source
 equation
   dH = HeatOut.H - HeatIn.H;
   (HeatOut.Heat - (HeatIn.Heat + Heat_source))/Heat_nominal = 0.0;
+  (Heat_flow - Heat_source)/Heat_nominal = 0.0;
 end Source;

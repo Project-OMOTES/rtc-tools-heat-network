@@ -276,9 +276,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         if params_t["Primary"]["T_supply"] < params_t["Secondary"]["T_supply"]:
             logger.error(
-                f"{asset.name} has a primary side supply temperature that is higher than the "
-                f"secondary supply temperature. This is not possible as the HEX can only transfer "
-                f"heat from primary to secondary."
+                f"{asset.name} has a primary side supply temperature, "
+                f"{params_t['Primary']['T_supply']}, that is higher than the secondary supply , "
+                f"{params_t['Secondary']['T_supply']}. This is not possible as the HEX can only "
+                "transfer heat from primary to secondary."
             )
             assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
         if params_t["Primary"]["T_return"] < params_t["Secondary"]["T_return"]:

@@ -17,6 +17,7 @@ from rtctools_heat_network.control_variables import map_comp_type_to_control_var
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
+from .demand_insulation_class import DemandInsulationClass
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
 from .pipe_class import PipeClass
 
@@ -79,6 +80,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_pipe_class_map = {}
         self.__pipe_topo_pipe_class_result = {}
 
+        # Insulation options per demand
+        self.__demand_insulation_class_var = {}  # value 0/1: demand insulation - not active/active
+        self.__demand_insulation_class_var_bounds = {}
+        self.__demand_insulation_class_map = {}
+        self.__demand_insulation_class_result = {}
+
         self.__pipe_topo_heat_discharge_bounds = {}
 
         self.__pipe_topo_diameter_area_parameters = []
@@ -109,6 +116,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__asset_installation_cost_var = {}
         self.__asset_installation_cost_bounds = {}
         self.__asset_installation_cost_nominals = {}
+
+        self.__cumulative_investments_made_in_eur_map = {}
+        self.__cumulative_investments_made_in_eur_var = {}
+        self.__cumulative_investments_made_in_eur_nominals = {}
+        self.__cumulative_investments_made_in_eur_bounds = {}
+
+        self.__asset_is_realized_map = {}
+        self.__asset_is_realized_var = {}
+        self.__asset_is_realized_bounds = {}
 
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
@@ -481,6 +497,34 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     "the `maximum_temperature_der` or `maximum_flow_der` should be infinite."
                 )
 
+        # Demand insulation link
+        for dmnd in self.heat_network_components.get("demand", []):
+            demand_insulation_classes = self.demand_insulation_classes(dmnd)
+            if not demand_insulation_classes or len(demand_insulation_classes) == 1:
+                # No insulation options availabe for the demands
+                pass
+            else:
+                self.__demand_insulation_class_map[dmnd] = {}
+
+                for insl in demand_insulation_classes:
+                    if dmnd == insl.name_demand:
+                        demand_insulation_class_var_name = (
+                            f"{dmnd}__demand_insulation_class_{insl.name_insulation_level}"
+                        )
+                        if demand_insulation_class_var_name in (
+                            self.__demand_insulation_class_map[dmnd].values()
+                        ):
+                            raise Exception(f"Resolve duplicate insulation: {insl}.")
+                        self.__demand_insulation_class_map[dmnd][
+                            insl
+                        ] = demand_insulation_class_var_name
+                        self.__demand_insulation_class_var[
+                            demand_insulation_class_var_name
+                        ] = ca.MX.sym(demand_insulation_class_var_name)
+                        self.__demand_insulation_class_var_bounds[
+                            demand_insulation_class_var_name
+                        ] = (0.0, 1.0)
+
         # Check that buffer information is logical and
         # set the stored heat at t0 in the buffer(s) via bounds
         if len(self.times()) > 2:
@@ -550,7 +594,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             for asset_name_list in self.heat_network_components.values()
             for asset_name in asset_name_list
         ]:
-            if asset_name in [*self.heat_network_components.get("node", [])]:
+            if asset_name in [
+                *self.heat_network_components.get("node", []),
+                *self.heat_network_components.get("pump", []),
+                *self.heat_network_components.get("check_valve", []),
+                *self.heat_network_components.get("control_valve", []),
+                *self.heat_network_components.get("electricity_cable", []),
+                *self.heat_network_components.get("electricity_source", []),
+                *self.heat_network_components.get("electricity_demand", []),
+                *self.heat_network_components.get("electricity_node", []),
+            ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
@@ -639,7 +692,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__asset_installation_cost_var[asset_installation_cost_var] = ca.MX.sym(
                 asset_installation_cost_var
             )
-            self.__asset_installation_cost_bounds[asset_installation_cost_var] = (0.0, np.inf)
+            try:
+                aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
+            except KeyError:
+                aggr_count_max = 1.0
+            if parameters[f"{asset}.state"] == 0:
+                aggr_count_max = 0.0
+            self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
+                0.0,
+                parameters[f"{asset_name}.installation_cost"] * aggr_count_max,
+            )
             self.__asset_installation_cost_nominals[asset_installation_cost_var] = max(
                 parameters[f"{asset_name}.installation_cost"], 1.0e2
             )
@@ -650,7 +712,27 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__asset_investment_cost_var[asset_investment_cost_var] = ca.MX.sym(
                 asset_investment_cost_var
             )
-            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, np.inf)
+
+            if asset_name in self.heat_network_components.get("pipe", []):
+                if asset_name in self.__pipe_topo_pipe_class_map:
+                    pipe_classes = self.__pipe_topo_pipe_class_map[asset_name]
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * max([c.investment_costs for c in pipe_classes.keys()])
+                    )
+                else:
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * parameters[f"{asset_name}.investment_cost_coefficient"]
+                    )
+            else:
+                max_cost = (
+                    self.__asset_max_size_bounds[f"{asset_name}__max_size"][1]
+                    * parameters[f"{asset_name}.investment_cost_coefficient"]
+                )
+            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
             self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
                 max(
                     parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
@@ -659,6 +741,37 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 if nominal_investment is not None
                 else 1.0e2
             )
+
+        for asset in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            var_name = f"{asset}__cumulative_investments_made_in_eur"
+            self.__cumulative_investments_made_in_eur_map[asset] = var_name
+            self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
+            self.__cumulative_investments_made_in_eur_nominals[var_name] = self.variable_nominal(
+                f"{asset}__investment_cost"
+            ) + self.variable_nominal(f"{asset}__installation_cost")
+            self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
+
+            # This is an integer variable between [0, max_aggregation_count] that allows the
+            # increments of the asset to become used by the optimizer. Meaning that when this
+            # variable is zero not heat can be consumed or produced by this asset. When the integer
+            # is >=1 the asset can consume and/or produce according to it's increments.
+            var_name = f"{asset}__asset_is_realized"
+            self.__asset_is_realized_map[asset] = var_name
+            self.__asset_is_realized_var[var_name] = ca.MX.sym(var_name)
+            try:
+                aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
+            except KeyError:
+                aggr_count_max = 1.0
+            if parameters[f"{asset}.state"] == 0:
+                aggr_count_max = 0.0
+            self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
     def heat_network_options(self):
         r"""
@@ -682,6 +795,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
         +--------------------------------------+-----------+-----------------------------+
         | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
+        | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
@@ -713,6 +828,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         Note that the inherited options ``head_loss_option`` and
         ``minimize_head_losses`` are changed from their default values to
         ``HeadLossOption.LINEAR`` and ``False`` respectively.
+
+        The ``include_demand_insulation_options`` options is used, when insulations options per
+        demand is specificied, to include heat demand and supply matching via constraints for all
+        possible insulation options.
         """
 
         options = super().heat_network_options()
@@ -725,6 +844,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
+        options["include_demand_insulation_options"] = False
 
         return options
 
@@ -742,12 +862,29 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         return []
 
+    def demand_insulation_classes(self, demand_insulation: str) -> List[DemandInsulationClass]:
+        """
+        If the returned List is:
+        - empty: use the demand insualtion properties from the model
+        - len() == 1: use these demand insualtion properties to overrule that of the model
+        - len() > 1: decide between the demand insualtion class options.
+
+        """
+        return []
+
     def get_optimized_pipe_class(self, pipe: str) -> PipeClass:
         """
         Return the optimized pipe class for a specific pipe. If no
         optimized pipe class is available (yet), a `KeyError` is returned.
         """
         return self.__pipe_topo_pipe_class_result[pipe]
+
+    def get_optimized_deman_insulation_class(self, demand_insulation: str) -> DemandInsulationClass:
+        """
+        Return the optimized demand_insulation class for a specific pipe. If no
+        optimized demand insulation class is available (yet), a `KeyError` is returned.
+        """
+        return self.__demand_insulation_class_result[demand_insulation]
 
     def pipe_diameter_symbol_name(self, pipe: str) -> str:
         return self.__pipe_topo_diameter_map[pipe]
@@ -777,10 +914,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__pipe_disconnect_var.values())
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
+        variables.extend(self.__demand_insulation_class_var.values())
         variables.extend(self._change_setpoint_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
         variables.extend(self.__disabled_hex_var.values())
+        variables.extend(self.__cumulative_investments_made_in_eur_var.values())
+        variables.extend(self.__asset_is_realized_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -790,10 +930,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__pipe_topo_pipe_class_var
+            or variable in self.__demand_insulation_class_var
             or variable in self._change_setpoint_var
             or variable in self.__carrier_selected_var
             or variable in self.__disabled_hex_var
             or variable in self.__asset_aggregation_count_var
+            or variable in self.__asset_is_realized_var
         ):
             return True
         else:
@@ -816,6 +958,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return self.__asset_max_size_nominals[variable]
         elif variable in self.__asset_installation_cost_nominals:
             return self.__asset_installation_cost_nominals[variable]
+        elif variable in self.__cumulative_investments_made_in_eur_nominals:
+            return self.__cumulative_investments_made_in_eur_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -827,6 +971,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__pipe_topo_pipe_class_var_bounds)
+        bounds.update(self.__demand_insulation_class_var_bounds)
         bounds.update(self.__pipe_topo_diameter_var_bounds)
         bounds.update(self.__pipe_topo_cost_var_bounds)
         bounds.update(self.__pipe_topo_heat_loss_var_bounds)
@@ -841,6 +986,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__asset_variable_operational_cost_bounds)
         bounds.update(self.__asset_max_size_bounds)
         bounds.update(self.__asset_aggregation_count_var_bounds)
+        bounds.update(self.__asset_is_realized_bounds)
+        bounds.update(self.__cumulative_investments_made_in_eur_bounds)
         return bounds
 
     def _pipe_heat_loss(
@@ -1038,6 +1185,97 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             ub[0] = heat_t0
             b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
             self.__buffer_t0_bounds[stored_heat] = self.merge_bounds(bounds[stored_heat], b_t0)
+
+    def __heat_matching_demand_insulation_constraints(self, ensemble_member):
+        """
+        Consider all possible heat demand insulation options (each options has an assosiated unique
+        demand profile for the specific demand) and add constraints such that only one insulation
+        options is activated per demand. The constraints will then ensure aim to match the supply
+        and demand.
+
+        Note:
+        - This function is only active when the "include_demand_insulation_options" (False by
+        default) has been set to True in the heat network options.
+        - Currently this functional requires that all demands have at least one insualtion option is
+        specified for every demand in the heat network.
+        """
+
+        constraints = []
+        for dmnd in self.heat_network_components["demand"]:
+            heat_demand = self.__state_vector_scaled(f"{dmnd}.Heat_demand", ensemble_member)
+            target_demand = self.get_timeseries(f"{dmnd}.target_heat_demand")
+
+            try:
+                demand_insulation_classes = self.__demand_insulation_class_map[dmnd]
+                is_insulation_active = []
+                demand_profile_for_this_class = []
+                big_m = []  # big_m for every insulation class
+                nominal = []
+                for pc, pc_var_name in demand_insulation_classes.items():
+                    # Create a demand profile for every insulation level option for this demand
+                    demand_profile_for_this_class.append(
+                        pc.demand_scaling_factor * target_demand.values[: (len(self.times()))]
+                    )
+                    # There might be a large differnece between profiles of different insulation
+                    # classes. Therefor create variables below per profile (per insulation class)
+                    big_m.append(2.0 * max(demand_profile_for_this_class[-1]))
+                    nominal.append(np.median(demand_profile_for_this_class[-1]))
+
+                    # Create integer variable to activated/deactivate (1/0) a demand insulation
+                    is_insulation_active_var = self.extra_variable(pc_var_name, ensemble_member)
+                    # Demand insulation activation variable for each time step of demand profile
+                    is_insulation_active.append(
+                        ca.repmat(
+                            is_insulation_active_var,
+                            len(target_demand.values[: (len(self.times()))]),
+                        )
+                    )
+                # Add constraint to enforce that only 1 demand insulation can be active
+                # per time step for a specific demand
+                for itstep in range(len(target_demand.values[: (len(self.times()))])):
+                    is_insulation_active_sum_per_timestep = 0
+                    for iclasses in range(len(demand_profile_for_this_class)):
+                        is_insulation_active_sum_per_timestep = (
+                            is_insulation_active_sum_per_timestep
+                            + is_insulation_active[iclasses][itstep]
+                        )
+                    constraints.append((is_insulation_active_sum_per_timestep, 1.0, 1.0))
+
+                # Adding constraints for the entire time horizon per demand insulation
+                for iclasses in range(len(demand_profile_for_this_class)):
+                    for itstep in range(len(demand_profile_for_this_class[iclasses])):
+                        constraints.append(
+                            (
+                                (
+                                    heat_demand[itstep]
+                                    - demand_profile_for_this_class[iclasses][itstep]
+                                    + big_m[iclasses]
+                                    * (1.0 - is_insulation_active[iclasses][itstep])
+                                )
+                                / nominal[iclasses],
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (
+                                    heat_demand[itstep]
+                                    - demand_profile_for_this_class[iclasses][itstep]
+                                    - big_m[iclasses]
+                                    * (1.0 - is_insulation_active[iclasses][itstep])
+                                )
+                                / nominal[iclasses],
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+            except KeyError:
+                raise Exception(
+                    "Add a DemandInsulationClass with a demand_scaling_factor value =1.0 for "
+                    "demand: {dmnd}"
+                )
+        return constraints
 
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
         # To avoid sudden change in heat from a timestep to the next,
@@ -2721,7 +2959,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 cp_prim
                 * rho_prim
                 * dt_prim
-                * self.bounds()[f"{heat_exchanger}.Primary.HeatIn.Q"][1]
+                * self.variable_nominal(f"{heat_exchanger}.Primary.HeatIn.Q")
             )
 
             sup_carrier_prim = parameters[f"{heat_exchanger}.Primary.T_supply_id"]
@@ -2762,7 +3000,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m, 0.0, np.inf)
+                    (
+                        (heat_primary - (tol + (small_m - tol) * is_disabled))
+                        / (big_m * tol) ** 0.5,
+                        0.0,
+                        np.inf,
+                    )
                 )
             elif len(supply_temperatures_prim) == 0:
                 supply_temperature = parameters[f"{heat_exchanger}.Primary.T_supply"]
@@ -2773,7 +3016,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
+                    (
+                        (heat_primary - (tol + (small_m - tol) * is_disabled))
+                        / (big_m_n * tol) ** 0.5,
+                        0.0,
+                        np.inf,
+                    )
                 )
                 for return_temperature in return_temperatures_prim:
                     ret_temperature_is_selected = self.state(
@@ -2817,7 +3065,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
+                    (
+                        (heat_primary - (tol + (small_m - tol) * is_disabled))
+                        / (big_m_n * tol) ** 0.5,
+                        0.0,
+                        np.inf,
+                    )
                 )
                 for supply_temperature in supply_temperatures_prim:
                     sup_temperature_is_selected = self.state(
@@ -2865,7 +3118,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 # This constraints ensures that is_disabled is 1 when heat_primary = 0
                 constraints.append(
-                    ((heat_primary - (tol + (small_m - tol) * is_disabled)) / big_m_n, 0.0, np.inf)
+                    (
+                        (heat_primary - (tol + (small_m - tol) * is_disabled))
+                        / (big_m_n * tol) ** 0.5,
+                        0.0,
+                        np.inf,
+                    )
                 )
                 for supply_temperature in supply_temperatures_prim:
                     sup_temperature_is_selected = self.state(
@@ -3680,6 +3938,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("node", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
+                *self.heat_network_components.get("electricity_cable", []),
+                *self.heat_network_components.get("electricity_node", []),
+                *self.heat_network_components.get("electricity_source", []),
+                *self.heat_network_components.get("electricity_demand", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -3867,6 +4129,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("node", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
+                *self.heat_network_components.get("electricity_cable", []),
+                *self.heat_network_components.get("electricity_node", []),
+                *self.heat_network_components.get("electricity_source", []),
+                *self.heat_network_components.get("electricity_demand", []),
             ]:
                 # no support for joints right now
                 continue
@@ -3952,6 +4218,82 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __cumulative_investments_made_in_eur_path_constraints(self, ensemble_member):
+        r"""
+        These constraints are linking the cummulitive investments made to the possiblity of
+        utilizing an asset. The investments made are sufficient for that asset to be realized it
+        becomes available.
+
+        Meaning that an asset requires 1million euro investment to be realized
+        and the investments made at timestep i are sufficient the asset also is realized (becomes
+        available) in that same timestep.
+        """
+        constraints = []
+
+        for asset in [
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            var_name = self.__cumulative_investments_made_in_eur_map[asset]
+            cumulative_investments_made = self.state(var_name)
+            nominal = self.variable_nominal(var_name)
+            var_name = self.__asset_is_realized_map[asset]
+            asset_is_realized = self.state(var_name)
+            installation_cost_sym = self.__asset_installation_cost_var[
+                self._asset_installation_cost_map[asset]
+            ]
+            investment_cost_sym = self.__asset_investment_cost_var[
+                self._asset_investment_cost_map[asset]
+            ]
+            # TODO: add insulation class cost to the investments made.
+            # if asset in self.heat_network_components.get("demand", []):
+            #     for insulation_class in self.__get_insulation_classes(asset):
+            #         insulation_class_active
+            #         insulation_class_cost
+            #         investment_cost_sym += insulation_class_active * insulation_class_cost
+            big_m = (
+                1.5
+                * max(
+                    self.bounds()[f"{asset}__investment_cost"][1]
+                    + self.bounds()[f"{asset}__installation_cost"][1],
+                    1.0,
+                )
+                / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+            )
+
+            # Asset can be realized once the investments made equal the installation and
+            # investment cost
+            constraints.append(
+                (
+                    (
+                        cumulative_investments_made
+                        - (installation_cost_sym + investment_cost_sym)
+                        + (1.0 - asset_is_realized) * big_m
+                    )
+                    / nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+            # Once the asset is utilized the asset must be realized
+            heat_flow = self.state(f"{asset}.Heat_flow")
+            # 5.e8 To avoid errors if bound is not set
+            big_m = (
+                1.5
+                * min(self.bounds()[f"{asset}.Heat_flow"][1], 5.0e8)
+                / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+            )
+            nominal = (big_m * self.variable_nominal(f"{asset}.Heat_flow")) ** 0.5
+            constraints.append(((heat_flow + asset_is_realized * big_m) / nominal, 0.0, np.inf))
+            constraints.append(((heat_flow - asset_is_realized * big_m) / nominal, -np.inf, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
@@ -3976,6 +4318,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(
+            self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
+        )
 
         return constraints
 
@@ -3994,6 +4339,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.extend(
                 self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
             )
+
+        if self.heat_network_options()["include_demand_insulation_options"]:
+            constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         return constraints
 
@@ -4222,7 +4570,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             flow_dir_var = np.round(results[self.__pipe_to_flow_direct_map[p]])
 
             if options["heat_loss_disconnected_pipe"]:
-                np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
+                if not options["neglect_pipe_heat_losses"]:
+                    np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
             else:
                 if not options["neglect_pipe_heat_losses"]:
                     try:

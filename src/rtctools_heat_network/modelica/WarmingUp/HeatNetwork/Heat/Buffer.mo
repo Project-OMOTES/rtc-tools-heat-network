@@ -47,6 +47,7 @@ block Buffer
   // As by construction the cold line should have zero heat, we fix HeatCold to zero.
   // Thus Heat_buffer = HeatIn.Heat = der(Stored_heat)-Heat_loss.
   Modelica.SIunits.Heat Heat_buffer(nominal=Heat_nominal);
+  Modelica.SIunits.Heat Heat_flow(nominal=Heat_nominal);
   // Assume the storage fills in about an hour at typical rate
   parameter Modelica.SIUnits.Duration _typical_fill_time = 3600.0;
   parameter Modelica.SIunits.Heat _nominal_stored_heat = Heat_nominal * _typical_fill_time;
@@ -66,6 +67,7 @@ equation
   (der(Stored_heat) - Heat_buffer + Heat_loss) / _heat_loss_eq_nominal_buf = 0.0;
   (Heat_loss - Stored_heat * heat_loss_coeff) / _nominal_heat_loss = 0.0;
   (Heat_buffer - (HeatIn.Heat - HeatOut.Heat)) / Heat_nominal = 0.0;
+  (Heat_flow - Heat_buffer)/Heat_nominal = 0.0;
 
   // Set in Mixin. We want HeatHot to be positive when the buffer is
   // charging, which means we need to know the orientation of the connected

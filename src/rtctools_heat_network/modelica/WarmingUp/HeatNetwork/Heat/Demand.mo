@@ -14,4 +14,5 @@ block Demand
   Modelica.SIunits.Heat Heat_demand(min=0.0, nominal=Heat_nominal);
 equation
   (HeatOut.Heat - (HeatIn.Heat - Heat_demand))/Heat_nominal = 0.0;
+  (Heat_flow - Heat_demand)/Heat_nominal = 0.0;
 end Demand;

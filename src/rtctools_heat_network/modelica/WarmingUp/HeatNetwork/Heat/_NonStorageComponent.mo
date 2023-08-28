@@ -31,6 +31,8 @@ model _NonStorageComponent
 
   Modelica.SIunits.VolumeFlowRate Q(nominal=Q_nominal);
 
+  Modelica.SIunits.Heat Heat_flow(nominal=Heat_nominal);
+
   Modelica.SIunits.Level H_in;
   Modelica.SIunits.Level H_out;
 equation
