@@ -15,29 +15,39 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         components = self.heat_network_components
         nodes = components.get("node", [])
         busses = components.get("electricity_node", [])
+        gas_nodes = components.get("gas_node", [])
         buffers = components.get("buffer", [])
         atess = components.get("ates", [])
         try:
             pipes = components["pipe"]
             cables = components.get("electricity_cable", [])
+            gas_pipes = components.get("gas_pipe", [])
         except KeyError:
             try:
                 cables = components["electricity_cable"]
+                gas_pipes = components.get("gas_pipe", [])
                 pipes = []
             except KeyError:
-                logger.error(
-                    "A valid network should have at least one pipe/cable, "
-                    "assets cannot be connected directly"
-                )
+                try:
+                    cables = []
+                    gas_pipes = components["gas_pipe"]
+                    pipes = []
+                except KeyError:
+                    logger.error(
+                        "A valid network should have at least one pipe/cable, "
+                        "assets cannot be connected directly"
+                    )
 
         # Figure out which pipes are connected to which nodes, which pipes
         # are connected in series, and which pipes are connected to which buffers.
 
         pipes_set = set(pipes)
         cables_set = set(cables)
+        gas_pipes_set = set(gas_pipes)
         parameters = [self.parameters(e) for e in range(self.ensemble_size)]
         node_connections = {}
         bus_connections = {}
+        gas_node_connections = {}
 
         # Figure out if we are dealing with a Heat model, or a QTH model
         try:
@@ -45,12 +55,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 _ = self.variable(f"{pipes[0]}.HeatIn.Heat")
                 heat_network_model_type = "Heat"
             else:
-                _ = self.variable(f"{cables[0]}.ElectricityIn.V")
                 heat_network_model_type = "Heat"
         except KeyError:
             heat_network_model_type = "QTH"
 
-        for n in [*nodes, *busses]:
+        for n in [*nodes, *busses, *gas_nodes]:
             n_connections = [ens_params[f"{n}.n"] for ens_params in parameters]
 
             if len(set(n_connections)) > 1:
@@ -67,6 +76,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 node_connections[n] = connected_pipes = {}
             elif n in busses:
                 bus_connections[n] = connected_pipes = {}
+            elif n in gas_nodes:
+                gas_node_connections[n] = connected_pipes = {}
 
             for i in range(n_connections):
                 if n in nodes:
@@ -81,6 +92,13 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                     prop = "Power"
                     in_suffix = ".ElectricityIn.Power"
                     out_suffix = ".ElectricityOut.Power"
+                elif n in gas_nodes:
+                    # TODO: Ideally a temporary variable would be created to make the connections
+                    #  map that is not passed to the problem
+                    cur_port = f"{n}.GasConn[{i + 1}]"
+                    prop = "Q_shadow"
+                    in_suffix = ".GasIn.Q_shadow"
+                    out_suffix = ".GasOut.Q_shadow"
                 aliases = [
                     x
                     for x in self.alias_relation.aliases(f"{cur_port}.{prop}")
@@ -104,7 +122,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                         NodeConnectionDirection.OUT,
                     )
 
-                assert pipe_w_orientation[0] in pipes_set or pipe_w_orientation[0] in cables_set
+                assert (
+                    pipe_w_orientation[0] in pipes_set
+                    or pipe_w_orientation[0] in cables_set
+                    or pipe_w_orientation[0] in gas_pipes_set
+                )
 
                 connected_pipes[i] = pipe_w_orientation
 
@@ -255,7 +277,12 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
             ates_connections[a] = tuple(ates_connections[a])
 
         self.__topology = Topology(
-            node_connections, pipe_series, buffer_connections, ates_connections, bus_connections
+            node_connections,
+            gas_node_connections,
+            pipe_series,
+            buffer_connections,
+            ates_connections,
+            bus_connections,
         )
 
         super().pre()

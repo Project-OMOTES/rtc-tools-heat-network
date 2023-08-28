@@ -55,16 +55,46 @@ class _ESDLModelBase(_Model):
         elec_in_suf = "ElectricityIn"
         elec_out_suf = "ElectricityOut"
         elec_node_suf = "ElectricityConn"
+        gas_in_suf = "GasIn"
+        gas_out_suf = "GasOut"
+        gas_node_suf = "GasConn"
 
         skip_asset_ids = {a.id for a in skip_assets}
         pipe_assets = [
-            a for a in assets.values() if a.asset_type == "Pipe" and a.id not in skip_asset_ids
+            a
+            for a in assets.values()
+            if (
+                a.asset_type == "Pipe"
+                and a.id not in skip_asset_ids
+                and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
+            )
         ]
         node_assets = [
-            a for a in assets.values() if (a.asset_type == "Joint") and a.id not in skip_asset_ids
+            a
+            for a in assets.values()
+            if (
+                (a.asset_type == "Joint")
+                and a.id not in skip_asset_ids
+                and (
+                    (isinstance(a.in_ports[0].carrier, esdl.HeatCommodity))
+                    or isinstance(a.out_ports[0].carrier, esdl.HeatCommodity)
+                )
+            )
+        ]
+        gas_node_assets = [
+            a
+            for a in assets.values()
+            if (
+                (a.asset_type == "Joint")
+                and a.id not in skip_asset_ids
+                and (
+                    (isinstance(a.in_ports[0].carrier, esdl.GasCommodity))
+                    or isinstance(a.out_ports[0].carrier, esdl.GasCommodity)
+                )
+            )
         ]
         bus_assets = [
-            a for a in assets.values() if (a.asset_type == "Bus") and a.id not in skip_asset_ids
+            a for a in assets.values() if ((a.asset_type == "Bus") and a.id not in skip_asset_ids)
         ]
         non_node_assets = [
             a
@@ -156,30 +186,49 @@ class _ESDLModelBase(_Model):
                     )
             elif (
                 asset.in_ports is None
-                and len(asset.out_ports) == 1
                 and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)
+                and len(asset.out_ports) == 1
             ):
                 port_map[asset.out_ports[0].id] = getattr(component, elec_out_suf)
             elif (
+                asset.in_ports is None
+                and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
+                and len(asset.out_ports) == 1
+            ):
+                port_map[asset.out_ports[0].id] = getattr(component, gas_out_suf)
+            elif (
                 len(asset.in_ports) == 1
-                and asset.out_ports is None
                 and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+                and asset.out_ports is None
             ):
                 port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
             elif (
                 len(asset.in_ports) == 1
-                and len(asset.out_ports) == 1
+                and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
+                and asset.out_ports is None
+            ):
+                port_map[asset.in_ports[0].id] = getattr(component, gas_in_suf)
+            elif (
+                len(asset.in_ports) == 1
                 and isinstance(asset.in_ports[0].carrier, esdl.HeatCommodity)
+                and len(asset.out_ports) == 1
             ):
                 port_map[asset.in_ports[0].id] = getattr(component, in_suf)
                 port_map[asset.out_ports[0].id] = getattr(component, out_suf)
             elif (
                 len(asset.in_ports) == 1
-                and len(asset.out_ports) == 1
                 and isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity)
+                and len(asset.out_ports) == 1
             ):
                 port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
                 port_map[asset.out_ports[0].id] = getattr(component, elec_out_suf)
+            elif (
+                len(asset.in_ports) == 1
+                and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
+                and len(asset.out_ports) == 1
+            ):
+                port_map[asset.in_ports[0].id] = getattr(component, gas_in_suf)
+                port_map[asset.out_ports[0].id] = getattr(component, gas_out_suf)
             else:
                 raise Exception(f"Unsupported ports for asset type {asset.name}.")
 
@@ -189,7 +238,7 @@ class _ESDLModelBase(_Model):
         # after.
         connections = set()
 
-        for asset in [*node_assets, *bus_assets]:
+        for asset in [*node_assets, *bus_assets, *gas_node_assets]:
             component = getattr(self, asset.name)
 
             i = 1
@@ -211,6 +260,10 @@ class _ESDLModelBase(_Model):
                         self.connect(
                             getattr(component, elec_node_suf)[i], port_map[connected_to.id]
                         )
+                        connections.add(conn)
+                        i += 1
+                    elif isinstance(port.carrier, esdl.GasCommodity):
+                        self.connect(getattr(component, gas_node_suf)[i], port_map[connected_to.id])
                         connections.add(conn)
                         i += 1
                     else:

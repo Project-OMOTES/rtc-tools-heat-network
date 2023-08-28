@@ -603,6 +603,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("electricity_source", []),
                 *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("electricity_node", []),
+                *self.heat_network_components.get("gas_node", []),
+                *self.heat_network_components.get("gas_pipe", []),
+                *self.heat_network_components.get("gas_source", []),
+                *self.heat_network_components.get("gas_demand", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
@@ -1346,6 +1350,34 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             heat_nominal = np.median(heat_nominals)
             constraints.append((heat_sum / heat_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __gas_node_heat_mixing_path_constraints(self, ensemble_member):
+        constraints = []
+
+        for node, connected_pipes in self.heat_network_topology.gas_nodes.items():
+            q_sum = 0.0
+            q_nominals = []
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                gas_conn = f"{node}.GasConn[{i_conn + 1}].Q"
+                q_sum += orientation * self.state(gas_conn)
+                q_nominals.append(self.variable_nominal(gas_conn))
+
+            q_nominal = np.median(q_nominals)
+            constraints.append((q_sum / q_nominal, 0.0, 0.0))
+
+            q_sum = 0.0
+            q_nominals = []
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
+                q_sum += orientation * self.state(gas_conn)
+                q_nominals.append(self.variable_nominal(gas_conn))
+
+            q_nominal = np.median(q_nominals)
+            constraints.append((q_sum / q_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -3942,6 +3974,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("electricity_source", []),
                 *self.heat_network_components.get("electricity_demand", []),
+                *self.heat_network_components.get("gas_pipe", []),
+                *self.heat_network_components.get("gas_node", []),
+                *self.heat_network_components.get("gas_source", []),
+                *self.heat_network_components.get("gas_demand", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -4036,6 +4072,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("electricity_source", []),
+                *self.heat_network_components.get("gas_pipe", []),
+                *self.heat_network_components.get("gas_node", []),
+                *self.heat_network_components.get("gas_demand", []),
+                *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
             ]:
@@ -4133,6 +4173,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("electricity_source", []),
                 *self.heat_network_components.get("electricity_demand", []),
+                *self.heat_network_components.get("gas_pipe", []),
+                *self.heat_network_components.get("gas_node", []),
+                *self.heat_network_components.get("gas_source", []),
+                *self.heat_network_components.get("gas_demand", []),
             ]:
                 # no support for joints right now
                 continue
@@ -4318,6 +4362,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(
             self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
         )

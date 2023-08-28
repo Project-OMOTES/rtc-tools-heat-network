@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Run xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.wldelft.nl/fews/PI" xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_run.xsd" version="1.8">
+    <logLevel>debug</logLevel>
+    <timeZone>0.0</timeZone>
+    <startDateTime date="2019-01-01" time="00:00:00"/>
+    <endDateTime date="2019-01-01" time="03:00:00"/>
+    <time0 date="2019-01-01" time="00:00:00"/>
+    <lastObservationDateTime date="2019-01-01" time="00:00:00"/>
+
+    <workDir>.</workDir>
+    <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>
+    <properties>
+        <string key="ESDL_File_Path" value="../model/test.esdl"/>
+    </properties>
+</Run>

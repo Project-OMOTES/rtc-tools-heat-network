@@ -1,7 +1,0 @@
-constraintName,constraintIsActive,constraintValue
-absolutePressure_max,true,25
-absolutePressure_min,true,1
-consumerPressureDrop,true,1
-returnTemperature,,40
-supplyTemperature,,70
-velocity_max,true,3

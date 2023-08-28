@@ -8,6 +8,10 @@ from .electricity.electricity_demand import ElectricityDemand
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
 from .electricity.heat_pump_elec import HeatPumpElec
+from .gas.gas_demand import GasDemand
+from .gas.gas_node import GasNode
+from .gas.gas_pipe import GasPipe
+from .gas.gas_source import GasSource
 from .geothermal_source import GeothermalSource
 from .heat_exchanger import HeatExchanger
 from .heat_four_port import HeatFourPort
@@ -29,6 +33,10 @@ __all__ = [
     "ElectricityDemand",
     "ElectricityNode",
     "ElectricitySource",
+    "GasDemand",
+    "GasNode",
+    "GasPipe",
+    "GasSource",
     "GeothermalSource",
     "HeatExchanger",
     "HeatFourPort",

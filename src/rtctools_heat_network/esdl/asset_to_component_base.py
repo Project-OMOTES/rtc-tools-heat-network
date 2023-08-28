@@ -81,6 +81,8 @@ class _AssetToComponentBase:
         "HeatingDemand": "demand",
         "HeatPump": "heat_pump",
         "GasHeater": "source",
+        "GasProducer": "gas_source",
+        "GasDemand": "gas_demand",
         "GenericProducer": "source",
         "GeothermalSource": "source",
         "HeatProducer": "source",

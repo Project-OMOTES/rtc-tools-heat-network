@@ -14,6 +14,10 @@ from rtctools_heat_network.pycml.component_library.heat import (
     ElectricityDemand,
     ElectricityNode,
     ElectricitySource,
+    GasDemand,
+    GasNode,
+    GasPipe,
+    GasSource,
     GeothermalSource,
     HeatExchanger,
     HeatPump,
@@ -181,10 +185,33 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
         )
 
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity) or isinstance(
+            asset.out_ports[0].carrier, esdl.esdl.GasCommodity
+        ):
+            modifiers = dict(
+                n=sum_in + sum_out,
+            )
+            return GasNode, modifiers
+
         return Node, modifiers
 
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         assert asset.asset_type == "Pipe"
+
+        length = asset.attributes["length"]
+        if length < 25.0:
+            length = 25.0
+
+        (
+            diameter,
+            insulation_thicknesses,
+            conductivies_insulation,
+        ) = self._pipe_get_diameter_and_insulation(asset)
+
+        if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            modifiers = dict(length=length, diameter=diameter)
+
+            return GasPipe, modifiers
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
@@ -195,12 +222,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             temperature = return_temperature
         else:
             temperature = supply_temperature
-
-        (
-            diameter,
-            insulation_thicknesses,
-            conductivies_insulation,
-        ) = self._pipe_get_diameter_and_insulation(asset)
 
         # Compute the maximum heat flow based on an assumed maximum velocity
         area = math.pi * diameter**2 / 4.0
@@ -219,10 +240,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )  # TODO: are there any physical implications of using this bound
 
         assert hfr_max > 0.0
-
-        length = asset.attributes["length"]
-        if length < 25.0:
-            length = 25.0
 
         modifiers = dict(
             Q_nominal=q_nominal,
@@ -558,6 +575,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         return ElectricityCable, modifiers
+
+    def convert_gas_demand(self, asset: Asset):
+        assert asset.asset_type in {"GasDemand"}
+
+        modifiers = dict()
+
+        return GasDemand, modifiers
+
+    def convert_gas_source(self, asset: Asset):
+        assert asset.asset_type in {"GasProducer"}
+
+        modifiers = dict()
+
+        return GasSource, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

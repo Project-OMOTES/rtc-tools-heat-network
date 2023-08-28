@@ -274,7 +274,18 @@ class ESDLMixin(
         if self._profiles:
             datetimes = None
             for id, profile in self._profiles.items():
-                variable = f"{self.esdl_asset_id_to_name_map[id]}.target_heat_demand"
+                asset_name = self.esdl_asset_id_to_name_map[id]
+                asset = next(a for a in self.esdl_assets.values() if a.name == asset_name)
+                ports = []
+                ports.extend(asset.in_ports) if asset.in_ports is not None else ports
+                ports.extend(asset.out_ports) if asset.out_ports is not None else ports
+                if isinstance(ports[0].carrier, esdl.HeatCommodity):
+                    commodity = "heat"
+                elif isinstance(ports[0].carrier, esdl.ElectricityCommodity):
+                    commodity = "electricity"
+                elif isinstance(ports[0].carrier, esdl.GasCommodity):
+                    commodity = "gas"
+                variable = f"{asset_name}.target_{commodity}_demand"
                 values = profile.values
                 flat_list = []
                 for sublist in values:
@@ -425,6 +436,28 @@ class ESDLMixin(
                     )
                 except KeyError:
                     pass
+            for demand in self.heat_network_components.get("gas_demand", []):
+                try:
+                    values = csv_data[f"{demand.replace(' ', '')}.target_gas_demand"].to_numpy()
+                    self.io.set_timeseries(
+                        demand + ".target_gas_demand",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
+            for source in self.heat_network_components.get("gas_source", []):
+                try:
+                    values = csv_data[f"{source.replace(' ', '')}.target_gas_source"].to_numpy()
+                    self.io.set_timeseries(
+                        source + ".target_gas_source",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
 
     def read_xml(self, input_timeseries_file):
         timeseries_import_basename = input_timeseries_file.stem
@@ -551,9 +584,14 @@ class ESDLMixin(
 
 class _ESDLInputDataConfig:
     def __init__(self, id_map, heat_network_components):
+        # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map = id_map
-        self._sources = set(heat_network_components["source"])
-        self._demands = set(heat_network_components["demand"])
+        self._sources = set(heat_network_components.get("source", []))
+        self._demands = set(heat_network_components.get("demand", []))
+        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
+        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
+        self._gas_sources = set(heat_network_components.get("gas_source", []))
+        self._gas_demands = set(heat_network_components.get("gas_demand", []))
 
     def variable(self, pi_header):
         location_id = pi_header.find("pi:locationId", ns).text
@@ -570,6 +608,14 @@ class _ESDLInputDataConfig:
             suffix = ".target_heat_demand"
         elif component_name in self._sources:
             suffix = ".target_heat_source"
+        elif component_name in self._electricity_demands:
+            suffix = ".target_electricity_demand"
+        elif component_name in self._electricity_sources:
+            suffix = ".target_electricity_source"
+        elif component_name in self._gas_demands:
+            suffix = ".target_gas_demand"
+        elif component_name in self._gas_sources:
+            suffix = ".target_gas_source"
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "
