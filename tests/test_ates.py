@@ -33,3 +33,12 @@ class TestAtes(TestCase):
 
         # Test begin and end same state
         np.testing.assert_allclose(stored_heat[0], stored_heat[-1])
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestAtes()
+    a.test_ates()
+    temp = 0

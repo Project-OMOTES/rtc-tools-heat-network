@@ -198,7 +198,7 @@ class ScenarioOutput(HeatMixin):
                 )
             )
 
-    def _write_updated_esdl(self, db_profiles=False):
+    def _write_updated_esdl(self, db_profiles=False, optimizer_sim=True):
         from esdl.esdl_handler import EnergySystemHandler
         from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
@@ -404,7 +404,12 @@ class ScenarioOutput(HeatMixin):
         self.optimized_esdl_string = esh.to_string()
 
         if self.esdl_string is None:
-            filename = run_info.esdl_file.with_name(
-                f"{run_info.esdl_file.stem}_SmartControlOptimized.esdl"
-            )
+            if optimizer_sim:
+                filename = run_info.esdl_file.with_name(
+                    f"{run_info.esdl_file.stem}_SmartControlOptimized.esdl"
+                )
+            else:
+                filename = run_info.esdl_file.with_name(
+                    f"{run_info.esdl_file.stem}_Simulation.esdl"
+                )
             esh.save(str(filename))

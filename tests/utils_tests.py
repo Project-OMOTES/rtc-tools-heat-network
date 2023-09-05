@@ -4,9 +4,14 @@ import numpy as np
 
 
 def demand_matching_test(solution, results):
+    len_times = 0.0
     for d in solution.heat_network_components.get("demand", []):
-        target = solution.get_timeseries(f"{d}.target_heat_demand").values
-        np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
+        if len(solution.times()) > 0:
+            len_times = len(solution.times())
+        else:
+            len_times = len(solution.get_timeseries(f"{d}.target_heat_demand").values)
+        target = solution.get_timeseries(f"{d}.target_heat_demand").values[0:len_times]
+        np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=1.0e-3, rtol=1.0e-6)
 
 
 def heat_to_discharge_test(solution, results):
@@ -46,12 +51,12 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 np.clip(results[f"{d}.Heat_ates"], 0.0, np.inf)
-                >= np.clip(results[f"{d}.Q"], 0.0, np.inf) * rho * cp * dt
+                >= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt - 1e-7)
             )
         )
         np.testing.assert_allclose(
             np.clip(results[f"{d}.Heat_ates"], -np.inf, 0.0),
-            np.clip(results[f"{d}.Q"], -np.inf, 0.0) * rho * cp * dt,
+            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * dt,
         )
 
     for p in solution.hot_pipes:

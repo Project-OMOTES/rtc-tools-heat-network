@@ -95,8 +95,7 @@ class HeatProblem(
 
     def read(self):
         """
-        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
-        except for the day with the peak demand.
+        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile.
         """
         super().read()
 

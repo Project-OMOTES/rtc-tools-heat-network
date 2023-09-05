@@ -199,6 +199,9 @@
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" id="b90c659f-4d87-4402-b042-90a7594e7016" value="15.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="0d948406-7864-4eff-bc65-7670533bf18b" description="Cost in EUR/MWh" perMultiplier="MEGA" perUnit="WATTHOUR" unit="EURO" physicalQuantity="COST"/>
           </variableOperationalAndMaintenanceCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" value="2.0" id="8377c514-76a2-4592-8c9c-f2e429837098">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="88e78358-1344-45c2-8bbc-51de066003b1" description="Cost in EUR" physicalQuantity="COST" unit="EURO"/>
+          </marginalCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" lon="4.309977293014527" lat="52.04476403847825"/>
         <port xsi:type="esdl:OutPort" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="b462d564-a8c0-4ae0-a4af-36958f2455ea" name="Out" id="45bfc7d0-ef59-4f49-b37a-867b18e04b86"/>
@@ -378,6 +381,9 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9" value="6.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c52334c9-bc5d-41f4-b93d-10e7b769f281" description="Cost in EUR/MWh" perMultiplier="MEGA" perUnit="WATTHOUR" unit="EURO" physicalQuantity="COST"/>
           </variableOperationalCosts>
+          <marginalCosts xsi:type="esdl:SingleValue" value="1.0" id="3f73bd26-b923-4e2a-8f8e-435c8a783d8d">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a1086a77-a2d1-4a9b-a6f2-adf0e4380eca" description="Cost in EUR" physicalQuantity="COST" unit="EURO"/>
+          </marginalCosts>
         </costInformation>
         <geometry xsi:type="esdl:Point" lat="52.04487621664103" lon="4.311726093292237" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" name="Out" id="886e5430-bec1-44e3-bab6-221c4518c810"/>
