@@ -30,7 +30,10 @@ Operating System :: MacOS
 """
 
 if sys.version_info < (3, 7):
-    sys.exit("Sorry, Python 3.7 or newer is required.")
+    sys.exit(f"Sorry, Python 3.7 to 3.10 is required. You are using {sys.version_info}")
+
+if sys.version_info > (3, 11):
+    sys.exit(f"Sorry, Python 3.7 to 3.10 is required. You are using {sys.version_info}")
 
 setup(
     name="rtc-tools-heat-network",
@@ -39,7 +42,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
-    url="https://www.warmingup.info",
+    url="https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network",
     author="Teresa Piovesan",
     author_email="teresa.piovesan@deltares.nl",
     maintainer="Teresa Piovesan",
@@ -58,7 +61,7 @@ setup(
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.7",
+    python_requires=">=3.7,<3.11",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]
