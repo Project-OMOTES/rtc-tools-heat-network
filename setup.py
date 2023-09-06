@@ -29,11 +29,11 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 7):
-    sys.exit(f"Sorry, Python 3.7 to 3.10 is required. You are using {sys.version_info}")
+if sys.version_info < (3, 8):
+    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
 
 if sys.version_info > (3, 11):
-    sys.exit(f"Sorry, Python 3.7 to 3.10 is required. You are using {sys.version_info}")
+    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
 
 setup(
     name="rtc-tools-heat-network",
@@ -45,7 +45,7 @@ setup(
     url="https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network",
     author="Jim Rojer",
     author_email="jim.rojer@tno.nl",
-    maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, Femke Janssen, Jesús Andrés Rodríguez Sarasty",
+    maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, Femke Janssen, Jesús Andrés Rodríguez Sarasty, Thijs van der Klauw",
     license="LGPLv3",
     keywords="heat network optimization rtc tools",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
@@ -61,7 +61,7 @@ setup(
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.7,<3.11",
+    python_requires=">=3.8,<3.11",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]

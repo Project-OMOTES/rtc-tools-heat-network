@@ -27,3 +27,5 @@ src/*.egg-info
 
 # Kobus van Rooyen
 run_pipe_compare.py
+
+.venv/
