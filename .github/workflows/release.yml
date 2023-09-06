@@ -3,7 +3,7 @@ run-name: Releasing next version 🚀
 on:
   push:
     tags:
-      - *
+      - '*'
 
 jobs:
   pypi-publish:
