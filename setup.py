@@ -2,11 +2,15 @@
 
 Includes Modelica models and their accompanying Mixins for heat networks.
 """
+from pathlib import Path
 import sys
 
 from setuptools import find_packages, setup
 
 import versioneer
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 DOCLINES = __doc__.split("\n")
 
@@ -32,6 +36,8 @@ setup(
     name="rtc-tools-heat-network",
     version=versioneer.get_version(),
     description=DOCLINES[0],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
     url="https://www.warmingup.info",
     author="Teresa Piovesan",
