@@ -17,7 +17,7 @@ logger = logging.getLogger("rtctools_heat_network")
 
 MODIFIERS = Dict[str, Union[str, int, float]]
 
-HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS = 4200 * 998
+HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS = 4200 * 988
 WATTHOUR_TO_JOULE = 3600
 
 MULTI_ENUM_NAME_TO_FACTOR = {
