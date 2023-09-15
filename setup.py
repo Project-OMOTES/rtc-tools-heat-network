@@ -2,8 +2,8 @@
 
 Includes Modelica models and their accompanying Mixins for heat networks.
 """
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
@@ -45,7 +45,9 @@ setup(
     url="https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network",
     author="Jim Rojer",
     author_email="jim.rojer@tno.nl",
-    maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, Femke Janssen, Jesús Andrés Rodríguez Sarasty, Thijs van der Klauw",
+    maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, "
+               "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
+               "Thijs van der Klauw",
     license="LGPLv3",
     keywords="heat network optimization rtc tools",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
