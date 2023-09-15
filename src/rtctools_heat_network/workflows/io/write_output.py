@@ -439,19 +439,17 @@ class ScenarioOutput(HeatMixin):
                                     pass
 
                     # Create KPIs by using applicable costs for the specific asset
-                    area_investment_cost += max(
-                        results[self._asset_investment_cost_map[asset_name]][0], 1.0
-                    )
-                    area_installation_cost += max(
-                        results[self._asset_installation_cost_map[asset_name]][0], 1.0
-                    )
+                    area_investment_cost += results[self._asset_investment_cost_map[asset_name]][0]
+                    area_installation_cost += results[
+                        self._asset_installation_cost_map[asset_name]
+                    ][0]
                     if is_asset_opex_included:
-                        area_variable_opex_cost += max(
-                            results[self._asset_variable_operational_cost_map[asset_name]][0], 1.0
-                        )
-                        area_fixed_opex_cost += max(
-                            results[self._asset_fixed_operational_cost_map[asset_name]][0], 1.0
-                        )
+                        area_variable_opex_cost += results[
+                            self._asset_variable_operational_cost_map[asset_name]
+                        ][0]
+                        area_fixed_opex_cost += results[
+                            self._asset_fixed_operational_cost_map[asset_name]
+                        ][0]
 
             # Here we add KPIs to the polygon area which allows to visualize them by hoovering over
             # it with the mouse
