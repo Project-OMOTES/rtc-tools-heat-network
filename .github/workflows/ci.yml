@@ -1,0 +1,78 @@
+name: PyPi release
+run-name: CI pipeline
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  style:
+    name: Check style
+    runs-on: ubuntu-latest
+    env:
+      TOXENV: flake8,black
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.7"
+
+      - name: deps
+        run: python -m pip install -U tox
+
+      - name: Check style
+        run: tox -vv
+
+  build:
+    name: Check build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.7"
+
+      - name: deps
+        run: python -m pip install -U wheel setuptools build
+
+      - name: Check build
+        run: python setup.py sdist bdist_wheel
+
+  test:
+    name: Check test
+    runs-on: ubuntu-latest
+    env:
+      TOXENV: py37
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.7"
+
+      - name: deps
+        run: python -m pip install -U tox
+
+      - name: Check test
+        run: tox -vv
+
+  documentation:
+    name: Generate documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.7"
+
+      - name: Generate documentation
+        run: |
+          pip install -e .
+          cd docs
+          pip install -r requirements.txt
+          make html
+          mv _build/html ../public
+          cd ..
