@@ -46,8 +46,8 @@ setup(
     author="Jim Rojer",
     author_email="jim.rojer@tno.nl",
     maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, "
-               "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
-               "Thijs van der Klauw",
+    "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
+    "Thijs van der Klauw",
     license="LGPLv3",
     keywords="heat network optimization rtc tools",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
@@ -66,6 +66,8 @@ setup(
     python_requires=">=3.8,<3.11",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
-        "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]
+        "rtctools.libraries.modelica": [
+            "library_folder = rtctools_heat_network:modelica"
+        ]
     },
 )
