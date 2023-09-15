@@ -175,8 +175,7 @@ class EndScenarioSizing(
                 else:
                     total_demand += demand_values
                 max_demand = max(demand_values)
-                # TODO: check why (0.0, 2.0 * max_demand) caused investment to go to upper bound
-                self.__heat_demand_bounds[f"{demand}.Heat_demand"] = (0.0, max_demand)
+                self.__heat_demand_bounds[f"{demand}.Heat_demand"] = (0.0, 2.0 * max_demand)
                 self.__heat_demand_nominal[f"{demand}.Heat_demand"] = max_demand
 
             # TODO: the approach of picking one peak day was introduced for a network with a tree
