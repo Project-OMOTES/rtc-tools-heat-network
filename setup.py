@@ -66,8 +66,6 @@ setup(
     python_requires=">=3.8,<3.11",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
-        "rtctools.libraries.modelica": [
-            "library_folder = rtctools_heat_network:modelica"
-        ]
+        "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]
     },
 )
