@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -11,6 +12,8 @@ import pandas as pd
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
+
+logger = logging.getLogger("rtctools_heat_network")
 
 
 class ScenarioOutput(HeatMixin):
@@ -212,91 +215,345 @@ class ScenarioOutput(HeatMixin):
         else:
             energy_system = esh.load_from_string(self.esdl_string)
 
+        energy_system.id = str(uuid.uuid4())
+        energy_system.name = energy_system.name + "_SmartControlOptimized"
+
         def _name_to_asset(name):
             return next(
                 (x for x in energy_system.eAllContents() if hasattr(x, "name") and x.name == name)
             )
 
-        opex = 0.0
-        capex = 0.0
-        for asset_name in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
-            *self.heat_network_components.get("demand", []),
-            *self.heat_network_components.get("heat_exchanger", []),
-            *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("pipe", []),
-        ]:
-            asset = _name_to_asset(asset_name)
+        # ------------------------------------------------------------------------------------------
+        # KPIs
+        # General cost breakdowns
+        # ------------------------------------------------------------------------------------------
+        kpis_top_level = esdl.KPIs(id=str(uuid.uuid4()))
+        energy_wh = {}
+        capex_breakdown = {}
+        opex_breakdown = {}
+        tot_install_cost_euro = 0.0
+        tot_invest_cost_euro = 0.0
+        tot_variable_opex_cost_euro = 0.0
+        tot_fixed_opex_cost_euro = 0.0
+
+        for _key, asset in self.esdl_assets.items():
+            is_asset_opex_included = False
+            if (
+                asset.asset_type == "HeatProducer"
+                or asset.asset_type == "GenericProducer"
+                or asset.asset_type == "ResidualHeatSource"
+                or asset.asset_type == "GeothermalSource"
+                or asset.asset_type == "ResidualHeatSource"
+                or asset.asset_type == "GasHeater"
+            ):
+                is_asset_opex_included = True
+
+            asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
+            placed = np.round(results[asset_placement_var][0]) >= 1.0
+            if placed:
+                try:
+                    tot_install_cost_euro += results[f"{asset.name}__installation_cost"][0]
+                    tot_invest_cost_euro += results[f"{asset.name}__investment_cost"][0]
+                    capex_breakdown[asset.asset_type] += (
+                        tot_install_cost_euro + tot_invest_cost_euro
+                    )
+
+                    if is_asset_opex_included:
+                        tot_variable_opex_cost_euro += results[
+                            f"{asset.name}__variable_operational_cost"
+                        ][0]
+                        tot_fixed_opex_cost_euro += results[
+                            f"{asset.name}__fixed_operational_cost"
+                        ][0]
+                        opex_breakdown[asset.asset_type] += (
+                            tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro
+                        )
+
+                except KeyError:
+                    try:
+                        tot_install_cost_euro = results[f"{asset.name}__installation_cost"][0]
+                        tot_invest_cost_euro = results[f"{asset.name}__investment_cost"][0]
+                        capex_breakdown[asset.asset_type] = (
+                            tot_install_cost_euro + tot_invest_cost_euro
+                        )
+
+                        if is_asset_opex_included:
+                            tot_variable_opex_cost_euro = results[
+                                f"{asset.name}__variable_operational_cost"
+                            ][0]
+                            tot_fixed_opex_cost_euro = results[
+                                f"{asset.name}__fixed_operational_cost"
+                            ][0]
+                            opex_breakdown[asset.asset_type] = (
+                                tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro
+                            )
+                    except KeyError:
+                        # Do not add any costs. Items like joint
+                        pass
+
+                if is_asset_opex_included:
+                    energy_wh[asset.name] = np.sum(
+                        results[f"{asset.name}.Heat_source"][1:]
+                        * (self.times()[1:] - self.times()[0:-1])
+                        / 3600
+                    )
+
+        kpis_top_level.kpi.append(
+            esdl.DistributionKPI(
+                name="High level cost breakdown [EUR]",
+                distribution=esdl.StringLabelDistribution(
+                    stringItem=[
+                        esdl.StringItem(
+                            label="CAPEX",
+                            value=tot_install_cost_euro + tot_invest_cost_euro,
+                        ),
+                        esdl.StringItem(
+                            label="OPEX",
+                            value=tot_variable_opex_cost_euro + tot_fixed_opex_cost_euro,
+                        ),
+                    ]
+                ),
+                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                ),
+            )
+        )
+
+        kpis_top_level.kpi.append(
+            esdl.DistributionKPI(
+                name="Overall cost breakdown [EUR]",
+                distribution=esdl.StringLabelDistribution(
+                    stringItem=[
+                        esdl.StringItem(label="Installation", value=tot_install_cost_euro),
+                        esdl.StringItem(label="Investment", value=tot_invest_cost_euro),
+                        esdl.StringItem(label="Variable OPEX", value=tot_variable_opex_cost_euro),
+                        esdl.StringItem(label="Fixed OPEX", value=tot_fixed_opex_cost_euro),
+                    ]
+                ),
+                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                ),
+            )
+        )
+
+        kpis_top_level.kpi.append(
+            esdl.DistributionKPI(
+                name="CAPEX breakdown [EUR]",
+                distribution=esdl.StringLabelDistribution(
+                    stringItem=[
+                        esdl.StringItem(label=key, value=value)
+                        for key, value in capex_breakdown.items()
+                    ]
+                ),
+                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                ),
+            )
+        )
+
+        kpis_top_level.kpi.append(
+            esdl.DistributionKPI(
+                name="OPEX breakdown [EUR]",
+                distribution=esdl.StringLabelDistribution(
+                    stringItem=[
+                        esdl.StringItem(label=key, value=value)
+                        for key, value in opex_breakdown.items()
+                    ]
+                ),
+                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                ),
+            )
+        )
+
+        kpis_top_level.kpi.append(
+            esdl.DistributionKPI(
+                name="Energy production [Wh]",
+                distribution=esdl.StringLabelDistribution(
+                    stringItem=[
+                        esdl.StringItem(label=key, value=value) for key, value in energy_wh.items()
+                    ]
+                ),
+            )
+        )
+        energy_system.instance[0].area.KPIs = kpis_top_level
+        # ------------------------------------------------------------------------------------------
+        # Cost breakdowns per polygon areas (can consist of several assets of differents types)
+        # Notes:
+        # - OPEX KPIs are taken into account for energy sources only.
+        # - We assume that all energy produced outside of the the subarea comes in via a heat
+        #   exchanger that is part of the subarea.
+        for subarea in energy_system.instance[0].area.area:
+            area_investment_cost = 0.0
+            area_installation_cost = 0.0
+            area_variable_opex_cost = 0.0
+            area_fixed_opex_cost = 0.0
+
+            is_at_least_asset_opex_included = False
             kpis = esdl.KPIs(id=str(uuid.uuid4()))
+            # Here we make a breakdown of the produced energy in the subarea. Where we assume that
+            # all energy produced outside of the the subarea comes in via a heat exchanger that is
+            # part of the subarea.
+            energy_breakdown = {}
+            for asset in subarea.asset:
+                asset_name = asset.name
+                asset_type = self.get_asset_from_asset_name(asset_name).asset_type
 
-            variable_operational = esdl.DoubleKPI(
-                value=results[self._asset_variable_operational_cost_map[asset_name]][0],
-                name="variable_operational_cost",
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST,
-                    unit=esdl.UnitEnum.EURO,
-                    perUnit=esdl.UnitEnum.YEAR,
-                ),
+                asset_placement_var = self._asset_aggregation_count_var_map[asset.name]
+                placed = np.round(results[asset_placement_var][0]) >= 1.0
+
+                if placed:
+                    is_asset_opex_included = False
+                    if (
+                        asset_type == "HeatProducer"
+                        or asset_type == "GenericProducer"
+                        or asset_type == "ResidualHeatSource"
+                        or asset_type == "GeothermalSource"
+                        or asset_type == "ResidualHeatSource"
+                        or asset_type == "GasHeater"
+                        or asset_type == "HeatStorage"
+                    ):
+                        is_asset_opex_included = True
+                        is_at_least_asset_opex_included = True
+
+                    if asset_type == "Joint":
+                        continue
+                    try:
+                        energy_breakdown[asset_type] += np.sum(results[f"{asset_name}.Heat_source"])
+                    except KeyError:
+                        try:
+                            energy_breakdown[asset_type] = np.sum(
+                                results[f"{asset_name}.Heat_source"]
+                            )
+                        except KeyError:
+                            try:
+                                energy_breakdown[asset_type] += np.sum(
+                                    results[f"{asset_name}.Secondary_heat"]
+                                )
+                            except KeyError:
+                                try:
+                                    energy_breakdown[asset_type] = np.sum(
+                                        results[f"{asset_name}.Secondary_heat"]
+                                    )
+                                except KeyError:
+                                    pass
+
+                    # Create KPIs by using applicable costs for the specific asset
+                    area_investment_cost += results[self._asset_investment_cost_map[asset_name]][0]
+                    area_installation_cost += results[
+                        self._asset_installation_cost_map[asset_name]
+                    ][0]
+                    if is_asset_opex_included:
+                        area_variable_opex_cost += results[
+                            self._asset_variable_operational_cost_map[asset_name]
+                        ][0]
+                        area_fixed_opex_cost += results[
+                            self._asset_fixed_operational_cost_map[asset_name]
+                        ][0]
+
+            # Here we add KPIs to the polygon area which allows to visualize them by hoovering over
+            # it with the mouse
+            kpis.kpi.append(
+                esdl.DoubleKPI(
+                    value=area_investment_cost / 1.0e6,
+                    name="Investment",
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                        unit=esdl.UnitEnum.EURO,
+                        multiplier=esdl.MultiplierEnum.MEGA,
+                    ),
+                )
             )
-            fixed_operational = esdl.DoubleKPI(
-                value=results[self._asset_fixed_operational_cost_map[asset_name]][0],
-                name="fixed_operational_cost",
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST,
-                    unit=esdl.UnitEnum.EURO,
-                    perUnit=esdl.UnitEnum.YEAR,
-                ),
-            )
-            installation = esdl.DoubleKPI(
-                value=results[self._asset_installation_cost_map[asset_name]][0],
-                name="installation_cost",
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
-            )
-            investment = esdl.DoubleKPI(
-                value=results[self._asset_investment_cost_map[asset_name]][0],
-                name="investment_cost",
-                quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                    physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-                ),
-            )
-            kpis.kpi.append(variable_operational)
-            kpis.kpi.append(fixed_operational)
-            kpis.kpi.append(installation)
-            kpis.kpi.append(investment)
-            asset.KPIs = kpis
-            capex += (
-                results[self._asset_investment_cost_map[asset_name]][0]
-                + results[self._asset_installation_cost_map[asset_name]][0]
-            )
-            opex += (
-                results[self._asset_variable_operational_cost_map[asset_name]][0]
-                + results[self._asset_fixed_operational_cost_map[asset_name]][0]
+            kpis.kpi.append(
+                esdl.DoubleKPI(
+                    value=area_installation_cost / 1.0e6,
+                    name="Installation",
+                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                        physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                        unit=esdl.UnitEnum.EURO,
+                        multiplier=esdl.MultiplierEnum.MEGA,
+                    ),
+                )
             )
 
-        kpis = esdl.KPIs(id=str(uuid.uuid4()))
-        kpi_capex = esdl.DoubleKPI(
-            value=capex,
-            name="CAPEX",
-            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-            ),
-        )
-        kpis.kpi.append(kpi_capex)
-        kpi_opex = esdl.DoubleKPI(
-            value=opex,
-            name="OPEX",
-            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
-            ),
-        )
-        kpis.kpi.append(kpi_opex)
+            if is_at_least_asset_opex_included:
+                kpis.kpi.append(
+                    esdl.DoubleKPI(
+                        value=area_variable_opex_cost / 1.0e6,
+                        name="Variable OPEX",
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                            unit=esdl.UnitEnum.EURO,
+                            multiplier=esdl.MultiplierEnum.MEGA,
+                        ),
+                    )
+                )
+                kpis.kpi.append(
+                    esdl.DoubleKPI(
+                        value=area_fixed_opex_cost / 1.0e6,
+                        name="Fixed OPEX",
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                            unit=esdl.UnitEnum.EURO,
+                            multiplier=esdl.MultiplierEnum.MEGA,
+                        ),
+                    )
+                )
 
-        energy_system.instance[0].area.KPIs = kpis
+            # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
+            kpi_name = f"{subarea.name}: Asset cost breakdown [EUR]"
+            if is_asset_opex_included:
+                kpis_top_level.kpi.append(
+                    esdl.DistributionKPI(
+                        name=kpi_name,
+                        distribution=esdl.StringLabelDistribution(
+                            stringItem=[
+                                esdl.StringItem(label="Installation", value=area_installation_cost),
+                                esdl.StringItem(label="Investment", value=area_investment_cost),
+                                esdl.StringItem(
+                                    label="Variable OPEX", value=area_variable_opex_cost
+                                ),
+                                esdl.StringItem(label="Fixed OPEX", value=area_fixed_opex_cost),
+                            ]
+                        ),
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                        ),
+                    )
+                )
+            else:
+                kpis_top_level.kpi.append(
+                    esdl.DistributionKPI(
+                        name=kpi_name,
+                        distribution=esdl.StringLabelDistribution(
+                            stringItem=[
+                                esdl.StringItem(label="Installation", value=area_installation_cost),
+                                esdl.StringItem(label="Investment", value=area_investment_cost),
+                            ]
+                        ),
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST, unit=esdl.UnitEnum.EURO
+                        ),
+                    )
+                )
 
+            # Here we add a distribution KPI to the subarea to which gives a piechart
+            # !!!!!!!!!!!!!!! This will only work if the source is in the area?
+            # TODO: Still to be resolved since piecharts are still a work in progress in mapeditor
+            # kpis.kpi.append(
+            #     esdl.DistributionKPI(
+            #         name="Energy breakdown ?",
+            #         distribution=esdl.StringLabelDistribution(
+            #             stringItem=[
+            #                 esdl.StringItem(label=key, value=value) for key,
+            #                 value in energy_breakdown.items()
+            #             ]
+            #         )
+            #     )
+            # )
+            subarea.KPIs = kpis
+        # end KPIs
+        # ------------------------------------------------------------------------------------------
         # Placement
         for _, attributes in self.esdl_assets.items():
             name = attributes.name
