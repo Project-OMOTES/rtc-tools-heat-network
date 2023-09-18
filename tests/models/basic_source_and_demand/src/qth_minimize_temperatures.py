@@ -2,8 +2,9 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.csv_mixin import CSVMixin
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
+from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.bounds_to_pipe_flow_directions_mixin import (
@@ -50,7 +51,7 @@ class _QTHBase(
     QTHMixin,
     ModelicaComponentTypeMixin,
     HomotopyMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     CSVMixin,
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
@@ -91,5 +92,5 @@ class QTHMinReturnMaxDeltaT(_QTHBase):
 
 
 if __name__ == "__main__":
-    fixed_dt = run_optimization_problem(QTHFixedDeltaTemperature)
+    # fixed_dt = run_optimization_problem(QTHFixedDeltaTemperature)
     min_return_max_dt = run_optimization_problem(QTHMinReturnMaxDeltaT)
