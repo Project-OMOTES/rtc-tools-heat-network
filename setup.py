@@ -3,10 +3,14 @@
 Includes Modelica models and their accompanying Mixins for heat networks.
 """
 import sys
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
 import versioneer
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 DOCLINES = __doc__.split("\n")
 
@@ -25,18 +29,25 @@ Operating System :: Unix
 Operating System :: MacOS
 """
 
-if sys.version_info < (3, 7):
-    sys.exit("Sorry, Python 3.7 or newer is required.")
+if sys.version_info < (3, 8):
+    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
+
+if sys.version_info > (3, 11):
+    sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
 
 setup(
     name="rtc-tools-heat-network",
     version=versioneer.get_version(),
     description=DOCLINES[0],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
-    url="https://www.warmingup.info",
-    author="Teresa Piovesan",
-    author_email="teresa.piovesan@deltares.nl",
-    maintainer="Teresa Piovesan",
+    url="https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network",
+    author="Jim Rojer",
+    author_email="jim.rojer@tno.nl",
+    maintainer="Jim Rojer, Kobus van Rooyen, Kelbij Star, "
+    "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
+    "Thijs van der Klauw",
     license="LGPLv3",
     keywords="heat network optimization rtc tools",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
@@ -48,11 +59,11 @@ setup(
         "pymoca >= 0.9.0",
         "rtc-tools == 2.6.0a3",
         "pyesdl >= 21.11.0",
-        "pandas >= 1.3.1",
+        "pandas >= 1.3.1, < 2.0",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
-    python_requires=">=3.7",
+    python_requires=">=3.8,<3.11",
     cmdclass=versioneer.get_cmdclass(),
     entry_points={
         "rtctools.libraries.modelica": ["library_folder = rtctools_heat_network:modelica"]
