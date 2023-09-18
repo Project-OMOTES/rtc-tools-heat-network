@@ -535,6 +535,7 @@ def format_datetime(dt):
     ntime = time + ":00+0000"
     return ndate + "T" + ntime
 
+
 class EndScenarioSizingHIGHS(EndScenarioSizing):
     def post(self):
         super().post()

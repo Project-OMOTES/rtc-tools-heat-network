@@ -385,7 +385,7 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
     _ = run_optimization_problem(
-        NetworkSimulatorCBC,
+        NetworkSimulatorHIGHSWeeklyTimeStep,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
     )

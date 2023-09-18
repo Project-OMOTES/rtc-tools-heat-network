@@ -34,7 +34,7 @@ class TestEndScenarioSizing(TestCase):
         # Check whether cyclic ates constraint is working
         for a in solution.heat_network_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
-            np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.)
+            np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
