@@ -234,9 +234,9 @@ class HeatProblem(
 
         try:
             if len(data_milp["Pipe1_supply_dPress"]) > 1:
-                df_MILP = df_MILP.append(pd.DataFrame(pd.DataFrame(data_milp)), ignore_index=True)
+                df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], ignore_index=True)
         except Exception:  # Case when there is only one row value added
-            df_MILP = df_MILP.append(pd.DataFrame(pd.DataFrame(data_milp, index=[index_df_milp])))
+            df_MILP = pd.concat([df_MILP, pd.DataFrame(data_milp)], index=[index_df_milp])
 
         # Update pipe length value for the last rows added in dataframe
         index_last_row = df_MILP.last_valid_index()
