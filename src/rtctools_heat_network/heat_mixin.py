@@ -3899,7 +3899,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
             constraint_nominal = self.variable_nominal(max_var)
 
-            constraints.append(((np.ones(len(self.times())) * max_heat - stored_heat) / constraint_nominal, 0.0, np.inf))
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_heat - stored_heat) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
             # Same as for the buffer but now for the source
         for s in self.heat_network_components.get("source", []):
@@ -3920,7 +3926,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
             except KeyError:
-                constraints.append(((np.ones(len(self.times())) * max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
+                constraints.append(
+                    (
+                        (np.ones(len(self.times())) * max_heat - heat_source) / constraint_nominal,
+                        0.0,
+                        np.inf,
+                    )
+                )
 
         for hx in [
             *self.heat_network_components.get("heat_exchanger", []),
@@ -3932,7 +3944,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_secondary = self.__state_vector_scaled(f"{hx}.Secondary_heat", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{hx}.Secondary_heat")
 
-            constraints.append(((np.ones(len(self.times())) * max_heat - heat_secondary) / constraint_nominal, 0.0, np.inf))
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_heat - heat_secondary) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
         for d in self.heat_network_components.get("demand", []):
             max_var = self._asset_max_size_map[d]
@@ -3941,8 +3959,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraint_nominal = max(
                 self.variable_nominal(f"{d}.Heat_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
             )
-            # np.ones(len(self.times())) ? KvR 
-            constraints.append(((np.ones(len(self.times())) * max_heat - heat_demand) / constraint_nominal, 0.0, np.inf))
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_heat - heat_demand) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
         for a in self.heat_network_components.get("ates", []):
             max_var = self._asset_max_size_map[a]
@@ -3950,8 +3973,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
             constraint_nominal = bounds[f"{a}.Heat_ates"][1]
 
-            constraints.append(((np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal, 0.0, np.inf))
-            constraints.append(((np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal, 0.0, np.inf))
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
 
         return constraints
 
@@ -3987,12 +4022,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             investment_cost_coefficient = parameters[f"{asset_name}.investment_cost_coefficient"]
             nominal = self.variable_nominal(investment_cost_var)
 
-            if parameters[f"{asset_name}.state"] == 1:
+            if parameters[f"{asset_name}.state"] == 1:  # Asset is in use
                 if asset_name in [*self.heat_network_components.get("demand", [])]:
-                    asset_size = min(
-                        bounds[f"{asset_name}.Heat_demand"][1],
-                        bounds[f"{asset_name}.HeatIn.Heat"][1],
-                    )
+                    try:
+                        if np.isinf(bounds[f"{asset_name}.Heat_demand"][1]):
+                            asset_size = max(
+                                self.get_timeseries(
+                                    f"{asset_name}.target_heat_demand", ensemble_member
+                                ).values
+                            )
+                        else:
+                            asset_size = bounds[f"{asset_name}.Heat_demand"][1]
+                    except KeyError:
+                        asset_size = 0.0
+                        logger.warning(
+                            f"No investment cost will calculdated for asset: {asset_name}, because "
+                            "no target demand heat profile or Power [W] (mapeditor) has been "
+                            "specified."
+                        )
                 elif asset_name in [*self.heat_network_components.get("source", [])]:
                     asset_size = bounds[f"{asset_name}.Heat_source"][1]
                 elif asset_name in [*self.heat_network_components.get("pipe", [])]:
@@ -4024,7 +4071,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         f"Unknown type for asset {asset_name}, cannot "
                         f"set constraints for its investment costs, thus forced to zero"
                     )
-            elif parameters[f"{asset_name}.state"] == 2:
+            elif parameters[f"{asset_name}.state"] == 2:  # Optional assets for use
                 if asset_name in [*self.heat_network_components.get("pipe", [])]:
                     if asset_name in self.cold_pipes:
                         # we optimize purely on hot pipes
