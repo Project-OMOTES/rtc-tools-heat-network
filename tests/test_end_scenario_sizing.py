@@ -5,7 +5,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.workflows import EndScenarioSizingCBC
+from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 
 
 class TestEndScenarioSizing(TestCase):
@@ -16,7 +16,7 @@ class TestEndScenarioSizing(TestCase):
 
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
-        solution = run_optimization_problem(EndScenarioSizingCBC, base_folder=base_folder)
+        solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
 
         results = solution.extract_results()
         # In the future we want to check the following
@@ -34,7 +34,7 @@ class TestEndScenarioSizing(TestCase):
         # Check whether cyclic ates constraint is working
         for a in solution.heat_network_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
-            np.testing.assert_allclose(stored_heat[0], stored_heat[-1])
+            np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]

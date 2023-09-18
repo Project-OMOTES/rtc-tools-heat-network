@@ -5,7 +5,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.workflows import NetworkSimulatorCBCTestCase
+from rtctools_heat_network.workflows import NetworkSimulatorHIGHSTestCase
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -28,7 +28,7 @@ class TestNetworkSimulator(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(NetworkSimulatorCBCTestCase, base_folder=base_folder)
+        solution = run_optimization_problem(NetworkSimulatorHIGHSTestCase, base_folder=base_folder)
 
         results = solution.extract_results()
 

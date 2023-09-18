@@ -51,7 +51,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 np.clip(results[f"{d}.Heat_ates"], 0.0, np.inf)
-                >= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt - 1e-7)
+                >= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt - 1e-6)
             )
         )
         np.testing.assert_allclose(
