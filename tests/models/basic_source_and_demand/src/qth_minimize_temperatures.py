@@ -92,5 +92,5 @@ class QTHMinReturnMaxDeltaT(_QTHBase):
 
 
 if __name__ == "__main__":
-    # fixed_dt = run_optimization_problem(QTHFixedDeltaTemperature)
+    fixed_dt = run_optimization_problem(QTHFixedDeltaTemperature)
     min_return_max_dt = run_optimization_problem(QTHMinReturnMaxDeltaT)
