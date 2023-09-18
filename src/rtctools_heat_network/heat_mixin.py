@@ -4540,7 +4540,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         self.alias_relation.canonical_signed(f"{p}.Q")[0]
                     )
                     inds = (np.abs(q) / q_nominal > 1e-4) & (is_disconnected == 0)
-                    assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
+                    if not options["heat_loss_disconnected_pipe"]:
+                        assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
         minimum_velocity = options["minimum_velocity"]
         for p in self.heat_network_components.get("pipe", []):
