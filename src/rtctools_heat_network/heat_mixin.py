@@ -3899,7 +3899,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
             constraint_nominal = self.variable_nominal(max_var)
 
-            constraints.append(((max_heat - stored_heat) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((np.ones(len(self.times())) * max_heat - stored_heat) / constraint_nominal, 0.0, np.inf))
 
             # Same as for the buffer but now for the source
         for s in self.heat_network_components.get("source", []):
@@ -3920,7 +3920,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
             except KeyError:
-                constraints.append(((max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
+                constraints.append(((np.ones(len(self.times())) * max_heat - heat_source) / constraint_nominal, 0.0, np.inf))
 
         for hx in [
             *self.heat_network_components.get("heat_exchanger", []),
@@ -3932,7 +3932,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_secondary = self.__state_vector_scaled(f"{hx}.Secondary_heat", ensemble_member)
             constraint_nominal = self.variable_nominal(f"{hx}.Secondary_heat")
 
-            constraints.append(((max_heat - heat_secondary) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((np.ones(len(self.times())) * max_heat - heat_secondary) / constraint_nominal, 0.0, np.inf))
 
         for d in self.heat_network_components.get("demand", []):
             max_var = self._asset_max_size_map[d]
@@ -3941,8 +3941,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraint_nominal = max(
                 self.variable_nominal(f"{d}.Heat_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
             )
-
-            constraints.append(((max_heat - heat_demand) / constraint_nominal, 0.0, np.inf))
+            # np.ones(len(self.times())) ? KvR 
+            constraints.append(((np.ones(len(self.times())) * max_heat - heat_demand) / constraint_nominal, 0.0, np.inf))
 
         for a in self.heat_network_components.get("ates", []):
             max_var = self._asset_max_size_map[a]
@@ -3950,8 +3950,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
             constraint_nominal = bounds[f"{a}.Heat_ates"][1]
 
-            constraints.append(((max_heat - heat_ates) / constraint_nominal, 0.0, np.inf))
-            constraints.append(((max_heat + heat_ates) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal, 0.0, np.inf))
 
         return constraints
 
