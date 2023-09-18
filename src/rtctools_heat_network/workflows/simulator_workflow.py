@@ -306,29 +306,29 @@ class NetworkSimulator(
 
 
 # -------------------------------------------------------------------------------------------------
-class NetworkSimulatorCBC(NetworkSimulator):
+class NetworkSimulatorHIGHS(NetworkSimulator):
     # def post(self):
     #     super().post()
     #     self._write_updated_esdl(db_profiles=False, optimizer_sim=False)
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "cbc"
+        options["solver"] = "highs"
 
-        if options["solver"] == "cbc":
-            options["hot_start"] = True
-            cbc_options = options["cbc"] = {}
-            cbc_options["seconds"] = 300000.0
+        # if options["solver"] == "cbc":
+        #     options["hot_start"] = True
+        #     cbc_options = options["cbc"] = {}
+        #     cbc_options["seconds"] = 300000.0
 
         return options
 
 
-class NetworkSimulatorCBCTestCase(NetworkSimulatorCBC):
+class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
     def times(self, variable=None) -> np.ndarray:
         return super().times(variable)[:5]
 
 
-class NetworkSimulatorCBCWeeklyTimeStep(NetworkSimulatorCBC):
+class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
     def read(self):
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile.

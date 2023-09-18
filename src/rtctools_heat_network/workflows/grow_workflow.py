@@ -535,6 +535,53 @@ def format_datetime(dt):
     ntime = time + ":00+0000"
     return ndate + "T" + ntime
 
+class EndScenarioSizingHIGHS(EndScenarioSizing):
+    def post(self):
+        super().post()
+
+        # results = self.extract_results()
+        # client = connect_database()
+        #
+        # json_body = []
+        #
+        # for asset in [*self.heat_network_components.get("source", []),
+        #               *self.heat_network_components.get("demand", []),
+        #               *self.heat_network_components.get("pipe", []),
+        #               *self.heat_network_components.get("buffer", []),
+        #               *self.heat_network_components.get("ates", []),
+        #               *self.heat_network_components.get("heat_exchanger", []),
+        #               *self.heat_network_components.get("heat_pump", [])]:
+        #     for i in range(len(self.times())):
+        #         fields = {}
+        #         try:
+        #             # For all components dealing with one hydraulic system
+        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
+        #                 fields[variable] = results[f"{asset}." + variable][i]
+        #         except Exception:
+        #             # For all components dealing with two hydraulic system
+        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
+        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
+        #                 fields[variable] = results[f"{asset}." + variable][i]
+        #
+        #         json_body.append({
+        #             "measurement": asset,
+        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
+        #             "fields": fields
+        #         })
+        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
+        self._write_updated_esdl(db_profiles=False)
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
 
 class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):
