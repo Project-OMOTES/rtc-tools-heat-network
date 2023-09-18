@@ -46,7 +46,7 @@ setup(
         "influxdb >= 5.3.1",
         "pyecore",
         "pymoca >= 0.9.0",
-        "rtc-tools == test_hydraulic_power",
+        "rtc-tools == 2.6.0a3",
         "pyesdl >= 21.11.0",
         "pandas >= 1.3.1",
     ],
