@@ -23,8 +23,8 @@ class TestAtes(TestCase):
         stored_heat = results["ATES_033c.Stored_heat"]
         heat_loss = results["ATES_033c.Heat_loss"]
         heat_ates = results["ATES_033c.Heat_ates"]
-        summed_discharge = np.sum(np.clip(heat_ates, 0.0, np.inf))
-        summed_charge = np.abs(np.sum(np.clip(heat_ates, -np.inf, 0.0)))
+        summed_charge = np.sum(np.clip(heat_ates, 0.0, np.inf))
+        summed_discharge = np.abs(np.sum(np.clip(heat_ates, -np.inf, 0.0)))
 
         # Test if the heat loss is as expected
         coeff = solution.parameters(0)["ATES_033c.heat_loss_coeff"]

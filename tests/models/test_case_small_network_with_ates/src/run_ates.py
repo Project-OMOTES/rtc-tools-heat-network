@@ -350,13 +350,14 @@ if __name__ == "__main__":
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
     import matplotlib.pyplot as plt
+
     plt.figure()
     plt.plot(results["ATES_033c.Heat_ates"])
     plt.figure()
     plt.plot(results["ATES_033c.Stored_heat"])
     plt.show()
-    a=2
-    a=1
+    a = 2
+    a = 1
 
     # solution = run_optimization_problem(
     #     HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}
