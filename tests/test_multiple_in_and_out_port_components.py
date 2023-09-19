@@ -19,11 +19,11 @@ class TestHEX(TestCase):
 
         results = solution.extract_results()
 
-        prim_heat = results["GenericConversion_3d3f.Primary_heat"]
-        sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
-        prim_q = results["GenericConversion_3d3f.Primary.HeatIn.Q"]
-        sec_q = results["GenericConversion_3d3f.Secondary.HeatOut.Q"]
-        disabled = results["GenericConversion_3d3f__disabled"]
+        prim_heat = results["HeatExchange_39ed.Primary_heat"]
+        sec_heat = results["HeatExchange_39ed.Secondary_heat"]
+        prim_q = results["HeatExchange_39ed.Primary.HeatIn.Q"]
+        sec_q = results["HeatExchange_39ed.Secondary.HeatOut.Q"]
+        disabled = results["HeatExchange_39ed__disabled"]
 
         # Values used in non_storage_component.py
         cp = 4200.0

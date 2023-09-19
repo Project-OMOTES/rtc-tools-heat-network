@@ -283,9 +283,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
         assert asset.asset_type in {
             "GenericConversion",
+            "HeatExchange",
         }
-
-        max_power = asset.attributes["power"]
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
@@ -306,6 +305,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"heat from primary to secondary."
             )
             assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
+
+        if asset.asset_type == "GenericConversion":
+            max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
+        else:
+            max_power = asset.attributes["heatTransferCoefficient"] * (
+                params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"]
+            )
 
         prim_heat = dict(
             Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
@@ -336,8 +342,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             efficiency = 1.0
         else:
             efficiency = asset.attributes["efficiency"]
-
-        max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         modifiers = dict(
             efficiency=efficiency,
