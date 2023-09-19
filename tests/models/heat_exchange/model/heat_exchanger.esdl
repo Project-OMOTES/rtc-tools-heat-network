@@ -282,7 +282,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatExchange" name="HeatExchange_39ed" id="39ed1de8-8c7a-4e3c-8e52-45a0b209a176" heatTransferCoefficient="200000.0" efficiency="0.9">
+      <asset xsi:type="esdl:HeatExchange" name="HeatExchange_39ed" id="39ed1de8-8c7a-4e3c-8e52-45a0b209a176" heatTransferCoefficient="400000.0" efficiency="0.9">
         <geometry xsi:type="esdl:Point" lon="4.387479722499848" lat="52.086540813049496"/>
         <port xsi:type="esdl:InPort" connectedTo="22daf91b-d674-4fe9-b35b-360a731c173b" id="230bf10b-c2f5-4ef9-b865-2863133a8156" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe" name="PrimIn"/>
         <port xsi:type="esdl:OutPort" id="861b1adf-1050-48b7-821e-58eea67d479b" connectedTo="ef6d471c-ead8-4541-853e-f85dea09e2be" carrier="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret" name="PrimOut"/>

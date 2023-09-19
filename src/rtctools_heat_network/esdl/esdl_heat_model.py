@@ -311,7 +311,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             max_power = asset.attributes["heatTransferCoefficient"] * (
                 params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"]
-            )
+            ) / 2.
 
         prim_heat = dict(
             Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
