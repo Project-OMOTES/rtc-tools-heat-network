@@ -309,6 +309,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if asset.asset_type == "GenericConversion":
             max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
         else:
+            # TODO: Current max_power estimation is not very accurate, a more physics based
+            # estimation should be implemented, maybe using other ESDL attributs.
             max_power = asset.attributes["heatTransferCoefficient"] * (
                 params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"]
             ) / 2.
