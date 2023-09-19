@@ -63,6 +63,7 @@ class Buffer(HeatTwoPort, BaseAsset):
             max=self.max_stored_heat,
             nominal=self._nominal_stored_heat,
         )
+        self.add_variable(Variable, "Q", nominal=self.Q_nominal)
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
         # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
@@ -76,6 +77,7 @@ class Buffer(HeatTwoPort, BaseAsset):
         self._heat_loss_eq_nominal_buf = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
 
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
+        self.add_equation(self.Q - self.HeatOut.Q)
 
         # Heat stored in the buffer
         self.add_equation(

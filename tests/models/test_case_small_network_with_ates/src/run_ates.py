@@ -84,12 +84,19 @@ class HeatProblem(
         options["minimum_velocity"] = 0.0
         return options
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
         for a in self.heat_network_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
+            heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            constraints.append((heat_ates[0], 0.0, 0.0))
 
         return constraints
 
@@ -342,6 +349,18 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(
-        HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}
-    )
+    sol = run_optimization_problem(HeatProblem)
+    results = sol.extract_results()
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.plot(results["ATES_033c.Heat_ates"])
+    plt.figure()
+    plt.plot(results["ATES_033c.Stored_heat"])
+    plt.show()
+    a = 2
+    a = 1
+
+    # solution = run_optimization_problem(
+    #     HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}
+    # )

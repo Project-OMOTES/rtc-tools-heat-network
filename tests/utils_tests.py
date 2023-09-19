@@ -50,13 +50,13 @@ def heat_to_discharge_test(solution, results):
         dt = solution.parameters(0)[f"{d}.dT"]
         test.assertTrue(
             expr=all(
-                np.clip(results[f"{d}.Heat_ates"], 0.0, np.inf)
-                >= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt - 1e-6)
+                np.clip(results[f"{d}.Heat_ates"], -np.inf, 0.0)
+                <= (np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * dt + 1e-6)
             )
         )
         np.testing.assert_allclose(
-            np.clip(results[f"{d}.Heat_ates"], -np.inf, 0.0),
-            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * dt,
+            np.clip(results[f"{d}.Heat_ates"], 0.0, np.inf),
+            np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt,
         )
 
     for p in solution.hot_pipes:
@@ -86,7 +86,7 @@ def energy_conservation_test(solution, results):
         energy_sum += results[f"{d}.Heat_source"]
 
     for d in solution.heat_network_components.get("ates", []):
-        energy_sum += results[f"{d}.Heat_ates"]
+        energy_sum -= results[f"{d}.Heat_ates"]
 
     for p in solution.heat_network_components.get("pipe", []):
         energy_sum -= np.ones(len(solution.times())) * results[f"{p}__hn_heat_loss"]

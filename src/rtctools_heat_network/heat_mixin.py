@@ -2749,8 +2749,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds = self.bounds()
 
         for a, (
-            (_cold_pipe, _cold_pipe_orientation),
             (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
         ) in self.heat_network_topology.ates.items():
             heat_nominal = parameters[f"{a}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{a}.Q")
@@ -2758,7 +2758,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             rho = parameters[f"{a}.rho"]
             dt = parameters[f"{a}.dT"]
 
-            discharge = self.state(f"{a}.HeatIn.Q")
+            discharge = self.state(f"{a}.Q")
             # Note that `heat_hot` can be negative for the buffer; in that case we
             # are extracting heat from it.
             heat_ates = self.state(f"{a}.Heat_ates")
@@ -2770,7 +2770,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # the constraints with a boolean. Note that `discharge` and `heat_hot`
             # are guaranteed to have the same sign.
             flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
-            is_ates_charging = 1 - self.state(flow_dir_var)
+            is_ates_charging = self.state(flow_dir_var)
 
             big_m = self.__get_abs_max_bounds(
                 *self.merge_bounds(bounds[f"{a}.HeatIn.Heat"], bounds[f"{a}.HeatOut.Heat"])
@@ -2781,18 +2781,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(
                 (
                     (heat_ates - cp * rho * dt * discharge) / constraint_nominal,
+                    -np.inf,
                     0.0,
-                    np.inf,
                 )
             )
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
             constraints.append(
                 (
-                    (heat_ates - cp * rho * dt * discharge - (1 - is_ates_charging) * big_m)
+                    (heat_ates - cp * rho * dt * discharge + (1 - is_ates_charging) * big_m)
                     / constraint_nominal,
-                    -np.inf,
                     0.0,
+                    np.inf,
                 )
             )
 

@@ -268,9 +268,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
                 assert pipe_w_orientation[0] in pipes_set
 
                 if k == "Out":
-                    assert self.is_hot_pipe(pipe_w_orientation[0])
-                else:
                     assert self.is_cold_pipe(pipe_w_orientation[0])
+                else:
+                    assert self.is_hot_pipe(pipe_w_orientation[0])
 
                 ates_connections[a].append(pipe_w_orientation)
 
