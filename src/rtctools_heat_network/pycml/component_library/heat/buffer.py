@@ -52,6 +52,8 @@ class Buffer(HeatTwoPort, BaseAsset):
         # the hot (resp. cold) line.
         # As by construction the cold line should have zero heat, we fix HeatCold to zero.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
+        # We connect a buffer as an demand, meaning that flow and Heat_buffer are positive under
+        # charging and negative under discharge
         self.add_variable(Variable, "Heat_buffer", nominal=self.Heat_nominal)
         # Assume the storage fills in about an hour at typical rate
         self._typical_fill_time = 3600.0

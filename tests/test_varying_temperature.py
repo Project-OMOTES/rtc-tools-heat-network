@@ -109,8 +109,8 @@ class TestVaryingTemperature(TestCase):
         # Check that the problem has an infeasible temperature for the hex
         np.testing.assert_allclose(results[f"{33638164429859421}__supply_temperature"], 69.0)
         # Verify that the hex is disabled
-        np.testing.assert_allclose(results["GenericConversion_3d3f__disabled"], 1.0)
-        np.testing.assert_allclose(results["GenericConversion_3d3f.Primary_heat"], 0.0)
+        np.testing.assert_allclose(results["HeatExchange_39ed__disabled"], 1.0)
+        np.testing.assert_allclose(results["HeatExchange_39ed.Primary_heat"], 0.0)
 
         heat_problem = run_optimization_problem(HeatProblemTvarSecondary, base_folder=base_folder)
 

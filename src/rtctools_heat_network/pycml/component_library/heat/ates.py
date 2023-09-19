@@ -34,6 +34,8 @@ class ATES(HeatTwoPort, BaseAsset):
         # Heat_ates is the amount of heat added to or extracted from the buffer
         # per timestep.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
+        # We connect an ATES as an demand, meaning that flow and Heat_ates are positive under
+        # charging and negative under discharge
         self.add_variable(Variable, "Heat_ates", nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
         # Assume the storage fills in about 3 months at typical rate
