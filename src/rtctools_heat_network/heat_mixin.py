@@ -2758,7 +2758,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             rho = parameters[f"{a}.rho"]
             dt = parameters[f"{a}.dT"]
 
-            discharge = self.state(f"{a}.HeatIn.Q")
+            discharge = self.state(f"{a}.Q")
             # Note that `heat_hot` can be negative for the buffer; in that case we
             # are extracting heat from it.
             heat_ates = self.state(f"{a}.Heat_ates")
@@ -2781,18 +2781,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(
                 (
                     (heat_ates - cp * rho * dt * discharge) / constraint_nominal,
+                    -np.inf,
                     0.0,
-                    np.inf,
                 )
             )
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
             constraints.append(
                 (
-                    (heat_ates - cp * rho * dt * discharge - (1 - is_ates_charging) * big_m)
+                    (heat_ates - cp * rho * dt * discharge + (1 - is_ates_charging) * big_m)
                     / constraint_nominal,
-                    -np.inf,
                     0.0,
+                    np.inf,
                 )
             )
 
