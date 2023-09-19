@@ -311,9 +311,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             # TODO: Current max_power estimation is not very accurate, a more physics based
             # estimation should be implemented, maybe using other ESDL attributs.
-            max_power = asset.attributes["heatTransferCoefficient"] * (
-                params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"]
-            ) / 2.
+            max_power = (
+                asset.attributes["heatTransferCoefficient"]
+                * (params_t["Primary"]["T_supply"] - params_t["Secondary"]["T_return"])
+                / 2.0
+            )
 
         prim_heat = dict(
             Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
