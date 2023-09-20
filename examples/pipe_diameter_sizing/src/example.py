@@ -93,7 +93,7 @@ class PipeDiameterSizingProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-        """
+    """
     Represents an optimization problem for sizing pipe diameters in a heat
     network.
 
@@ -162,7 +162,7 @@ class PipeDiameterSizingProblem(
 
 
 class PipeDiameterSizingProblemTvar(PipeDiameterSizingProblem):
-        """
+    """
     Represents an extension of PipeDiameterSizingProblem with temperature variations.
 
     Methods:
