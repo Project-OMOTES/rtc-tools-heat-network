@@ -216,7 +216,10 @@ class ScenarioOutput(HeatMixin):
             energy_system = esh.load_from_string(self.esdl_string)
 
         energy_system.id = str(uuid.uuid4())
-        energy_system.name = energy_system.name + "_SmartControlOptimized"
+        if optimizer_sim:
+            energy_system.name = energy_system.name + "_GrowOptimized"
+        else:
+            energy_system.name = energy_system.name + "_Simulation"
 
         def _name_to_asset(name):
             return next(
@@ -252,11 +255,12 @@ class ScenarioOutput(HeatMixin):
             placed = np.round(results[asset_placement_var][0]) >= 1.0
             if placed:
                 try:
+                    capex_breakdown[asset.asset_type] += (
+                        results[f"{asset.name}__installation_cost"][0]
+                        + results[f"{asset.name}__investment_cost"][0]
+                    )
                     tot_install_cost_euro += results[f"{asset.name}__installation_cost"][0]
                     tot_invest_cost_euro += results[f"{asset.name}__investment_cost"][0]
-                    capex_breakdown[asset.asset_type] += (
-                        tot_install_cost_euro + tot_invest_cost_euro
-                    )
 
                     if is_asset_opex_included:
                         tot_variable_opex_cost_euro += results[
@@ -271,17 +275,18 @@ class ScenarioOutput(HeatMixin):
 
                 except KeyError:
                     try:
-                        tot_install_cost_euro = results[f"{asset.name}__installation_cost"][0]
-                        tot_invest_cost_euro = results[f"{asset.name}__investment_cost"][0]
                         capex_breakdown[asset.asset_type] = (
-                            tot_install_cost_euro + tot_invest_cost_euro
+                            results[f"{asset.name}__installation_cost"][0]
+                            + results[f"{asset.name}__investment_cost"][0]
                         )
+                        tot_install_cost_euro += results[f"{asset.name}__installation_cost"][0]
+                        tot_invest_cost_euro += results[f"{asset.name}__investment_cost"][0]
 
                         if is_asset_opex_included:
-                            tot_variable_opex_cost_euro = results[
+                            tot_variable_opex_cost_euro += results[
                                 f"{asset.name}__variable_operational_cost"
                             ][0]
-                            tot_fixed_opex_cost_euro = results[
+                            tot_fixed_opex_cost_euro += results[
                                 f"{asset.name}__fixed_operational_cost"
                             ][0]
                             opex_breakdown[asset.asset_type] = (
@@ -383,6 +388,7 @@ class ScenarioOutput(HeatMixin):
         # - OPEX KPIs are taken into account for energy sources only.
         # - We assume that all energy produced outside of the the subarea comes in via a heat
         #   exchanger that is part of the subarea.
+        # TODO: Investigate if no cost in the ESDL then this breaks ESDL visibility
         for subarea in energy_system.instance[0].area.area:
             area_investment_cost = 0.0
             area_installation_cost = 0.0
@@ -628,11 +634,16 @@ class ScenarioOutput(HeatMixin):
 
         for pipe in self.hot_pipes:
             pipe_classes = self.pipe_classes(pipe)
+            # When a pipe has not been optimized, enforce pipe to be shown in the simulator
+            # ESDL.
             if not pipe_classes:
-                # Nothing to change in the model
-                continue
+                if optimizer_sim:
+                    continue
+                else:
+                    asset.state = esdl.AssetStateEnum.ENABLED
 
-            pipe_class = self.get_optimized_pipe_class(pipe)
+            if optimizer_sim:
+                pipe_class = self.get_optimized_pipe_class(pipe)
             cold_pipe = self.hot_to_cold_pipe(pipe)
 
             if parameters[f"{pipe}.diameter"] != 0.0 or any(np.abs(results[f"{pipe}.Q"]) > 1.0e-9):
@@ -643,15 +654,17 @@ class ScenarioOutput(HeatMixin):
                 # print(pipe + " has pipeclass: " + pipe_class.name )
                 # print(pipe + f" has diameter: " + pipe_class.name)
 
-                assert isinstance(pipe_class, EDRPipeClass)
+                if optimizer_sim:
+                    assert isinstance(pipe_class, EDRPipeClass)
 
-                asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
+                    asset_edr = esh_edr.load_from_string(pipe_class.xml_string)
 
                 for p in [pipe, cold_pipe]:
                     asset = _name_to_asset(p)
                     asset.state = esdl.AssetStateEnum.ENABLED
-                    for prop in edr_pipe_properties_to_copy:
-                        setattr(asset, prop, getattr(asset_edr, prop))
+                    if optimizer_sim:
+                        for prop in edr_pipe_properties_to_copy:
+                            setattr(asset, prop, getattr(asset_edr, prop))
             else:
                 for p in [pipe, cold_pipe]:
                     asset = _name_to_asset(p)
@@ -663,7 +676,7 @@ class ScenarioOutput(HeatMixin):
         if self.esdl_string is None:
             if optimizer_sim:
                 filename = run_info.esdl_file.with_name(
-                    f"{run_info.esdl_file.stem}_SmartControlOptimized.esdl"
+                    f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
                 )
             else:
                 filename = run_info.esdl_file.with_name(
