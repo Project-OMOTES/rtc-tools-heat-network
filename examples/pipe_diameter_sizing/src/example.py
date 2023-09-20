@@ -107,6 +107,7 @@ class PipeDiameterSizingProblem(
         options, including hot start.
 
     """
+
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0
@@ -171,6 +172,7 @@ class PipeDiameterSizingProblemTvar(PipeDiameterSizingProblem):
         solver_options(): Specify solver options, including hot start.
 
     """
+
     def temperature_carriers(self):
         return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
 
