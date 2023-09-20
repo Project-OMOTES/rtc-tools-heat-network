@@ -130,7 +130,11 @@ class _ESDLModelBase(_Model):
             # We assume that every component has 2 ports. Essentially meaning that we are dealing
             # with a single commodity for a component. Exceptions, assets that deal with multiple
             # have to be specifically specified what port configuration is expected in the model.
-            if asset.asset_type == "GenericConversion" or asset.asset_type == "HeatPump":
+            if (
+                asset.asset_type == "GenericConversion"
+                or asset.asset_type == "HeatExchange"
+                or asset.asset_type == "HeatPump"
+            ):
                 if prefix != "Heat":
                     raise Exception(
                         "Hydraulically decoulpled systems are not yet supported for nonlinear (QTH)"

@@ -37,3 +37,12 @@ class TestBufferHistory(TestCase):
         np.testing.assert_allclose(
             historystoredheat.objective_value, history.objective_value, rtol=1e-05
         )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestBufferHistory()
+    a.test_buffer_history()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

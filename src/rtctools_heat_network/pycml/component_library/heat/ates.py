@@ -34,6 +34,8 @@ class ATES(HeatTwoPort, BaseAsset):
         # Heat_ates is the amount of heat added to or extracted from the buffer
         # per timestep.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
+        # We connect an ATES as an demand, meaning that flow and Heat_ates are positive under
+        # charging and negative under discharge
         self.add_variable(Variable, "Heat_ates", nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
         # Assume the storage fills in about 3 months at typical rate
@@ -45,6 +47,7 @@ class ATES(HeatTwoPort, BaseAsset):
             min=0.0,
             nominal=self._nominal_stored_heat,
         )
+        self.add_variable(Variable, "Q", nominal=self.Q_nominal)
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
         # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
@@ -57,16 +60,17 @@ class ATES(HeatTwoPort, BaseAsset):
         self._heat_loss_eq_nominal_ates = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
 
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
+        self.add_equation(self.Q - self.HeatOut.Q)
 
         # Heat stored in the ates
         self.add_equation(
-            (self.der(self.Stored_heat) + self.Heat_ates + self.Heat_loss)
+            (self.der(self.Stored_heat) - self.Heat_ates + self.Heat_loss)
             / self._heat_loss_eq_nominal_ates
         )
         self.add_equation(
             (self.Heat_loss - self.Stored_heat * self.heat_loss_coeff) / self._nominal_heat_loss
         )
         self.add_equation(
-            (self.HeatOut.Heat - (self.HeatIn.Heat + self.Heat_ates)) / self.Heat_nominal
+            (self.HeatIn.Heat - (self.HeatOut.Heat + self.Heat_ates)) / self.Heat_nominal
         )
         self.add_equation((self.Heat_flow - self.Heat_ates) / self.Heat_nominal)

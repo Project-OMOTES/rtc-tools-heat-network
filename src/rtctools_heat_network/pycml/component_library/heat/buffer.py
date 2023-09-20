@@ -52,6 +52,8 @@ class Buffer(HeatTwoPort, BaseAsset):
         # the hot (resp. cold) line.
         # As by construction the cold line should have zero heat, we fix HeatCold to zero.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
+        # We connect a buffer as an demand, meaning that flow and Heat_buffer are positive under
+        # charging and negative under discharge
         self.add_variable(Variable, "Heat_buffer", nominal=self.Heat_nominal)
         # Assume the storage fills in about an hour at typical rate
         self._typical_fill_time = 3600.0
@@ -63,6 +65,7 @@ class Buffer(HeatTwoPort, BaseAsset):
             max=self.max_stored_heat,
             nominal=self._nominal_stored_heat,
         )
+        self.add_variable(Variable, "Q", nominal=self.Q_nominal)
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
         # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
@@ -76,6 +79,7 @@ class Buffer(HeatTwoPort, BaseAsset):
         self._heat_loss_eq_nominal_buf = (self.Heat_nominal * self._nominal_heat_loss) ** 0.5
 
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
+        self.add_equation(self.Q - self.HeatOut.Q)
 
         # Heat stored in the buffer
         self.add_equation(

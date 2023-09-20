@@ -303,4 +303,4 @@ class HeatProblemTvarDisableHEX(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblemTvar)
+    run_optimization_problem(HeatProblem)

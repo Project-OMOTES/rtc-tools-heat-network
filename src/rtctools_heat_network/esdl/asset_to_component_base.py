@@ -78,6 +78,7 @@ class _AssetToComponentBase:
         "ElectricityProducer": "electricity_source",
         "Bus": "electricity_node",
         "GenericConsumer": "demand",
+        "HeatExchange": "heat_exchanger",
         "HeatingDemand": "demand",
         "HeatPump": "heat_pump",
         "GasHeater": "source",
