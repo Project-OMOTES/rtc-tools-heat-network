@@ -1,18 +1,16 @@
 """
-This example shows how to solve a pipe diameter sizing problem for a heat
-network system. The goal is to optimize the selection of pipe diameters for
-various segments of the heat network while considering factors such as demand,
-heat loss, and fluid velocity. Here's an explanation of the problem that
-this code addresses:
+This example shows a simplified example of an optimization problem for heat
+network design. The goal is to optimize the selection of pipe diameters for
+various segments of the heat network while considering multiple goals. Here's an
+explanation of the problem that this code addresses:
 
-1. **Heat Network Design**: The code is designed for optimizing the design of a
+1. **Heat Network Design**: The code optimizes the design of a
    heat network, which typically involves the transportation of hot water or
    steam to meet the heating demands of various consumers (e.g., buildings).
 
 2. **Objective**: The primary objective of the optimization is to determine the
-   appropriate diameter of pipes for different sections of the heat network to
-   minimize heat losses and ensure that the fluid velocity within the pipes
-   meets certain criteria.
+   appropriate optimal combination of pipe diameters for the heat network,
+   considering both minimizing heat loss and meeting demand targets.
 
 3. **Components**: - `Pipe Classes`: The code defines different classes of pipes
    with varying diameters, lengths, and thermal properties. These pipe classes
@@ -24,25 +22,10 @@ this code addresses:
    `Solver Options`: The code specifies options for the optimization solver,
    including parameters like maximum runtime.
 
-4. **Constraints**: In this example we don't specify constraints. However, in
-   some applications it's necessary to define constraints that could represent
+4. **Constraints**: This example does not specify constraints. However, in
+   some applications it is necessary to define constraints to represent
    physical priperties (fluid temperature, flow rates, etc.) or other
    limitations of the system.
-
-5. **Optimization**: The main goal of the code is to use optimization techniques
-   to find the optimal combination of pipe diameters for the heat network,
-   considering both minimizing heat loss and meeting demand targets.
-
-6. **Execution Time**: The code also measures the execution time of the
-   optimization process, which can be useful for assessing the efficiency of the
-   optimization algorithm.
-
-Overall, this code represents a simplified example of an optimization problem
-for heat network design. In practice, such problems can become quite complex,
-with multiple objectives, constraints, and considerations. The code provides a
-foundation for solving this type of problem, and further development and
-customization would likely be required to address specific real-world scenarios
-and requirements.
 
 """
 
@@ -111,15 +94,17 @@ class PipeDiameterSizingProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
         """
-    Represents an optimization problem for sizing pipe diameters in a heat network.
+    Represents an optimization problem for sizing pipe diameters in a heat
+    network.
 
     Methods:
         heat_network_options(): Specifies heat network options.
         pipe_classes(pipe): Defines pipe classes with characteristics.
-        path_goals(): Specifies goals related to the heat demand in the network.
-        goals(): Specifies the primary optimization goals.
-        priority_completed(priority): Called when a priority level of goals is completed.
-        solver_options(): Specifies solver options, including hot start.
+        path_goals(): Includes the goal related to the heat demand in the
+        network. goals(): Includes the goal related to minimization of losses.
+        priority_completed(priority): Called when a priority level of goals is
+        completed to activate the hot start solver_options(): Specifies solver
+        options, including hot start.
 
     """
     def heat_network_options(self):
