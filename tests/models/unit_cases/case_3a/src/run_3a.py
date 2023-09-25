@@ -332,7 +332,7 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblemTvarsup)
+    sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
     a = 1
     # run_heat_network_optimization(HeatProblem, QTHProblem)
