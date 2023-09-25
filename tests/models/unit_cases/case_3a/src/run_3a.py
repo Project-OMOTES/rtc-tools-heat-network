@@ -127,6 +127,18 @@ class HeatProblem(
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.
+        options["heat_loss_disconnected_pipe"] = True
+        options["neglect_pipe_heat_losses"] = False
+        return options
+
 
 class HeatProblemSetPointConstraints(
     HeatMixin,

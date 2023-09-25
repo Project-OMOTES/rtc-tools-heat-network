@@ -236,7 +236,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         delta_temperature = supply_temperature - return_temperature
         # hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
         hfr_max = (
-            self.rho * self.cp * q_max * delta_temperature
+            self.rho * self.cp * q_max * temperature
         )  # TODO: are there any physical implications of using this bound
 
         assert hfr_max > 0.0
