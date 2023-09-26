@@ -65,6 +65,7 @@ class PipeDiameterSizingProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0
+        options["heat_loss_disconnected_pipe"] = False
         return options
 
     def pipe_classes(self, pipe):
@@ -109,10 +110,10 @@ class PipeDiameterSizingProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
-        options["hot_start"] = getattr(self, "_hot_start", False)
-        cbc_options = options["cbc"] = {}
-        cbc_options["seconds"] = 500.0
+        options["solver"] = "gurobi"
+        # options["hot_start"] = getattr(self, "_hot_start", False)
+        # cbc_options = options["cbc"] = {}
+        # cbc_options["seconds"] = 500.0
         return options
 
 
@@ -169,5 +170,10 @@ if __name__ == "__main__":
     start_time = time.time()
 
     heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
+    results = heat_problem.extract_results()
+    print(results["GeothermalSource_27cb.HeatIn.Heat"])
+    print(results["GeothermalSource_27cb.HeatIn.Q"] * 4200 * 988 * 45)
+    print(results["GeothermalSource_fafd.HeatIn.Heat"])
+    print(results["GeothermalSource_fafd.HeatIn.Q"] * 4200 * 988 * 45)
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
