@@ -300,7 +300,8 @@ class EndScenarioSizing(
         options["minimum_velocity"] = 0.0
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
+        # options["neglect_pipe_heat_losses"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
@@ -374,8 +375,9 @@ class EndScenarioSizing(
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.05
+        gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
 
         return options
 
@@ -637,7 +639,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
     _ = run_optimization_problem(
-        EndScenarioSizingHIGHS,
+        EndScenarioSizing,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
     )

@@ -1524,8 +1524,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 heat_loss = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
                 # To avoid another symbol we use the hot pipe symbol and rescale it for
                 # the return pipe temperature
-                heat_loss_sym_name = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(p)]
-                heat_loss_cold = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
+                heat_loss_cold_sym_name  = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(p)]
+                heat_loss_cold = self.__pipe_topo_heat_loss_var[heat_loss_cold_sym_name ]
                 #     (
                 #     heat_loss
                 #     / (parameters[f"{p}.T_supply"] - parameters[f"{p}.T_ground"])
@@ -2534,6 +2534,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             pipe_q = self.state(f"{p}.Q")
             q_nominal = self.variable_nominal(f"{p}.Q")
 
+            is_disconnected_var = self.__pipe_disconnect_map.get(p)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
             # We do not want Big M to be too tight in this case, as it results
             # in a rather hard yes/no constraint as far as feasibility on e.g.
             # a single source system is concerned. Use a factor of 2 to give
@@ -2555,10 +2562,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                     if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
                         constraints.append(
-                            ((heat - pipe_q + big_m * (1 - flow_dir)) / big_m, 0.0, np.inf)
+                            ((heat - pipe_q + big_m * (1 - flow_dir + is_disconnected)) / big_m, 0.0, np.inf)
                         )
                         constraints.append(
-                            ((heat - pipe_q - big_m * flow_dir) / big_m, -np.inf, 0.0)
+                            ((heat - pipe_q - big_m * (flow_dir+ is_disconnected)) / big_m, -np.inf, 0.0)
                         )
                     elif len(return_temperatures) == 0:
                         return_temperature = parameters[f"{p}.T_return"]
@@ -4623,9 +4630,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(
-            self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
-        )
+        # constraints.extend(
+        #     self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
+        # )
 
         return constraints
 
