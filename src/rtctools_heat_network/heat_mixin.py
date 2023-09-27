@@ -328,9 +328,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 self.__pipe_topo_max_discharge_var_bounds[pipe] = (-max(max_discharges), max(max_discharges))
             else:
                 # TODO: use proper max velocity
-                self.__pipe_topo_max_discharge_nominals[pipe] = parameters[f"{pipe}.area"] * 3.
-                self.__pipe_topo_max_discharge_var_bounds[pipe] = (
-                -parameters[f"{pipe}.area"] * 3., parameters[f"{pipe}.area"] * 3.)
+                self.__pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
+                self.__pipe_topo_max_discharge_var_bounds[pipe] = (-max(max_discharges), max(max_discharges))
 
             if not pipe_classes:
                 # No pipe class decision to make for this pipe w.r.t. diameter
@@ -1118,13 +1117,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             head_loss = 0.0
 
             for pipe in components.get("pipe", []):
-                if self.is_cold_pipe(pipe):
-                    hot_pipe = self.cold_to_hot_pipe(pipe)
-                else:
-                    hot_pipe = pipe
+                # if self.is_cold_pipe(pipe):
+                #     hot_pipe = self.cold_to_hot_pipe(pipe)
+                # else:
+                #     hot_pipe = pipe
 
                 try:
-                    pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe].keys()
+                    pipe_classes = self.__pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._hn_pipe_head_loss(
                             pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
@@ -3681,9 +3680,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             if len(supply_temperatures) == 0:
                 heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
-                constraints.append(
-                    ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
-                )
+                # constraints.append(
+                #     ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
+                # )
             else:
                 for temperature in supply_temperatures:
                     heat_losses = [
@@ -4334,43 +4333,43 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
-        # constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member)) # niks nodig
+        constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member)) # niks nodig
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member)) # loop over all pipes
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member)) # loop over alle pipes
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member)) # niks nodig
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member)) # check
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member)) # check
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member)) # check
-        # constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member)) # check
-        # constraints.extend(
-        #     self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)# check
-        # )
-        # constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
-        # constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member)) # check
+        constraints.extend(
+            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)# check
+        )
+        constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
-        # constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
-        # constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
-        # constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
-        # constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
-        # constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
-        # constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
-        # constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
-        # constraints.extend(
-        #     self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
-        # )
+        constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
+        constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(
+            self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
+        )
 
         return constraints
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        # constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
+        constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
-        # constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
-        # constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
-        # constraints.extend(self.__investment_cost_constraints(ensemble_member))
-        # constraints.extend(self.__installation_cost_constraints(ensemble_member))
-        # constraints.extend(self.__max_size_constraints(ensemble_member))
+        constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
+        constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
+        constraints.extend(self.__investment_cost_constraints(ensemble_member))
+        constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__max_size_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(
