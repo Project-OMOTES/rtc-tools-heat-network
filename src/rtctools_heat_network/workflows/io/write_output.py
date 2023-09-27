@@ -459,30 +459,34 @@ class ScenarioOutput(HeatMixin):
 
             # Here we add KPIs to the polygon area which allows to visualize them by hoovering over
             # it with the mouse
-            kpis.kpi.append(
-                esdl.DoubleKPI(
-                    value=area_investment_cost / 1.0e6,
-                    name="Investment",
-                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                        physicalQuantity=esdl.PhysicalQuantityEnum.COST,
-                        unit=esdl.UnitEnum.EURO,
-                        multiplier=esdl.MultiplierEnum.MEGA,
-                    ),
+            # Only update kpis if one of the costs > 0, else esdl file will be corrupted
+            if area_investment_cost > 0.0 or area_installation_cost > 0.0:
+                kpis.kpi.append(
+                    esdl.DoubleKPI(
+                        value=area_investment_cost / 1.0e6,
+                        name="Investment",
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                            unit=esdl.UnitEnum.EURO,
+                            multiplier=esdl.MultiplierEnum.MEGA,
+                        ),
+                    )
                 )
-            )
-            kpis.kpi.append(
-                esdl.DoubleKPI(
-                    value=area_installation_cost / 1.0e6,
-                    name="Installation",
-                    quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                        physicalQuantity=esdl.PhysicalQuantityEnum.COST,
-                        unit=esdl.UnitEnum.EURO,
-                        multiplier=esdl.MultiplierEnum.MEGA,
-                    ),
+                kpis.kpi.append(
+                    esdl.DoubleKPI(
+                        value=area_installation_cost / 1.0e6,
+                        name="Installation",
+                        quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                            physicalQuantity=esdl.PhysicalQuantityEnum.COST,
+                            unit=esdl.UnitEnum.EURO,
+                            multiplier=esdl.MultiplierEnum.MEGA,
+                        ),
+                    )
                 )
-            )
-
-            if is_at_least_asset_opex_included:
+            # Only update kpis if one of the costs > 0, else esdl file will be corrupted
+            if is_at_least_asset_opex_included and (
+                area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0
+            ):
                 kpis.kpi.append(
                     esdl.DoubleKPI(
                         value=area_variable_opex_cost / 1.0e6,
