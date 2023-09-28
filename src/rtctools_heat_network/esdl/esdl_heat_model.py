@@ -215,13 +215,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
-        supply_temperature = temperature_modifiers["T_supply"]
-        return_temperature = temperature_modifiers["T_return"]
+        temperature = temperature_modifiers["temperature"]
 
-        if "_ret" in asset.attributes["name"]:
-            temperature = return_temperature
-        else:
-            temperature = supply_temperature
+        # supply_temperature = temperature_modifiers["T_supply"]
+        # return_temperature = temperature_modifiers["T_return"]
+        #
+        # if "_ret" in asset.attributes["name"]:
+        #     temperature = return_temperature
+        # else:
+        #     temperature = supply_temperature
 
         # Compute the maximum heat flow based on an assumed maximum velocity
         area = math.pi * diameter**2 / 4.0
@@ -233,7 +235,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: This might be an underestimation. We need to add the total
         # heat losses in the system to get a proper upper bound. Maybe move
         # calculation of Heat bounds to the HeatMixin?
-        delta_temperature = supply_temperature - return_temperature
+        # delta_temperature = supply_temperature - return_temperature
         # hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
         hfr_max = (
             self.rho * self.cp * q_max * temperature
@@ -245,7 +247,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             length=length,
             diameter=diameter,
-            temperature=temperature,
+            # temperature=temperature,
             disconnectable=self._is_disconnectable_pipe(asset),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),

@@ -323,13 +323,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             max_discharges = [c.maximum_discharge for c in pipe_classes]
             self.__pipe_topo_max_discharge_var[max_discharge_var_name] = ca.MX.sym(max_discharge_var_name)
             self.__pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
-            if len(pipe_classes) > 1:
+            if len(pipe_classes) >= 1:
                 self.__pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
                 self.__pipe_topo_max_discharge_var_bounds[pipe] = (-max(max_discharges), max(max_discharges))
             else:
                 # TODO: use proper max velocity
-                self.__pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
-                self.__pipe_topo_max_discharge_var_bounds[pipe] = (-max(max_discharges), max(max_discharges))
+                max_discharge = parameters[f"{pipe}.area"] * self.heat_network_options()["maximum_velocity"]
+                self.__pipe_topo_max_discharge_nominals[pipe] = max_discharge
+                self.__pipe_topo_max_discharge_var_bounds[pipe] = (-max_discharge, max_discharge)
 
             if not pipe_classes:
                 # No pipe class decision to make for this pipe w.r.t. diameter
@@ -389,27 +390,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_loss_var_name = f"{pipe}__hn_heat_loss"
             self.__pipe_topo_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
             self.__pipe_topo_heat_loss_map[pipe] = heat_loss_var_name
-            # heat_loss_var_name = f"{self.hot_to_cold_pipe(pipe)}__hn_heat_loss"
-            # self.__pipe_topo_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
-            # self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)] = heat_loss_var_name
 
             heat_losses = [
                 self._pipe_heat_loss(options, parameters, pipe, c.u_values) for c in pipe_classes
             ]
 
-            # for heat_loss_var_name in [
-            #     f"{pipe}__hn_heat_loss",
-            #     f"{cold_pipe}__hn_heat_loss",
-            # ]:
-            #     pipe_name = pipe
-            #     if cold_pipe in heat_loss_var_name:
-            #         pipe_name = cold_pipe
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
                 # No pipe class decision to make for this pipe w.r.t. heat loss
                 heat_loss = self._pipe_heat_loss(options, parameters, pipe)
                 self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
-                    heat_loss,
-                    heat_loss,
+                    0.,
+                    2. * heat_loss,
                 )
                 if heat_loss > 0:
                     self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
@@ -426,8 +417,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 heat_loss = self._pipe_heat_loss(options, parameters, pipe, u_values)
 
                 self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
-                    heat_loss,
-                    heat_loss,
+                    0.,
+                    2. * heat_loss,
                 )
                 if heat_loss > 0:
                     self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
@@ -438,8 +429,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 self.__pipe_topo_heat_losses[pipe] = heat_losses
                 self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
-                    min(heat_losses),
-                    max(heat_losses),
+                    0.,
+                    2. * max(heat_losses),
                 )
                 self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = min(
                     x for x in heat_losses if x > 0
@@ -471,7 +462,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # naively override the bounds without taking this into account.
         for pipe in self.__pipe_topo_pipe_class_map:
             pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
-            max_discharge = max(c.maximum_discharge for c in pipe_classes)
+            max_discharge = max([c.maximum_discharge for c in pipe_classes])
 
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (-max_discharge, max_discharge)
             # self.__pipe_topo_heat_discharge_bounds[f"{self.hot_to_cold_pipe(pipe)}.Q"] = (
@@ -1062,8 +1053,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if temp is not None:
             temperature = temp
         temperature_ground = parameters[f"{p}.T_ground"]
-        sign_dtemp = 1 if self.is_hot_pipe(p) else -1
-        dtemp = sign_dtemp * parameters[f"{p}.dT"]
+        try: 
+            sign_dtemp = 1 if self.is_hot_pipe(p) else -1
+            if sign_dtemp == 1:
+                dtemp = (temperature - parameters[f"{self.hot_to_cold_pipe(p)}.temperature"])
+            else:
+                dtemp = (temperature - parameters[f"{self.cold_to_hot_pipe(p)}.temperature"])
+        except KeyError:
+            dtemp = 0.
 
         heat_loss = (
             length * (u_1 - u_2) * temperature
@@ -1505,12 +1502,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
             else:
                 # Heat loss is constant, i.e. does not depend on pipe class
-                carrier = parameters[f"{p}.T_supply_id"]
-                # ret_carrier = parameters[f"{self.hot_to_cold_pipe(p)}.T_return_id"]
-                temperatures = []#self.temperature_regimes(sup_carrier)
+                carrier = parameters[f"{p}.carrier_id"]
+                temperatures = self.temperature_regimes(carrier)
 
                 if len(temperatures) == 0:
                     heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
+                    # Heat loss is fixed there is no temperature variation possible
                     heat_loss = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
                     # heat_loss = parameters[f"{p}.Heat_loss"]
                     constraint_nominal = (
@@ -1539,14 +1536,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             )
                         )
                 elif len(temperatures) > 0:
+                    # Heat loss depends on the temperature selected
                     heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
-                    heat_loss = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
+                    # heat_loss = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
                     constraint_nominal = (
                         (bounds[heat_loss_sym_name][1] * heat_nominal) ** 0.5 if bounds[heat_loss_sym_name][1] else heat_nominal
                     )
                     for temperature in temperatures:
+                        heat_loss = self._pipe_heat_loss(
+                            self.heat_network_options(),
+                            self.parameters(ensemble_member),
+                            p,
+                            temp=temperature
+                        )
                         temperature_is_selected = self.state(
-                            f"{carrier}__return_{temperature}"
+                            f"{carrier}_{temperature}"
                         )
                         big_m = 2.0 * np.max(np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"])))
 
@@ -1944,7 +1948,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             try:
                 pipe_classes = self.__pipe_topo_pipe_class_map[p].keys()
-                maximum_discharge = max(c.maximum_discharge for c in pipe_classes)
+                maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
                 minimum_discharge = 0.0
             except KeyError:
                 maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
@@ -2418,8 +2422,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             flow_dir_var = self.__pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
-            scaled_heat_in = self.state(f"{p}.HeatIn.Heat") * heat_to_discharge_fac
-            scaled_heat_out = self.state(f"{p}.HeatOut.Heat") * heat_to_discharge_fac
+            scaled_heat_in = self.state(f"{p}.HeatIn.Heat")# * heat_to_discharge_fac
+            scaled_heat_out = self.state(f"{p}.HeatOut.Heat")# * heat_to_discharge_fac
             pipe_q = self.state(f"{p}.Q")
             q_nominal = self.variable_nominal(f"{p}.Q")
 
@@ -2428,7 +2432,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # a single source system is concerned. Use a factor of 2 to give
             # some slack.
             # big_m = 2 * sum_heat_losses * heat_to_discharge_fac
-            big_m = 2.0 * np.max(np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))) * heat_to_discharge_fac
+            big_m = 2.0 * np.max(np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"])))# * heat_to_discharge_fac
             big_m_t = 2.0 * max(self.bounds()[f"{p}.Q"])
 
             for heat in (scaled_heat_in, scaled_heat_out):
@@ -2438,32 +2442,32 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     assert big_m > 0.0
 
                     # We only consider the supply carrier as we are looking at hot_pipes
-                    sup_carrier = parameters[f"{p}.T_supply_id"]
-                    supply_temperatures = self.temperature_regimes(sup_carrier)
+                    carrier = parameters[f"{p}.carrier_id"]
+                    temperatures = self.temperature_regimes(carrier)
                     # ret_carrier = parameters[f"{p}.T_return_id"]
                     # return_temperatures = self.temperature_regimes(ret_carrier)
 
-                    if len(supply_temperatures) == 0:
+                    if len(temperatures) == 0:
                         constraints.append(
-                            ((heat - pipe_q - big_m * (1 - flow_dir)) / big_m, -np.inf, 0.0)
+                            ((heat - pipe_q * (cp * rho * temp) - big_m * (1 - flow_dir)) / big_m, -np.inf, 0.0)
                         )
                         constraints.append(
-                            ((heat - pipe_q + big_m * flow_dir) / big_m, 0.0, np.inf)
+                            ((heat - pipe_q * (cp * rho * temp) + big_m * flow_dir) / big_m, 0.0, np.inf)
                         )
-                    elif len(supply_temperatures) > 0:
+                    elif len(temperatures) > 0:
                         # return_temperature = parameters[f"{p}.T_return"]
-                        for supply_temperature in supply_temperatures:
-                            sup_temperature_is_selected = self.state(
-                                f"{sup_carrier}__supply_{supply_temperature}"
+                        for temperature in temperatures:
+                            temperature_is_selected = self.state(
+                                f"{carrier}__supply_{temperature}"
                             )
-                            big_m_n = big_m * temp / supply_temperature
+                            big_m_n = big_m * temp / temperature
                             constraints.append(
                                 (
                                     (
-                                        heat * temp / supply_temperature
+                                        heat * temp / temperature
                                         - pipe_q
                                         + big_m_n * (1 - flow_dir)
-                                        + (1.0 - sup_temperature_is_selected) * big_m_t
+                                        + (1.0 - temperature_is_selected) * big_m_t
                                     )
                                     / big_m_n,
                                     0.0,
@@ -2473,10 +2477,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             constraints.append(
                                 (
                                     (
-                                        heat * temp / supply_temperature
+                                        heat * temp / temperature
                                         - pipe_q
                                         - big_m_n * flow_dir
-                                        - (1.0 - sup_temperature_is_selected) * big_m_t
+                                        - (1.0 - temperature_is_selected) * big_m_t
                                     )
                                     / big_m_n,
                                     -np.inf,
@@ -3632,11 +3636,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Make sure exactly one indicator is true
             constraints.append((sum(v), 1.0, 1.0))
 
-            if p in self.hot_pipes and self.hot_to_cold_pipe(p) in self.__pipe_topo_pipe_class_map:
-                return_pipe_classes = self.__pipe_topo_pipe_class_map[self.hot_to_cold_pipe(p)]
-                for pc_var_name,pc_ret_var_name in zip(pipe_classes.values(), return_pipe_classes.values()):
-                    constraints.append((self.extra_variable(pc_var_name, ensemble_member) -
-                                        self.extra_variable(pc_ret_var_name, ensemble_member), 0., 0.))
+            # if p in self.hot_pipes and self.hot_to_cold_pipe(p) in self.__pipe_topo_pipe_class_map:
+            #     return_pipe_classes = self.__pipe_topo_pipe_class_map[self.hot_to_cold_pipe(p)]
+            #     for pc_var_name,pc_ret_var_name in zip(pipe_classes.values(), return_pipe_classes.values()):
+            #         constraints.append((self.extra_variable(pc_var_name, ensemble_member) -
+            #                             self.extra_variable(pc_ret_var_name, ensemble_member), 0., 0.))
 
             # set the max discharge
             max_discharge = self.extra_variable(self.__pipe_topo_max_discharge_map[p])
@@ -3665,46 +3669,61 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
 
-        for p, heat_losses in self.__pipe_topo_heat_losses.items():
-            # assert self.is_hot_pipe(p)
+        for p in self.heat_network_components.get("pipe", []):
 
-            pipe_classes = self.__pipe_topo_pipe_class_map[p]
-            #     p if p in self.hot_pipes else self.cold_to_hot_pipe(p)
-            # ]
-            v = []
-            for pc_var_name in pipe_classes.values():
-                v.append(self.extra_variable(pc_var_name, ensemble_member))
+            try:
+                heat_losses = self.__pipe_topo_heat_losses[p]
+                pipe_classes = self.__pipe_topo_pipe_class_map[p]
+                v = []
+                for pc_var_name in pipe_classes.values():
+                    v.append(self.extra_variable(pc_var_name, ensemble_member))
+
+                heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
+            except:
+                heat_loss_expr = self._pipe_heat_loss(
+                            self.heat_network_options(),
+                            self.parameters(ensemble_member),
+                            p,
+                        )
 
             heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
             heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
             constraint_nominal = self.variable_nominal(heat_loss_sym_name)
 
-            carrier = self.parameters(ensemble_member)[f"{p}.T_supply_id"]
-            #     f"{p}.T_supply_id" if p in self.hot_pipes else f"{p}.T_return_id"
-            # ]
-            supply_temperatures = self.temperature_regimes(carrier)
+            carrier = self.parameters(ensemble_member)[f"{p}.carrier_id"]
+            temperatures = self.temperature_regimes(carrier)
 
-            if len(supply_temperatures) == 0:
-                heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
-                # constraints.append(
-                #     ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
-                # )
+            if len(temperatures) == 0:
+                # pass
+                constraints.append(
+                    ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
+                )
             else:
-                for temperature in supply_temperatures:
-                    heat_losses = [
-                        self._pipe_heat_loss(
+                for temperature in temperatures:
+                    if len(pipe_classes) == 0:
+                        heat_loss = self._pipe_heat_loss(
                             self.heat_network_options(),
                             self.parameters(ensemble_member),
                             p,
-                            c.u_values,
                             temp=temperature,
                         )
-                        for c in pipe_classes
-                    ]
-                    heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
+                        heat_loss_expr = heat_loss
+                    else:
+                        heat_losses = [
+                            self._pipe_heat_loss(
+                                self.heat_network_options(),
+                                self.parameters(ensemble_member),
+                                p,
+                                u_values=c.u_values,
+                                temp=temperature,
+                            )
+                            for c in pipe_classes
+                        ]
+                        heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
+
                     temperature_is_selected = self.state_vector(
-                        f"{carrier}__supply_{temperature}", ensemble_member
+                        f"{carrier}_{temperature}", ensemble_member
                     )
                     big_m = 2.0 * max(heat_losses)
                     constraints.append(
@@ -3738,10 +3757,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
 
         # Clip discharge based on pipe class
-        for p, pipe_classes in self.__pipe_topo_pipe_class_map.items():
-            v = []
-            for var_name in pipe_classes.values():
-                v.append(self.__pipe_topo_pipe_class_var[var_name])
+        for p in self.heat_network_components.get("pipe", []):#, pipe_classes in self.__pipe_topo_pipe_class_map.items():
+            # v = []
+            # for var_name in pipe_classes.values():
+            #     v.append(self.__pipe_topo_pipe_class_var[var_name])
 
             # Match the indicators to the discharge symbol(s)
             discharge_sym_hot = self.state(f"{p}.Q")
@@ -4340,51 +4359,51 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
-        constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member)) # niks nodig
+        # constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member)) # niks nodig
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member)) # loop over all pipes
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member)) # loop over alle pipes
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member)) # niks nodig
-        constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member)) # check
+        # constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member)) # check
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member)) # check
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member)) # check
         constraints.extend(self.__buffer_heat_to_discharge_path_constraints(ensemble_member)) # check
-        constraints.extend(
-            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)# check
-        )
-        constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
-        constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
+        # constraints.extend(
+        #     self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)# check
+        # )
+        # constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
+        # constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
-        constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
-        constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
-        constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(
-            self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
-        )
+        # constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
+        # constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
+        # constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
+        # constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
+        # constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
+        # constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
+        # constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
+        # constraints.extend(
+        #     self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
+        # )
 
         return constraints
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
+        # constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
-        constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
-        constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
-        constraints.extend(self.__investment_cost_constraints(ensemble_member))
-        constraints.extend(self.__installation_cost_constraints(ensemble_member))
-        constraints.extend(self.__max_size_constraints(ensemble_member))
+        # constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
+        # constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
+        # constraints.extend(self.__investment_cost_constraints(ensemble_member))
+        # constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        # constraints.extend(self.__max_size_constraints(ensemble_member))
 
-        for component_name, params in self._timed_setpoints.items():
-            constraints.extend(
-                self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
-            )
-
-        if self.heat_network_options()["include_demand_insulation_options"]:
-            constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
+        # for component_name, params in self._timed_setpoints.items():
+        #     constraints.extend(
+        #         self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
+        #     )
+        #
+        # if self.heat_network_options()["include_demand_insulation_options"]:
+        #     constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         return constraints
 
@@ -4599,36 +4618,36 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                         break
 
-        for p in self.hot_pipes:
-            if parameters[f"{p}.diameter"] == 0.0:
-                continue
-
-            heat_in = results[f"{p}.HeatIn.Heat"]
-            heat_out = results[f"{p}.HeatOut.Heat"]
-            inds = np.abs(heat_out) > np.abs(heat_in)
-            nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
-
-            heat = heat_in.copy()
-            heat[inds] = heat_out[inds]
-
-            flow_dir_var = np.round(results[self.__pipe_to_flow_direct_map[p]])
-
-            # if options["heat_loss_disconnected_pipe"]:
-            #     if not options["neglect_pipe_heat_losses"]:
-            #         np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
-            # else:
-            if not options["neglect_pipe_heat_losses"]:
-                try:
-                    is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
-                except KeyError:
-                    is_disconnected = np.zeros_like(heat_in)
-
-                inds_disconnected = is_disconnected == 1
-
-                if not options["heat_loss_disconnected_pipe"]:
-                    np.testing.assert_allclose(
-                        heat[inds_disconnected] / nominal, 0.0, atol=1e-5, rtol=0
-                    )
+        # for p in self.hot_pipes:
+        #     if parameters[f"{p}.diameter"] == 0.0:
+        #         continue
+        #
+        #     heat_in = results[f"{p}.HeatIn.Heat"]
+        #     heat_out = results[f"{p}.HeatOut.Heat"]
+        #     inds = np.abs(heat_out) > np.abs(heat_in)
+        #     nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
+        #
+        #     heat = heat_in.copy()
+        #     heat[inds] = heat_out[inds]
+        #
+        #     flow_dir_var = np.round(results[self.__pipe_to_flow_direct_map[p]])
+        #
+        #     # if options["heat_loss_disconnected_pipe"]:
+        #     #     if not options["neglect_pipe_heat_losses"]:
+        #     #         np.testing.assert_array_equal(np.sign(heat), 2 * flow_dir_var - 1)
+        #     # else:
+        #     if not options["neglect_pipe_heat_losses"]:
+        #         try:
+        #             is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
+        #         except KeyError:
+        #             is_disconnected = np.zeros_like(heat_in)
+        #
+        #         inds_disconnected = is_disconnected == 1
+        #
+        #         if not options["heat_loss_disconnected_pipe"]:
+        #             np.testing.assert_allclose(
+        #                 heat[inds_disconnected] / nominal, 0.0, atol=1e-5, rtol=0
+        #             )
 
                 # np.testing.assert_array_equal(
                 #     np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1

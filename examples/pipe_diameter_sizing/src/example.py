@@ -71,20 +71,20 @@ class PipeDiameterSizingProblem(
     def pipe_classes(self, pipe):
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
-            PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
-            PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 1.0),
-            PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 1.0),
-            PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 1.0),
-            PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 1.0),
-            PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 1.0),
-            PipeClass("DN150", 0.1603, 2.8, (0.328592, 0.011567), 1.0),
-            # PipeClass("DN40", 0.0431, 3.0, (0.179091, 0.005049), 1.0),
-            # PipeClass("DN50", 0.0545, 3.0, (0.201377, 0.006086), 1.0),
-            # PipeClass("DN65", 0.0703, 3.0, (0.227114, 0.007300), 1.0),
-            # PipeClass("DN80", 0.0825, 3.0, (0.238244, 0.007611), 1.0),
-            # PipeClass("DN100", 0.1071, 3.0, (0.247804, 0.007386), 1.0),
-            # PipeClass("DN125", 0.1325, 3.0, (0.287779, 0.009431), 1.0),
-            # PipeClass("DN150", 0.1603, 3.0, (0.328592, 0.011567), 1.0),
+            # PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
+            # PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 1.0),
+            # PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 1.0),
+            # PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 1.0),
+            # PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 1.0),
+            # PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 1.0),
+            # PipeClass("DN150", 0.1603, 2.8, (0.328592, 0.011567), 1.0),
+            PipeClass("DN40", 0.0431, 3.0, (0.179091, 0.005049), 1.0),
+            PipeClass("DN50", 0.0545, 3.0, (0.201377, 0.006086), 1.0),
+            PipeClass("DN65", 0.0703, 3.0, (0.227114, 0.007300), 1.0),
+            PipeClass("DN80", 0.0825, 3.0, (0.238244, 0.007611), 1.0),
+            PipeClass("DN100", 0.1071, 3.0, (0.247804, 0.007386), 1.0),
+            PipeClass("DN125", 0.1325, 3.0, (0.287779, 0.009431), 1.0),
+            PipeClass("DN150", 0.1603, 3.0, (0.328592, 0.011567), 1.0),
             PipeClass("DN200", 0.2101, 3.0, (0.346285, 0.011215), 1.0),
             PipeClass("DN250", 0.263, 3.0, (0.334606, 0.009037), 1.0),
             PipeClass("DN300", 0.3127, 3.0, (0.384640, 0.011141), 1.0),
@@ -182,5 +182,7 @@ if __name__ == "__main__":
     print(results["GeothermalSource_27cb.HeatIn.Q"] * 4200 * 988 * 45)
     print(results["GeothermalSource_fafd.HeatIn.Heat"])
     print(results["GeothermalSource_fafd.HeatIn.Q"] * 4200 * 988 * 45)
+    print(results["GeothermalSource_fafd.HeatOut.Heat"])
+    print(results["GeothermalSource_fafd.Heat_source"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

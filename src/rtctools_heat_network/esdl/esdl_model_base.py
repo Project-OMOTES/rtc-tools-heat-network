@@ -104,21 +104,21 @@ class _ESDLModelBase(_Model):
 
         # Here we check that every pipe and node has the correct coupled carrier for their _ret
         # asset.
-        for asset in [*pipe_assets, *node_assets]:
-            asset_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-            couple_asset_carrier = next(
-                x.global_properties["carriers"][x.in_ports[0].carrier.id]
-                for x in [*pipe_assets, *node_assets]
-                if (
-                    x.name.replace("_ret", "") == asset.name.replace("_ret", "")
-                    and x.name != asset.name
-                )
-            )
-            if asset_carrier["name"] != couple_asset_carrier["name"]:
-                raise Exception(
-                    f"{asset.name} and {asset.name}_ret do not have the matching "
-                    f"carriers specified"
-                )
+        # for asset in [*pipe_assets, *node_assets]:
+        #     asset_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        #     couple_asset_carrier = next(
+        #         x.global_properties["carriers"][x.in_ports[0].carrier.id]
+        #         for x in [*pipe_assets, *node_assets]
+        #         if (
+        #             x.name.replace("_ret", "") == asset.name.replace("_ret", "")
+        #             and x.name != asset.name
+        #         )
+        #     )
+        #     if asset_carrier["name"] != couple_asset_carrier["name"]:
+        #         raise Exception(
+        #             f"{asset.name} and {asset.name}_ret do not have the matching "
+        #             f"carriers specified"
+        #         )
 
         # First we map all port ids to their respective PyCML ports. We only
         # do this for non-nodes, as for nodes we don't quite know what port

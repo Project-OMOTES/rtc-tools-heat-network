@@ -24,7 +24,7 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         # particularly helps the scaling/range of the constraints that relate
         # the heat loss (if it is variable/optional) to the heat in- and out
         # of a component.
-        self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal / 100.0
+        self.Heat_nominal = self.cp * self.rho * self.Q_nominal * 100.
 
         self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
         self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)

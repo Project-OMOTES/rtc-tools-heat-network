@@ -308,43 +308,58 @@ class _AssetToComponentBase:
     @staticmethod
     def _get_supply_return_temperatures(asset: Asset) -> Tuple[float, float]:
         assert len(asset.in_ports) == 1 and len(asset.out_ports) == 1
-        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-        supply_temperature = carrier["supplyTemperature"]
-        return_temperature = carrier["returnTemperature"]
+        # # pipes, sources, storage, consumer, nodes, pumps, valves
+        # # sources, storages, consumers are connected to two different carriers on their two respective ports
+        # carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        # supply_temperature = carrier["supplyTemperature"]
+        # return_temperature = carrier["returnTemperature"]
+        #
+        # if carrier["__rtc_type"] == "supply":
+        #     supply_temperature_id = carrier["id_number_mapping"]
+        #     return_temperature_id = asset.global_properties["carriers"][
+        #         asset.in_ports[0].carrier.id + "_ret"
+        #     ]["id_number_mapping"]
+        # else:
+        #     supply_temperature_id = asset.global_properties["carriers"][
+        #         asset.in_ports[0].carrier.id[:-4]
+        #     ]["id_number_mapping"]
+        #     return_temperature_id = carrier["id_number_mapping"]
+        #
+        # assert supply_temperature > return_temperature
+        # # This is a bit dangerous, but the default (not-set) value is 0.0. We
+        # # however require it to be explicitly set.
+        # assert supply_temperature != 0.0
+        # assert return_temperature != 0.0
 
-        if carrier["__rtc_type"] == "supply":
-            supply_temperature_id = carrier["id_number_mapping"]
-            return_temperature_id = asset.global_properties["carriers"][
-                asset.in_ports[0].carrier.id + "_ret"
-            ]["id_number_mapping"]
+        in_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        out_carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
+
+        if in_carrier["id"] == out_carrier["id"]:
+            # these are the pipes, nodes, valves, pumps
+            modifiers = {"temperature": in_carrier["temperature"],
+             "carrier_id": in_carrier["id_number_mapping"]}
         else:
-            supply_temperature_id = asset.global_properties["carriers"][
-                asset.in_ports[0].carrier.id[:-4]
-            ]["id_number_mapping"]
-            return_temperature_id = carrier["id_number_mapping"]
+            # These are the sources, storages and consumers
+            supply_temperature = in_carrier["temperature"] if in_carrier["temperature"] > out_carrier["temperature"] else out_carrier["temperature"]
+            return_temperature = in_carrier["temperature"] if in_carrier["temperature"] < out_carrier["temperature"] else out_carrier["temperature"]
+            T_supply_id = in_carrier["id_number_mapping"] if in_carrier["temperature"] > out_carrier["temperature"] else out_carrier["temperature"]
+            T_return_id = in_carrier["id_number_mapping"] if in_carrier["temperature"] < out_carrier["temperature"] else out_carrier["temperature"]
 
-        assert supply_temperature > return_temperature
-        # This is a bit dangerous, but the default (not-set) value is 0.0. We
-        # however require it to be explicitly set.
-        assert supply_temperature != 0.0
-        assert return_temperature != 0.0
+            modifiers = {
+                "T_supply": supply_temperature,
+                "T_return": return_temperature,
+                "T_supply_id": T_supply_id,
+                "T_return_id": T_return_id,
+            }
 
-        return supply_temperature, return_temperature, supply_temperature_id, return_temperature_id
+
+
+        return modifiers
 
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
-            (
-                supply_temperature,
-                return_temperature,
-                supply_temperature_id,
-                return_temperature_id,
-            ) = self._get_supply_return_temperatures(asset)
-            return {
-                "T_supply": supply_temperature,
-                "T_return": return_temperature,
-                "T_supply_id": supply_temperature_id,
-                "T_return_id": return_temperature_id,
-            }
+            modifiers = self._get_supply_return_temperatures(asset)
+            return modifiers
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
