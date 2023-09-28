@@ -8,6 +8,7 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
@@ -101,12 +102,12 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components["source"]:
-            try:
-                target_flow_rate = parameters[f"{s}.target_flow_rate"]
-                goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
-            except KeyError:
-                pass
+        # for s in self.heat_network_components["source"]:
+        #     try:
+        #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
+        #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
+        #     except KeyError:
+        #         pass
 
         return goals
 
@@ -115,7 +116,7 @@ class HeatProblem(
     _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -143,7 +144,7 @@ class HeatProblem(
 class HeatProblemSetPointConstraints(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -165,7 +166,7 @@ class HeatProblemSetPointConstraints(
 class HeatProblemTvarsup(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
 ):
     def path_goals(self):
@@ -226,7 +227,7 @@ class HeatProblemTvarsup(
 class HeatProblemTvarret(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -288,7 +289,7 @@ class HeatProblemTvarret(
 class HeatProblemProdProfile(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -321,7 +322,7 @@ class QTHProblem(
     _GoalsAndOptions,
     QTHMixin,
     HomotopyMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
