@@ -117,7 +117,7 @@ class PipeDiameterSizingProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         # options["hot_start"] = getattr(self, "_hot_start", False)
         # cbc_options = options["cbc"] = {}
         # cbc_options["seconds"] = 500.0
