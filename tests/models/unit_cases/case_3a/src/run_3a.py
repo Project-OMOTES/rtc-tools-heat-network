@@ -131,6 +131,10 @@ class HeatProblem(
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.0025
+        # options["gurobi"] = gurobi_options = {}
+        # gurobi_options["MIPgap"] = 0.001
         return options
 
     def heat_network_options(self):
@@ -347,5 +351,11 @@ if __name__ == "__main__":
 
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.plot(results["HeatStorage_4b0c.Heat_buffer"])
+    plt.figure()
+    plt.plot(results["HeatStorage_4b0c.Stored_heat"])
+    plt.show()
     a = 1
     # run_heat_network_optimization(HeatProblem, QTHProblem)

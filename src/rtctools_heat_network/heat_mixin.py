@@ -2233,7 +2233,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             discharge = self.state(f"{b}.HeatIn.Q")
             # Note that `heat_hot` can be negative for the buffer; in that case we
             # are extracting heat from it.
-            heat_hot = self.state(f"{b}.Heat_flow")
+            heat_flow = self.state(f"{b}.Heat_flow")
             heat_out = self.state(f"{b}.HeatOut.Heat")
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
@@ -2259,24 +2259,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
 
             if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
-                # Flow should always be able to carry the heat
-                constraints.append(
-                    (
-                        (heat_hot - cp * rho * dt * discharge + is_buffer_charging * big_m)
-                        / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
+                # When consumer flow should be able to carry the heat_buffer
+                # constraints.append(
+                #     (
+                #         (heat_flow - cp * rho * dt * discharge + is_buffer_charging * big_m)
+                #         / constraint_nominal,
+                #         0.0,
+                #         np.inf,
+                #     )
+                # )
 
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-                # Only when producing the flow should exactly carry the heat
+                # Only when producing the flow should allow to carry more than the flow as return temperature has already dropped a bit
                 constraints.append(
-                    ((heat_hot - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.0)
+                    ((heat_flow - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.)
                 )
                 # Only when consuming the outgoing colder flow shjould exactly carry the heat
-                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"] + (1. - is_buffer_charging) * big_m) / heat_nominal, 0.0, np.inf))
-                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"]) / heat_nominal, -np.inf, 0.0))
+                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"]) / heat_nominal, 0.0, np.inf))
+                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"] - (1. - is_buffer_charging) * big_m) / heat_nominal, -np.inf, 0.0))
             elif len(supply_temperatures) == 0:
                 supply_temperature = parameters[f"{b}.T_supply"]
                 for return_temperature in return_temperatures:
@@ -2286,7 +2286,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_hot
+                                heat_flow
                                 - cp * rho * (supply_temperature - return_temperature) * discharge
                                 + is_buffer_charging * big_m
                                 + (1.0 - ret_temperature_is_selected) * big_m
@@ -2301,7 +2301,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_hot
+                                heat_flow
                                 - cp * rho * (supply_temperature - return_temperature) * discharge
                                 - (1.0 - ret_temperature_is_selected) * big_m
                             )
@@ -2321,7 +2321,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_hot
+                                heat_flow
                                 - cp * rho * (supply_temperature - return_temperature) * discharge
                                 + is_buffer_charging * big_m
                                 + (1.0 - sup_temperature_is_selected) * big_m
@@ -2336,7 +2336,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_hot
+                                heat_flow
                                 - cp * rho * (supply_temperature - return_temperature) * discharge
                                 - (1.0 - sup_temperature_is_selected) * big_m
                             )
@@ -2359,7 +2359,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         constraints.append(
                             (
                                 (
-                                    heat_hot
+                                    heat_flow
                                     - cp
                                     * rho
                                     * (supply_temperature - return_temperature)
@@ -2382,7 +2382,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         constraints.append(
                             (
                                 (
-                                    heat_hot
+                                    heat_flow
                                     - cp
                                     * rho
                                     * (supply_temperature - return_temperature)
