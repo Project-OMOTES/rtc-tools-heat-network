@@ -2041,10 +2041,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     # discharge and the hydraulic_power.
                     continue
 
-                if self.is_cold_pipe(pipe):
-                    hot_pipe = self.cold_to_hot_pipe(pipe)
-                else:
-                    hot_pipe = pipe
+                # if self.is_cold_pipe(pipe):
+                #     hot_pipe = self.cold_to_hot_pipe(pipe)
+                # else:
+                #     hot_pipe = pipe
 
                 head_loss_option = self._hn_get_pipe_head_loss_option(pipe, options, parameters)
                 assert (
@@ -2056,7 +2056,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 rho = parameters[f"{pipe}.rho"]
 
                 # 0: pipe is connected, 1: pipe is disconnected
-                is_disconnected_var = self.__pipe_disconnect_map.get(hot_pipe)
+                is_disconnected_var = self.__pipe_disconnect_map.get(pipe)
                 if is_disconnected_var is None:
                     is_disconnected = 0.0
                 else:
@@ -2064,12 +2064,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 max_discharge = None
 
-                flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+                flow_dir_var = self.__pipe_to_flow_direct_map[pipe]
                 flow_dir = self.state(flow_dir_var)  # 0/1: negative/positive flow direction
 
-                if hot_pipe in self.__pipe_topo_pipe_class_map:
+                if pipe in self.__pipe_topo_pipe_class_map:
                     # Multiple diameter options for this pipe
-                    pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe]
+                    pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
                     max_discharge = max(c.maximum_discharge for c in pipe_classes)
                     for pc, pc_var_name in pipe_classes.items():
                         if pc.inner_diameter == 0.0:
@@ -2403,60 +2403,60 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
-    def __ates_heat_to_discharge_path_constraints(self, ensemble_member):
-        constraints = []
-        parameters = self.parameters(ensemble_member)
-        bounds = self.bounds()
-
-        for a, (
-            (hot_pipe, _hot_pipe_orientation),
-            (_cold_pipe, _cold_pipe_orientation),
-        ) in self.heat_network_topology.ates.items():
-            heat_nominal = parameters[f"{a}.Heat_nominal"]
-            q_nominal = self.variable_nominal(f"{a}.Q")
-            cp = parameters[f"{a}.cp"]
-            rho = parameters[f"{a}.rho"]
-            dt = parameters[f"{a}.dT"]
-
-            discharge = self.state(f"{a}.Q")
-            # Note that `heat_hot` can be negative for the buffer; in that case we
-            # are extracting heat from it.
-            heat_ates = self.state(f"{a}.Heat_ates")
-
-            # We want an _equality_ constraint between discharge and heat if the buffer is
-            # consuming (i.e. behaving like a "demand"). We want an _inequality_
-            # constraint (`|heat| >= |f(Q)|`) just like a "source" component if heat is
-            # extracted from the buffer. We accomplish this by disabling one of
-            # the constraints with a boolean. Note that `discharge` and `heat_hot`
-            # are guaranteed to have the same sign.
-            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
-            is_ates_charging = self.state(flow_dir_var)
-
-            big_m = self.__get_abs_max_bounds(
-                *self.merge_bounds(bounds[f"{a}.HeatIn.Heat"], bounds[f"{a}.HeatOut.Heat"])
-            )
-
-            coefficients = [heat_nominal, cp * rho * dt * q_nominal, big_m]
-            constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
-            constraints.append(
-                (
-                    (heat_ates - cp * rho * dt * discharge) / constraint_nominal,
-                    -np.inf,
-                    0.0,
-                )
-            )
-
-            constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-            constraints.append(
-                (
-                    (heat_ates - cp * rho * dt * discharge + (1 - is_ates_charging) * big_m)
-                    / constraint_nominal,
-                    0.0,
-                    np.inf,
-                )
-            )
-
-        return constraints
+    # def __ates_heat_to_discharge_path_constraints(self, ensemble_member):
+    #     constraints = []
+    #     parameters = self.parameters(ensemble_member)
+    #     bounds = self.bounds()
+    #
+    #     for a, (
+    #         (hot_pipe, _hot_pipe_orientation),
+    #         (_cold_pipe, _cold_pipe_orientation),
+    #     ) in self.heat_network_topology.ates.items():
+    #         heat_nominal = parameters[f"{a}.Heat_nominal"]
+    #         q_nominal = self.variable_nominal(f"{a}.Q")
+    #         cp = parameters[f"{a}.cp"]
+    #         rho = parameters[f"{a}.rho"]
+    #         dt = parameters[f"{a}.dT"]
+    #
+    #         discharge = self.state(f"{a}.Q")
+    #         # Note that `heat_hot` can be negative for the buffer; in that case we
+    #         # are extracting heat from it.
+    #         heat_ates = self.state(f"{a}.Heat_ates")
+    #
+    #         # We want an _equality_ constraint between discharge and heat if the buffer is
+    #         # consuming (i.e. behaving like a "demand"). We want an _inequality_
+    #         # constraint (`|heat| >= |f(Q)|`) just like a "source" component if heat is
+    #         # extracted from the buffer. We accomplish this by disabling one of
+    #         # the constraints with a boolean. Note that `discharge` and `heat_hot`
+    #         # are guaranteed to have the same sign.
+    #         flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+    #         is_ates_charging = self.state(flow_dir_var)
+    #
+    #         big_m = self.__get_abs_max_bounds(
+    #             *self.merge_bounds(bounds[f"{a}.HeatIn.Heat"], bounds[f"{a}.HeatOut.Heat"])
+    #         )
+    #
+    #         coefficients = [heat_nominal, cp * rho * dt * q_nominal, big_m]
+    #         constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
+    #         constraints.append(
+    #             (
+    #                 (heat_ates - cp * rho * dt * discharge) / constraint_nominal,
+    #                 -np.inf,
+    #                 0.0,
+    #             )
+    #         )
+    #
+    #         constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+    #         constraints.append(
+    #             (
+    #                 (heat_ates - cp * rho * dt * discharge + (1 - is_ates_charging) * big_m)
+    #                 / constraint_nominal,
+    #                 0.0,
+    #                 np.inf,
+    #             )
+    #         )
+    #
+    #     return constraints
 
     def __setpoint_constraint(
         self, ensemble_member, component_name, windowsize_hr, setpointchanges
@@ -3098,13 +3098,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
-        if self.is_cold_pipe(pipe):
-            hot_pipe = self.cold_to_hot_pipe(pipe)
-        else:
-            hot_pipe = pipe
+        # if self.is_cold_pipe(pipe):
+        #     hot_pipe = self.cold_to_hot_pipe(pipe)
+        # else:
+        #     hot_pipe = pipe
 
         try:
-            pipe_classes = self.__pipe_topo_pipe_class_map[hot_pipe].keys()
+            pipe_classes = self.__pipe_topo_pipe_class_map[pipe].keys()
             area = np.median(c.area for c in pipe_classes)
         except KeyError:
             area = parameters[f"{pipe}.area"]
@@ -4274,13 +4274,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 else:
                     q = results[f"{p}.Q"]
 
-                    if self.is_cold_pipe(p):
-                        hot_pipe = self.cold_to_hot_pipe(p)
-                    else:
-                        hot_pipe = p
+                    # if self.is_cold_pipe(p):
+                    #     hot_pipe = self.cold_to_hot_pipe(p)
+                    # else:
+                    #     hot_pipe = p
 
                     try:
-                        is_disconnected = np.round(results[self.__pipe_disconnect_map[hot_pipe]])
+                        is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
                     except KeyError:
                         is_disconnected = np.zeros_like(q)
 
