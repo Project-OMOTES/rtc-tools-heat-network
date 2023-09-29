@@ -351,9 +351,6 @@ class _AssetToComponentBase:
                 "T_supply_id": T_supply_id,
                 "T_return_id": T_return_id,
             }
-
-
-
         return modifiers
 
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:

@@ -1906,11 +1906,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             big_m_t = 2.0 * self.bounds()[f"{s}.HeatIn.Heat"][1]
 
             if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
+                # Note that we have to produce more as the return temperature has dropped.
                 constraints.append(
                     (
                         (heat_production - cp * rho * dt * discharge) / constraint_nominal,
                         0.0,
-                        0.0,
+                        np.inf,
                     )
                 )
             elif len(supply_temperatures) == 0:
@@ -1931,18 +1932,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             np.inf,
                         )
                     )
-                    constraints.append(
-                        (
-                            (
-                                heat_production
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                - (1.0 - ret_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
+                    # constraints.append(
+                    #     (
+                    #         (
+                    #             heat_production
+                    #             - cp * rho * (supply_temperature - return_temperature) * discharge
+                    #             - (1.0 - ret_temperature_is_selected) * big_m
+                    #         )
+                    #         / constraint_nominal,
+                    #         -np.inf,
+                    #         0.0,
+                    #     )
+                    # )
             elif len(return_temperatures) == 0:
                 return_temperature = parameters[f"{s}.T_return"]
                 for supply_temperature in supply_temperatures:
@@ -1961,18 +1962,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             np.inf,
                         )
                     )
-                    constraints.append(
-                        (
-                            (
-                                heat_production
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                - (1.0 - sup_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
+                    # constraints.append(
+                    #     (
+                    #         (
+                    #             heat_production
+                    #             - cp * rho * (supply_temperature - return_temperature) * discharge
+                    #             - (1.0 - sup_temperature_is_selected) * big_m
+                    #         )
+                    #         / constraint_nominal,
+                    #         -np.inf,
+                    #         0.0,
+                    #     )
+                    # )
             else:
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(
@@ -2002,26 +2003,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                                 np.inf,
                             )
                         )
-                        constraints.append(
-                            (
-                                (
-                                    heat_production
-                                    - cp
-                                    * rho
-                                    * (supply_temperature - return_temperature)
-                                    * discharge
-                                    - (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        + ret_temperature_is_selected
-                                    )
-                                    * big_m
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             heat_production
+                        #             - cp
+                        #             * rho
+                        #             * (supply_temperature - return_temperature)
+                        #             * discharge
+                        #             - (
+                        #                 2.0
+                        #                 - sup_temperature_is_selected
+                        #                 + ret_temperature_is_selected
+                        #             )
+                        #             * big_m
+                        #         )
+                        #         / constraint_nominal,
+                        #         -np.inf,
+                        #         0.0,
+                        #     )
+                        # )
 
         return constraints
 
