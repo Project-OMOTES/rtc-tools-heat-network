@@ -1804,7 +1804,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 constraints.append(
                     ((heat_consumed - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.0)
                 )
-                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{d}.T_return"]) / heat_nominal, 0.0, 0.0))
+                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{d}.T_return"]) / heat_nominal, 0.0, np.inf))
             elif len(supply_temperatures) == 0:
                 supply_temperature = parameters[f"{d}.T_supply"]
                 for return_temperature in return_temperatures:
@@ -1894,7 +1894,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             discharge = self.state(f"{s}.Q")
             heat_production = self.state(f"{s}.Heat_source")
-            heat_in = self.state(f"{s}.HeatIn.Heat")
+            heat_out = self.state(f"{s}.HeatOut.Heat")
 
             constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
 
@@ -1914,6 +1914,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         np.inf,
                     )
                 )
+                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"]) / heat_nominal, 0.0, 0.0))
             elif len(supply_temperatures) == 0:
                 supply_temperature = parameters[f"{s}.T_supply"]
                 for return_temperature in return_temperatures:
@@ -2235,6 +2236,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # are extracting heat from it.
             heat_flow = self.state(f"{b}.Heat_flow")
             heat_out = self.state(f"{b}.HeatOut.Heat")
+            heat_in = self.state(f"{b}.HeatIn.Heat")
 
             # We want an _equality_ constraint between discharge and heat if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
@@ -2245,7 +2247,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
 
-            big_m = np.max(np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"])))
+            big_m = 2. * np.max(np.abs((*self.bounds()[f"{b}.HeatIn.Heat"], *self.bounds()[f"{b}.HeatOut.Heat"])))
             # big_m = self.__get_abs_max_bounds(
             #     *self.merge_bounds(bounds[f"{b}.HeatIn.Heat"], bounds[f"{b}.HeatOut.Heat"])
             # )
@@ -2271,9 +2273,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 # Only when producing the flow should allow to carry more than the flow as return temperature has already dropped a bit
-                constraints.append(
-                    ((heat_flow - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.)
-                )
+                # constraints.append(
+                #     ((heat_flow - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.)
+                # )
+                constraints.append(((heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"] + is_buffer_charging * big_m) / heat_nominal, 0.0, np.inf))
+                constraints.append(((heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"]) / heat_nominal, -np.inf, 0.0))
                 # Only when consuming the outgoing colder flow shjould exactly carry the heat
                 constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"]) / heat_nominal, 0.0, np.inf))
                 constraints.append(((heat_out - discharge * cp * rho * parameters[f"{b}.T_return"] - (1. - is_buffer_charging) * big_m) / heat_nominal, -np.inf, 0.0))
