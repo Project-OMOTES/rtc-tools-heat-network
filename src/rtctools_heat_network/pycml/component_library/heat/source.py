@@ -11,7 +11,7 @@ class Source(_NonStorageComponent):
             name,
             **self.merge_modifiers(
                 dict(
-                    # Heat_in=dict(min=0.0, max=0.0),
+                    Heat_in=dict(min=0.0), #ensures it is not cooled down to below 0C
                     Heat_out=dict(min=0.0),
                 ),
                 modifiers,
