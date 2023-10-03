@@ -678,6 +678,8 @@ class ScenarioOutput(HeatMixin):
                         pass
                         # do nothing, in the case that no costs have been specified for the return
                         # pipe in the mapeditor
+                    except UnboundLocalError:
+                        pass
 
                     if optimizer_sim:
                         for prop in edr_pipe_properties_to_copy:
