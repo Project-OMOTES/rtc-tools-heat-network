@@ -10,6 +10,7 @@ from rtctools.optimization.goal_programming_mixin import (
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.single_pass_goal_programming_mixin import CachingQPSol
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
@@ -110,7 +111,10 @@ class PipeDiameterSizingProblem(
     def solver_options(self):
         options = super().solver_options()
         # options["solver"] = "gurobi"
-        options["hot_start"] = getattr(self, "_hot_start", False)
+        # options["hot_start"] = getattr(self, "_hot_start", False)
+        self._qpsol = CachingQPSol()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "gurobi"
         cbc_options = options["cbc"] = {}
         cbc_options["seconds"] = 500.0
         return options
