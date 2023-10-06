@@ -1801,10 +1801,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             big_m = 2.0 * self.bounds()[f"{d}.Q"][1] * cp * rho * dt
 
             if len(supply_temperatures) == 0:
-                constraints.append(
-                    ((heat_consumed - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.0)
-                )
-                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{d}.T_return"]) / heat_nominal, 0.0, np.inf))
+                # constraints.append(
+                #     ((heat_consumed - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.0)
+                # )
+                constraints.append(((heat_out - discharge * cp * rho * parameters[f"{d}.T_return"]) / heat_nominal, 0.0, 0.0))
             elif len(supply_temperatures) == 0:
                 supply_temperature = parameters[f"{d}.T_supply"]
                 for return_temperature in return_temperatures:
@@ -1907,13 +1907,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
                 # Note that we have to produce more as the return temperature has dropped.
-                constraints.append(
-                    (
-                        (heat_production - cp * rho * dt * discharge) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
+                # constraints.append(
+                #     (
+                #         (heat_production - cp * rho * dt * discharge) / constraint_nominal,
+                #         0.0,
+                #         np.inf,
+                #     )
+                # )
                 constraints.append(((heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"]) / heat_nominal, 0.0, 0.0))
             elif len(supply_temperatures) == 0:
                 supply_temperature = parameters[f"{s}.T_supply"]
@@ -3372,11 +3372,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Make sure exactly one indicator is true
             constraints.append((sum(v), 1.0, 1.0))
 
-            # if p in self.hot_pipes and self.hot_to_cold_pipe(p) in self.__pipe_topo_pipe_class_map:
-            #     return_pipe_classes = self.__pipe_topo_pipe_class_map[self.hot_to_cold_pipe(p)]
-            #     for pc_var_name,pc_ret_var_name in zip(pipe_classes.values(), return_pipe_classes.values()):
-            #         constraints.append((self.extra_variable(pc_var_name, ensemble_member) -
-            #                             self.extra_variable(pc_ret_var_name, ensemble_member), 0., 0.))
+            if p in self.hot_pipes and self.hot_to_cold_pipe(p) in self.__pipe_topo_pipe_class_map:
+                return_pipe_classes = self.__pipe_topo_pipe_class_map[self.hot_to_cold_pipe(p)]
+                for pc_var_name,pc_ret_var_name in zip(pipe_classes.values(), return_pipe_classes.values()):
+                    constraints.append((self.extra_variable(pc_var_name, ensemble_member) -
+                                        self.extra_variable(pc_ret_var_name, ensemble_member), 0., 0.))
 
             # set the max discharge
             max_discharge = self.extra_variable(self.__pipe_topo_max_discharge_map[p])
