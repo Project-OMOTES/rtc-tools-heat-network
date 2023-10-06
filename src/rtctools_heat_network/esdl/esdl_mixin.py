@@ -745,12 +745,6 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
 
     for x in esdl_model.energySystemInformation.carriers.carrier.items:
         if isinstance(x, esdl.esdl.HeatCommodity):
-            # if x.supplyTemperature != 0.0 and x.returnTemperature == 0.0:
-            #     type_ = "supply"
-            # elif x.returnTemperature != 0.0 and x.supplyTemperature == 0.0:
-            #     type_ = "return"
-            # else:
-            #     type_ = "none"
             if x.id not in id_to_idnumber_map:
                 number_list = [int(s) for s in x.id if s.isdigit()]
                 number = ""
@@ -764,38 +758,11 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
             assert temperature > 0.
 
             global_properties["carriers"][x.id] = dict(
-                name=x.name,#.replace("_ret", ""),
+                name=x.name,
                 id=x.id,
                 id_number_mapping=id_to_idnumber_map[x.id],
                 temperature=temperature,
-                # returnTemperature=x.returnTemperature,
-                # __rtc_type=type_,
             )
-
-    # For now, we only support networks with two carries; one hot, one cold.
-    # When this no longer holds, carriers either have to specify both the
-    # supply and return temperature (instead of one being 0.0), or we have to
-    # pair them up.
-    # if (len(global_properties["carriers"]) % 2) != 0:
-    #     _ESDLInputException(
-    #         "Odd number of carriers specified, please use model with dedicated supply and return "
-    #         "carriers. Every hydraulically coupled system should have one carrier for the supply "
-    #         "side and one for the return side"
-    #     )
-    #
-    # for c in global_properties["carriers"].values():
-    #     supply_temperature = next(
-    #         x["supplyTemperature"]
-    #         for x in global_properties["carriers"].values()
-    #         if x["supplyTemperature"] != 0.0 and x["name"] == c["name"]
-    #     )
-    #     return_temperature = next(
-    #         x["returnTemperature"]
-    #         for x in global_properties["carriers"].values()
-    #         if x["returnTemperature"] != 0.0 and x["name"] == c["name"]
-    #     )
-    #     c["supplyTemperature"] = supply_temperature
-    #     c["returnTemperature"] = return_temperature
 
     for x in esdl_model.energySystemInformation.carriers.carrier.items:
         if isinstance(x, esdl.esdl.ElectricityCommodity):

@@ -308,28 +308,6 @@ class _AssetToComponentBase:
     @staticmethod
     def _get_supply_return_temperatures(asset: Asset) -> Tuple[float, float]:
         assert len(asset.in_ports) == 1 and len(asset.out_ports) == 1
-        # # pipes, sources, storage, consumer, nodes, pumps, valves
-        # # sources, storages, consumers are connected to two different carriers on their two respective ports
-        # carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-        # supply_temperature = carrier["supplyTemperature"]
-        # return_temperature = carrier["returnTemperature"]
-        #
-        # if carrier["__rtc_type"] == "supply":
-        #     supply_temperature_id = carrier["id_number_mapping"]
-        #     return_temperature_id = asset.global_properties["carriers"][
-        #         asset.in_ports[0].carrier.id + "_ret"
-        #     ]["id_number_mapping"]
-        # else:
-        #     supply_temperature_id = asset.global_properties["carriers"][
-        #         asset.in_ports[0].carrier.id[:-4]
-        #     ]["id_number_mapping"]
-        #     return_temperature_id = carrier["id_number_mapping"]
-        #
-        # assert supply_temperature > return_temperature
-        # # This is a bit dangerous, but the default (not-set) value is 0.0. We
-        # # however require it to be explicitly set.
-        # assert supply_temperature != 0.0
-        # assert return_temperature != 0.0
 
         in_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
         out_carrier = asset.global_properties["carriers"][asset.out_ports[0].carrier.id]
@@ -358,35 +336,36 @@ class _AssetToComponentBase:
             modifiers = self._get_supply_return_temperatures(asset)
             return modifiers
         elif len(asset.in_ports) >= 2 and len(asset.out_ports) == 2:
+            prim_return_temperature = None
+            sec_return_temperature = None
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
-                    if "_ret" in p.carrier.name:
-                        # This in the Secondary side carrier
-                        sec_supply_temperature = carrier["supplyTemperature"]
+                    if "sec" in p.name.lower():
                         sec_return_temperature_id = carrier["id_number_mapping"]
                         sec_return_temperature = carrier["returnTemperature"]
-                        assert sec_supply_temperature > sec_return_temperature
-                        assert sec_supply_temperature > 0.0
                     else:
-                        # This in the Primary side carrier
                         prim_supply_temperature = carrier["supplyTemperature"]
-                        prim_return_temperature = carrier["returnTemperature"]
                         prim_supply_temperature_id = carrier["id_number_mapping"]
-                        assert prim_supply_temperature > prim_return_temperature
-                        assert prim_supply_temperature > 0.0
             for p in asset.out_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
-                    if "_ret" in p.carrier.name:
+                    if "prim" in p.name.lower():
                         prim_return_temperature_id = carrier["id_number_mapping"]
+                        prim_return_temperature = carrier["returnTemperature"]
                     else:
                         sec_supply_temperature_id = carrier["id_number_mapping"]
-            if not prim_supply_temperature or not sec_supply_temperature:
+                        sec_supply_temperature = carrier["supplyTemperature"]
+            if not prim_return_temperature or not sec_return_temperature:
                 raise RuntimeError(
-                    f"{asset.name} carriers are not specified correctly there should be a "
-                    f"dedicated _ret carrier for each hydraulically coupled network"
+                    f"{asset.name} ports are not specified correctly there should be dedicated "
+                    f"primary and secondary ports ('prim' and 'sec') for the hydraulically decoupled"
+                    f" networks"
                 )
+            assert sec_supply_temperature > sec_return_temperature
+            assert sec_return_temperature > 0.0
+            assert prim_supply_temperature > prim_return_temperature
+            assert prim_return_temperature > 0.0
             temperatures = {
                 "Primary": {
                     "T_supply": prim_supply_temperature,
