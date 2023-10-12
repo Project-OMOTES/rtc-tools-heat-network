@@ -31,6 +31,7 @@ from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
+from rtctools_heat_network.workflows.utils.adapt_profiles import adapt_hourly_profile_to_common
 from rtctools_heat_network.workflows.utils.helpers import main_decorator
 
 
@@ -155,85 +156,9 @@ class EndScenarioSizing(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
-        new_datastore = DataStore(self)
-        new_datastore.reference_datetime = self.io.datetimes[0]
-
-        for ensemble_member in range(self.ensemble_size):
-            parameters = self.parameters(ensemble_member)
-
-            total_demand = None
-            for demand in demands:
-                try:
-                    demand_values = self.get_timeseries(
-                        f"{demand}.target_heat_demand", ensemble_member
-                    ).values
-                except KeyError:
-                    continue
-                if total_demand is None:
-                    total_demand = demand_values
-                else:
-                    total_demand += demand_values
-                max_demand = max(demand_values)
-                self.__heat_demand_nominal[f"{demand}.Heat_demand"] = max_demand
-
-            # TODO: the approach of picking one peak day was introduced for a network with a tree
-            #  layout and all big sources situated at the root of the tree. It is not guaranteed
-            #  that an optimal solution is reached in different network topologies.
-            idx_max = int(np.argmax(total_demand))
-            max_day = idx_max // 24
-            nr_of_days = len(total_demand) // 24
-            new_date_times = list()
-            day_steps = self.__day_steps
-
-            self.__indx_max_peak = max_day // day_steps
-            if max_day % day_steps > 0:
-                self.__indx_max_peak += 1.0
-
-            for day in range(0, nr_of_days, day_steps):
-                if day == max_day // day_steps * day_steps:
-                    if max_day > day:
-                        new_date_times.append(self.io.datetimes[day * 24])
-                    new_date_times.extend(self.io.datetimes[max_day * 24 : max_day * 24 + 24])
-                    if (day + day_steps - 1) > max_day:
-                        new_date_times.append(self.io.datetimes[max_day * 24 + 24])
-                else:
-                    new_date_times.append(self.io.datetimes[day * 24])
-            new_date_times.append(self.io.datetimes[-1] + datetime.timedelta(hours=1))
-
-            new_date_times = np.asarray(new_date_times)
-            parameters["times"] = [x.timestamp() for x in new_date_times]
-
-            for demand in demands:
-                var_name = f"{demand}.target_heat_demand"
-                self._set_data_with_averages_and_peak_day(
-                    datastore=new_datastore,
-                    variable_name=var_name,
-                    ensemble_member=ensemble_member,
-                    new_date_times=new_date_times,
-                )
-
-            # TODO: this has not been tested but is required if a production profile is included
-            #  in the data
-            for source in self.heat_network_components.get("source", []):
-                try:
-                    self.get_timeseries(f"{source}.target_heat_source", ensemble_member)
-                except KeyError:
-                    logger.debug(
-                        f"{source} has no production profile, skipping setting the "
-                        f"production profile"
-                    )
-                    continue
-                var_name = f"{source}.target_heat_source"
-                self._set_data_with_averages_and_peak_day(
-                    datastore=new_datastore,
-                    variable_name=var_name,
-                    ensemble_member=ensemble_member,
-                    new_date_times=new_date_times,
-                )
-
-        self.io = new_datastore
-
+        self.__indx_max_peak, self.__heat_demand_nominal = adapt_hourly_profile_to_common(
+            self, self.__day_steps
+        )
         logger.info("HeatProblem read")
 
     def _set_data_with_averages_and_peak_day(
