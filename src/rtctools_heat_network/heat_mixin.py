@@ -546,7 +546,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("demand", []):
-            ub = bounds[f"{asset_name}.Heat_demand"][1] if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else bounds[f"{asset_name}.HeatIn.Heat"][1]
+            ub = (
+                bounds[f"{asset_name}.Heat_demand"][1]
+                if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
+                else bounds[f"{asset_name}.HeatIn.Heat"][1]
+            )
             _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("ates", []):
@@ -614,7 +618,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("demand", [])]:
-                nominal_fixed_operational = bounds[f"{asset_name}.Heat_demand"][1] if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else bounds[f"{asset_name}.HeatIn.Heat"][1]
+                nominal_fixed_operational = (
+                    bounds[f"{asset_name}.Heat_demand"][1]
+                    if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
+                    else bounds[f"{asset_name}.HeatIn.Heat"][1]
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("source", [])]:
@@ -704,8 +712,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 0.0,
                 parameters[f"{asset_name}.installation_cost"] * aggr_count_max,
             )
-            self.__asset_installation_cost_nominals[asset_installation_cost_var] = max(
-                parameters[f"{asset_name}.installation_cost"], 1.0e2
+            self.__asset_installation_cost_nominals[asset_installation_cost_var] = (
+                parameters[f"{asset_name}.installation_cost"]
+                if parameters[f"{asset_name}.installation_cost"]
+                else 1.0e2
             )
 
             # investment cost
@@ -4356,13 +4366,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # Asset can be realized once the investments made equal the installation and
             # investment cost
+            capex_sym = 0.0
+            if self.variable_nominal(self._asset_installation_cost_map[asset]) > 1.0e2:
+                capex_sym = capex_sym + installation_cost_sym
+            if self.variable_nominal(self._asset_investment_cost_map[asset]) > 1.0e2:
+                capex_sym = capex_sym + investment_cost_sym
+
             constraints.append(
                 (
-                    (
-                        cumulative_investments_made
-                        - (installation_cost_sym + investment_cost_sym)
-                        + (1.0 - asset_is_realized) * big_m
-                    )
+                    (cumulative_investments_made - capex_sym + (1.0 - asset_is_realized) * big_m)
                     / nominal,
                     0.0,
                     np.inf,
@@ -4371,15 +4383,33 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # Once the asset is utilized the asset must be realized
             heat_flow = self.state(f"{asset}.Heat_flow")
-            # 5.e8 To avoid errors if bound is not set
-            big_m = (
-                1.5
-                * min(self.bounds()[f"{asset}.Heat_flow"][1], 5.0e8)
-                / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
-            )
-            nominal = (big_m * self.variable_nominal(f"{asset}.Heat_flow")) ** 0.5
-            constraints.append(((heat_flow + asset_is_realized * big_m) / nominal, 0.0, np.inf))
-            constraints.append(((heat_flow - asset_is_realized * big_m) / nominal, -np.inf, 0.0))
+            if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
+                big_m = (
+                    1.5
+                    * self.bounds()[f"{asset}.Heat_flow"][1]
+                    / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+                )
+            else:
+                try:
+                    big_m = (
+                        1.5
+                        * max(
+                            self.bounds()[f"{asset}.HeatOut.Heat"][1],
+                            self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                        )
+                        / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+                    )
+                except KeyError:
+                    big_m = (
+                        1.5
+                        * max(
+                            self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
+                            self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                        )
+                        / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+                    )
+            constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
+            constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
 
         return constraints
 
@@ -4422,8 +4452,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
-        # constraints.extend(self.__installation_cost_constraints(ensemble_member))
-        # constraints.extend(self.__max_size_constraints(ensemble_member))
+        constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__max_size_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(
