@@ -38,6 +38,16 @@ class BaseComponentTypeMixin:
 
         return f"{pipe[:-5]}_hot"
 
+    def has_related_pipe(self, pipe: str) -> bool:
+        related = False
+        if self.is_hot_pipe(pipe):
+            if self.hot_to_cold_pipe(pipe) in self.heat_network_components.get("pipe", []):
+                related = True
+        elif self.is_cold_pipe(pipe):
+            if self.cold_to_hot_pipe(pipe) in self.heat_network_components.get("pipe", []):
+                related = True
+        return related
+
     @property
     def hot_pipes(self) -> List[str]:
         return [p for p in self.heat_network_components.get("pipe", []) if self.is_hot_pipe(p)]

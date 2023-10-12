@@ -356,7 +356,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 for ensemble_member in range(self.ensemble_size):
                     d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
 
-                    # for p in [pipe, cold_pipe]:
                     d[f"{pipe}.diameter"] = diameter
                     d[f"{pipe}.area"] = pipe_classes[0].area
             else:
@@ -379,7 +378,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 for ensemble_member in range(self.ensemble_size):
                     d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
 
-                    # for p in [pipe, cold_pipe]:
                     d[f"{pipe}.diameter"] = np.nan
                     d[f"{pipe}.area"] = np.nan
 
@@ -465,10 +463,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             max_discharge = max([c.maximum_discharge for c in pipe_classes])
 
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (-max_discharge, max_discharge)
-            # self.__pipe_topo_heat_discharge_bounds[f"{self.hot_to_cold_pipe(pipe)}.Q"] = (
-            #     -max_discharge,
-            #     max_discharge,
-            # )
 
             # Heat on cold side is zero, so no change needed
             cp = parameters[f"{pipe}.cp"]
@@ -1031,6 +1025,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if options["neglect_pipe_heat_losses"]:
             return 0.0
 
+        neighbour = self.has_related_pipe(p)
+
         if u_values is None:
             u_kwargs = {
                 "inner_diameter": parameters[f"{p}.diameter"],
@@ -1044,7 +1040,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # NaN values mean we use the function default
             u_kwargs = {k: v for k, v in u_kwargs.items() if not np.all(np.isnan(v))}
-            u_1, u_2 = heat_loss_u_values_pipe(**u_kwargs)
+            u_1, u_2 = heat_loss_u_values_pipe(**u_kwargs, neighbour=neighbour)
         else:
             u_1, u_2 = u_values
 
@@ -1053,14 +1049,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if temp is not None:
             temperature = temp
         temperature_ground = parameters[f"{p}.T_ground"]
-        try: 
-            sign_dtemp = 1 if self.is_hot_pipe(p) else -1
-            if sign_dtemp == 1:
+        if neighbour:
+            if self.is_hot_pipe(p):
                 dtemp = (temperature - parameters[f"{self.hot_to_cold_pipe(p)}.temperature"])
             else:
                 dtemp = (temperature - parameters[f"{self.cold_to_hot_pipe(p)}.temperature"])
-        except KeyError:
-            dtemp = 0.
+        else:
+            dtemp = 0
+
+        # if no return/supply pipes can be linked to eachother, the influence of the heat of the
+        # neighbouring pipes can also not be determined and thus no influence is assumed (distance between pipes to infinity)
+        # This results in Rneighbour -> 0 and therefore u2->0, u1-> 1/(Rsoil+Rins)
 
         heat_loss = (
             length * (u_1 - u_2) * temperature
