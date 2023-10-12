@@ -1387,6 +1387,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __node_discharge_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to ensure that the incoming volumetric flow equals the outgoing
+        volumetric flow. We assume constant density throughout a hydraulically coupled system and thus
+        these constratints are needed for mass conservation.
+        """
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
@@ -1410,11 +1415,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         energy losses are accounted for, temperature losses are not considered.
 
         There are a few cases for the heat loss constraints
-        - Heat losses are constant
-        - Heat losses depend on pipe_class
-        - Heat losses depend on varying network temperature
-        - neglect_pipe_heat_losses
+        - Heat losses are constant: This is the case when the pipe class is constant and the network temperature is
+        constant. In this case the symbol for the heat-loss is fixed by its lower and upper bound to a value.
+        - Heat losses depend on pipe_class: In this case the heat loss depend on the pipe class selected by the
+        optimization. In this case the heat losses can vary due to the varying radiation surface and different
+        instulation materials applied to the pipe. Note that the influences of varying pipe class are taken into
+        account while setting the heat-loss variable in topology constraints.
+        - Heat losses depend on varying network temperature: In this case the heat loss varies due to the different
+        delta temperature with ambient. Note that the heat loss symbol does not account for the varying temperature.
+        Therefore the big_m formalation is needed in these constraints.
+        - Heat losses depend both on varying network temperature and pipe classes: In this case both pipe class and
+        delta temperature with ambient vary
+        - neglect_pipe_heat_losses:
         """
+        #TODO: Massively simplify this function by setting the heat loss symbol also for varying temperature. All cases
+        # should then be solved with the same set of equations in this function.
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
@@ -1931,6 +1946,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return max_
 
     def __flow_direction_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the direction in pipes and determine whether a pipe
+        is utilized at all (is_disconnected variable).
+
+        Whether or not a pipe is connected is based upon whether flow passes through that pipe.
+
+        The directions are set based upon the directions of how thermal power propegates. This is done based
+        upon the sign of the Heat variable. Where positive Heat means a positive direction and negative heat means
+        a negative direction. By default positive is define from HeatIn to HeatOut.
+
+        Finally, a minimum flow can be set. This can sometimes be handy for numerical stability.
+        """
         constraints = []
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
@@ -2076,6 +2103,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __demand_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the demand assets.
+        We assume that at demands the flow and thermal power are linked via equality constraints, as we here want to
+        subtract a specific amount of energy from the flow. Please note that thermal power can properate through a
+        demand for compensating heat losses in the return network.
+
+        see also __source_heat_to_discharge_path_constraints for more explanation.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -2218,6 +2253,29 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __source_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints relating the thermal power to the discharge at the sources. Please note that
+        these constaints have to be considered in relation with the other heat_to_discharge constriants.
+
+        This equation relates thermal power with the volumetric flow-rate via an inequality constraint. This implies
+        that the thermal power can be larger than what physically can be transported by the flow. This choice was
+        made to avoid temperature modelling, essentially allowing the compensation of heat losses in the network as
+        the optimizer will drag the solution to the minimum amount of thermal power produced for minimum cost.
+
+        Depending on how the supply and return temperature are chosen, the errors can be observed in various parts of
+        the costs. The two most logical choices are to either use the in and outgoing design temperature at the source
+        or demand side. For the source side this will lead to an overestimation of how much thermal power the flow is
+        carrying and thereby an underestimation of transportation cost and pipe sizing cost. However, the heat losses
+        will be overestimated and therefore this assumption will be conservative w.r.t. the cost of thermal energy
+        produced.
+
+        Another option is to use the minimum required temperature difference at the demand side. This will lead to on
+        underestimation of how much power the flow is carrying and therefore an overestimation of transport cost and
+        pipe sizing cost, but an underestimation of the heat losses and the cost of thermal energy produced.
+
+        Depending on the use-case a choice can be made to ensure a conservative cost estimate. In this research the
+        temperatures at the demand side were selected.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -2416,6 +2474,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        Similar as for the source we relate the thermal power to the discharge with an in-equality constraint
+        to allow the energy losses whilst propegating through the network.
+
+        There are two cases for the constraint, namely:
+        - constant network temperature: In this case there is a single inequality constraint
+        - varying network temperature: In this case a set of big_m constraints is used to "activate" only the
+        constraint with the selected network temperature.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
