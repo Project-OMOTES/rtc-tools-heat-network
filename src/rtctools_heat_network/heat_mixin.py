@@ -122,6 +122,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__cumulative_investments_made_in_eur_nominals = {}
         self.__cumulative_investments_made_in_eur_bounds = {}
 
+        self.__annualized_capex_var = {}
+        self.__annualized_capex_var_bounds = {}
+        self.__annualized_capex_var_map = {}
+        self.__annualized_capex_var_nominals = {}
+
         self.__asset_is_realized_map = {}
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
@@ -751,6 +756,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             *self.heat_network_components.get("demand", []),
             *self.heat_network_components.get("ates", []),
             *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("pipe", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            annulaized_capex_var_name = f"{asset}__annulaized_capex"
+            self.__annualized_capex_var_map[asset] = annulaized_capex_var_name
+            self.__annualized_capex_var[annulaized_capex_var_name] = ca.MX.sym(annulaized_capex_var_name)
+            self.__annualized_capex_var_bounds[annulaized_capex_var_name] = (0., np.inf)#(lb, ub)
+            self.__annualized_capex_var_nominals[annulaized_capex_var_name] = 1.
+
+        for asset in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
         ]:
@@ -909,6 +929,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__asset_variable_operational_cost_var.values())
         variables.extend(self.__asset_max_size_var.values())
         variables.extend(self.__asset_aggregation_count_var.values())
+        variables.extend(self.__annualized_capex_var.values())
         return variables
 
     @property
@@ -964,6 +985,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return self.__asset_installation_cost_nominals[variable]
         elif variable in self.__cumulative_investments_made_in_eur_nominals:
             return self.__cumulative_investments_made_in_eur_nominals[variable]
+        elif variable in self.__annualized_capex_var_nominals:
+            return self.__annualized_capex_var_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -992,6 +1015,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__asset_aggregation_count_var_bounds)
         bounds.update(self.__asset_is_realized_bounds)
         bounds.update(self.__cumulative_investments_made_in_eur_bounds)
+        bounds.update(self.__annualized_capex_var_bounds)
         return bounds
 
     def _pipe_heat_loss(
@@ -4384,6 +4408,40 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((heat_flow - asset_is_realized * big_m) / nominal, -np.inf, 0.0))
 
         return constraints
+    
+    def __annualized_capex_constraints(self, ensemble_member):
+        constraints = []
+
+        for asset_name in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("pipe", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+
+            symbol_name = self.__annualized_capex_var_map[asset_name] # gives the name of the casadi symbol
+            symbol = self.extra_variable(symbol_name) # casadi symbol
+
+            investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+            investment_cost_symbol = self.extra_variable(investment_cost_symbol_name)
+            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+            installation_cost_symbol = self.extra_variable(installation_cost_symbol_name)
+
+            PV = investment_cost_symbol + installation_cost_symbol
+
+            INTEREST_RATE = 0.05
+
+            AEC_expression = calculate_annualized_equivalent_cost(PV, INTEREST_RATE, 30)
+            nominal = 1.e6
+
+            constraints.append(((symbol - AEC_expression) / nominal, 0.0, 0.0))
+
+
+
+        return constraints
 
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
@@ -4425,6 +4483,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__annualized_capex_constraints(ensemble_member))
         constraints.extend(self.__max_size_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
@@ -4681,3 +4740,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     np.testing.assert_array_equal(
                         np.sign(heat[~inds_disconnected]), 2 * flow_dir_var[~inds_disconnected] - 1
                     )
+
+
+def calculate_annualized_equivalent_cost(present_value, interest_rate, years_asset_life):
+    """
+    Calculate the annualized_equivalent_cost of a present_value
+    at an annual interest_rate over a specified number years_asset_life.
+
+    Parameters:
+        present_value (float): Present Value.
+        interest_rate (float): Annual Interest Rate (expressed as a decimal, e.g., 0.05 for 5%).
+        years_asset_life (int): Number of Years.
+
+    Returns:
+        float: annualized_equivalent_cost.
+
+    """
+    if interest_rate == 0:
+        annualized_equivalent_cost = present_value / years_asset_life
+    else:
+        annualized_equivalent_cost = present_value * (interest_rate / (1 - (1 + interest_rate) ** (-years_asset_life)))
+    return annualized_equivalent_cost
+
+
