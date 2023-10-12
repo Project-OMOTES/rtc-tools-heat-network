@@ -4412,32 +4412,30 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def __annualized_capex_constraints(self, ensemble_member):
         constraints = []
 
-        for asset_name in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("demand", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
-            *self.heat_network_components.get("pipe", []),
-            *self.heat_network_components.get("heat_exchanger", []),
-            *self.heat_network_components.get("heat_pump", []),
-        ]:
+        asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
 
-            symbol_name = self.__annualized_capex_var_map[asset_name] # gives the name of the casadi symbol
-            symbol = self.extra_variable(symbol_name) # casadi symbol
+        parameters = super().parameters(ensemble_member)
+        
+        for category in asset_categories:
+            for asset_name in self.heat_network_components.get(category, []):
 
-            investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-            investment_cost_symbol = self.extra_variable(investment_cost_symbol_name)
-            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-            installation_cost_symbol = self.extra_variable(installation_cost_symbol_name)
+                symbol_name = self.__annualized_capex_var_map[asset_name] # gives the name of the casadi symbol
+                symbol = self.extra_variable(symbol_name) # casadi symbol
 
-            PV = investment_cost_symbol + installation_cost_symbol
+                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                investment_cost_symbol = self.extra_variable(investment_cost_symbol_name)
+                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                installation_cost_symbol = self.extra_variable(installation_cost_symbol_name)
 
-            INTEREST_RATE = 0.05
+                investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
-            AEC_expression = calculate_annualized_equivalent_cost(PV, INTEREST_RATE, 30)
-            nominal = 1.e6
+                INTEREST_RATE = 0.05
+                NOMINAL = 1.e6
+                asset_life_years = self._number_of_years 
 
-            constraints.append(((symbol - AEC_expression) / nominal, 0.0, 0.0))
+                AEC_expression = calculate_annualized_equivalent_cost(investment_and_installation_cost, INTEREST_RATE, asset_life_years)
+
+                constraints.append(((symbol - AEC_expression) / NOMINAL, 0.0, 0.0))
 
 
 
