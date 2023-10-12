@@ -546,7 +546,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("demand", []):
-            ub = min(bounds[f"{asset_name}.Heat_demand"][1], bounds[f"{asset_name}.HeatIn.Heat"][1])
+            ub = bounds[f"{asset_name}.Heat_demand"][1] if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else bounds[f"{asset_name}.HeatIn.Heat"][1]
             _make_max_size_var(name=asset_name, lb=0.0, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("ates", []):
@@ -614,9 +614,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("demand", [])]:
-                nominal_fixed_operational = min(
-                    bounds[f"{asset_name}.Heat_demand"][1], bounds[f"{asset_name}.HeatIn.Heat"][1]
-                )
+                nominal_fixed_operational = bounds[f"{asset_name}.Heat_demand"][1] if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else bounds[f"{asset_name}.HeatIn.Heat"][1]
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("source", [])]:
@@ -4424,8 +4422,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
-        constraints.extend(self.__installation_cost_constraints(ensemble_member))
-        constraints.extend(self.__max_size_constraints(ensemble_member))
+        # constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        # constraints.extend(self.__max_size_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(
