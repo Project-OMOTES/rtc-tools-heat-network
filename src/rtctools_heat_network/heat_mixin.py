@@ -1337,6 +1337,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __node_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for each heat network node/joint to have as much
+        thermal power (Heat variable) going in as out. Effectively, it is setting the sum of thermal powers
+        to zero.
+        """
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
@@ -1399,6 +1404,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __heat_loss_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints to substract the heat losses from the thermal power that
+        propegates through the network. Note that this is done only on the thermal power, as such only
+        energy losses are accounted for, temperature losses are not considered.
+
+        There are a few cases for the heat loss constraints
+        - Heat losses are constant
+        - Heat losses depend on pipe_class
+        - Heat losses depend on varying network temperature
+        - neglect_pipe_heat_losses
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
