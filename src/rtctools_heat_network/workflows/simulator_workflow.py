@@ -1,4 +1,3 @@
-import datetime
 import locale
 import logging
 
@@ -6,7 +5,6 @@ import esdl
 
 import numpy as np
 
-from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -25,7 +23,9 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
-from rtctools_heat_network.workflows.utils.adapt_profiles import adapt_hourly_profile_to_common
+from rtctools_heat_network.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 from rtctools_heat_network.workflows.utils.helpers import main_decorator
 
 
@@ -345,54 +345,10 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
         """
         super().read()
 
-        self.__indx_max_peak, _ = adapt_hourly_profile_to_common(self, self.__day_steps)
-        logger.info("HeatProblem read")
-
-    def _set_data_with_averages_and_peak_day(
-        self,
-        datastore: DataStore,
-        variable_name: str,
-        ensemble_member: int,
-        new_date_times: np.array,
-    ):
-        try:
-            data = self.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
-        except KeyError:
-            datastore.set_timeseries(
-                variable=variable_name,
-                datetimes=new_date_times,
-                values=np.asarray([0.0] * len(new_date_times)),
-                ensemble_member=ensemble_member,
-                check_duplicates=True,
-            )
-            return
-
-        new_data = list()
-        data_timestamps = data.times
-        data_datetimes = [
-            self.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
-        ]
-        assert new_date_times[0] == data_datetimes[0]
-        data_values = data.values
-
-        values_for_mean = [0.0]
-        for dt, val in zip(data_datetimes, data_values):
-            if dt in new_date_times:
-                new_data.append(np.mean(values_for_mean))
-                values_for_mean = [val]
-            else:
-                values_for_mean.append(val)
-
-        # last datetime is not in input data, so we need to take the mean of the last bit
-        new_data.append(np.mean(values_for_mean))
-
-        datastore.set_timeseries(
-            variable=variable_name,
-            datetimes=new_date_times,
-            values=np.asarray(new_data),
-            ensemble_member=ensemble_member,
-            check_duplicates=True,
+        self.__indx_max_peak, _ = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+            self, self.__day_steps
         )
+        logger.info("HeatProblem read")
 
 
 # -------------------------------------------------------------------------------------------------
