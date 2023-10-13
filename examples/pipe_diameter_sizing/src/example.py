@@ -114,9 +114,9 @@ class PipeDiameterSizingProblem(
         # options["hot_start"] = getattr(self, "_hot_start", False)
         self._qpsol = CachingQPSol()
         options["casadi_solver"] = self._qpsol
-        options["solver"] = "gurobi"
-        cbc_options = options["cbc"] = {}
-        cbc_options["seconds"] = 500.0
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        # cbc_options["seconds"] = 500.0
         return options
 
 
