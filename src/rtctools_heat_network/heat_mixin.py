@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Set, Tuple
 
 import casadi as ca
 
