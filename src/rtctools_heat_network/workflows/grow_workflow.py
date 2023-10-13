@@ -176,6 +176,7 @@ class EndScenarioSizing(
                     total_demand += demand_values
                 max_demand = max(demand_values)
                 self.__heat_demand_nominal[f"{demand}.Heat_demand"] = max_demand
+                self.__heat_demand_nominal[f"{demand}.Heat_flow"] = max_demand
 
             # TODO: the approach of picking one peak day was introduced for a network with a tree
             #  layout and all big sources situated at the root of the tree. It is not guaranteed
@@ -320,7 +321,8 @@ class EndScenarioSizing(
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                 logger.warning(
-                    f"{demand} has a flow limit lower that wat is required for the maximum demand"
+                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                    f"lower that wat is required for the maximum demand {max(target.values)}"
                 )
             state = f"{demand}.Heat_demand"
 
