@@ -234,7 +234,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         #  heat losses in the system to get a proper upper bound. Maybe move
         #  calculation of Heat bounds to the HeatMixin?
         delta_temperature = supply_temperature - return_temperature
-        hfr_max = 2. * (
+        hfr_max = 2.0 * (
             self.rho * self.cp * q_max * delta_temperature
         )  # TODO: are there any physical implications of using this bound
 

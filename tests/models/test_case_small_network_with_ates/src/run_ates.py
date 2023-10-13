@@ -152,6 +152,11 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
         return options
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "gurobi"
+        return options
+
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
@@ -349,16 +354,16 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblemPlacingOverTime)
     results = sol.extract_results()
-    import matplotlib.pyplot as plt
-
-    plt.figure()
-    plt.plot(results["ATES_033c.Heat_ates"])
-    plt.figure()
-    plt.plot(results["ATES_033c.Stored_heat"])
-    plt.show()
-    a = 2
+    # import matplotlib.pyplot as plt
+    #
+    # plt.figure()
+    # plt.plot(results["ATES_033c.Heat_ates"])
+    # plt.figure()
+    # plt.plot(results["ATES_033c.Stored_heat"])
+    # plt.show()
+    # a = 2
     a = 1
 
     # solution = run_optimization_problem(
