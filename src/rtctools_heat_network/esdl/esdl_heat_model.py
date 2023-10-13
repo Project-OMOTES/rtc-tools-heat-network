@@ -148,7 +148,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Heat_demand=dict(max=max_demand),
+            Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
