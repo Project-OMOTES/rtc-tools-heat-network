@@ -639,7 +639,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
     _ = run_optimization_problem(
-        EndScenarioSizing,
+        EndScenarioSizingHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
     )
