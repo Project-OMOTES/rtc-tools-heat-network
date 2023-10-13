@@ -9,6 +9,53 @@ logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
 
+def set_data_with_averages_and_peak_day(
+    datastore: DataStore,
+    variable_name: str,
+    ensemble_member: int,
+    new_date_times: np.array,
+    problem: object,
+):
+    try:
+        data = problem.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
+    except KeyError:
+        datastore.set_timeseries(
+            variable=variable_name,
+            datetimes=new_date_times,
+            values=np.asarray([0.0] * len(new_date_times)),
+            ensemble_member=ensemble_member,
+            check_duplicates=True,
+        )
+        return
+
+    new_data = list()
+    data_timestamps = data.times
+    data_datetimes = [
+        problem.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
+    ]
+    assert new_date_times[0] == data_datetimes[0]
+    data_values = data.values
+
+    values_for_mean = [0.0]
+    for dt, val in zip(data_datetimes, data_values):
+        if dt in new_date_times:
+            new_data.append(np.mean(values_for_mean))
+            values_for_mean = [val]
+        else:
+            values_for_mean.append(val)
+
+    # last datetime is not in input data, so we need to take the mean of the last bit
+    new_data.append(np.mean(values_for_mean))
+
+    datastore.set_timeseries(
+        variable=variable_name,
+        datetimes=new_date_times,
+        values=np.asarray(new_data),
+        ensemble_member=ensemble_member,
+        check_duplicates=True,
+    )
+
+
 def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps):
     """
     Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
@@ -18,51 +65,6 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         - problem_indx_max_peak: index of the maximum of the peak values
         - heat_demand_nominal: max demand value found for a specific heating demand
     """
-
-    def set_data_with_averages_and_peak_day(
-        datastore: DataStore,
-        variable_name: str,
-        ensemble_member: int,
-        new_date_times: np.array,
-    ):
-        try:
-            data = problem.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
-        except KeyError:
-            datastore.set_timeseries(
-                variable=variable_name,
-                datetimes=new_date_times,
-                values=np.asarray([0.0] * len(new_date_times)),
-                ensemble_member=ensemble_member,
-                check_duplicates=True,
-            )
-            return
-
-        new_data = list()
-        data_timestamps = data.times
-        data_datetimes = [
-            problem.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
-        ]
-        assert new_date_times[0] == data_datetimes[0]
-        data_values = data.values
-
-        values_for_mean = [0.0]
-        for dt, val in zip(data_datetimes, data_values):
-            if dt in new_date_times:
-                new_data.append(np.mean(values_for_mean))
-                values_for_mean = [val]
-            else:
-                values_for_mean.append(val)
-
-        # last datetime is not in input data, so we need to take the mean of the last bit
-        new_data.append(np.mean(values_for_mean))
-
-        datastore.set_timeseries(
-            variable=variable_name,
-            datetimes=new_date_times,
-            values=np.asarray(new_data),
-            ensemble_member=ensemble_member,
-            check_duplicates=True,
-        )
 
     demands = problem.heat_network_components.get("demand", [])
     new_datastore = DataStore(problem)
@@ -122,6 +124,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 variable_name=var_name,
                 ensemble_member=ensemble_member,
                 new_date_times=new_date_times,
+                problem=problem,
             )
 
         # TODO: this has not been tested but is required if a production profile is included
@@ -141,6 +144,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 variable_name=var_name,
                 ensemble_member=ensemble_member,
                 new_date_times=new_date_times,
+                problem=problem,
             )
 
     problem.io = new_datastore
