@@ -152,11 +152,6 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
         return options
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "gurobi"
-        return options
-
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
