@@ -315,7 +315,7 @@ class ESDLMixin(
                     )
                 if self.io.reference_datetime is None:
                     self.io.reference_datetime = (profile.index.tz_convert(None).to_pydatetime())[0]
-        if not hasattr(self, "_input_timeseries_file"):
+        elif not hasattr(self, "_input_timeseries_file"):
             demand_assets = [
                 asset for asset in self.esdl_assets.values() if asset.asset_type == "HeatingDemand"
             ]
@@ -333,7 +333,7 @@ class ESDLMixin(
                 if self.io.reference_datetime is None:
                     self.io.reference_datetime = start_time
             for demand in demand_assets:
-                if self._profiles and demand.name in self._profiles:
+                if self._profiles and self.esdl_asset_name_to_id_map[demand.name] in self._profiles:
                     continue
                 logger.warning(
                     f"No demand profile specified for {demand} in an influxdb "
