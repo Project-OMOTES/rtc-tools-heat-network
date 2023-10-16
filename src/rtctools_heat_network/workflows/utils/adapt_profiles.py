@@ -89,6 +89,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
             else:
                 total_demand += demand_values
             heat_demand_nominal[f"{demand}.Heat_demand"] = max(demand_values)
+            heat_demand_nominal[f"{demand}.Heat_flow"] = max(demand_values)
 
         # TODO: the approach of picking one peak day was introduced for a network with a tree
         #  layout and all big sources situated at the root of the tree. It is not guaranteed
