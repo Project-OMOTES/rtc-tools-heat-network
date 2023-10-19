@@ -3969,12 +3969,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __electricity_node_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for power/energy and current conservation at nodes/busses.
+        """
         constraints = []
 
         for bus, connected_cables in self.heat_network_topology.busses.items():
             power_sum = 0.0
             i_sum = 0.0
             power_nominal = []
+            i_nominal = []
 
             for i_conn, (_cable, orientation) in connected_cables.items():
                 heat_conn = f"{bus}.ElectricityConn[{i_conn + 1}].Power"
@@ -3982,9 +3986,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 power_sum += orientation * self.state(heat_conn)
                 i_sum += orientation * self.state(i_port)
                 power_nominal.append(self.variable_nominal(heat_conn))
+                i_nominal.append(self.variable_nominal(i_port))
 
             power_nominal = np.median(power_nominal)
             constraints.append((power_sum / power_nominal, 0.0, 0.0))
+
+            i_nominal = np.median(i_nominal)
+            constraints.append((i_sum / i_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -4024,7 +4032,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def __electricity_demand_path_constraints(self, ensemble_member):
         """
-
+        This function adds the constraints for the electricity commodity at the demand assets. We enforce that a
+        minimum voltage is exactly met together with the power that is carried by the current. By fixing the voltage
+        at the demand we ensure that at the demands the P = U * I is met exactly at this point in the network and are
+        conservatively in the lines at all locations in the network.
         """
         constraints = []
         parameters = self.parameters(ensemble_member)

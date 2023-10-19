@@ -42,6 +42,10 @@ class TestMILPbus(TestCase):
         p2 = results["Bus_f262.ElectricityConn[2].Power"]
         p3 = results["Bus_f262.ElectricityConn[3].Power"]
         p4 = results["Bus_f262.ElectricityConn[4].Power"]
+        i1 = results["Bus_f262.ElectricityConn[1].I"]
+        i2 = results["Bus_f262.ElectricityConn[2].I"]
+        i3 = results["Bus_f262.ElectricityConn[3].I"]
+        i4 = results["Bus_f262.ElectricityConn[4].I"]
 
         # Incoming voltage == outgoing voltage of bus
         self.assertTrue(all(v1 == v2))
@@ -51,6 +55,8 @@ class TestMILPbus(TestCase):
         self.assertTrue(all(v1 == v_outgoing_cable))
         # Power in == power out = no dissipation of power
         np.testing.assert_allclose(p1 + p2 - p3 - p4, 0.0, rtol=1.0e-6, atol=1.0e-6)
+        # Power in == power out = no dissipation of power
+        np.testing.assert_allclose(i1 + i2 - i3 - i4, 0.0, rtol=1.0e-6, atol=1.0e-6)
         # check if minimum voltage is reached
         np.testing.assert_array_less(230.0 - 1.0e-3, v_demand)
         # Check that current is high enough to carry the power
