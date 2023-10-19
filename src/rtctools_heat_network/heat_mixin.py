@@ -4412,8 +4412,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def __annualized_capex_constraints(self, ensemble_member):
         constraints = []
 
-        asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
+        # asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
 
+        asset_categories  = ["source"]
+        
         parameters = super().parameters(ensemble_member)
         
         for category in asset_categories:

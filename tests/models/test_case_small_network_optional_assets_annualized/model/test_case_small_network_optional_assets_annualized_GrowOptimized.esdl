@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="9cdcb5f8-ce18-4d64-ae49-5acc787cf1c8" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized" version="14">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="c6741a80-498c-4b2c-98c1-fd7312a6decd" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized" version="17">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" supplyTemperature="70.0" name="Heat" id="7b32e287-d775-480c-b317-64ffdacf12c9"/>
@@ -45,13 +45,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="ec2d740c-2f13-4b70-a1bb-6e4a561414c2">
@@ -70,13 +70,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="c8140b3b-99dc-4ee0-b034-1050b4fd1946">
@@ -95,13 +95,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="883afc13-098e-47b4-aa30-ae3c3e25f9b1">
@@ -120,13 +120,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="b1dd0427-f8ca-4525-8192-8a8954f2be1c">
@@ -145,13 +145,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="d9132301-1f49-4c31-b38f-4e650c18a984">
@@ -170,13 +170,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="762aeec6-ac5d-4e54-b32f-3da929bd6713">
@@ -191,7 +191,7 @@
       <asset xsi:type="esdl:Joint" name="Joint_1" id="f96d02d7-19d1-4a0b-8869-2d180f39b7e6">
         <geometry xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" id="51852861-aeeb-461f-b8ec-08f000abc6dd" connectedTo="66590f96-a397-4d6f-9cfb-e7d34232cad6 f966bade-1fad-453f-8ec2-4062ec70bc7b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
-        <port xsi:type="esdl:OutPort" id="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="5f65520d-61ee-4f68-8002-271f48f1daee 578ec414-3f11-430e-a893-60ea77848ff5 2e672d8b-ee9b-4c8b-8357-58ea984ae6be c7ad4fce-efbb-4b30-9508-f71a4356ca2d" name="Out"/>
+        <port xsi:type="esdl:OutPort" id="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="5f65520d-61ee-4f68-8002-271f48f1daee 578ec414-3f11-430e-a893-60ea77848ff5" name="Out"/>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_2" id="d74db9ba-b86c-486a-8911-3ff368ae63a3">
         <geometry xsi:type="esdl:Point" lon="4.313372969627381" lat="52.04075678384997" CRS="WGS84"/>
@@ -206,7 +206,7 @@
       <asset xsi:type="esdl:Joint" name="Joint_1_ret" id="6d97700c-a3d7-4127-b64c-f08ee2e308f9">
         <geometry xsi:type="esdl:Point" lon="4.311074402665649" lat="52.04281086202885" CRS="WGS84"/>
         <port xsi:type="esdl:OutPort" id="2913e645-b027-429e-bf5d-22ace96a39fa" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="dd50e603-c87c-4cdb-82bb-486ebee77255 42e9f86b-ea96-4992-bf3f-9cbae8a4a39c" name="ret_port"/>
-        <port xsi:type="esdl:InPort" id="7893125d-d82f-4fe8-aaea-5fb6afecc635" connectedTo="0431b8a0-a8d1-4375-b348-37a475add47a 6b655eb1-2b66-455f-90a3-0dd6f2844fab 8271240c-cae3-4e81-8b36-d65302a4e6b4 2b341054-a732-404f-a361-d39c4cb4e271" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="ret_port"/>
+        <port xsi:type="esdl:InPort" id="7893125d-d82f-4fe8-aaea-5fb6afecc635" connectedTo="0431b8a0-a8d1-4375-b348-37a475add47a 6b655eb1-2b66-455f-90a3-0dd6f2844fab" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="ret_port"/>
       </asset>
       <asset xsi:type="esdl:Joint" name="Joint_2_ret" id="e615c77a-bb75-411b-92c2-549efbdf8ec8">
         <geometry xsi:type="esdl:Point" lon="4.312746245529536" lat="52.04084678393997" CRS="WGS84"/>
@@ -296,15 +296,15 @@
         <port xsi:type="esdl:InPort" id="5cd0f2e0-d456-4909-a81c-4b312b1be857" connectedTo="9c025b19-57d1-43a8-b2e8-db3e684756f2" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="2045aca9-4e50-42ec-99de-fbcffa627a86" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="f36b9767-8e64-4744-8cd0-08acb2ae873b" name="Out_ret"/>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="16938869.78259667" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb">
+      <asset xsi:type="esdl:HeatProducer" power="16928320.047862798" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb" technicalLifetime="20.0">
         <geometry xsi:type="esdl:Point" lon="4.311726093292237" lat="52.04487621664103" CRS="WGS84"/>
         <costInformation xsi:type="esdl:CostInformation" id="d59fe0c4-5156-4dcf-b259-6ac6855241c6">
-          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="3633cd09-9f87-4d8d-a5f8-0431bab9576d">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="88a009ff-0eeb-48b1-9eb3-60dba04b3e79" unit="EURO" description="Cost in EUR/MW" physicalQuantity="COST" perMultiplier="MEGA"/>
-          </investmentCosts>
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="6.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="c52334c9-bc5d-41f4-b93d-10e7b769f281" unit="EURO" description="Cost in EUR/MWh" physicalQuantity="COST" perMultiplier="MEGA"/>
           </variableOperationalCosts>
+          <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="3633cd09-9f87-4d8d-a5f8-0431bab9576d">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="88a009ff-0eeb-48b1-9eb3-60dba04b3e79" unit="EURO" description="Cost in EUR/MW" physicalQuantity="COST" perMultiplier="MEGA"/>
+          </investmentCosts>
           <installationCosts xsi:type="esdl:SingleValue" value="100000.0" id="2b2f4b93-32c7-4f20-9723-5900cc76fe20">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Cost in EUR" unit="EURO" physicalQuantity="COST" id="b0975eef-2e13-4b7f-b89a-64a47183e8cc"/>
           </installationCosts>
@@ -319,13 +319,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="22fb2e85-7a81-4371-b6ab-6d5101b8ca45">
@@ -344,13 +344,13 @@
         </geometry>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
+            <matter xsi:type="esdl:Material" name="steel" id="371c1d72-de35-4559-9b0e-47172e5d1d83" thermalConductivity="52.15"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
+            <matter xsi:type="esdl:Material" name="PUR" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c" thermalConductivity="0.027"/>
           </component>
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
+            <matter xsi:type="esdl:Material" name="HDPE" id="f53de37b-a735-4b0d-b226-a6b722029a01" thermalConductivity="0.4"/>
           </component>
         </material>
         <costInformation xsi:type="esdl:CostInformation" id="7cbc9c32-3d7d-44e1-ab73-598459294f0c">
@@ -362,119 +362,19 @@
         <port xsi:type="esdl:OutPort" id="df6f89d0-7872-4891-934f-de407f6aa142" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" name="Out"/>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_9768" outerDiameter="0.63" id="97684360-d920-45c2-a584-a092fdcf91f1" diameter="DN450" innerDiameter="0.4444" length="149.0">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854"/>
-          <point xsi:type="esdl:Point" lon="4.313871860504151" lat="52.042658996032856"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
-          </component>
-        </material>
-        <costInformation xsi:type="esdl:CostInformation" id="6939255e-b8a1-4045-9739-74690c35fda4">
-          <investmentCosts xsi:type="esdl:SingleValue" id="a40165e8-88bd-49b9-81d9-298812ac0170" value="3417.9" name="Combined investment and installation costs">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="METRE" id="d0aebc76-201b-4b2d-81fe-55269fcefe3b" unit="EURO" description="Costs in EUR/m" physicalQuantity="COST"/>
-          </investmentCosts>
-        </costInformation>
-        <port xsi:type="esdl:InPort" id="2e672d8b-ee9b-4c8b-8357-58ea984ae6be" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
-        <port xsi:type="esdl:OutPort" id="636a1943-2289-4d57-a2dd-33aaa4f25b49" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="Out"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_9768_ret" outerDiameter="0.63" id="3542e501-01ea-468b-9d4f-c1e7c67b43d9" diameter="DN450" innerDiameter="0.4444" length="192.1">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.313871860504151" lat="52.042658996032856"/>
-          <point xsi:type="esdl:Point" lon="4.311074402665649" lat="52.04281086202885"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" thermalConductivity="52.15" id="371c1d72-de35-4559-9b0e-47172e5d1d83"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0805">
-            <matter xsi:type="esdl:Material" name="PUR" thermalConductivity="0.027" id="df30bd37-2fc4-4993-828f-1b7cf1e8202c"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.006">
-            <matter xsi:type="esdl:Material" name="HDPE" thermalConductivity="0.4" id="f53de37b-a735-4b0d-b226-a6b722029a01"/>
-          </component>
-        </material>
-        <costInformation xsi:type="esdl:CostInformation" id="68394efa-f98e-4fbe-9418-b5975d7c0fe7">
-          <investmentCosts xsi:type="esdl:SingleValue" id="a40165e8-88bd-49b9-81d9-298812ac0170" value="3417.9" name="Combined investment and installation costs">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="METRE" id="d0aebc76-201b-4b2d-81fe-55269fcefe3b" unit="EURO" description="Costs in EUR/m" physicalQuantity="COST"/>
-          </investmentCosts>
-        </costInformation>
-        <port xsi:type="esdl:InPort" id="a581c340-3cab-46b1-924f-c5ddc0120de6" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In"/>
-        <port xsi:type="esdl:OutPort" id="8271240c-cae3-4e81-8b36-d65302a4e6b4" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="Out"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_352c" outerDiameter="0.63" id="352cf2f0-173e-420e-b8d7-5c226b6d8565" diameter="DN400" innerDiameter="0.3938" length="233.1">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.311695247888566" lat="52.042720861938854"/>
-          <point xsi:type="esdl:Point" lon="4.314751625061036" lat="52.04364884025295"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" id="ae32d30b-4e0d-4470-a4f0-4ba7bd258070" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.1052">
-            <matter xsi:type="esdl:Material" name="PUR" id="5d591b58-2cf8-4d94-91eb-be773e1c25ee" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0066">
-            <matter xsi:type="esdl:Material" name="HDPE" id="8a0279cc-afbf-46fb-a590-33960ce30613" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <costInformation xsi:type="esdl:CostInformation" id="ea319afa-4c85-49d6-80f6-313f6866cdc7">
-          <investmentCosts xsi:type="esdl:SingleValue" id="566d3f26-f85a-48b4-b06a-5fd62ac6fa61" value="2840.6" name="Combined investment and installation costs">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="METRE" id="5b1085e4-5642-4c1d-aa7c-bfb7793d4e64" unit="EURO" description="Costs in EUR/m" physicalQuantity="COST"/>
-          </investmentCosts>
-        </costInformation>
-        <port xsi:type="esdl:InPort" id="c7ad4fce-efbb-4b30-9508-f71a4356ca2d" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="In"/>
-        <port xsi:type="esdl:OutPort" id="e15db059-ab19-4483-9911-7a37f0c08e42" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" name="Out"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-      </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_352c_ret" outerDiameter="0.63" id="eebe64ca-1b17-4bfa-9d0f-77129ee3716b" diameter="DN400" innerDiameter="0.3938" length="234.8">
-        <geometry xsi:type="esdl:Line" CRS="WGS84">
-          <point xsi:type="esdl:Point" lon="4.314306378364564" lat="52.043747823469246"/>
-          <point xsi:type="esdl:Point" lon="4.311178922653199" lat="52.04287676364216"/>
-        </geometry>
-        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
-            <matter xsi:type="esdl:Material" name="steel" id="ae32d30b-4e0d-4470-a4f0-4ba7bd258070" thermalConductivity="52.15"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.1052">
-            <matter xsi:type="esdl:Material" name="PUR" id="5d591b58-2cf8-4d94-91eb-be773e1c25ee" thermalConductivity="0.027"/>
-          </component>
-          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0066">
-            <matter xsi:type="esdl:Material" name="HDPE" id="8a0279cc-afbf-46fb-a590-33960ce30613" thermalConductivity="0.4"/>
-          </component>
-        </material>
-        <costInformation xsi:type="esdl:CostInformation" id="aa0df5f9-2ce9-4153-8761-a4a0288edfbf">
-          <investmentCosts xsi:type="esdl:SingleValue" id="566d3f26-f85a-48b4-b06a-5fd62ac6fa61" value="2840.6" name="Combined investment and installation costs">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="METRE" id="5b1085e4-5642-4c1d-aa7c-bfb7793d4e64" unit="EURO" description="Costs in EUR/m" physicalQuantity="COST"/>
-          </investmentCosts>
-        </costInformation>
-        <port xsi:type="esdl:InPort" id="febc9c00-71c8-4b12-b005-28beaae24e7b" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" name="In"/>
-        <port xsi:type="esdl:OutPort" id="2b341054-a732-404f-a361-d39c4cb4e271" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="Out"/>
-        <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
-      </asset>
-      <KPIs xsi:type="esdl:KPIs" id="be8dc863-e7cd-4b88-8219-d6f2aeaeac64">
+      <KPIs xsi:type="esdl:KPIs" id="b44ad24b-5a17-4a7c-804d-912edccbdbcc">
         <kpi xsi:type="esdl:DistributionKPI" name="High level cost breakdown [EUR]">
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="30706828.478259668" label="CAPEX"/>
-            <stringItem xsi:type="esdl:StringItem" value="123666.24047356065" label="OPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="25715848.64478628" label="CAPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="123111.74641594857" label="OPEX"/>
           </distribution>
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="Overall cost breakdown [EUR]">
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3100000.0" label="Installation"/>
-            <stringItem xsi:type="esdl:StringItem" value="27606828.478259668" label="Investment"/>
-            <stringItem xsi:type="esdl:StringItem" value="123666.24047356065" label="Variable OPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="22615848.64478628" label="Investment"/>
+            <stringItem xsi:type="esdl:StringItem" value="123111.74641594857" label="Variable OPEX"/>
             <stringItem xsi:type="esdl:StringItem" label="Fixed OPEX"/>
           </distribution>
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
@@ -482,20 +382,20 @@
         <kpi xsi:type="esdl:DistributionKPI" name="CAPEX breakdown [EUR]">
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3000000.0" label="HeatingDemand"/>
-            <stringItem xsi:type="esdl:StringItem" value="25912941.5" label="Pipe"/>
-            <stringItem xsi:type="esdl:StringItem" value="1793886.9782596668" label="HeatProducer"/>
+            <stringItem xsi:type="esdl:StringItem" value="20923016.64" label="Pipe"/>
+            <stringItem xsi:type="esdl:StringItem" value="1792832.00478628" label="HeatProducer"/>
           </distribution>
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="OPEX breakdown [EUR]">
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="123666.24047356065" label="HeatProducer"/>
+            <stringItem xsi:type="esdl:StringItem" value="123111.74641594857" label="HeatProducer"/>
           </distribution>
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="Energy production [Wh]">
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="20611040078.92678" label="HeatProducer_2"/>
+            <stringItem xsi:type="esdl:StringItem" value="20518624402.658096" label="HeatProducer_2"/>
           </distribution>
         </kpi>
       </KPIs>
