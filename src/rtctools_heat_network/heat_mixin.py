@@ -4439,8 +4439,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 constraints.append(((symbol - AEC_expression) / NOMINAL, 0.0, 0.0))
 
-
-
         return constraints
 
     def path_constraints(self, ensemble_member):

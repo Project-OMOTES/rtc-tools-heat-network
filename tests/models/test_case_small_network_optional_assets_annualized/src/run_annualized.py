@@ -31,7 +31,26 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class MinimizeSourcesHeatCostGoal(Goal):
+class MinimizeNonAnnualizedCostGoal(Goal):
+    priority = 2
+
+    order = 1
+
+    def __init__(self, source):
+        self.target_max = 0.0
+        self.function_range = (0.0, 1.0e8)
+        self.source = source
+        self.function_nominal = 1.0e7
+
+    def function(self, optimization_problem, ensemble_member):
+        return (
+            optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
+            + optimization_problem.extra_variable(f"{self.source}__investment_cost")
+            + optimization_problem.extra_variable(f"{self.source}__installation_cost")
+        )
+
+
+class MinimizeAnnualizedCostGoal(Goal):
     priority = 2
 
     order = 1
@@ -62,16 +81,16 @@ class _GoalsAndOptions:
 
         return goals
 
-    def goals(self):
-        goals = super().goals().copy()
-        for s in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
-        ]:
-            goals.append(MinimizeSourcesHeatCostGoal(s))
+    # def goals(self):
+    #     goals = super().goals().copy()
+    #     for s in [
+    #         *self.heat_network_components.get("source", []),
+    #         *self.heat_network_components.get("ates", []),
+    #         *self.heat_network_components.get("buffer", []),
+    #     ]:
+    #         goals.append(MinimizeSourcesHeatCostGoal(s))
 
-        return goals
+    # return goals
 
 
 class HeatProblem(
@@ -109,7 +128,7 @@ class HeatProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 
@@ -156,3 +175,22 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
     results = solution.extract_results()
+
+
+class HeatProblemAnnulized(HeatProblem):
+
+    def goals(self, ensemble_member):
+        goals = super().goals(ensemble_member).copy()
+
+        goals.append(MinimizeAnnulizedCost())
+
+        return goals    
+    
+class HeatProblemNonAnnulized(HeatProblem):
+
+    def goals(self, ensemble_member):
+        goals = super().goals(ensemble_member).copy()
+
+        goals.append(MinimizeNonAnnualizedCostGoal())
+
+        return goals   
