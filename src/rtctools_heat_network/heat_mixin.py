@@ -1302,11 +1302,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
-        # To avoid sudden change in heat from a timestep to the next,
-        # constraints on d(Heat)/dt are introduced.
-        # Information of restrictions on dQ/dt and dT/dt are used, as d(Heat)/dt is
-        # proportional to average_temperature * dQ/dt + average_discharge * dT/dt.
-        # The average discharge is computed using the assumption that the average velocity is 1.
+        """
+        To avoid sudden change in heat from a timestep to the next,
+        constraints on d(Heat)/dt are introduced.
+        Information of restrictions on dQ/dt and dT/dt are used, as d(Heat)/dt is
+        proportional to average_temperature * dQ/dt + average_discharge * dT/dt.
+        The average discharge is computed using the assumption that the average velocity is 1.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3839,6 +3841,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_topology_constraints(self, ensemble_member):
+        """
+        This function adds the constraints needed for the optimization of pipe classes (referred to as topology
+        optimization). We ensure that only one pipe_class can be selected. Following we set the diameter and cost
+        variable to those associated with the optimized pipe_class. Note that the cost symbol is the investment cost in
+        EUR/meter, the actual investment cost of the pipe is set in the __investment_cost variable.
+
+        Furthermore the __hn_heat_loss symbol is set, as the heat loss depends on the chosen pipe class and the
+        selected temperature in the network.
+        """
         constraints = []
 
         for p, pipe_classes in self.__pipe_topo_pipe_class_map.items():
@@ -4176,6 +4187,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __investment_cost_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the investment cost variable. The investment cost scales with the
+        maximum size of the asset. This leaves to cases for the constraint. 1) The asset size is fixed (state==1): in
+        this case the investment cost is set based on the upper bound of the size. 2) The asset size is optimized
+        (state==2): in this case the investment cost is set based upon the __max_size variable.
+
+        Specifically for demands we have a case where we set the investment cost based on the maximum demand as often
+        the size of the demand is not seperately specified.
+
+        For pipes the investment cost is set based on the pipe class and the length.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -4288,6 +4310,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __fixed_operational_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints to set the fixed operational cost. The fixed operational cost are the cost
+        made independently of the operation of the asset. We assume that these cost scale with the maximum size of
+        the asset.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -4337,6 +4364,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __variable_operational_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for setting the variable operational cost. This are the cost that depend
+        on the operation of the asset. At this moment we only support the variable operational cost for sources where
+        they scale with the thermal energy production.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -4388,6 +4420,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __installation_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for setting the installation cost variable. The installation cost is the
+        cost element that comes with the placing of the asset independently of the size of the asset. Therefore, the
+        installation cost is set with the _aggregation_count variable.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
