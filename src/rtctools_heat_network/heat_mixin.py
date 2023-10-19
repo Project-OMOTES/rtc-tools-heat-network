@@ -4066,9 +4066,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __max_size_constraints(self, ensemble_member):
+        """
+        This function makes sure that the __max_size variable is at least as large as needed. For most assets the
+        __max_size is related to the thermal Power it can produce or consume, there are a few exceptions like tank
+        storage that size with volume.
+
+        As the constraints are inequality the __max_size variable can be larger than what is the actual needed size.
+        In combination with the objectives, e.g. cost minimization, we can drag down the __max_size to the minimum
+        required.
+        """
         constraints = []
-        # This function makes sure that the __max_size variable is at least as large as needed
-        # a goal should minimize the size of this variable.
         bounds = self.bounds()
 
         for b in self.heat_network_components.get("buffer", []):
