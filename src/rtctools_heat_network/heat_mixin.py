@@ -2401,6 +2401,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_hydraulic_power_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to compute the hydraulic power that is needed to realize the flow compensating
+        the pressure drop through the pipe. Similar as for the head loss we allow two supported methods. 1) a single
+        linear line between 0 to max velocity. 2) A multiple line inequality approach where one can use the
+        minimize_head_losses == True option to drag down the solution to the actual physical solution.
+
+        Note that the linearizations are made seperately from the pressuredrop constraints, this is done to avoid
+        "stacked" overestimations.
+        """
         constraints = []
         options = self.heat_network_options()
 
@@ -3997,12 +4006,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __electricity_cable_heat_mixing_path_constraints(self, ensemble_member):
-        #TODO: doc not finished yet.
         """
         This function adds constraints relating the electrical power to the current flowing through the cable. The
         power through the cable is limited by the maximum voltage and the actual current variable with an inequality
         constraint. This is done to allow power losses through the network. As the current and power are related with
-        an equality constraint at the demands we can .....
+        an equality constraint at the demands exactly matching the P = U*I equation, we allow the inequalities for the
+        lines. By overestimating the power losses and voltage drops, together we ensure that U*I>P.
 
 
         Furthermore, the power loss is estiamted by linearizing with the maximum current, meaning that we are always
@@ -4415,6 +4424,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __optional_asset_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints that set the _aggregation_count variable. This variable is used for most assets
+        (except geo and ates) to turn on/off the asset. Which effectively mean that assets cannot exchange thermal
+        power with the network when _aggregation_count == 0.
+
+        Specifically for the geo and ATES we use the _aggregation_count for modelling the amount of doublets. Where the
+        _aggregation_count allows increments in the upper limit for the thermal power that can be exchanged with the
+        network.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
