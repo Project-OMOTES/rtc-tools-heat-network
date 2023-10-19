@@ -32,49 +32,62 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     }
 
     def __init__(self, *args, **kwargs):
-        # Prepare dicts for additional variables
+        """
+        In this __init__ we prepace the dicts for the variables added by th HeatMixin
+        """
+        # Boolean path-variable for the direction of the flow in to out port is positive.
         self.__flow_direct_var = {}
         self.__flow_direct_bounds = {}
         self.__pipe_to_flow_direct_map = {}
 
+        # Boolean path-variable to determine whether flow is going through a pipe.
         self.__pipe_disconnect_var = {}
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
+        # Boolean variable to switch assets on/off or to increment their size.
         self.__asset_aggregation_count_var = {}
         self.__asset_aggregation_count_var_bounds = {}
         self._asset_aggregation_count_var_map = {}
 
+        # Boolean path-variable for the status of the check valve
         self.__check_valve_status_var = {}
         self.__check_valve_status_var_bounds = {}
         self.__check_valve_status_map = {}
 
+        # Boolean path-variable for the status of the control valve
         self.__control_valve_direction_var = {}
         self.__control_valve_direction_var_bounds = {}
         self.__control_valve_direction_map = {}
 
+        # Boolean path-variable to disable the hex for certain moments in time
         self.__disabled_hex_map = {}
         self.__disabled_hex_var = {}
         self.__disabled_hex_var_bounds = {}
 
+        # To avoid atrificail energy at t0
         self.__buffer_t0_bounds = {}
 
+        # Variable for the diameter of a pipe during pipe-class optimization
         self.__pipe_topo_diameter_var = {}
         self.__pipe_topo_diameter_var_bounds = {}
         self.__pipe_topo_diameter_map = {}
         self.__pipe_topo_diameter_nominals = {}
 
+        # Variable for the investmentcost in eur/m during pipe-class optimization
         self.__pipe_topo_cost_var = {}
         self.__pipe_topo_cost_var_bounds = {}
         self.__pipe_topo_cost_map = {}
         self.__pipe_topo_cost_nominals = {}
 
+        # Variable for the heat-loss (not specific forpipe-class optimization anymore)
         self.__pipe_topo_heat_loss_var = {}
         self.__pipe_topo_heat_loss_var_bounds = {}
         self.__pipe_topo_heat_loss_map = {}
         self.__pipe_topo_heat_loss_nominals = {}
         self.__pipe_topo_heat_losses = {}
 
+        # Boolean variables for the various pipe class options per pipe
         self.__pipe_topo_pipe_class_var = {}
         self.__pipe_topo_pipe_class_var_bounds = {}
         self.__pipe_topo_pipe_class_map = {}
@@ -86,52 +99,63 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__demand_insulation_class_map = {}
         self.__demand_insulation_class_result = {}
 
+        # Dict to specifically update the discharge bounds under pipe-class optimization
         self.__pipe_topo_heat_discharge_bounds = {}
 
+        # list with entry per ensemble member containing dicts for parameter values for diameter, area and heatloss.
         self.__pipe_topo_diameter_area_parameters = []
         self.__pipe_topo_heat_loss_parameters = []
 
+        # Variable of selected network temperature
         self.__temperature_regime_var = {}
         self.__temperature_regime_var_bounds = {}
 
+        # Integer variable whether descrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
 
+        # Variable for fixed operational cost
         self._asset_fixed_operational_cost_map = {}
         self.__asset_fixed_operational_cost_var = {}
         self.__asset_fixed_operational_cost_nominals = {}
         self.__asset_fixed_operational_cost_bounds = {}
 
+        # Variable for variable operational cost
         self._asset_variable_operational_cost_map = {}
         self.__asset_variable_operational_cost_var = {}
         self.__asset_variable_operational_cost_bounds = {}
         self.__asset_variable_operational_cost_nominals = {}
 
+        # Variable for investment cost
         self._asset_investment_cost_map = {}
         self.__asset_investment_cost_var = {}
         self.__asset_investment_cost_nominals = {}
         self.__asset_investment_cost_bounds = {}
 
+        # Variable for installation cost
         self._asset_installation_cost_map = {}
         self.__asset_installation_cost_var = {}
         self.__asset_installation_cost_bounds = {}
         self.__asset_installation_cost_nominals = {}
 
+        # Variable for the cumulative cost made per asset
         self.__cumulative_investments_made_in_eur_map = {}
         self.__cumulative_investments_made_in_eur_var = {}
         self.__cumulative_investments_made_in_eur_nominals = {}
         self.__cumulative_investments_made_in_eur_bounds = {}
 
+        # Variable for when in time an asset is realized
         self.__asset_is_realized_map = {}
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
+        # Variable for the maximum size of an asset
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
         self.__asset_max_size_bounds = {}
         self.__asset_max_size_nominals = {}
 
-        # Setpoint vars
+        # Boolean variable for determining when a asset switches from setpoint
         self._timed_setpoints = {}
         self._change_setpoint_var = {}
         self._change_setpoint_bounds = {}
@@ -142,18 +166,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         super().__init__(*args, **kwargs)
 
-    # @property
-    # def esdl_assets(self):
-    #     return {}
-    #
-
     def temperature_carriers(self):
+        """
+        This function should be overwritten by the problem and should give a dict withy the carriers as keys and a list
+        of temperatures as values.
+        """
         return {}
 
     def temperature_regimes(self, carrier):
+        """
+        This funciton returns a list of temperatures that can be selected for a certain carrier.
+        """
         return []
 
     def pre(self):
+        """
+        In this pre method we fill the dicts initiated in the __init__. This means that we create the Casadi variables
+        and determine the bounds, nominals and create maps for easier retrieving of the variables.
+        """
         super().pre()
 
         options = self.heat_network_options()
@@ -891,9 +921,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return self.__demand_insulation_class_result[demand_insulation]
 
     def pipe_diameter_symbol_name(self, pipe: str) -> str:
+        """
+        Return the symbol name for the pipe diameter
+        """
         return self.__pipe_topo_diameter_map[pipe]
 
     def pipe_cost_symbol_name(self, pipe: str) -> str:
+        """
+        Return the symbol name for the pipe investment cost per meter
+        """
         return self.__pipe_topo_cost_map[pipe]
 
     @property
@@ -1146,6 +1182,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __check_buffer_values_and_set_bounds_at_t0(self):
+        """
+        In this function we force the buffer at t0 to have a certain amount of set energy in it. We do this via the
+        bounds, by providing the bounds with a time-series where the first element is the initial heat in the buffer.
+        """
         t = self.times()
         # We assume that t0 is always equal to self.times()[0]
         assert self.initial_time == self.times()[0]
@@ -4679,6 +4719,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def history(self, ensemble_member):
+        """
+        In this history function we avoid the optimization using aritificial energy for storage assets as the history
+        is not defined.
+        """
         history = super().history(ensemble_member)
 
         initial_time = np.array([self.initial_time])
@@ -4707,17 +4751,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return history
 
     def goal_programming_options(self):
+        """
+        Here we set the goal programming configuration. We use soft constraints for consecutive goals.
+        """
         options = super().goal_programming_options()
         options["keep_soft_constraints"] = True
         return options
 
     def solver_options(self):
+        """
+        Here we define the solver options. By default we use the open-source solver cbc and casadi solver qpsol.
+        """
         options = super().solver_options()
         options["casadi_solver"] = "qpsol"
         options["solver"] = "cbc"
         return options
 
     def compiler_options(self):
+        """
+        In this function we set the compiler configuration.
+        """
         options = super().compiler_options()
         options["resolve_parameter_values"] = True
         return options
@@ -4760,6 +4813,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     d[f"{p}.area"] = pipe_class.area
 
     def _pipe_heat_loss_to_parameters(self):
+        """
+        This function is used to set the optimized heat losses in the parameters object.
+        """
         options = self.heat_network_options()
 
         for ensemble_member in range(self.ensemble_size):
@@ -4774,6 +4830,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
 
     def priority_completed(self, priority):
+        """
+        This function is called after a priority of goals is completed. This function is used to to specific operations
+        between consecutive goals. Here we set some parameter attributes after the optimization is completed.
+        """
         options = self.heat_network_options()
 
         self.__pipe_class_to_results()
@@ -4792,6 +4852,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         super().priority_completed(priority)
 
     def post(self):
+        """
+        In this post function we check the optimization results in accurately solving for the constraints. We do this
+        for the head losses and check if they are consistent with the flow direction. Whether, the minimum velocity is
+        actually met. Whether, the directions of heat match the directions of the flow.
+        """
         super().post()
 
         self.__pipe_class_to_results()
