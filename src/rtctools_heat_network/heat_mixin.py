@@ -2060,6 +2060,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             pipe_q = self.state(f"{p}.Q")
             q_nominal = self.variable_nominal(f"{p}.Q")
 
+            is_disconnected_var = self.__pipe_disconnect_map.get(p)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
             # We do not want Big M to be too tight in this case, as it results
             # in a rather hard yes/no constraint as far as feasibility on e.g.
             # a single source system is concerned. Use a factor of 2 to give
@@ -2079,7 +2086,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     temperatures = self.temperature_regimes(carrier)
                     # ret_carrier = parameters[f"{p}.T_return_id"]
                     # return_temperatures = self.temperature_regimes(ret_carrier)
-
+                    constraints.append(
+                        ((heat - big_m * (1 - is_disconnected)) / big_m, -np.inf, 0.0))
+                    constraints.append(
+                        ((heat + big_m * (1 - is_disconnected)) / big_m, 0.0, np.inf))
                     if len(temperatures) == 0:
                         constraints.append(
                             ((heat - pipe_q * (cp * rho * temp) - big_m * (1 - flow_dir)) / big_m, -np.inf, 0.0)
@@ -3351,41 +3361,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
 
         # Clip discharge based on pipe class
-        for p in self.heat_network_components.get("pipe", []):#, pipe_classes in self.__pipe_topo_pipe_class_map.items():
-            # v = []
-            # for var_name in pipe_classes.values():
-            #     v.append(self.__pipe_topo_pipe_class_var[var_name])
+        for p in self.heat_network_components.get("pipe", []):
 
             # Match the indicators to the discharge symbol(s)
             discharge_sym_hot = self.state(f"{p}.Q")
-            # discharge_sym_cold = self.state(f"{self.hot_to_cold_pipe(p)}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
 
             max_discharge = self.__pipe_topo_max_discharge_var[self.__pipe_topo_max_discharge_map[p]]
 
             constraints.append(((max_discharge - discharge_sym_hot) / nominal, 0., np.inf))
             constraints.append(((-max_discharge - discharge_sym_hot) / nominal, -np.inf, 0.))
-            # constraints.append(((max_discharge - discharge_sym_cold) / nominal, 0., np.inf))
-            # constraints.append(((-max_discharge - discharge_sym_cold) / nominal, -np.inf, 0.))
-
-            # maximum_discharges = [c.maximum_discharge for c in pipe_classes.keys()]
-            #
-            # max_discharge_expr = sum(s * d for s, d in zip(v, maximum_discharges))
-            # constraint_nominal = self.variable_nominal(f"{p}.Q")
-            #
-            # constraints.append(
-            #     ((discharge_sym_hot - max_discharge_expr) / constraint_nominal, -np.inf, 0.0)
-            # )
-            # constraints.append(
-            #     ((discharge_sym_hot + max_discharge_expr) / constraint_nominal, 0.0, np.inf)
-            # )
-
-            # constraints.append(
-            #     ((discharge_sym_cold - max_discharge_expr) / constraint_nominal, -np.inf, 0.0)
-            # )
-            # constraints.append(
-            #     ((discharge_sym_cold + max_discharge_expr) / constraint_nominal, 0.0, np.inf)
-            # )
 
         return constraints
 
@@ -4137,11 +4122,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 else:
                     q = results[f"{p}.Q"]
 
-                    # if self.is_cold_pipe(p):
-                    #     hot_pipe = self.cold_to_hot_pipe(p)
-                    # else:
-                    #     hot_pipe = p
-
                     try:
                         is_disconnected = np.round(results[self.__pipe_disconnect_map[p]])
                     except KeyError:
@@ -4156,10 +4136,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         minimum_velocity = options["minimum_velocity"]
         for p in self.heat_network_components.get("pipe", []):
-            # if self.is_cold_pipe(p):
-            #     hot_pipe = self.cold_to_hot_pipe(p)
-            # else:
-            #     hot_pipe = p
             area = parameters[f"{p}.area"]
 
             if area == 0.0:
