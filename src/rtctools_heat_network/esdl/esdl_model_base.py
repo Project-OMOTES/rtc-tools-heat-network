@@ -60,15 +60,15 @@ class _ESDLModelBase(_Model):
         gas_node_suf = "GasConn"
 
         skip_asset_ids = {a.id for a in skip_assets}
-        pipe_assets = [
-            a
-            for a in assets.values()
-            if (
-                a.asset_type == "Pipe"
-                and a.id not in skip_asset_ids
-                and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
-            )
-        ]
+        # pipe_assets = [
+        #     a
+        #     for a in assets.values()
+        #     if (
+        #         a.asset_type == "Pipe"
+        #         and a.id not in skip_asset_ids
+        #         and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
+        #     )
+        # ]
         node_assets = [
             a
             for a in assets.values()

@@ -343,12 +343,12 @@ class _AssetToComponentBase:
                 if in_carrier["temperature"] < out_carrier["temperature"]
                 else out_carrier["temperature"]
             )
-            T_supply_id = (
+            temperature_supply_id = (
                 in_carrier["id_number_mapping"]
                 if in_carrier["temperature"] > out_carrier["temperature"]
                 else out_carrier["id_number_mapping"]
             )
-            T_return_id = (
+            temperature_return_id = (
                 in_carrier["id_number_mapping"]
                 if in_carrier["temperature"] < out_carrier["temperature"]
                 else out_carrier["id_number_mapping"]
@@ -357,8 +357,8 @@ class _AssetToComponentBase:
             modifiers = {
                 "T_supply": supply_temperature,
                 "T_return": return_temperature,
-                "T_supply_id": T_supply_id,
-                "T_return_id": T_return_id,
+                "T_supply_id": temperature_supply_id,
+                "T_return_id": temperature_return_id,
             }
         return modifiers
 

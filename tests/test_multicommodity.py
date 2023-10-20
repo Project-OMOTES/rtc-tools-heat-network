@@ -5,7 +5,8 @@ import numpy as np
 
 
 from rtctools.util import run_optimization_problem
-from utils_tests import demand_matching_test, heat_to_discharge_test, energy_conservation_test
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestMultiCommodityHeatPump(TestCase):

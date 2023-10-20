@@ -4,6 +4,7 @@ from unittest import TestCase
 import numpy as np
 
 from rtctools.util import run_optimization_problem
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 

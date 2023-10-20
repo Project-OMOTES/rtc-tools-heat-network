@@ -2013,7 +2013,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             supply_temperatures = self.temperature_regimes(sup_carrier)
             return_temperatures = self.temperature_regimes(ret_carrier)
             big_m = 2.0 * self.bounds()[f"{s}.Heat_source"][1]
-            big_m_t = 2.0 * self.bounds()[f"{s}.HeatIn.Heat"][1]
+            # big_m_t = 2.0 * self.bounds()[f"{s}.HeatIn.Heat"][1]
 
             if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
                 constraints.append(
@@ -2296,7 +2296,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         parameters = self.parameters(ensemble_member)
 
         for b, (
-            (hot_pipe, hot_pipe_orientation),
+            (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.heat_network_topology.buffers, **self.heat_network_topology.ates}.items():
             heat_nominal = parameters[f"{b}.Heat_nominal"]
@@ -3687,7 +3687,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     v.append(self.extra_variable(pc_var_name, ensemble_member))
 
                 heat_loss_expr = sum(s * h for s, h in zip(v, heat_losses))
-            except:
+            except KeyError:
                 heat_loss_expr = self._pipe_heat_loss(
                     self.heat_network_options(),
                     self.parameters(ensemble_member),
