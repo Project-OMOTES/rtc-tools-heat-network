@@ -30,6 +30,7 @@ class TargetDemandGoal(Goal):
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state(self.state)
 
+
 class MinimizeSourcesHeatGoal(Goal):
     priority = 3
 
@@ -81,7 +82,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.
+        options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
@@ -91,4 +92,3 @@ if __name__ == "__main__":
     elect = run_optimization_problem(HeatProblem)
     results = elect.extract_results()
     a = 1
-

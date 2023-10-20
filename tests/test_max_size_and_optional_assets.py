@@ -101,4 +101,3 @@ class TestMaxSizeAggregationCount(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
-

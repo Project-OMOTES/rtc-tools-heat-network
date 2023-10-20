@@ -12,7 +12,7 @@ def heat_loss_u_values_pipe(
     depth: float = 1.0,
     h_surface: float = 15.4,
     pipe_distance: float = None,
-    neighbour: bool = True
+    neighbour: bool = True,
 ) -> Tuple[float, float]:
     """
     Calculate the U_1 and U_2 heat loss values for a pipe based for either
@@ -89,7 +89,7 @@ def heat_loss_u_values_pipe(
         u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m**2)
         u_2 = r_m / ((r_subsoil + r_ins) ** 2 - r_m**2)
     else:
-        u_1 = 1/(r_subsoil + r_ins)
+        u_1 = 1 / (r_subsoil + r_ins)
         u_2 = 0
 
     return u_1, u_2

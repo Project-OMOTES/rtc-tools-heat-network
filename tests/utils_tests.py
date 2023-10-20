@@ -4,7 +4,7 @@ import numpy as np
 
 
 def demand_matching_test(solution, results):
-    """"Test function to check whether the heat demand of each consumer is matched"""
+    """ "Test function to check whether the heat demand of each consumer is matched"""
     len_times = 0.0
     for d in solution.heat_network_components.get("demand", []):
         if len(solution.times()) > 0:
@@ -37,10 +37,20 @@ def heat_to_discharge_test(solution, results):
         return_T = solution.parameters(0)[f"{d}.T_return"]
         supply_T = solution.parameters(0)[f"{d}.T_supply"]
         dt = solution.parameters(0)[f"{d}.dT"]
-        np.testing.assert_allclose(results[f"{d}.Heat_demand"], results[f"{d}.HeatIn.Heat"]-results[f"{d}.HeatOut.Heat"], atol=tol)
-        np.testing.assert_allclose(results[f"{d}.HeatOut.Heat"],results[f"{d}.Q"] * rho * cp * return_T)
-        test.assertTrue(expr=all(results[f"{d}.HeatIn.Heat"]<=results[f"{d}.Q"] * rho * cp * supply_T+tol))
-        test.assertTrue(expr=all(results[f"{d}.Heat_demand"] <= results[f"{d}.Q"] * rho * cp * dt+tol))
+        np.testing.assert_allclose(
+            results[f"{d}.Heat_demand"],
+            results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+            atol=tol,
+        )
+        np.testing.assert_allclose(
+            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * return_T
+        )
+        test.assertTrue(
+            expr=all(results[f"{d}.HeatIn.Heat"] <= results[f"{d}.Q"] * rho * cp * supply_T + tol)
+        )
+        test.assertTrue(
+            expr=all(results[f"{d}.Heat_demand"] <= results[f"{d}.Q"] * rho * cp * dt + tol)
+        )
 
     for d in solution.heat_network_components.get("source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
@@ -48,38 +58,52 @@ def heat_to_discharge_test(solution, results):
         dt = solution.parameters(0)[f"{d}.dT"]
         supply_T = solution.parameters(0)[f"{d}.T_supply"]
         return_T = solution.parameters(0)[f"{d}.T_return"]
-        test.assertTrue(expr=all(results[f"{d}.Heat_source"] >= results[f"{d}.Q"] * rho * cp * dt - tol))
-        np.testing.assert_allclose(results[f"{d}.HeatOut.Heat"],
-                                   results[f"{d}.Q"] * rho * cp * supply_T)
-        test.assertTrue(expr=all(results[f"{d}.HeatIn.Heat"] <= results[f"{d}.Q"] * rho * cp * return_T + tol))
+        test.assertTrue(
+            expr=all(results[f"{d}.Heat_source"] >= results[f"{d}.Q"] * rho * cp * dt - tol)
+        )
+        np.testing.assert_allclose(
+            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_T
+        )
+        test.assertTrue(
+            expr=all(results[f"{d}.HeatIn.Heat"] <= results[f"{d}.Q"] * rho * cp * return_T + tol)
+        )
 
-    for d in [*solution.heat_network_components.get("ates", []),
-              *solution.heat_network_components.get("buffer", [])]:
+    for d in [
+        *solution.heat_network_components.get("ates", []),
+        *solution.heat_network_components.get("buffer", []),
+    ]:
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         dt = solution.parameters(0)[f"{d}.dT"]
         supply_T = solution.parameters(0)[f"{d}.T_supply"]
         return_T = solution.parameters(0)[f"{d}.T_return"]
-        test.assertTrue(expr=all(
-            np.clip(results[f"{d}.HeatIn.Heat"], 0.0, np.inf) <=
-            (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * supply_T+ tol)
-        ))
+        test.assertTrue(
+            expr=all(
+                np.clip(results[f"{d}.HeatIn.Heat"], 0.0, np.inf)
+                <= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * supply_T + tol)
+            )
+        )
         np.testing.assert_allclose(
             np.clip(results[f"{d}.HeatOut.Heat"], 0.0, np.inf),
             np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * return_T,
         )
         np.testing.assert_allclose(
             np.clip(results[f"{d}.HeatIn.Heat"], -np.inf, 0.0),
-            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * supply_T, atol=tol
+            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * supply_T,
+            atol=tol,
         )
 
-        test.assertTrue(expr=all(
-            np.clip(results[f"{d}.HeatOut.Heat"], -np.inf, 0.0) +tol >=
-            (np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * return_T)
-        ))
+        test.assertTrue(
+            expr=all(
+                np.clip(results[f"{d}.HeatOut.Heat"], -np.inf, 0.0) + tol
+                >= (np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * return_T)
+            )
+        )
 
-    for d in [*solution.heat_network_components.get("heat_exchanger", []),
-              *solution.heat_network_components.get("heat_pump", [])]:
+    for d in [
+        *solution.heat_network_components.get("heat_exchanger", []),
+        *solution.heat_network_components.get("heat_pump", []),
+    ]:
         for p in ["Primary", "Secondary"]:
             cp = solution.parameters(0)[f"{d}.{p}.cp"]
             rho = solution.parameters(0)[f"{d}.{p}.rho"]
@@ -98,10 +122,9 @@ def heat_to_discharge_test(solution, results):
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_T + tol))
                 test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol))
             elif p == "Secondary":
-                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt-tol))
+                test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol))
                 np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_T)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_T + tol))
-
 
     for p in solution.heat_network_components.get("pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
@@ -110,18 +133,22 @@ def heat_to_discharge_test(solution, results):
         temperature = solution.parameters(0)[f"{p}.temperature"]
         test.assertTrue(
             expr=all(
-                abs(results[f"{p}.HeatIn.Heat"]) <= abs(results[f"{p}.Q"] * rho * cp * temperature + tol)
+                abs(results[f"{p}.HeatIn.Heat"])
+                <= abs(results[f"{p}.Q"] * rho * cp * temperature + tol)
             )
         )
         test.assertTrue(
-            expr=all(abs(results[f"{p}.HeatOut.Heat"]) <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol)
+            expr=all(
+                abs(results[f"{p}.HeatOut.Heat"])
+                <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol
+            )
         )
 
-    #TODO: add check for HEX and HPs
+    # TODO: add check for HEX and HPs
 
 
 def energy_conservation_test(solution, results):
-    """ Test to check if the energy is conserved at each timestep"""
+    """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
     for d in solution.heat_network_components.get("demand", []):
@@ -137,18 +164,22 @@ def energy_conservation_test(solution, results):
         energy_sum -= results[f"{d}.Heat_ates"]
 
     for d in solution.heat_network_components.get("heat_exchanger", []):
-        energy_sum -= results[f"{d}.Primary_heat"]-results[f"{d}.Secondary_heat"]
+        energy_sum -= results[f"{d}.Primary_heat"] - results[f"{d}.Secondary_heat"]
 
     for d in solution.heat_network_components.get("heat_pump", []):
         energy_sum += results[f"{d}.Power_elec"]
 
     for p in solution.heat_network_components.get("pipe", []):
-        energy_sum -= abs(results[f"{p}.HeatIn.Heat"]-results[f"{p}.HeatOut.Heat"])
+        energy_sum -= abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"])
         if f"{p}__is_disconnected" in results.keys():
             p_discon = results[f"{p}__is_disconnected"].copy()
-            p_discon[p_discon < 0.5] = 0 #fix for discrete value sometimes being 0.003 or so.
-            np.testing.assert_allclose(results[f"{p}__hn_heat_loss"]*(1-p_discon), abs(results[f"{p}.HeatIn.Heat"]-results[f"{p}.HeatOut.Heat"]), atol=1e-3)
+            p_discon[p_discon < 0.5] = 0  # fix for discrete value sometimes being 0.003 or so.
+            np.testing.assert_allclose(
+                results[f"{p}__hn_heat_loss"] * (1 - p_discon),
+                abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"]),
+                atol=1e-3,
+            )
 
-    #TODO: need to add HEX and HPS
+    # TODO: need to add HEX and HPS
 
     np.testing.assert_allclose(energy_sum, 0.0, atol=1e-6)

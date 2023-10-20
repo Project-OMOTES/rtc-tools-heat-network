@@ -22,13 +22,7 @@ class TestHEX(TestCase):
 
         prim_heat = results["HeatExchange_39ed.Primary_heat"]
         sec_heat = results["HeatExchange_39ed.Secondary_heat"]
-        prim_q = results["HeatExchange_39ed.Primary.HeatIn.Q"]
-        sec_q = results["HeatExchange_39ed.Secondary.HeatOut.Q"]
         disabled = results["HeatExchange_39ed__disabled"]
-
-        # Values used in non_storage_component.py
-        cp = 4200.0
-        rho = 988.0
 
         # We check the energy converted betweeen the commodities
         eff = solution.parameters(0)["HeatExchange_39ed.efficiency"]
@@ -63,15 +57,9 @@ class TestHP(TestCase):
         prim_heat = results["GenericConversion_3d3f.Primary_heat"]
         sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
         power_elec = results["GenericConversion_3d3f.Power_elec"]
-        prim_q = results["GenericConversion_3d3f.Primary.HeatIn.Q"]
-        sec_q = results["GenericConversion_3d3f.Secondary.HeatOut.Q"]
 
         # TODO: we should also check if heatdemand target is matched
         # TODO: check if the primary source utilisisation is maximised and secondary minimised
-
-        # Values used in non_storage_component.py
-        cp = 4200.0
-        rho = 988.0
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -80,4 +68,3 @@ class TestHP(TestCase):
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * 4.0, sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
-

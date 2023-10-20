@@ -3,7 +3,7 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -94,7 +94,6 @@ class MinimizeSourcesQTHGoal(Goal):
 class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
-        parameters = self.parameters(0)
 
         for demand in self.heat_network_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
@@ -122,7 +121,7 @@ class _GoalsAndOptions:
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.
+        options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
@@ -155,7 +154,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.
+        options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
@@ -359,6 +358,7 @@ if __name__ == "__main__":
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
     import matplotlib.pyplot as plt
+
     plt.figure()
     plt.plot(results["HeatStorage_4b0c.Heat_buffer"])
     plt.figure()

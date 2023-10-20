@@ -750,12 +750,12 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
                 number = ""
                 for nr in number_list:
                     number = number + str(nr)
-                if "_ret" in x.id: # note this fix is to create a unique number for the map
+                if "_ret" in x.id:  # note this fix is to create a unique number for the map
                     number = number + "000"
                 id_to_idnumber_map[x.id] = int(number)
 
             temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
-            assert temperature > 0.
+            assert temperature > 0.0
 
             global_properties["carriers"][x.id] = dict(
                 name=x.name,

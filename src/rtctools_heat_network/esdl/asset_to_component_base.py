@@ -209,7 +209,20 @@ class _AssetToComponentBase:
             raise RuntimeError("Pipe does not have 1 in port and 1 out port")
         # TODO: add other components which can be disabled and thus of which the pipes are allowed
         #  to be disabled: , "heat_exchanger", "heat_pump", "ates"
-        types = {k for k, v in self.component_map.items() if v in {"source", "buffer", "ates", "heat_exchanger", "demand", "heat_pump", "heat_pump_elec"}}
+        types = {
+            k
+            for k, v in self.component_map.items()
+            if v
+            in {
+                "source",
+                "buffer",
+                "ates",
+                "heat_exchanger",
+                "demand",
+                "heat_pump",
+                "heat_pump_elec",
+            }
+        }
 
         if types.intersection({connected_type_in, connected_type_out}):
             return True
@@ -314,14 +327,32 @@ class _AssetToComponentBase:
 
         if in_carrier["id"] == out_carrier["id"]:
             # these are the pipes, nodes, valves, pumps
-            modifiers = {"temperature": in_carrier["temperature"],
-             "carrier_id": in_carrier["id_number_mapping"]}
+            modifiers = {
+                "temperature": in_carrier["temperature"],
+                "carrier_id": in_carrier["id_number_mapping"],
+            }
         else:
             # These are the sources, storages and consumers
-            supply_temperature = in_carrier["temperature"] if in_carrier["temperature"] > out_carrier["temperature"] else out_carrier["temperature"]
-            return_temperature = in_carrier["temperature"] if in_carrier["temperature"] < out_carrier["temperature"] else out_carrier["temperature"]
-            T_supply_id = in_carrier["id_number_mapping"] if in_carrier["temperature"] > out_carrier["temperature"] else out_carrier["id_number_mapping"]
-            T_return_id = in_carrier["id_number_mapping"] if in_carrier["temperature"] < out_carrier["temperature"] else out_carrier["id_number_mapping"]
+            supply_temperature = (
+                in_carrier["temperature"]
+                if in_carrier["temperature"] > out_carrier["temperature"]
+                else out_carrier["temperature"]
+            )
+            return_temperature = (
+                in_carrier["temperature"]
+                if in_carrier["temperature"] < out_carrier["temperature"]
+                else out_carrier["temperature"]
+            )
+            T_supply_id = (
+                in_carrier["id_number_mapping"]
+                if in_carrier["temperature"] > out_carrier["temperature"]
+                else out_carrier["id_number_mapping"]
+            )
+            T_return_id = (
+                in_carrier["id_number_mapping"]
+                if in_carrier["temperature"] < out_carrier["temperature"]
+                else out_carrier["id_number_mapping"]
+            )
 
             modifiers = {
                 "T_supply": supply_temperature,
@@ -359,8 +390,8 @@ class _AssetToComponentBase:
             if not prim_return_temperature or not sec_return_temperature:
                 raise RuntimeError(
                     f"{asset.name} ports are not specified correctly there should be dedicated "
-                    f"primary and secondary ports ('prim' and 'sec') for the hydraulically decoupled"
-                    f" networks"
+                    f"primary and secondary ports ('prim' and 'sec') for the hydraulically "
+                    f"decoupled networks"
                 )
             assert sec_supply_temperature > sec_return_temperature
             assert sec_return_temperature > 0.0
@@ -470,9 +501,11 @@ class _AssetToComponentBase:
                 if per_unit == UnitEnum.CUBIC_METRE:
                     # index is 0 because buffers only have one in out port
                     supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                        "temperature"]
-                    return_temp = asset.global_properties["carriers"][asset.out_ports[0].carrier.id
-                        ]["temperature"]
+                        "temperature"
+                    ]
+                    return_temp = asset.global_properties["carriers"][
+                        asset.out_ports[0].carrier.id
+                    ]["temperature"]
                     delta_temp = supply_temp - return_temp
                     m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
                     cost_value = cost_value / m3_to_joule_factor
@@ -482,9 +515,11 @@ class _AssetToComponentBase:
                         if size == 0.0:
                             # index is 0 because buffers only have one in out port
                             supply_temp = asset.global_properties["carriers"][
-                                asset.in_ports[0].carrier.id]["temperature"]
+                                asset.in_ports[0].carrier.id
+                            ]["temperature"]
                             return_temp = asset.global_properties["carriers"][
-                                asset.out_ports[0].carrier.id]["temperature"]
+                                asset.out_ports[0].carrier.id
+                            ]["temperature"]
                             delta_temp = supply_temp - return_temp
                             m3_to_joule_factor = (
                                 delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS

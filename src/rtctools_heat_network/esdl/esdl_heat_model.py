@@ -224,9 +224,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         self._set_q_nominal(asset, q_nominal)
 
-        hfr_max = (
-            self.rho * self.cp * q_max * temperature
-        )
+        hfr_max = self.rho * self.cp * q_max * temperature
 
         assert hfr_max > 0.0
 

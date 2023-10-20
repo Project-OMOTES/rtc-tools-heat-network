@@ -7,6 +7,7 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 from utils_tests import demand_matching_test, heat_to_discharge_test, energy_conservation_test
 
+
 class TestMultiCommodityHeatPump(TestCase):
     """Test to verify that the optimisation problem can handle multicommodity problems, relating
     electricity and heat"""
