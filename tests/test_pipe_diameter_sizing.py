@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 
 from rtctools.util import run_optimization_problem
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestPipeDiameterSizingExample(TestCase):
@@ -74,6 +75,9 @@ class TestPipeDiameterSizingExample(TestCase):
                 )
 
         self.assertGreater(hydraulic_power_sum, hydraulic_power_post_process)
+        demand_matching_test(problem, results)
+        energy_conservation_test(problem, results)
+        heat_to_discharge_test(problem, results)
 
 
 if __name__ == "__main__":

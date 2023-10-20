@@ -4,6 +4,7 @@ from unittest import TestCase
 import numpy as np
 
 from rtctools.util import run_optimization_problem
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestAtes(TestCase):
@@ -33,6 +34,10 @@ class TestAtes(TestCase):
 
         # Test begin and end same state
         np.testing.assert_allclose(stored_heat[0], stored_heat[-1])
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
 
 
 if __name__ == "__main__":

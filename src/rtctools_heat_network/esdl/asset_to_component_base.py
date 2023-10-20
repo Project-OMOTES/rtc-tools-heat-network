@@ -209,7 +209,7 @@ class _AssetToComponentBase:
             raise RuntimeError("Pipe does not have 1 in port and 1 out port")
         # TODO: add other components which can be disabled and thus of which the pipes are allowed
         #  to be disabled: , "heat_exchanger", "heat_pump", "ates"
-        types = {k for k, v in self.component_map.items() if v in {"source", "buffer"}}
+        types = {k for k, v in self.component_map.items() if v in {"source", "buffer", "ates"}}
 
         if types.intersection({connected_type_in, connected_type_out}):
             return True

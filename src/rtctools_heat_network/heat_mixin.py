@@ -1639,20 +1639,32 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             if not np.isfinite(big_m):
                 raise Exception(f"Heat in pipe {p} must be bounded")
+            #FIXME: not exactly these constraints are required, but a constrained is required such that is_disconnected will become 1 if Q==0, now it is only enforced the other way around.
+            # This will probably require an additional binary variable: (Q>0 -> flowdir=1) (eps<1e-4)
+            # Q<= big_m_flow (1-is_disconnected)
+            # eps(1-is_disconnected) <= Q + big_m_flow*(1-flow_dir)
+            # eps(1-is_disconnected) <= -Q + big_m_flow*flow_dir
+            # These constraints are still required, otherwise q_pipe can be 0, but since is_disconnected does not have to be 0, there might still go a small heat through the pipe
+            # Fix flow direction
+            constraints.append(((heat_in - big_m * (flow_dir + is_disconnected)) / constraint_nominal, -np.inf, 0.0))
+            constraints.append(
+                ((heat_in + big_m * (1 - flow_dir + is_disconnected)) / constraint_nominal, 0.0, np.inf)
+            )
 
-            # # Fix flow direction
-            # constraints.append(((heat_in - big_m * (flow_dir + is_disconnected)) / constraint_nominal, -np.inf, 0.0))
-            # constraints.append(
-            #     ((heat_in + big_m * (1 - flow_dir + is_disconnected)) / constraint_nominal, 0.0, np.inf)
-            # )
-            #
-            # # Flow direction is the same for In and Out. Note that this
-            # # ensures that the heat going in and/or out of a pipe is more than
-            # # its heat losses.
-            # constraints.append(((heat_out - big_m * (flow_dir + is_disconnected)) / constraint_nominal, -np.inf, 0.0))
-            # constraints.append(
-            #     ((heat_out + big_m * (1 - flow_dir + is_disconnected)) / constraint_nominal, 0.0, np.inf)
-            # )
+            # Flow direction is the same for In and Out. Note that this
+            # ensures that the heat going in and/or out of a pipe is more than
+            # its heat losses.
+            constraints.append(((heat_out - big_m * (flow_dir + is_disconnected)) / constraint_nominal, -np.inf, 0.0))
+            constraints.append(
+                ((heat_out + big_m * (1 - flow_dir + is_disconnected)) / constraint_nominal, 0.0, np.inf)
+            )
+            # If a pipe is disconnected, the heat should be zero
+            if is_disconnected_var is not None:
+                constraints.append(((heat_in - big_m * (1 - is_disconnected)) / big_m, -np.inf, 0.0))
+                constraints.append(((heat_in + big_m * (1 - is_disconnected)) / big_m, 0.0, np.inf))
+                constraints.append(
+                    ((heat_out - big_m * (1 - is_disconnected)) / big_m, -np.inf, 0.0))
+                constraints.append(((heat_out + big_m * (1 - is_disconnected)) / big_m, 0.0, np.inf))
 
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
@@ -1714,10 +1726,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
             )
 
+            eps = 1e-6 #this tolerance on volumetric flow corresponds to DN10 with a velocity of 0.01m/s
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
                 constraints.append(((q_pipe - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0))
                 constraints.append(((q_pipe + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf))
+                # eps(1-is_disconnected) <= Q + big_m_flow*(1-flow_dir)
+                # eps(1-is_disconnected) <= -Q + big_m_flow*flow_dir
+                constraints.append((-q_pipe- (1-flow_dir)*big_m + eps* (1-is_disconnected), -np.inf, 0.0))
+                constraints.append(
+                    (q_pipe - (flow_dir) * big_m + eps * (1 - is_disconnected), -np.inf, 0.0))
 
         # Pipes that are connected in series should have the same heat direction.
         for pipes in self.heat_network_topology.pipe_series:
@@ -2086,10 +2104,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     temperatures = self.temperature_regimes(carrier)
                     # ret_carrier = parameters[f"{p}.T_return_id"]
                     # return_temperatures = self.temperature_regimes(ret_carrier)
-                    constraints.append(
-                        ((heat - big_m * (1 - is_disconnected)) / big_m, -np.inf, 0.0))
-                    constraints.append(
-                        ((heat + big_m * (1 - is_disconnected)) / big_m, 0.0, np.inf))
                     if len(temperatures) == 0:
                         constraints.append(
                             ((heat - pipe_q * (cp * rho * temp) - big_m * (1 - flow_dir)) / big_m, -np.inf, 0.0)
