@@ -760,11 +760,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
         ]:
-            annulaized_capex_var_name = f"{asset}__annulaized_capex"
-            self.__annualized_capex_var_map[asset] = annulaized_capex_var_name
-            self.__annualized_capex_var[annulaized_capex_var_name] = ca.MX.sym(annulaized_capex_var_name)
-            self.__annualized_capex_var_bounds[annulaized_capex_var_name] = (0., np.inf)#(lb, ub)
-            self.__annualized_capex_var_nominals[annulaized_capex_var_name] = 1.
+            annualized_capex_var_name = f"{asset}__annualized_capex"
+            self.__annualized_capex_var_map[asset] = annualized_capex_var_name
+            self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(annualized_capex_var_name)
+            self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf)#(lb, ub)
+            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.
 
         for asset in [
             *self.heat_network_components.get("source", []),

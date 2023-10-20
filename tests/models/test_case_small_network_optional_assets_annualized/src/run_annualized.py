@@ -45,8 +45,7 @@ class MinimizeNonAnnualizedCostGoal(Goal):
     def function(self, optimization_problem, ensemble_member):
         return (
             optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
-            + optimization_problem.extra_variable(f"{self.source}__investment_cost")
-            + optimization_problem.extra_variable(f"{self.source}__installation_cost")
+            + optimization_problem.extra_variable(f"{self.source}__annualized_capex")
         )
 
 
@@ -80,17 +79,6 @@ class _GoalsAndOptions:
             goals.append(TargetDemandGoal(state, target))
 
         return goals
-
-    # def goals(self):
-    #     goals = super().goals().copy()
-    #     for s in [
-    #         *self.heat_network_components.get("source", []),
-    #         *self.heat_network_components.get("ates", []),
-    #         *self.heat_network_components.get("buffer", []),
-    #     ]:
-    #         goals.append(MinimizeSourcesHeatCostGoal(s))
-
-    # return goals
 
 
 class HeatProblem(
@@ -169,22 +157,14 @@ class HeatProblem(
             self.io = new_datastore
 
 
-if __name__ == "__main__":
-    from pathlib import Path
-
-    base_folder = Path(__file__).resolve().parent.parent
-    solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
-    results = solution.extract_results()
-
-
 class HeatProblemAnnulized(HeatProblem):
 
     def goals(self, ensemble_member):
         goals = super().goals(ensemble_member).copy()
 
-        goals.append(MinimizeAnnulizedCost())
+        goals.append(MinimizeAnnualizedCostGoal())
 
-        return goals    
+        return goals
     
 class HeatProblemNonAnnulized(HeatProblem):
 
@@ -193,4 +173,20 @@ class HeatProblemNonAnnulized(HeatProblem):
 
         goals.append(MinimizeNonAnnualizedCostGoal())
 
-        return goals   
+        return goals
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    base_folder = Path(__file__).resolve().parent.parent
+    # solution = run_optimization_problem(HeatProblemNonAnnulized, base_folder=base_folder)
+    # results = solution.extract_results()
+    # print(results)
+    # print('\n HeatProblemNonAnnulized Completed \n \n')
+    
+    solution = run_optimization_problem(HeatProblemAnnulized, base_folder=base_folder)
+    results = solution.extract_results()
+    print(results)
+    print('\n HeatProblemAnnulized Completed \n \n')
+    
