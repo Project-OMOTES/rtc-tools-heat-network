@@ -470,11 +470,9 @@ class _AssetToComponentBase:
                 if per_unit == UnitEnum.CUBIC_METRE:
                     # index is 0 because buffers only have one in out port
                     supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                        "supplyTemperature"
-                    ]
-                    return_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                        "returnTemperature"
-                    ]
+                        "temperature"]
+                    return_temp = asset.global_properties["carriers"][asset.out_ports[0].carrier.id
+                        ]["temperature"]
                     delta_temp = supply_temp - return_temp
                     m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
                     cost_value = cost_value / m3_to_joule_factor
@@ -484,11 +482,9 @@ class _AssetToComponentBase:
                         if size == 0.0:
                             # index is 0 because buffers only have one in out port
                             supply_temp = asset.global_properties["carriers"][
-                                asset.in_ports[0].carrier.id
-                            ]["supplyTemperature"]
+                                asset.in_ports[0].carrier.id]["temperature"]
                             return_temp = asset.global_properties["carriers"][
-                                asset.in_ports[0].carrier.id
-                            ]["returnTemperature"]
+                                asset.out_ports[0].carrier.id]["temperature"]
                             delta_temp = supply_temp - return_temp
                             m3_to_joule_factor = (
                                 delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
@@ -625,10 +621,10 @@ class _AssetToComponentBase:
             elif per_unit_provided == UnitEnum.CUBIC_METRE:
                 # index is 0 because buffers only have one in out port
                 supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                    "supplyTemperature"
+                    "temperature"
                 ]
-                return_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
-                    "returnTemperature"
+                return_temp = asset.global_properties["carriers"][asset.out_ports[0].carrier.id][
+                    "temperature"
                 ]
                 delta_temp = supply_temp - return_temp
                 m3_to_joule_factor = delta_temp * HEAT_STORAGE_M3_WATER_PER_DEGREE_CELCIUS
