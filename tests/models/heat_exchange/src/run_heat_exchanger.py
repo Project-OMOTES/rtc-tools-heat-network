@@ -46,7 +46,7 @@ class _GoalsAndOptions:
 class MinimizeSourcesHeatGoal(Goal):
     priority = 2
 
-    order = 2
+    order = 1
 
     def __init__(self, source):
         self.target_max = 0.0
@@ -77,7 +77,13 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0
+        options["heat_loss_disconnected_pipe"] = False
 
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
         return options
 
 
@@ -303,4 +309,5 @@ class HeatProblemTvarDisableHEX(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(HeatProblem)
+    results = solution.extract_results()

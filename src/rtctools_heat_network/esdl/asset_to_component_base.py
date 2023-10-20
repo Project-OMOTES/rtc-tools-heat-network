@@ -209,7 +209,7 @@ class _AssetToComponentBase:
             raise RuntimeError("Pipe does not have 1 in port and 1 out port")
         # TODO: add other components which can be disabled and thus of which the pipes are allowed
         #  to be disabled: , "heat_exchanger", "heat_pump", "ates"
-        types = {k for k, v in self.component_map.items() if v in {"source", "buffer", "ates"}}
+        types = {k for k, v in self.component_map.items() if v in {"source", "buffer", "ates", "heat_exchanger", "demand", "heat_pump", "heat_pump_elec"}}
 
         if types.intersection({connected_type_in, connected_type_out}):
             return True
@@ -343,19 +343,19 @@ class _AssetToComponentBase:
                     carrier = asset.global_properties["carriers"][p.carrier.id]
                     if "sec" in p.name.lower():
                         sec_return_temperature_id = carrier["id_number_mapping"]
-                        sec_return_temperature = carrier["returnTemperature"]
+                        sec_return_temperature = carrier["temperature"]
                     else:
-                        prim_supply_temperature = carrier["supplyTemperature"]
+                        prim_supply_temperature = carrier["temperature"]
                         prim_supply_temperature_id = carrier["id_number_mapping"]
             for p in asset.out_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
                     if "prim" in p.name.lower():
                         prim_return_temperature_id = carrier["id_number_mapping"]
-                        prim_return_temperature = carrier["returnTemperature"]
+                        prim_return_temperature = carrier["temperature"]
                     else:
                         sec_supply_temperature_id = carrier["id_number_mapping"]
-                        sec_supply_temperature = carrier["supplyTemperature"]
+                        sec_supply_temperature = carrier["temperature"]
             if not prim_return_temperature or not sec_return_temperature:
                 raise RuntimeError(
                     f"{asset.name} ports are not specified correctly there should be dedicated "

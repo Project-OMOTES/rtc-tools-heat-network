@@ -4,6 +4,7 @@ from unittest import TestCase
 import numpy as np
 
 from rtctools.util import run_optimization_problem
+from utils_tests import demand_matching_test, heat_to_discharge_test, energy_conservation_test
 
 
 class TestHEX(TestCase):
@@ -30,16 +31,18 @@ class TestHEX(TestCase):
         rho = 988.0
 
         # We check the energy converted betweeen the commodities
-        # 0.9 efficiency specified in esdl
-        np.testing.assert_allclose(prim_heat * 0.9, sec_heat)
-        # We check the energy being properly linked to the flows, this should already be satisfied
-        # by the multiple commodity test but we do it anyway.
-        np.testing.assert_allclose(prim_heat, prim_q * cp * rho * 40.0)
+        eff = solution.parameters(0)["HeatExchange_39ed.efficiency"]
+
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
+        np.testing.assert_allclose(prim_heat * eff, sec_heat)
+
         # Note that we are not testing the last element as we exploit the last timestep for
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
-        np.testing.assert_array_less(-np.abs(sec_q[:-1] * cp * rho * 30.0 - sec_heat[:-1]), 1.0e-6)
-        np.testing.assert_allclose(prim_heat[-1], 0.0)
+        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-9)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
 
@@ -70,11 +73,11 @@ class TestHP(TestCase):
         cp = 4200.0
         rho = 988.0
 
+        demand_matching_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        energy_conservation_test(solution, results)
+
         # We check the energy converted betweeen the commodities
-        # 0.9 efficiency specified in esdl
         np.testing.assert_allclose(power_elec * 4.0, sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
-        # We check the energy being properly linked to the flows, this should already be satisfied
-        # by the multiple commodity test but we do it anyway.
-        np.testing.assert_allclose(prim_heat, prim_q * cp * rho * 30.0)
-        np.testing.assert_array_less(sec_q * cp * rho * 40.0, sec_heat)
+
