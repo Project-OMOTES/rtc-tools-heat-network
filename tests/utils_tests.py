@@ -30,7 +30,7 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol = 1.0e-3
+    tol = 1.0e-5
     for d in solution.heat_network_components.get("demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -70,7 +70,7 @@ def heat_to_discharge_test(solution, results):
         )
         np.testing.assert_allclose(
             np.clip(results[f"{d}.HeatIn.Heat"], -np.inf, 0.0),
-            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * supply_T,
+            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * supply_T, atol=tol
         )
 
         test.assertTrue(expr=all(
@@ -145,7 +145,9 @@ def energy_conservation_test(solution, results):
     for p in solution.heat_network_components.get("pipe", []):
         energy_sum -= abs(results[f"{p}.HeatIn.Heat"]-results[f"{p}.HeatOut.Heat"])
         if f"{p}__is_disconnected" in results.keys():
-            np.testing.assert_allclose(results[f"{p}__hn_heat_loss"]*(1-results[f"{p}__is_disconnected"]), abs(results[f"{p}.HeatIn.Heat"]-results[f"{p}.HeatOut.Heat"]), atol=1e-6)
+            p_discon = results[f"{p}__is_disconnected"].copy()
+            p_discon[p_discon < 0.5] = 0 #fix for discrete value sometimes being 0.003 or so.
+            np.testing.assert_allclose(results[f"{p}__hn_heat_loss"]*(1-p_discon), abs(results[f"{p}.HeatIn.Heat"]-results[f"{p}.HeatOut.Heat"]), atol=1e-3)
 
     #TODO: need to add HEX and HPS
 

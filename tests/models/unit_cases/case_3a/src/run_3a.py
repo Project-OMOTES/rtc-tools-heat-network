@@ -111,6 +111,22 @@ class _GoalsAndOptions:
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.0025
+        # options["gurobi"] = gurobi_options = {}
+        # gurobi_options["MIPgap"] = 0.001
+        return options
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.
+        options["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = False
+        return options
+
 
 class HeatProblem(
     _GoalsAndOptions,
@@ -146,6 +162,7 @@ class HeatProblem(
 
 
 class HeatProblemSetPointConstraints(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -155,12 +172,6 @@ class HeatProblemSetPointConstraints(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
-
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
@@ -168,6 +179,7 @@ class HeatProblemSetPointConstraints(
 
 
 class HeatProblemTvarsup(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -175,12 +187,6 @@ class HeatProblemTvarsup(
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
@@ -229,6 +235,7 @@ class HeatProblemTvarsup(
 
 
 class HeatProblemTvarret(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -237,12 +244,6 @@ class HeatProblemTvarret(
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesFlowGoal(s))
@@ -291,6 +292,7 @@ class HeatProblemTvarret(
 
 
 class HeatProblemProdProfile(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -304,7 +306,7 @@ class HeatProblemProdProfile(
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.05
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
             self.set_timeseries(f"{s}.target_heat_source", new_timeseries)
 
     def path_goals(self):
@@ -323,7 +325,6 @@ class HeatProblemProdProfile(
 
 
 class QTHProblem(
-    _GoalsAndOptions,
     QTHMixin,
     HomotopyMixin,
     SinglePassGoalProgrammingMixin,
@@ -332,6 +333,12 @@ class QTHProblem(
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
+
+        for demand in self.heat_network_components["demand"]:
+            target = self.get_timeseries(f"{demand}.target_heat_demand")
+            state = f"{demand}.Heat_demand"
+
+            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesQTHGoal(s))
