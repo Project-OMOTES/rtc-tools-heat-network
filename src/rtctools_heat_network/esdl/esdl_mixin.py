@@ -111,7 +111,7 @@ class ESDLMixin(
             # hard to choose a default. Therefore, we look at the global
             # properties instead and add 10 degrees on top.
             global_supply_temperatures = [
-                c["supplyTemperature"]
+                c["temperature"]
                 for a in assets.values()
                 for c in a.global_properties["carriers"].values()
             ]

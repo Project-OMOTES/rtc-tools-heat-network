@@ -61,6 +61,8 @@ class TestHP(TestCase):
 
         # TODO: we should also check if heatdemand target is matched
         # TODO: check if the primary source utilisisation is maximised and secondary minimised
+        # I think it is badly scaled or some scaling issues in constraints. (possible in combination
+        # with disconnected)
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)

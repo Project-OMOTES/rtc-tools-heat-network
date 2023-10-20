@@ -33,5 +33,5 @@ class TestESDL(TestCase):
         case_esdl = run_optimization_problem(QTHESDL, base_folder=base_folder)
 
         np.testing.assert_allclose(
-            case_python._objective_values, case_esdl._objective_values, rtol=1e-5, atol=1e-5
+            case_python._objective_values[0], case_esdl._objective_values, rtol=1e-5, atol=1e-5
         )

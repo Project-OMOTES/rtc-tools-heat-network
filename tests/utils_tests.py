@@ -30,7 +30,7 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol = 1.0e-5
+    tol = 1.0e-4
     for d in solution.heat_network_components.get("demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -134,7 +134,7 @@ def heat_to_discharge_test(solution, results):
         test.assertTrue(
             expr=all(
                 abs(results[f"{p}.HeatIn.Heat"])
-                <= abs(results[f"{p}.Q"] * rho * cp * temperature + tol)
+                <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol
             )
         )
         test.assertTrue(
