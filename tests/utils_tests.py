@@ -4,6 +4,7 @@ import numpy as np
 
 
 def demand_matching_test(solution, results):
+    """"Test function to check whether the heat demand of each consumer is matched"""
     len_times = 0.0
     for d in solution.heat_network_components.get("demand", []):
         if len(solution.times()) > 0:
@@ -15,6 +16,19 @@ def demand_matching_test(solution, results):
 
 
 def heat_to_discharge_test(solution, results):
+    """
+    Test to check if the discharge and heat flow are correlated as how the constraints are intented:
+    - demand clusters: HeatIn should be smaller or equal to discharge multiplied with the supply
+    temperature due to potential heatlosses in the network, HeatOut should be fixed at the return
+    temperature.
+    - sources: HeatIn should be smaller or equal to discharge multiplied with the return
+    temperature due to potential heatlosses in the network, HeatOut should be fixed at the supply
+    temperature.
+    - buffers/ates: when discharging should act like sources, when charging like demand clusters.
+    - pipes: the absolute value of HeatIn and HeatOut should both be smaller than the absolute value
+     of discharge with the temperature. Taking the absolute value because based on direction the
+     discharge and heatflow can be negative.
+    """
     test = TestCase()
     tol = 1.0e-5
     for d in solution.heat_network_components.get("demand", []):
@@ -25,34 +39,21 @@ def heat_to_discharge_test(solution, results):
         dt = solution.parameters(0)[f"{d}.dT"]
         np.testing.assert_allclose(results[f"{d}.Heat_demand"], results[f"{d}.HeatIn.Heat"]-results[f"{d}.HeatOut.Heat"])
         np.testing.assert_allclose(results[f"{d}.HeatOut.Heat"],results[f"{d}.Q"] * rho * cp * return_T)
-        test.assertTrue(expr=all(results[f"{d}.HeatIn.Heat"]<=results[f"{d}.Q"] * rho * cp * supply_T))
-        test.assertTrue(expr=all(results[f"{d}.Heat_demand"] <= results[f"{d}.Q"] * rho * cp * dt))
-
-    for d in solution.heat_network_components.get("buffer", []):
-        cp = solution.parameters(0)[f"{d}.cp"]
-        rho = solution.parameters(0)[f"{d}.rho"]
-        dt = solution.parameters(0)[f"{d}.dT"]
-        np.testing.assert_allclose(
-            np.clip(results[f"{d}.Heat_buffer"], 0.0, np.inf),
-            np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * dt,
-        )
-        test.assertTrue(
-            expr=all(
-                np.clip(results[f"{d}.Heat_buffer"], -np.inf, 0.0)
-                <= np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * dt
-            )
-        )
+        test.assertTrue(expr=all(results[f"{d}.HeatIn.Heat"]<=results[f"{d}.Q"] * rho * cp * supply_T+tol))
+        test.assertTrue(expr=all(results[f"{d}.Heat_demand"] <= results[f"{d}.Q"] * rho * cp * dt+tol))
 
     for d in solution.heat_network_components.get("source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         dt = solution.parameters(0)[f"{d}.dT"]
         supply_T = solution.parameters(0)[f"{d}.T_supply"]
+        return_T = solution.parameters(0)[f"{d}.T_return"]
         test.assertTrue(expr=all(results[f"{d}.Heat_source"] >= results[f"{d}.Q"] * rho * cp * dt))
         np.testing.assert_allclose(results[f"{d}.HeatOut.Heat"],
                                    results[f"{d}.Q"] * rho * cp * supply_T)
+        test.assertTrue(expr=all(results[f"{d}.HeatIn.Heat"] <= results[f"{d}.Q"] * rho * cp * return_T))
 
-    for d in solution.heat_network_components.get("ates", []):
+    for d in [*solution.heat_network_components.get("ates", []), *solution.heat_network_components.get("buffer", [])]:
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         dt = solution.parameters(0)[f"{d}.dT"]
@@ -92,6 +93,7 @@ def heat_to_discharge_test(solution, results):
 
 
 def energy_conservation_test(solution, results):
+    """ Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
     for d in solution.heat_network_components.get("demand", []):

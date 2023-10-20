@@ -4,6 +4,7 @@ from unittest import TestCase
 import numpy as np
 
 from rtctools.util import run_optimization_problem
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestMaxSizeAggregationCount(TestCase):
@@ -36,7 +37,7 @@ class TestMaxSizeAggregationCount(TestCase):
         max_size_2 = results["HeatProducer_2__max_size"]
 
         # Test if source 1 is off and 2 is producing
-        np.testing.assert_allclose(heat_1, 0.0)
+        np.testing.assert_allclose(heat_1, 0.0, atol=1e-6)
         np.testing.assert_equal(True, heat_2[1:] > 0.0)
 
         # Test if source 1 is not placed and 2 is placed
@@ -56,15 +57,16 @@ class TestMaxSizeAggregationCount(TestCase):
 
         # Test that cost only exist for 2 and not for 1. Note the tolerances
         # to avoid test failing when heat losses slightly change
-        np.testing.assert_allclose(var_cost_1, 0.0)
+        np.testing.assert_allclose(var_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(var_cost_2, 6174.920222, atol=1000.0, rtol=1.0e-2)
-        np.testing.assert_allclose(inst_cost_1, 0.0)
+        np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(inst_cost_2, 100000.0)
-        np.testing.assert_allclose(inv_cost_1, 0.0)
+        np.testing.assert_allclose(inv_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(inv_cost_2, 476459.893686, atol=1000.0, rtol=1.0e-2)
 
         # Since the buffer and ates are not optional they must consume some heat to compensate
-        # losses. Therefore we can check the max_size constraint
+        # losses as the buffer has a minimum fraction volume of 5%.
+        # Therefore, we can check the max_size constraint.
         np.testing.assert_allclose(
             True, results["HeatStorage_74c1.Stored_heat"] <= results["HeatStorage_74c1__max_size"]
         )
@@ -82,7 +84,7 @@ class TestMaxSizeAggregationCount(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         # This is the same problem, but now with the buffer and ates also optional.
-        # Therefore we expect that the ates and buffer are no longer placed to avoid their heat
+        # Therefore, we expect that the ates and buffer are no longer placed to avoid their heat
         # losses. This allows us to check if their placement constraints are proper.
         solution = run_optimization_problem(
             HeatProblem,
@@ -95,3 +97,8 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(results["HeatStorage_74c1.Stored_heat"], 0.0)
         np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 0.0)
         np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 0.0)
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
