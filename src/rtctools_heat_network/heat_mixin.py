@@ -3835,7 +3835,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __check_valve_head_discharge_path_constraints(self, ensemble_member):
-        """ """
+        """
+        This function adds constraints for the check valve functionality. Meaning that the flow can
+        only go in positive direction of the valve. Depending on the status of the valve the flow is
+        set to zero or bounded between zero and the maximum discharge.
+
+        The head loss is also bounded to only act in one direction.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
@@ -3880,6 +3886,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __control_valve_head_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for the control valve. In this case we allow the valve to
+        produce head loss for flow in both directions.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
