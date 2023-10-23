@@ -1,6 +1,82 @@
-# MPC Development
+# rtc-tools-heat-network
 
-For more details, visit the documentation at http://warmingup.pages.ci.tno.nl/rtc-tools-heat-network/
+Rtc-tools-heat-network is an optimization application for optimal planning, design and 
+operation of Energy Sysstems with the current main focus on District Heating Systems (DHS). The current application focuses on Mixed Integer Linear Problem
+(MILP) approach, multiple linearization strategies to approximate the steady-state physics and financial models.
+All physics are combined in the Heat_mixin class. This 
+class can be inherited and combined with objective functions (that typically incorporate the financial aspects), interface methods to create an
+optimization workflow (see also running an example).
+
+The main supported method for defining your Energy system is ESDL, which is a modelling language for energy systems. See also:https://github.com/EnergyTransition/ESDL.
+With ESDL you can define assets like demand, source, pipes, etc. and fill in their attributes. The ESDL_Mixin class
+will parse the ESDL file and utilize the attributes to build up the model representation.
+
+This optimization package was originally developed for operational optimization and houses two 
+optimization approaches 1) A MILP approach 
+and 2) Nonlinear Problem (NLP) approach. These two approaches were developed to run sequentially for 
+operational optimization where the MILP would fix the integer decision for the NLP problem. The NLP
+problem would then find the optimized solution with the steady-state non-linear physics included. The by now outdated documentation can be found on http://warmingup.pages.ci.tno.nl/rtc-tools-heat-network/
+
+Installation
+============
+
+Installation of the RTC-Tools Heat Network library is as simple as::
+
+    # 1a. Use pip to install directly
+    pip install rtc-tools-heat-network
+
+If you are going to develop and change the source code, you probably want to do something like::
+
+	# 1b. Use git clone and pip to make an editable/developer installation
+	git clone https://ci.tno.nl/gitlab/warmingup/rtc-tools-heat-network
+	pip install -e rtc-tools-heat-network
+
+RTC-Tools Heat Network depends on `RTC-Tools <https://gitlab.com/deltares/rtc-tools.git>`_, which is automatically installed as one of its dependencies.
+
+Running an example
+==================
+
+To make sure that everything is set-up correctly, you can run one of the example cases.
+These do not come with the installation, and need to be downloaded separately::
+
+    # 1. Clone the repository
+    git clone https://ci.tno.nl/gitlab/warmingup/rtc-tools-heat-network
+
+    # 2. Change directory to the example folder
+    cd rtc-tools-heat-network/examples/pipe_diameter_sizing/src
+
+    # 3. Run the example
+    python example.py
+
+You will see the progress of RTC-Tools in your shell.
+If all is well, you should see something like the following output.
+
+.. image:: images/example-output.png
+
+In this example.py file you can see a small workflow being set-up. The PipeDiameterSizingProblem class
+inherits from (Note only the *classes are defined in rtc-tools-heat-network the others come from rtc-tools package):
+- CollocatedIntegratedOptimizationProblem: This class does all the descritization of the state variables in your problem.
+- *ESDLMixin: This class does the parsing and setting up of a model based on an ESDL file.
+- GoalProgrammingMixin: This class allows you to add Goals (objective functions) with different priorities
+- LinearizedOrderGoalProgrammingMixin: This class allows you to add higher order goals (e.g. order=2) for MILP problems
+- *HeatMixin: This class adds all the heat network physics for MILP problems. 
+
+Within the PipeDiameterSizingProblem class you can see that the path_goals() function is overwritten and that
+a path_goal with priority one is added to meet the heat demands. The definition path_goal is used
+to define a goal that is applied to a state variable at every time step. Furthermore, the goals() method is also overwritten
+in this case a objective with priority two is added to minimize `length*diameter`  (sort of cost minimization).
+This is done in the goals() method as these are global variables that do not change over time. The priorities indicate that first the
+heat demand is matches, after which in a second stage the priority 2 length*diameter is minimized. The objective of priority one 
+is added as a constraint to the second priority optimization to ensure that optimality of higher priority goals is not affected.
+
+Contribute
+==========
+
+You can contribute to this code through Pull Request on GitLab_.
+Please, make sure that your code is coming with unit tests to ensure full coverage and continuous integration in the API.
+
+.. _GitHub: https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network
+
 
 
 ## Release
