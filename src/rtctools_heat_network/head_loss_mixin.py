@@ -202,8 +202,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def pre(self):
         """
-        Some checks to avoid that different pipes have different head_loss options in case one has the No_HeadLoss
-        option.
+        Some checks to avoid that different pipes have different head_loss options in case one
+        has the No_HeadLoss option.
         """
         super().pre()
 
@@ -929,9 +929,9 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def __demand_head_loss_path_constraints(self, _ensemble_member):
         """
-        This function adds constraints for a minimum pressuredrop at demands. This minimum pressuredrop is ofter
-        required in practise to garuantee that if needed more flow could be generated at that specific demand by
-        opening the control valve.
+        This function adds constraints for a minimum pressuredrop at demands. This minimum
+        pressuredrop is ofter required in practise to garuantee that if needed more flow could be
+        generated at that specific demand by opening the control valve.
         """
         constraints = []
 
@@ -987,10 +987,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def priority_completed(self, priority):
         """
-        In this funtion we check whether there is still artificial head loss in pipes after the head loss minimization
-        goal. This can happen when there are multiple routes without control valves towards a single consumer. In this
-        case the optimization can create non-physcial solutions for the inequality head loss options where it favours
-        one route and creates head loss for it that in practice would not be there and could not be compensated for by
+        In this funtion we check whether there is still artificial head loss in pipes after the
+        head loss minimization goal. This can happen when there are multiple routes without control
+        valves towards a single consumer. In this case the optimization can create non-physcial
+        solutions for the inequality head loss options where it favours one route and creates head
+        loss for it that in practice would not be there and could not be compensated for by
         a control valve in along the route.
         """
         super().priority_completed(priority)
@@ -1055,8 +1056,9 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def path_goals(self):
         """
-        Here we add the goals for minimizing the head loss and hydraulic power depending on the configuration. Please
-        note that we only do hydraulic power for the MILP problem thus only for the linearized head_loss options.
+        Here we add the goals for minimizing the head loss and hydraulic power depending on the
+        configuration. Please note that we only do hydraulic power for the MILP problem thus only
+        for the linearized head_loss options.
         """
         g = super().path_goals().copy()
 

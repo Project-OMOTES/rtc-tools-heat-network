@@ -12,15 +12,16 @@ logger = logging.getLogger("rtctools_heat_network")
 
 class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     """
-    This class is used to make the heat network component information easily accesible in the heat_mixin.
-    This is achieved by creating a heat_network_components dict where the assets are sorted by asset_type.
-    Furthermore, the topology object is created in which for specific assets the connections with directions
-    are saved for later use in the constraints.
+    This class is used to make the heat network component information easily accesible in the
+    heat_mixin. This is achieved by creating a heat_network_components dict where the assets are
+    sorted by asset_type. Furthermore, the topology object is created in which for specific assets
+    the connections with directions are saved for later use in the constraints.
     """
+
     def pre(self):
         """
-        In this pre method the topology object of the heat network is constructed. Meaning
-        that for nodes, busses and storage assets their relevant information on the direction and connections
+        In this pre method the topology object of the heat network is constructed. Meaning that for
+        nodes, busses and storage assets their relevant information on the direction and connections
         on the ports is gathered and stored in the topology object.
         """
         components = self.heat_network_components
@@ -326,7 +327,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     @property
     def heat_network_topology(self) -> Topology:
         """
-        This method returns the topology object of the heat network. Which contains specific assets with directions
-        on the ports that are needed in the constraints.
+        This method returns the topology object of the heat network. Which contains specific assets
+        with directions on the ports that are needed in the constraints.
         """
         return self.__topology

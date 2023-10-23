@@ -13,9 +13,11 @@ class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
     This class determins implied flow direction based upon the lb and ub of the problem.
     This method is only applied for the non-linear problem which is currently not used.
     """
+
     def pre(self):
         """
-        In this pre method a dict is constructed with the implied flow directions based upon bounds on flow, Q.
+        In this pre method a dict is constructed with the implied flow directions based upon bounds
+        on flow, Q.
         """
         super().pre()
 
