@@ -122,9 +122,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__cumulative_investments_made_in_eur_nominals = {}
         self.__cumulative_investments_made_in_eur_bounds = {}
 
+        self._annualized_capex_var_map = {}
         self.__annualized_capex_var = {}
         self.__annualized_capex_var_bounds = {}
-        self.__annualized_capex_var_map = {}
         self.__annualized_capex_var_nominals = {}
 
         self.__asset_is_realized_map = {}
@@ -761,7 +761,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             *self.heat_network_components.get("heat_pump", []),
         ]:
             annualized_capex_var_name = f"{asset}__annualized_capex"
-            self.__annualized_capex_var_map[asset] = annualized_capex_var_name
+            self._annualized_capex_var_map[asset] = annualized_capex_var_name
             self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(annualized_capex_var_name)
             self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf)#(lb, ub)
             self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.
@@ -4412,6 +4412,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def __annualized_capex_constraints(self, ensemble_member):
         constraints = []
 
+        # REMOVE
+        self._number_of_years=30
         # asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
 
         asset_categories  = ["source"]
@@ -4421,7 +4423,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for category in asset_categories:
             for asset_name in self.heat_network_components.get(category, []):
 
-                symbol_name = self.__annualized_capex_var_map[asset_name] # gives the name of the casadi symbol
+                symbol_name = self._annualized_capex_var_map[asset_name] # gives the name of the casadi symbol
                 symbol = self.extra_variable(symbol_name) # casadi symbol
 
                 investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
@@ -4433,8 +4435,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 INTEREST_RATE = 0.05
                 NOMINAL = 1.e6
+                
                 asset_life_years = self._number_of_years 
-
+                # asset.technical_life
                 AEC_expression = calculate_annualized_equivalent_cost(investment_and_installation_cost, INTEREST_RATE, asset_life_years)
 
                 constraints.append(((symbol - AEC_expression) / NOMINAL, 0.0, 0.0))

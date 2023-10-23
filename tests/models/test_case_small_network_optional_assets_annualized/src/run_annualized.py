@@ -32,40 +32,79 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeNonAnnualizedCostGoal(Goal):
-    priority = 2
-
     order = 1
 
-    def __init__(self, source):
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
-        self.source = source
-        self.function_nominal = 1.0e7
+    def __init__(self, priority=2, number_of_years=30.0):
+        self.priority = priority
+        self.number_of_years = number_of_years
 
-    def function(self, optimization_problem, ensemble_member):
-        return (
-            optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
-            + optimization_problem.extra_variable(f"{self.source}__annualized_capex")
-        )
+    def function(self, optimization_problem: HeatMixin, ensemble_member):
+        obj = 0.0
 
+        asset_categories = ["source", "ates"]
+        cost_map_keys = ["_asset_variable_operational_cost_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+
+        asset_categories = ["source", "ates", "buffer"]
+        cost_map_keys = ["_asset_fixed_operational_cost_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+
+        asset_categories = ["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"]
+        cost_map_keys = ["_asset_installation_cost_map", "_asset_investment_cost_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys, True)
+
+        return obj / 1.0e6
+
+    def sum_cost(self, optimization_problem, asset_categories, cost_map_keys, divide_by_years=False):
+        obj = 0.0
+        for asset_category in asset_categories:
+            for asset in optimization_problem.heat_network_components.get(asset_category, []):
+                for cost_map_key in cost_map_keys:
+                    cost_map = getattr(optimization_problem, cost_map_key)
+                    cost = cost_map.get(asset, 0)
+                    if divide_by_years:
+                        obj += optimization_problem.extra_variable(cost) / self.number_of_years
+                    else:
+                        obj += optimization_problem.extra_variable(cost)
+        return obj
+    
 
 class MinimizeAnnualizedCostGoal(Goal):
-    priority = 2
-
     order = 1
 
-    def __init__(self, source):
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
-        self.source = source
-        self.function_nominal = 1.0e7
+    def __init__(self, priority=2, number_of_years=30.0):
+        self.priority = priority
+        self.number_of_years = number_of_years
 
-    def function(self, optimization_problem, ensemble_member):
-        return (
-            optimization_problem.extra_variable(f"{self.source}__variable_operational_cost")
-            + optimization_problem.extra_variable(f"{self.source}__investment_cost")
-            + optimization_problem.extra_variable(f"{self.source}__installation_cost")
-        )
+    def function(self, optimization_problem: HeatMixin, ensemble_member):
+        obj = 0.0
+
+        asset_categories = ["source", "ates"]
+        cost_map_keys = ["_asset_variable_operational_cost_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+
+        asset_categories = ["source", "ates", "buffer"]
+        cost_map_keys = ["_asset_fixed_operational_cost_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+
+        asset_categories = ["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"]
+        cost_map_keys = ["_annualized_capex_var_map"]
+        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+
+        return obj / 1.0e6
+
+    def sum_cost(self, optimization_problem, asset_categories, cost_map_keys, divide_by_years=False):
+        obj = 0.0
+        for asset_category in asset_categories:
+            for asset in optimization_problem.heat_network_components.get(asset_category, []):
+                for cost_map_key in cost_map_keys:
+                    cost_map = getattr(optimization_problem, cost_map_key)
+                    cost = cost_map.get(asset, 0)
+                    if divide_by_years:
+                        obj += optimization_problem.extra_variable(cost) / self.number_of_years
+                    else:
+                        obj += optimization_problem.extra_variable(cost)
+        return obj
 
 
 class _GoalsAndOptions:
@@ -157,19 +196,20 @@ class HeatProblem(
             self.io = new_datastore
 
 
-class HeatProblemAnnulized(HeatProblem):
+class HeatProblemAnnualized(HeatProblem):
 
-    def goals(self, ensemble_member):
-        goals = super().goals(ensemble_member).copy()
+    def goals(self):
+        goals = super().goals().copy()
 
         goals.append(MinimizeAnnualizedCostGoal())
 
         return goals
-    
-class HeatProblemNonAnnulized(HeatProblem):
 
-    def goals(self, ensemble_member):
-        goals = super().goals(ensemble_member).copy()
+
+class HeatProblemNonAnnualized(HeatProblem):
+
+    def goals(self):
+        goals = super().goals().copy()
 
         goals.append(MinimizeNonAnnualizedCostGoal())
 
@@ -185,8 +225,10 @@ if __name__ == "__main__":
     # print(results)
     # print('\n HeatProblemNonAnnulized Completed \n \n')
     
-    solution = run_optimization_problem(HeatProblemAnnulized, base_folder=base_folder)
+    solution = run_optimization_problem(HeatProblemAnnualized, base_folder=base_folder)
     results = solution.extract_results()
-    print(results)
-    print('\n HeatProblemAnnulized Completed \n \n')
-    
+    print('\n HeatProblemAnnualized Completed \n \n')
+
+    # solution = run_optimization_problem(HeatProblemNonAnnualized, base_folder=base_folder)
+    # results = solution.extract_results()
+    # print('\n HeatProblemAnnualized Completed \n \n')
