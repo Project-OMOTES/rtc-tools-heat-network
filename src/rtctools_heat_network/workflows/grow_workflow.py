@@ -446,7 +446,9 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         #
         #         json_body.append({
         #             "measurement": asset,
-        #             "time": format_datetime(self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')),
+        #             "time": format_datetime(
+        #             self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')
+        #             ),
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
@@ -494,7 +496,9 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         #
         #         json_body.append({
         #             "measurement": asset,
-        #             "time": format_datetime(self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')),
+        #             "time": format_datetime(
+        #             self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')
+        #             ),
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)

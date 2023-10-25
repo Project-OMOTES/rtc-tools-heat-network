@@ -266,7 +266,9 @@ class HeatProblemSetPoints(
                     if (day + day_steps - 1) > max_day:
                         new_date_times.append(self.io.datetimes[max_day * 24 + 24])
                     # if day == nr_of_days - day_steps:
-                    #     new_date_times.append(self.io_tools.datetimes[-1] + datetime.timedelta(hours=1))
+                    #     new_date_times.append(
+                    #     self.io_tools.datetimes[-1] + datetime.timedelta(hours=1)
+                    #     )
                 else:
                     new_date_times.append(self.io.datetimes[day * 24])
                     # if day == nr_of_days - day_steps:
