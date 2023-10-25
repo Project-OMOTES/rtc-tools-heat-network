@@ -5,6 +5,13 @@
 General notes: 
     - qth: non linear implementation: skip over these for now in terms of
     understanding/explaining/documenting
+    - test case description: standard format, using Checks: list functionality 
+    - separate tests a bit more
+    - modelica - how many are there? delete or replace? Which funcionality is being tested,-->> summary of what assert statements are being used in these cases? - KvR  
+    - test code coverage - with and without modelica test cases - KvR
+    - Test idea of setting up matrix with rows-test files, columns-constraints - Jim 
+    - Absolute heat work: new test cases to be added, and some existing test cases to be updated - wait for this to be completed before updating to much comments
+    - Decoupled from absoulte heat can update comments now: gas test, elec test, insulation, hydraulic power, max size and optional assest, testpycml, setpointconstraints, descriptions of heat problems in all, 
 
 ***************************************************************************************************
 
@@ -12,7 +19,7 @@ Exsting test cases:
 - What do we want to explain in description? General scenario? Or more detail like 1 year profile
 used etc?
 - Where is the warming up 3/4 test cases that have been mentioned by Ryvo and Sam
-- Picture of the network? Where will we show this? I think it is usefull to see the network.
+- Picture of the network? Where will we show this? I think it is usefull to see the network. -->> Add png in esdl folder - kvr
 
 ***************************************************************************************************
 
@@ -38,8 +45,9 @@ r"""
 Check that the ATES heat loss heat achieved by the network optmization is the same as analytically
 expected (loss coef * stored heat [J]). Check if the ATES yearly cyclic constraint for the stored
 heat [J] is achieved and that the amount of energy discharged form the ATES is less then the amount
-of energy stored over the time horizon.      
+of energy stored over the time horizon. --> this is roughly the length of comment we want      
 """
+
 
 
 - test_buffer.py:
@@ -565,12 +573,13 @@ r"""
 
 ***************************************************************************************************
 
-- models:
+- models --->> put in seperate readme and place in models:
     - test_case_small_network_with_ates:
         r"""
         This a relative small tree? network consisting of 2 renewable heat producers, 1 ATES and
         3 heating demands. 
-        """
+        """ --->>> this comment to be added at the top of file, will help to do a quick scan of models
+        -->> heat problem class give explanation of the setup, this will only be in the code
         - Do we want to say anything about input data (profile, etc) for assets?
     - test_case_small_network_ates_buffer_optional_assets:
         r"""
