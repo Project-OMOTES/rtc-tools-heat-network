@@ -7,7 +7,7 @@ General notes:
     understanding/explaining/documenting
     - test case description: standard format, using Checks: list functionality 
     - separate tests a bit more
-    - modelica - how many are there? delete or replace? Which funcionality is being tested,-->> summary of what assert statements are being used in these cases? - KvR  
+    - modelica - how many are there? delete or replace? Which funcionality is being tested,-->> summary of what assert statements are being used in these cases? - 1st priority testing work KvR 
     - test code coverage - with and without modelica test cases - KvR
     - Test idea of setting up matrix with rows-test files, columns-constraints - Jim 
     - Absolute heat work: new test cases to be added, and some existing test cases to be updated - wait for this to be completed before updating to much comments
