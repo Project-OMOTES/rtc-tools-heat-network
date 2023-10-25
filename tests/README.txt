@@ -11,15 +11,15 @@ General notes:
     - test code coverage - with and without modelica test cases - KvR
     - Test idea of setting up matrix with rows-test files, columns-constraints - Jim 
     - Absolute heat work: new test cases to be added, and some existing test cases to be updated - wait for this to be completed before updating to much comments
-    - Decoupled from absoulte heat can update comments now: gas test, elec test, insulation, hydraulic power, max size and optional assest, testpycml, setpointconstraints, descriptions of heat problems in all, 
+    - Decoupled from absoulte heat can update comments now: gas test, elec test, hydraulic power, max size and optional assest, testpycml, setpointconstraints, descriptions of heat problems in all, 
+    - Picture of the network? Where will we show this? I think it is usefull to see the network. -->> Add png in esdl folder - KvR
 
 ***************************************************************************************************
 
 Exsting test cases:
 - What do we want to explain in description? General scenario? Or more detail like 1 year profile
 used etc?
-- Where is the warming up 3/4 test cases that have been mentioned by Ryvo and Sam
-- Picture of the network? Where will we show this? I think it is usefull to see the network. -->> Add png in esdl folder - kvr
+- Where is the warming up 3/4 test cases that have been mentioned by Ryvo and Sam - KvR check with Ryvo where there cases are?
 
 ***************************************************************************************************
 
