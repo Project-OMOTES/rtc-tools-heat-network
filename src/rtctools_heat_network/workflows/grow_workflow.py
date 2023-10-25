@@ -28,7 +28,7 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
-from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
+from rtctools_heat_network.workflows.io_tools.write_output import ScenarioOutput
 from rtctools_heat_network.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
 )
@@ -446,7 +446,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         #
         #         json_body.append({
         #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
+        #             "time": format_datetime(self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')),
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
@@ -494,7 +494,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         #
         #         json_body.append({
         #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
+        #             "time": format_datetime(self.io_tools.datetimes[i].strftime('%Y-%m-%d %H:%M')),
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
