@@ -51,6 +51,11 @@ class _GoalsAndOptions:
 
         return options
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 # this goal will result in the sources at the primary side of the heatpump to be utilised as much
 # as possible as this requires less heat_source because it is upgraded with electricity, heat_source

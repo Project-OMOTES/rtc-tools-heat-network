@@ -112,7 +112,7 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "highs"
+        options["solver"] = "highs"
         # highs_options = options["highs"] = {}
         # highs_options["mip_rel_gap"] = 0.0025
         # options["gurobi"] = gurobi_options = {}

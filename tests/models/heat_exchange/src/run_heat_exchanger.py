@@ -42,6 +42,11 @@ class _GoalsAndOptions:
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 class MinimizeSourcesHeatGoal(Goal):
     priority = 2

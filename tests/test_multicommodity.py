@@ -148,6 +148,7 @@ class TestMultiCommodityHeatPump(TestCase):
         solution = run_optimization_problem(ElectricityProblem, base_folder=base_folder)
         results = solution.extract_results()
 
+        tol = 1e-6
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
         # heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
         heatpump_power = results["GenericConversion_3d3f.Power_elec"]
@@ -170,12 +171,12 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_allclose(heatdemand_prim_target, heatdemand_prim)
 
         # check that heatpump is not used:
-        np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)))
-        np.testing.assert_allclose(heatpump_heat_sec, np.zeros(len(heatpump_heat_sec)))
-        np.testing.assert_allclose(heatpump_heat_prim, np.zeros(len(heatpump_heat_prim)))
+        np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)
+        np.testing.assert_allclose(heatpump_heat_sec, np.zeros(len(heatpump_heat_sec)), atol=tol)
+        np.testing.assert_allclose(heatpump_heat_prim, np.zeros(len(heatpump_heat_prim)), atol=tol)
 
-        np.testing.assert_allclose(elec_prod_power, np.zeros(len(heatpump_heat_prim)))
-        np.testing.assert_allclose(heatpump_disabled, np.ones(len(heatpump_heat_prim)))
+        np.testing.assert_allclose(elec_prod_power, np.zeros(len(heatpump_heat_prim)), atol=tol)
+        np.testing.assert_allclose(heatpump_disabled, np.ones(len(heatpump_heat_prim)), atol=tol)
 
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
