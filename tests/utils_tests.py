@@ -15,6 +15,32 @@ def demand_matching_test(solution, results):
         np.testing.assert_allclose(target, results[f"{d}.Heat_demand"], atol=1.0e-3, rtol=1.0e-6)
 
 
+def _get_component_temperatures(solution, results, component, side=None):
+    if side:
+        return_id = solution.parameters(0)[f"{component}.{side}.T_return_id"]
+    else:
+        return_id = solution.parameters(0)[f"{component}.T_return_id"]
+    if f"{return_id}_temperature" in results.keys():
+        return_t = results[f"{return_id}_temperature"]
+    else:
+        if side:
+            return_t = solution.parameters(0)[f"{component}.{side}.T_return"]
+        else:
+            return_t = solution.parameters(0)[f"{component}.T_return"]
+    if side:
+        supply_id = solution.parameters(0)[f"{component}.{side}.T_supply_id"]
+    else:
+        supply_id = solution.parameters(0)[f"{component}.T_supply_id"]
+    if f"{supply_id}_temperature" in results.keys():
+        supply_t = results[f"{supply_id}_temperature"]
+    else:
+        if side:
+            supply_t = solution.parameters(0)[f"{component}.{side}.T_supply"]
+        else:
+            supply_t = solution.parameters(0)[f"{component}.T_supply"]
+    dt = supply_t - return_t
+    return supply_t, return_t, dt
+
 def heat_to_discharge_test(solution, results):
     """
     Test to check if the discharge and heat flow are correlated as how the constraints are intented:
@@ -34,9 +60,19 @@ def heat_to_discharge_test(solution, results):
     for d in solution.heat_network_components.get("demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        return_t = solution.parameters(0)[f"{d}.T_return"]
-        supply_t = solution.parameters(0)[f"{d}.T_supply"]
-        dt = solution.parameters(0)[f"{d}.dT"]
+        # return_id = solution.parameters(0)[f"{d}.T_return_id"]
+        # if f"{return_id}_temperature" in results.keys():
+        #     return_t = results[f"{return_id}_temperature"]
+        # else:
+        #     return_t = solution.parameters(0)[f"{d}.T_return"]
+        # supply_id = solution.parameters(0)[f"{d}.T_supply_id"]
+        # if f"{supply_id}_temperature" in results.keys():
+        #     supply_t = results[f"{supply_id}_temperature"]
+        # else:
+        #     supply_t = solution.parameters(0)[f"{d}.T_supply"]
+        # dt = supply_t - return_t
+        # dt = solution.parameters(0)[f"{d}.dT"]
+        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
         np.testing.assert_allclose(
             results[f"{d}.Heat_demand"],
             results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
@@ -55,9 +91,16 @@ def heat_to_discharge_test(solution, results):
     for d in solution.heat_network_components.get("source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        dt = solution.parameters(0)[f"{d}.dT"]
-        supply_t = solution.parameters(0)[f"{d}.T_supply"]
-        return_t = solution.parameters(0)[f"{d}.T_return"]
+        # dt = solution.parameters(0)[f"{d}.dT"]
+        # return_id = solution.parameters(0)[f"{d}.T_return_id"]
+        # return_t = results[f"{return_id}_temperature"]
+        # supply_id = solution.parameters(0)[f"{d}.T_supply_id"]
+        # supply_t = results[f"{supply_id}_temperature"]
+        # dt = supply_t - return_t
+        # supply_t = solution.parameters(0)[f"{d}.T_supply"]
+        # return_t = solution.parameters(0)[f"{d}.T_return"]
+        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+
         test.assertTrue(
             expr=all(results[f"{d}.Heat_source"] >= results[f"{d}.Q"] * rho * cp * dt - tol)
         )
@@ -74,9 +117,15 @@ def heat_to_discharge_test(solution, results):
     ]:
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
-        dt = solution.parameters(0)[f"{d}.dT"]
-        supply_t = solution.parameters(0)[f"{d}.T_supply"]
-        return_t = solution.parameters(0)[f"{d}.T_return"]
+        # return_id = solution.parameters(0)[f"{d}.T_return_id"]
+        # return_t = results[f"{return_id}_temperature"]
+        # supply_id = solution.parameters(0)[f"{d}.T_supply_id"]
+        # supply_t = results[f"{supply_id}_temperature"]
+        # dt = supply_t - return_t
+        # dt = solution.parameters(0)[f"{d}.dT"]
+        # supply_t = solution.parameters(0)[f"{d}.T_supply"]
+        # return_t = solution.parameters(0)[f"{d}.T_return"]
+        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
         test.assertTrue(
             expr=all(
                 np.clip(results[f"{d}.HeatIn.Heat"], 0.0, np.inf)
@@ -107,9 +156,15 @@ def heat_to_discharge_test(solution, results):
         for p in ["Primary", "Secondary"]:
             cp = solution.parameters(0)[f"{d}.{p}.cp"]
             rho = solution.parameters(0)[f"{d}.{p}.rho"]
-            dt = solution.parameters(0)[f"{d}.{p}.dT"]
-            supply_t = solution.parameters(0)[f"{d}.{p}.T_supply"]
-            return_t = solution.parameters(0)[f"{d}.{p}.T_return"]
+            # return_id = solution.parameters(0)[f"{d}.{p}.T_return_id"]
+            # return_t = results[f"{return_id}_temperature"]
+            # supply_id = solution.parameters(0)[f"{d}.{p}.T_supply_id"]
+            # supply_t = results[f"{supply_id}_temperature"]
+            # dt = supply_t - return_t
+            supply_t, return_t, dt = _get_component_temperatures(solution, results, d, p)
+            # dt = solution.parameters(0)[f"{d}.{p}.dT"]
+            # supply_t = solution.parameters(0)[f"{d}.{p}.T_supply"]
+            # return_t = solution.parameters(0)[f"{d}.{p}.T_return"]
 
             heat_out = results[f"{d}.{p}.HeatOut.Heat"]
             heat_in = results[f"{d}.{p}.HeatIn.Heat"]
@@ -129,8 +184,12 @@ def heat_to_discharge_test(solution, results):
     for p in solution.heat_network_components.get("pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
-        dt = solution.parameters(0)[f"{p}.dT"]
-        temperature = solution.parameters(0)[f"{p}.temperature"]
+        carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
+        # dt = solution.parameters(0)[f"{p}.dT"]
+        if f"{carrier_id}_temperature" in results.keys():
+            temperature = results[f"{carrier_id}_temperature"]
+        else:
+            temperature = solution.parameters(0)[f"{p}.temperature"]
         test.assertTrue(
             expr=all(
                 abs(results[f"{p}.HeatIn.Heat"])

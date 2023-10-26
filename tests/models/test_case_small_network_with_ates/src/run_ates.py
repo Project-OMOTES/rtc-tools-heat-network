@@ -60,8 +60,8 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        # for s in self.heat_network_components["source"]:
-        #     goals.append(MinimizeSourcesHeatGoal(s))
+        for s in self.heat_network_components["source"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 

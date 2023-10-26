@@ -44,6 +44,11 @@ class _GoalsAndOptions:
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 class HeatProblem(
     _GoalsAndOptions,
@@ -71,7 +76,7 @@ class HeatProblemTvar(HeatProblem):
         temperatures = []
         if carrier == 3625334968694477359:
             # supply
-            temperatures = [70.0, 75.0]
+            temperatures = [80.0, 85.0]
 
         if carrier == 3625334968694477359000:
             # return
@@ -83,19 +88,22 @@ class HeatProblemTvar(HeatProblem):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
         for carrier, temperatures in self.temperature_carriers().items():
-            number_list = [int(s) for s in carrier if s.isdigit()]
-            number = ""
-            for nr in number_list:
-                number = number + str(nr)
-            carrier_type = temperatures["__rtc_type"]
-            if carrier_type == "return":
-                number = number + "000"
-            carrier_id_number_mapping = number
+            if "id_number_mapping" in temperatures.keys():
+                carrier_id_number_mapping = str(temperatures["id_number_mapping"])
+            else:
+                number_list = [int(s) for s in carrier if s.isdigit()]
+                number = ""
+                for nr in number_list:
+                    number = number + str(nr)
+                carrier_type = temperatures["__rtc_type"]
+                if carrier_type == "return":
+                    number = number + "000"
+                carrier_id_number_mapping = number
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
+                        f"{int(carrier_id_number_mapping)}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(

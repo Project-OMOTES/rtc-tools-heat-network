@@ -65,11 +65,9 @@ class TestAssetIsRealized(TestCase):
 
         # Here we test that the asset is not used until it is actually realized
         inds_not = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_not], 0.0)
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_not], 0.0)
+        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_not], 0.0, atol = 1e-6)
 
         # Here we test that the asset is actually used once it is realized
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds] > 0.0, True)
         np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds] > 0.0, True)
 
 

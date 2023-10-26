@@ -47,6 +47,9 @@ class TestInsulation(TestCase):
         heat_problem = run_optimization_problem(HeatProblem, base_folder=base_folder)
         results = heat_problem.extract_results()
 
+        test = TestCase()
+        test.assertTrue(heat_problem.solver_stats["success"]==True, msg="Optimisation did not succeed")
+
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
@@ -76,6 +79,7 @@ class TestInsulation(TestCase):
             results["ResidualHeatSource_6783.Heat_source"]
             + results["ResidualHeatSource_4539.Heat_source"]
             + results["HeatPump_cd41.Secondary_heat"]
+            - results["HeatStorage_bce7.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
             results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
@@ -107,6 +111,10 @@ class TestInsulation(TestCase):
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
         heat_problem = run_optimization_problem(HeatProblemB, base_folder=base_folder)
         results = heat_problem.extract_results()
+
+        test = TestCase()
+        test.assertTrue(heat_problem.solver_stats["success"],
+                        msg="Optimisation did not succeed")
 
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(

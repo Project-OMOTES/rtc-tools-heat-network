@@ -59,7 +59,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-
+        options["heat_loss_disconnected_pipe"] = False
         options["include_demand_insulation_options"] = True
 
         return options
@@ -96,6 +96,11 @@ class HeatProblem(
                 )
         return available_demand_insulation_classes
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 # test 1b. ensure that the heat problem works when specifying only 1 insulation level for 1 demand
 class HeatProblemB(
@@ -115,7 +120,7 @@ class HeatProblemB(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-
+        options["heat_loss_disconnected_pipe"] = False
         options["include_demand_insulation_options"] = True
 
         return options
@@ -157,6 +162,10 @@ class HeatProblemB(
 
         return available_demand_insulation_classes
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
 
 # TODO: add test code below in future work:
 # # test 2. Insulating specific demands to either ensure Tmin is low enough add specific LT
