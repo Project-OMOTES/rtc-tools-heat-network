@@ -2273,29 +2273,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             coefficients = [heat_nominal, cp * rho * dt * q_nominal, big_m]
             constraint_nominal = (min(coefficients) * max(coefficients)) ** 0.5
 
-            if len(supply_temperatures) == 0 and len(return_temperatures) == 0:
-                # When consumer flow should be able to carry the heat_buffer
-                # constraints.append(
-                #     (
-                #         (heat_flow - cp * rho * dt * discharge + is_buffer_charging * big_m)
-                #         / constraint_nominal,
-                #         0.0,
-                #         np.inf,
-                #     )
-                # )
-
+            if len(supply_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-                # Only when producing the flow should allow to carry more than the flow as return
-                # temperature has already dropped a bit
-                # constraints.append(
-                #     ((heat_flow - cp * rho * dt * discharge) / constraint_nominal, -np.inf, 0.)
-                # )
+                # only when discharging the heat_in should match the heat excactly (like producer)
                 constraints.append(
                     (
                         (
-                            heat_in
-                            - discharge * cp * rho * parameters[f"{b}.T_supply"]
-                            + is_buffer_charging * big_m
+                                heat_in
+                                - discharge * cp * rho * parameters[f"{b}.T_supply"]
+                                + is_buffer_charging * big_m
                         )
                         / constraint_nominal,
                         0.0,
@@ -2310,7 +2296,42 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         0.0,
                     )
                 )
-                # Only when consuming the outgoing colder flow shjould exactly carry the heat
+            else:
+                big_m_t = big_m / parameters[f"{b}.T_supply"] * max(supply_temperatures)
+                for supply_temperature in supply_temperatures:
+                    sup_temperature_is_selected = self.state(
+                        f"{sup_carrier}_{supply_temperature}"
+                    )
+                    constraint_nominal = (heat_nominal * cp * rho * supply_temperature * q_nominal) ** 0.5
+                    constraints.append(
+                        (
+                            (
+                                heat_in
+                                - discharge * cp * rho * supply_temperature
+                                + is_buffer_charging * big_m_t
+                                + (1.0 - sup_temperature_is_selected) * big_m_t
+                            )
+                            / constraint_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            (
+                                heat_in
+                                - discharge * cp * rho * supply_temperature
+                                - (1.0 - sup_temperature_is_selected) * big_m_t
+                            )
+                            / constraint_nominal,
+                            -np.inf,
+                            0.0,
+                        )
+                    )
+
+            if len(return_temperatures) == 0:
+                constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
+                # Only when consuming/charging the heatout should match the q rho cp Tret
                 constraints.append(
                     (
                         (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"])
@@ -2331,8 +2352,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         0.0,
                     )
                 )
-            elif len(supply_temperatures) == 0:
-                supply_temperature = parameters[f"{b}.T_supply"]
+            else:
+                big_m_t = big_m / parameters[f"{b}.T_return"] * max(return_temperatures)
                 for return_temperature in return_temperatures:
                     ret_temperature_is_selected = self.state(
                         f"{ret_carrier}_{return_temperature}"
@@ -2340,36 +2361,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_flow
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                + is_buffer_charging * big_m
-                                + (1.0 - ret_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-
-                    constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-                    constraints.append(
-                        (
-                            (
-                                heat_flow
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                - (1.0 - ret_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
                                 heat_out
                                 - discharge * cp * rho * return_temperature
-                                + (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m
+                                + (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m_t
                             )
                             / heat_nominal,
                             0.0,
@@ -2381,143 +2375,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 heat_out
                                 - discharge * cp * rho * return_temperature
-                                + (2.0 - ret_temperature_is_selected) * big_m
+                                - (1.0 - ret_temperature_is_selected) * big_m_t
                             )
                             / heat_nominal,
                             -np.inf,
                             0.0,
                         )
                     )
-            elif len(return_temperatures) == 0:
-                return_temperature = parameters[f"{b}.T_return"]
-                for supply_temperature in supply_temperatures:
-                    sup_temperature_is_selected = self.state(
-                        f"{sup_carrier}_{supply_temperature}"
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_flow
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                + is_buffer_charging * big_m
-                                + (1.0 - sup_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-
-                    constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-                    constraints.append(
-                        (
-                            (
-                                heat_flow
-                                - cp * rho * (supply_temperature - return_temperature) * discharge
-                                - (1.0 - sup_temperature_is_selected) * big_m
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_out
-                                - discharge * cp * rho * parameters[f"{b}.T_return"]
-                                + (1.0 - is_buffer_charging) * big_m
-                            )
-                            / heat_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"])
-                            / heat_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-            else:
-                for supply_temperature in supply_temperatures:
-                    sup_temperature_is_selected = self.state(
-                        f"{sup_carrier}_{supply_temperature}"
-                    )
-                    for return_temperature in return_temperatures:
-                        ret_temperature_is_selected = self.state(
-                            f"{ret_carrier}_{return_temperature}"
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_flow
-                                    - cp
-                                    * rho
-                                    * (supply_temperature - return_temperature)
-                                    * discharge
-                                    + is_buffer_charging * big_m
-                                    + (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        - ret_temperature_is_selected
-                                    )
-                                    * big_m
-                                )
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-
-                        constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
-                        constraints.append(
-                            (
-                                (
-                                    heat_flow
-                                    - cp
-                                    * rho
-                                    * (supply_temperature - return_temperature)
-                                    * discharge
-                                    - (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        - ret_temperature_is_selected
-                                    )
-                                    * big_m
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_out
-                                    - discharge * cp * rho * return_temperature
-                                    + (2.0 - ret_temperature_is_selected - is_buffer_charging)
-                                    * big_m
-                                )
-                                / heat_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_out
-                                    - discharge * cp * rho * return_temperature
-                                    - (2.0 - ret_temperature_is_selected) * big_m
-                                )
-                                / heat_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
 
         return constraints
 
@@ -2738,173 +2602,25 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             small_m = 0  # 0W
             tol = big_m * 1e-5  # W
 
-            # Getting var for disabled constraints
-            is_disabled = self.state(self.__disabled_hex_map[heat_exchanger])
-
-            if len(supply_temperatures_prim) == 0 and len(return_temperatures_prim) == 0:
-                constraints.append(
-                    (
-                        (heat_primary - cp_prim * rho_prim * dt_prim * discharge_primary)
-                        / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+            #primary side
+            if len(return_temperatures_prim) == 0:
                 constraints.append(
                     (
                         (
-                            heat_out_prim
-                            - discharge_primary
-                            * cp_prim
-                            * rho_prim
-                            * parameters[f"{heat_exchanger}.Primary.T_return"]
-                        )
-                        / constraint_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
-                # Constraints to set the disabled integer, note we only set it for the primary
-                # side as the secondary side implicetly follows from the energy balance constraints.
-                # similar logic in the other blocks
-                # This constraints ensures that is_disabled is 0 when heat_primary > 0
-                constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m) / big_m, -np.inf, 0.0)
-                )
-                # This constraints ensures that is_disabled is 1 when heat_primary = 0
-                constraints.append(
-                    (
-                        (heat_primary - (tol + (small_m - tol) * is_disabled))
-                        / (big_m * tol) ** 0.5,
-                        0.0,
-                        np.inf,
-                    )
-                )
-            elif len(supply_temperatures_prim) == 0:
-                supply_temperature = parameters[f"{heat_exchanger}.Primary.T_supply"]
-                big_m_n = big_m / dt_prim * (supply_temperature - min(return_temperatures_prim))
-                # This constraint ensures that is_disabled is 0 when heat_primary > 0
-                constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
-                )
-                # This constraint ensures that is_disabled is 1 when heat_primary = 0
-                constraints.append(
-                    (
-                        (heat_primary - (tol + (small_m - tol) * is_disabled))
-                        / (big_m_n * tol) ** 0.5,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                for return_temperature in return_temperatures_prim:
-                    ret_temperature_is_selected = self.state(
-                        f"{ret_carrier_prim}_{return_temperature}"
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_primary
-                                - cp_prim
-                                * rho_prim
-                                * (supply_temperature - return_temperature)
-                                * discharge_primary
-                                - (1.0 - ret_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
                                 heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                + (1.0 - ret_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                - (1.0 - ret_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-            elif len(return_temperatures_prim) == 0:
-                return_temperature = parameters[f"{heat_exchanger}.Primary.T_return"]
-                big_m_n = big_m / dt_prim * (max(supply_temperatures_prim) - return_temperature)
-                constraints.append(
-                    (
-                        (
-                            heat_out_prim
-                            - discharge_primary
-                            * cp_prim
-                            * rho_prim
-                            * parameters[f"{heat_exchanger}.Primary.T_return"]
+                                - discharge_primary
+                                * cp_prim
+                                * rho_prim
+                                * parameters[f"{heat_exchanger}.Primary.T_return"]
                         )
                         / constraint_nominal,
                         0.0,
                         0.0,
                     )
                 )
-                constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
-                )
-                # This constraints ensures that is_disabled is 1 when heat_primary = 0
-                constraints.append(
-                    (
-                        (heat_primary - (tol + (small_m - tol) * is_disabled))
-                        / (big_m_n * tol) ** 0.5,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                for supply_temperature in supply_temperatures_prim:
-                    sup_temperature_is_selected = self.state(
-                        f"{sup_carrier_prim}_{supply_temperature}"
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_primary
-                                - cp_prim
-                                * rho_prim
-                                * (supply_temperature - return_temperature)
-                                * discharge_primary
-                                - (1.0 - sup_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
             else:
-                big_m_n = (
-                    big_m
-                    / dt_prim
-                    * (max(supply_temperatures_prim) - min(return_temperatures_prim))
-                )
-                constraints.append(
-                    ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
-                )
-                # This constraint ensures that is_disabled is 1 when heat_primary = 0
-                constraints.append(
-                    (
-                        (heat_primary - (tol + (small_m - tol) * is_disabled))
-                        / (big_m_n * tol) ** 0.5,
-                        0.0,
-                        np.inf,
-                    )
-                )
+                big_m_t = (2.0 * self.bounds()[f"{heat_exchanger}.Primary.HeatIn.Q"][1] * cp_prim
+                           * rho_prim * max(return_temperatures_prim))
                 for return_temperature in return_temperatures_prim:
                     ret_temperature_is_selected = self.state(
                         f"{ret_carrier_prim}_{return_temperature}"
@@ -2912,9 +2628,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                + (1.0 - ret_temperature_is_selected) * big_m_n
+                                    heat_out_prim
+                                    - discharge_primary * cp_prim * rho_prim * return_temperature
+                                    + (1.0 - ret_temperature_is_selected) * big_m_t
                             )
                             / constraint_nominal,
                             0.0,
@@ -2924,41 +2640,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_out_prim
-                                - discharge_primary * cp_prim * rho_prim * return_temperature
-                                - (1.0 - ret_temperature_is_selected) * big_m_n
+                                    heat_out_prim
+                                    - discharge_primary * cp_prim * rho_prim * return_temperature
+                                    - (1.0 - ret_temperature_is_selected) * big_m_t
                             )
                             / constraint_nominal,
                             -np.inf,
                             0.0,
                         )
                     )
-                    for supply_temperature in supply_temperatures_prim:
-                        sup_temperature_is_selected = self.state(
-                            f"{sup_carrier_prim}_{supply_temperature}"
-                        )
 
-                        constraints.append(
-                            (
-                                (
-                                    heat_primary
-                                    - cp_prim
-                                    * rho_prim
-                                    * (supply_temperature - return_temperature)
-                                    * discharge_primary
-                                    - (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        - ret_temperature_is_selected
-                                    )
-                                    * big_m_n
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
 
+            # Secondary side
             sup_carrier_sec = parameters[f"{heat_exchanger}.Secondary.T_supply_id"]
             ret_carrier_sec = parameters[f"{heat_exchanger}.Secondary.T_return_id"]
 
@@ -2975,7 +2668,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 cp_sec * rho_sec * dt_sec * self.bounds()[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
             )
 
-            if len(supply_temperatures_sec) == 0 and len(return_temperatures_sec) == 0:
+            if len(supply_temperatures_sec) == 0:
                 constraints.append(
                     (
                         (
@@ -2990,124 +2683,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         0.0,
                     )
                 )
-
-                constraints.append(
-                    (
-                        (heat_secondary - cp_sec * rho_sec * dt_sec * discharge_secondary)
-                        / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-            elif len(supply_temperatures_sec) == 0:
-                supply_temperature = parameters[f"{heat_exchanger}.Secondary.T_supply"]
-                constraints.append(
-                    (
-                        (heat_out_sec - discharge_secondary * cp_sec * rho_sec * supply_temperature)
-                        / constraint_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
-                for return_temperature in return_temperatures_sec:
-                    ret_temperature_is_selected = self.state(
-                        f"{ret_carrier_sec}_{return_temperature}"
-                    )
-                    big_m_n = big_m / dt_sec * (supply_temperature - return_temperature)
-                    constraints.append(
-                        (
-                            (
-                                heat_secondary
-                                - cp_sec
-                                * rho_sec
-                                * (supply_temperature - return_temperature)
-                                * discharge_secondary
-                                + (1.0 - ret_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_secondary
-                                - cp_sec
-                                * rho_sec
-                                * (supply_temperature - return_temperature)
-                                * discharge_secondary
-                                - (1.0 - ret_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-
-            elif len(return_temperatures_sec) == 0:
-                return_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
-                for supply_temperature in supply_temperatures_sec:
-                    sup_temperature_is_selected = self.state(
-                        f"{sup_carrier_sec}_{supply_temperature}"
-                    )
-                    big_m_n = big_m / dt_sec * (supply_temperature - return_temperature)
-
-                    constraints.append(
-                        (
-                            (
-                                heat_secondary
-                                - cp_sec
-                                * rho_sec
-                                * (supply_temperature - return_temperature)
-                                * discharge_secondary
-                                + (1.0 - sup_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_secondary
-                                - cp_sec
-                                * rho_sec
-                                * (supply_temperature - return_temperature)
-                                * discharge_secondary
-                                - (1.0 - sup_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_out_sec
-                                - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                - (1.0 - sup_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (
-                                heat_out_sec
-                                - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                + (1.0 - sup_temperature_is_selected) * big_m_n
-                            )
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
             else:
+                big_m_t = (2.0 * self.bounds()[f"{heat_exchanger}.Secondary.HeatIn.Q"][1] * cp_sec
+                           * rho_sec * max(supply_temperatures_sec))
                 for supply_temperature in supply_temperatures_sec:
                     sup_temperature_is_selected = self.state(
                         f"{sup_carrier_sec}_{supply_temperature}"
@@ -3117,7 +2695,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 heat_out_sec
                                 - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                - (1.0 - sup_temperature_is_selected) * big_m_n
+                                - (1.0 - sup_temperature_is_selected) * big_m_t
                             )
                             / constraint_nominal,
                             -np.inf,
@@ -3129,58 +2707,48 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 heat_out_sec
                                 - discharge_secondary * cp_sec * rho_sec * supply_temperature
-                                + (1.0 - sup_temperature_is_selected) * big_m_n
+                                + (1.0 - sup_temperature_is_selected) * big_m_t
                             )
                             / constraint_nominal,
                             0.0,
                             np.inf,
                         )
                     )
-                    for return_temperature in return_temperatures_sec:
-                        ret_temperature_is_selected = self.state(
-                            f"{ret_carrier_sec}_{return_temperature}"
-                        )
-                        big_m_n = big_m / dt_sec * (supply_temperature - return_temperature)
-                        constraints.append(
-                            (
-                                (
-                                    heat_secondary
-                                    - cp_sec
-                                    * rho_sec
-                                    * (supply_temperature - return_temperature)
-                                    * discharge_secondary
-                                    + (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        - ret_temperature_is_selected
-                                    )
-                                    * big_m_n
-                                )
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_secondary
-                                    - cp_sec
-                                    * rho_sec
-                                    * (supply_temperature - return_temperature)
-                                    * discharge_secondary
-                                    - (
-                                        2.0
-                                        - sup_temperature_is_selected
-                                        - ret_temperature_is_selected
-                                    )
-                                    * big_m_n
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
+
+            # disconnect HEX
+            # Getting var for disabled constraints
+            is_disabled = self.state(self.__disabled_hex_map[heat_exchanger])
+            if len(supply_temperatures_prim) == 0 and len(return_temperatures_prim) == 0:
+                big_m_n = big_m
+            elif len(supply_temperatures_prim) == 0:
+                supply_temperature = parameters[f"{heat_exchanger}.Primary.T_supply"]
+                big_m_n = big_m / dt_prim * (
+                            supply_temperature - min(return_temperatures_prim))
+                tol = big_m_n * 1e-5
+                # This constraint ensures that is_disabled is 0 when heat_primary > 0
+            elif len(return_temperatures_prim) == 0:
+                return_temperature = parameters[f"{heat_exchanger}.Primary.T_return"]
+                big_m_n = big_m / dt_prim * (
+                            max(supply_temperatures_prim) - return_temperature)
+                tol = big_m_n * 1e-5
+            else:
+                big_m_n = (big_m / dt_prim
+                           * (max(supply_temperatures_prim) - min(
+                            return_temperatures_prim)))
+                tol = big_m_n * 1e-5
+
+            # Constraints to set the disabled integer, note we only set it for the primary
+            # side as the secondary side implicetly follows from the energy balance constraints.
+            # similar logic in the other blocks
+            # This constraints ensures that is_disabled is 0 when heat_primary > 0
+            constraints.append(
+                ((heat_primary - (1.0 - is_disabled) * big_m_n) / big_m_n, -np.inf, 0.0)
+            )
+            # This constraints ensures that is_disabled is 1 when heat_primary < tol
+            constraints.append(((heat_primary - (tol + (small_m - tol) * is_disabled))
+                                / (big_m_n * tol) ** 0.5, 0.0, np.inf))
+
+
             if heat_exchanger in self.heat_network_components.get("heat_exchanger", []):
                 # Note we don't have to add constraints for the case of no temperature options,
                 # as that check is done in the esdl_heat_model

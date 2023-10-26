@@ -31,6 +31,7 @@ class TestVaryingTemperature(TestCase):
         # Check that the lowest return temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
 
+        # FIXME: apparently the demand is not matched, but the bound keeping the source/pipecapacity smaller can not be identified.
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
@@ -107,11 +108,7 @@ class TestVaryingTemperature(TestCase):
 
     def test_hex_temperature_variation(self):
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
-        from models.heat_exchange.src.run_heat_exchanger import (
-            HeatProblemTvar,
-            HeatProblemTvarDisableHEX,
-            HeatProblemTvarSecondary,
-        )
+        from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvar
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
@@ -146,7 +143,7 @@ class TestVaryingTemperature(TestCase):
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
         heat_problem = run_optimization_problem(HeatProblemTvarDisableHEX, base_folder=base_folder)
-
+        #FIXME: apparantly there is a conflict in the constraints for the is_disabled_hex
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"] == True,
                         msg="Optimisation did not succeed")
