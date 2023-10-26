@@ -61,7 +61,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             return_temperature,
             supply_temperature_id,
             return_temperature_id,
-        ) = self._get_supply_return_temperatures(asset)
+        ) = self._get_supply_return_temperatures(asset).values()
 
         heat_to_discharge_fac = 1 / (self.rho * self.cp * (supply_temperature - return_temperature))
 
@@ -268,7 +268,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             return_temperature,
             supply_temperature_id,
             return_temperature_id,
-        ) = self._get_supply_return_temperatures(asset)
+        ) = self._get_supply_return_temperatures(asset).values()
 
         # TODO: Why is the default zero for both, that's just weird. What if I
         # actually want a minimum of 0.0 (instead of treating it as a
