@@ -2,16 +2,12 @@ import logging
 from datetime import timedelta as td
 
 import esdl
-
-from influxdb import InfluxDBClient
+from esdl.profiles.influxdbprofilemanager import ConnectionSettings
+from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 
 import pandas as pd
 
-import requests.exceptions
-
-
 logger = logging.getLogger()
-
 
 data_set = {}
 influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
@@ -92,78 +88,46 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
     logger.info("Caching profiles...")
     error_neighbourhoods = list()
     for profile in [x for x in es.eAllContents() if isinstance(x, esdl.InfluxDBProfile)]:
-        # if profile.eContainer().carrier.id == self.carrier_id:
         profile_host = profile.host
         containing_asset_id = profile.eContainer().energyasset.id
         to_mw_multiplier = get_mw_multiplier(profile)
-        # print('Processing profile of {}'.format(containing_asset_id))
-        ssl_setting = False
-        if "https" in profile_host:
-            profile_host = profile_host[8:]
-            ssl_setting = True
-        elif "http" in profile_host:
-            profile_host = profile_host[7:]
-        if profile.port == 443:
-            ssl_setting = True
+        ssl_setting = True
+        profile_host = profile_host[8:]
         influx_host = "{}:{}".format(profile_host, profile.port)
         if influx_host in influx_cred_map:
             (username, password) = influx_cred_map[influx_host]
         else:
             username = None
             password = None
-        client = InfluxDBClient(
-            host=profile_host,
+
+        conn_settings = ConnectionSettings(
+            host=profile.host,
             port=profile.port,
             username=username,
             password=password,
+            database=profile.database,
             ssl=ssl_setting,
             verify_ssl=ssl_setting,
-            timeout=1,
         )
-        client.switch_database(profile.database)
-        # TODO: check these timebounds how they work.
-        # if profile.startDate is not None:
-        start_date = profile.startDate.isoformat()
-        start_date = start_date if start_date.endswith("+00:00") else start_date + "+00:00"
-        # else:
-        #     start_date = start_date.isoformat()
-        # if profile.endDate is not None:
-        end_date_suffix = " AND time <= '{}'".format(profile.endDate.isoformat())
-        end_date_suffix = (
-            end_date_suffix
-            if end_date_suffix.endswith("+00:00'")
-            else end_date_suffix[:-1] + "+00:00'"
-        )
-        # else:
-        #     end_date_suffix = ' AND time <= \'{}\''.format(end_date.isoformat())
-        if profile.filters is not None and profile.filters != "":
-            filter_suffix = " AND {}".format(profile.filters)
-        else:
-            filter_suffix = ""
+        time_series_data = InfluxDBProfileManager(conn_settings)
 
-        query = 'SELECT MEAN("{}") FROM "{}" WHERE time >= \'{}\'{}{} GROUP BY time({})'.format(
-            profile.field,
-            profile.measurement,
-            start_date,
-            end_date_suffix,
-            filter_suffix,
-            time_step_notation,
+        # TODO: to be resolve the need for this line of code below - Edwin
+        end_date = profile.endDate.replace(hour=profile.endDate.hour + 1)
+
+        time_series_data.load_influxdb(
+            '"' + profile.measurement + '"',
+            [profile.field],
+            profile.startDate,
+            end_date,
         )
-        logger.debug("Executing query...\n{}".format(query))
-        try:
-            data = client.query(query=query)
-        except requests.exceptions.ConnectTimeout:
-            error_neighbourhoods.append(profile.field)
-            logger.error(
-                f"Timeout on query for {profile.field}, probably because either the host "
-                f"{profile_host} can't be reached or the {profile.port} is wrong."
-            )
-        data_points = {t[0]: t[1] for t in data.raw["series"][0]["values"]}
+
+        data_points = {
+            t[0].strftime("%Y-%m-%dT%H:%M:%SZ"): t[1] for t in time_series_data.profile_data_list
+        }
         df = pd.DataFrame.from_dict(data_points, orient="index")
         df.index = pd.to_datetime(df.index, utc=True)
         data_set[containing_asset_id] = df * profile.multiplier * to_mw_multiplier * 1.0e6
-        client.close()
-
         if len(error_neighbourhoods) > 0:
             raise RuntimeError(f"Encountered errors loading data for {error_neighbourhoods}")
+
     return data_set
