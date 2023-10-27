@@ -18,20 +18,20 @@ def run_heat_network_optimization(heat_class, qht_class, *args, log_level=loggin
     directions = {}
 
     for p in heat_problem.hot_pipes:
-        heat_in = results[p + ".HeatIn.Heat"]
-        heat_out = results[p + ".HeatOut.Heat"]
+        q_in = results[p + ".HeatIn.Q"]
+        q_out = results[p + ".HeatOut.Q"]
 
         if not heat_problem.parameters(0)[p + ".disconnectable"]:
             # Flow direction is directly related to the sign of the heat
-            direction_pipe = (heat_in >= 0.0).astype(int) * 2 - 1
+            direction_pipe = (q_in >= 0.0).astype(int) * 2 - 1
         elif heat_problem.parameters(0)[p + ".disconnectable"]:
-            direction_pipe = (heat_in >= 0.0).astype(int) * 2 - 1
+            direction_pipe = (q_in >= 0.0).astype(int) * 2 - 1
             # Disconnect a pipe when the heat entering the component is only used
             # to account for its heat losses. There are three cases in which this
             # can happen.
-            direction_pipe[((heat_in > 0.0) & (heat_out < 0.0))] = 0
-            direction_pipe[((heat_in < 0.0) & (heat_out > 0.0))] = 0
-            direction_pipe[((heat_in == 0.0) | (heat_out == 0.0))] = 0
+            direction_pipe[((q_in > 0.0) & (q_out < 0.0))] = 0
+            direction_pipe[((q_in < 0.0) & (q_out > 0.0))] = 0
+            direction_pipe[((q_in == 0.0) | (q_out == 0.0))] = 0
         directions[p] = Timeseries(times, direction_pipe)
 
         # NOTE: The assumption is that the orientation of the cold pipes is such that the flow
