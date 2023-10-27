@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Dict
 from unittest import TestCase
 
 import numpy as np
@@ -20,7 +21,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
     """
 
     problem: HeatMixin
-    results: dict[str, np.ndarray]
+    results: Dict[str, np.ndarray]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -190,7 +191,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             f"but {total_pipes_to_optimize=}",
         )
 
-    def get_pipe_class_vars(self, pipe: str) -> dict[str, np.ndarray]:
+    def get_pipe_class_vars(self, pipe: str) -> Dict[str, np.ndarray]:
         given_pipe_classes = self.problem.pipe_classes(pipe)
         expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes]
         class_vars = {
@@ -200,7 +201,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         }
         return class_vars
 
-    def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: dict[str, np.ndarray]) -> PipeClass:
+    def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]) -> PipeClass:
         chosen_var = None
         given_pipe_classes = self.problem.pipe_classes(pipe)
         for var_name, value in pipe_class_vars.items():
