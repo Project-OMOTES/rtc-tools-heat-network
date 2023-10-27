@@ -44,11 +44,6 @@ class _GoalsAndOptions:
 
         return goals
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        return options
-
 
 class HeatProblem(
     _GoalsAndOptions,
@@ -58,7 +53,10 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    pass
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
 
 
 class HeatProblemTvar(HeatProblem):
