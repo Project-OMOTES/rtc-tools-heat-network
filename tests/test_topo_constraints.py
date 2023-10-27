@@ -1,10 +1,12 @@
-import numpy as np
-import numpy.testing
-from pathlib import Path
 import sys
+from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+import numpy.testing
+
 from rtctools.util import run_optimization_problem
+
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
 
@@ -16,6 +18,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
     """
     Tests the topo variables and constraints of heat_mixin on the Pipe Diameter Sizing example.
     """
+
     problem: HeatMixin
     results: dict[str, np.ndarray]
 
@@ -57,28 +60,35 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             chosen_pc = self.get_chosen_pipe_class(p, class_vars)
 
             for var_name, value in class_vars.items():
-                self.assertTrue(var_name in self.results,
-                                msg=f"{var_name} not in results")
+                self.assertTrue(var_name in self.results, msg=f"{var_name} not in results")
                 self.assertTrue(
                     abs(value - 0.0) < MIP_TOLERANCE or abs(value - 1.0) < MIP_TOLERANCE,
-                    msg=f"Binary {var_name} isn't either 0.0 or 1.0"
+                    msg=f"Binary {var_name} isn't either 0.0 or 1.0",
                 )
             np.testing.assert_almost_equal(
-                1.0, np.sum(val for val in class_vars.values()), 6,
-                err_msg=f"Not exactly 1 pipe class selected for {p}"
+                1.0,
+                np.sum(val for val in class_vars.values()),
+                6,
+                err_msg=f"Not exactly 1 pipe class selected for {p}",
             )
 
             np.testing.assert_array_almost_equal(
-                chosen_pc.inner_diameter, self.results[f"{p}__hn_diameter"], 5,
-                err_msg=f"{p} inner diameter doesn't match expected"
+                chosen_pc.inner_diameter,
+                self.results[f"{p}__hn_diameter"],
+                5,
+                err_msg=f"{p} inner diameter doesn't match expected",
             )
             np.testing.assert_array_almost_equal(
-                chosen_pc.investment_costs, self.results[f"{p}__hn_cost"], 5,
-                err_msg=f"{p} investment costs doesn't match expected"
+                chosen_pc.investment_costs,
+                self.results[f"{p}__hn_cost"],
+                5,
+                err_msg=f"{p} investment costs doesn't match expected",
             )
             np.testing.assert_array_almost_equal(
-                chosen_pc.maximum_discharge, self.results[f"{p}__hn_max_discharge"], 5,
-                err_msg=f"{p} maximum discharge doesn't match expected"
+                chosen_pc.maximum_discharge,
+                self.results[f"{p}__hn_max_discharge"],
+                5,
+                err_msg=f"{p} maximum discharge doesn't match expected",
             )
 
             expected_heat_losses = self.get_heat_losses(p, chosen_pc)
@@ -99,9 +109,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         - pipe_topo_pipe_class_cost_ordering_var
         - pipe_topo_pipe_class_heat_loss_ordering_var
         """
-        pc_sums = {
-            pc.name:0 for pc in self.problem.get_unique_pipe_classes()
-        }
+        pc_sums = {pc.name: 0 for pc in self.problem.get_unique_pipe_classes()}
         total_pipes_to_optimize = 0
         for p in self.problem.hot_pipes:
             # If there is nothing to choose for the optimizer, no pipe class binaries are made,
@@ -117,28 +125,34 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                 cost_ordering_var = self.results[cost_ordering_var_name]
                 if pc.investment_costs < chosen_pc.investment_costs:
                     np.testing.assert_almost_equal(
-                        cost_ordering_var, 0.0,
+                        cost_ordering_var,
+                        0.0,
                         err_msg=f"expected the cost order var for {p} and {pc=} to be 0.0, since"
-                                f"{chosen_pc=} with higher investment costs")
+                        f"{chosen_pc=} with higher investment costs",
+                    )
                 elif pc.investment_costs > chosen_pc.investment_costs:
                     np.testing.assert_almost_equal(
-                        cost_ordering_var, 1.0,
+                        cost_ordering_var,
+                        1.0,
                         err_msg=f"Expected the cost order var for {p} and {pc=} to be 1.0, since"
-                                f"{chosen_pc=} with lower investment costs"
+                        f"{chosen_pc=} with lower investment costs",
                     )
 
                 discharge_ordering_var_name = base_name + "_discharge_ordering"
                 discharge_ordering_var = self.results[discharge_ordering_var_name]
                 if pc.maximum_discharge < chosen_pc.maximum_discharge:
                     np.testing.assert_almost_equal(
-                        discharge_ordering_var, 0.0,
+                        discharge_ordering_var,
+                        0.0,
                         err_msg=f"expected the discharge order var for {p} and {pc=} to be 0.0, "
-                                f"since {chosen_pc=} with higher max discharge")
+                        f"since {chosen_pc=} with higher max discharge",
+                    )
                 elif pc.maximum_discharge > chosen_pc.maximum_discharge:
                     np.testing.assert_almost_equal(
-                        discharge_ordering_var, 1.0,
+                        discharge_ordering_var,
+                        1.0,
                         err_msg=f"Expected the discharge order var for {p} and {pc=} to be 1.0, "
-                                f"since {chosen_pc=} with lower max discharge"
+                        f"since {chosen_pc=} with lower max discharge",
                     )
 
                 heat_loss_ordering_var_name = base_name + "_heat_loss_ordering"
@@ -147,36 +161,43 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                 chosen_pc_heat_loss = self.get_heat_losses(p, chosen_pc)
                 if pc_heat_loss < chosen_pc_heat_loss:
                     np.testing.assert_almost_equal(
-                        heat_loss_ordering_var, 0.0,
+                        heat_loss_ordering_var,
+                        0.0,
                         err_msg=f"expected the heat loss order var for {p} and {pc=} to be 0.0, "
-                                f"since {chosen_pc=} with higher heat losses")
+                        f"since {chosen_pc=} with higher heat losses",
+                    )
                 elif pc_heat_loss > chosen_pc_heat_loss:
                     np.testing.assert_almost_equal(
-                        discharge_ordering_var, 1.0,
+                        discharge_ordering_var,
+                        1.0,
                         err_msg=f"Expected the heat loss order var for {p} and {pc=} to be 1.0, "
-                                f"since {chosen_pc=} with lower heat losses"
+                        f"since {chosen_pc=} with lower heat losses",
                     )
 
         for pc_name, total_count in pc_sums.items():
             count_var_value = self.results[f"{pc_name}__global_pipe_class_count"]
             np.testing.assert_almost_equal(
-                count_var_value, total_count, 6,
-                err_msg=f"Pipe count for {pc_name} doesn't match the expected {total_count}"
+                count_var_value,
+                total_count,
+                6,
+                err_msg=f"Pipe count for {pc_name} doesn't match the expected {total_count}",
             )
         total_pipe_count = sum(pc_sums.values())
         np.testing.assert_equal(
-            total_pipe_count, total_pipes_to_optimize,
+            total_pipe_count,
+            total_pipes_to_optimize,
             err_msg=f"Found {total_pipe_count} total selected pipe classes, "
-                    f"but {total_pipes_to_optimize=}"
+            f"but {total_pipes_to_optimize=}",
         )
 
     def get_pipe_class_vars(self, pipe: str) -> dict[str, np.ndarray]:
         given_pipe_classes = self.problem.pipe_classes(pipe)
-        expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}"
-                               for pc in given_pipe_classes]
-        class_vars = \
-            {var_name: value for var_name, value in self.results.items()
-             if var_name in expected_class_vars}
+        expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes]
+        class_vars = {
+            var_name: value
+            for var_name, value in self.results.items()
+            if var_name in expected_class_vars
+        }
         return class_vars
 
     def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: dict[str, np.ndarray]) -> PipeClass:
@@ -196,5 +217,5 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             options=self.problem.heat_network_options(),
             parameters=self.problem.parameters(0),
             p=pipe,
-            u_values=pipe_class.u_values
+            u_values=pipe_class.u_values,
         )
