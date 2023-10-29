@@ -180,7 +180,6 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             np.testing.assert_almost_equal(
                 count_var_value,
                 total_count,
-                6,
                 err_msg=f"Pipe count for {pc_name} doesn't match the expected {total_count}",
             )
         total_pipe_count = sum(pc_sums.values())
