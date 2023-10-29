@@ -574,7 +574,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # to be in self.__pipe_topo_pipe_class_map, but not vice versa. If
         # e.g. all diameters have a heat loss of zero, we don't have any
         # decision to make w.r.t heat loss.
-        for pc in self.__pipe_topo_heat_losses:
+        for p in self.__pipe_topo_heat_losses:
             pipe_name = p if p in self.hot_pipes else self.cold_to_hot_pipe(p)
             assert pipe_name in self.__pipe_topo_pipe_class_map
 
