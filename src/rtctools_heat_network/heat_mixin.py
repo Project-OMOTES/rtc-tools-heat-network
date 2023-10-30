@@ -1473,7 +1473,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
                     heat_loss_nominal = self.__pipe_topo_heat_loss_nominals[heat_loss_sym_name]
-                    constraint_nominal = (heat_nominal * heat_loss_nominal) ** 0.5
+                    constraint_nominal = (big_m * heat_loss_nominal) ** 0.5
 
                     # Force heat loss to `heat_loss` when pipe is connected.
                     constraints.append(
@@ -1496,10 +1496,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     # Force heat loss to zero (heat_in = heat_out) when pipe is
                     # disconnected. Note that heat loss is never less than zero, so
                     # we can skip a Big-M formulation in the lower bound.
-                    constraints.append((heat_in + (1 - is_disconnected) * big_m, 0.0, np.inf))
-                    constraints.append((heat_in - (1 - is_disconnected) * big_m, -np.inf, 0.0))
-                    constraints.append((heat_out + (1 - is_disconnected) * big_m, 0.0, np.inf))
-                    constraints.append((heat_out - (1 - is_disconnected) * big_m, -np.inf, 0.0))
+                    constraint_nominal = (big_m * heat_nominal) ** 0.5
+                    constraints.append(((heat_in + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
+                    constraints.append(((heat_in - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
+                    constraints.append(((heat_out + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
+                    constraints.append(((heat_out - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
 
             else:
                 # Heat loss is constant, i.e. does not depend on pipe class
