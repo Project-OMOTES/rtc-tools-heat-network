@@ -98,7 +98,10 @@ class _AssetToComponentBase:
         "CheckValve": "check_valve",
     }
 
-    def __init__(self):
+    primary_port_name_convention = "primary"
+    secondary_port_name_convention = "secondary"
+
+    def __init__(self, **kwargs):
         self._port_to_q_nominal = {}
         self._port_to_esdl_component_type = {}
         self._edr_pipes = json.load(
@@ -372,7 +375,7 @@ class _AssetToComponentBase:
             for p in asset.in_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
-                    if "sec" in p.name.lower():
+                    if self.secondary_port_name_convention in p.name.lower():
                         sec_return_temperature_id = carrier["id_number_mapping"]
                         sec_return_temperature = carrier["temperature"]
                     else:
@@ -381,7 +384,7 @@ class _AssetToComponentBase:
             for p in asset.out_ports:
                 if isinstance(p.carrier, esdl.HeatCommodity):
                     carrier = asset.global_properties["carriers"][p.carrier.id]
-                    if "prim" in p.name.lower():
+                    if self.primary_port_name_convention in p.name.lower():
                         prim_return_temperature_id = carrier["id_number_mapping"]
                         prim_return_temperature = carrier["temperature"]
                     else:

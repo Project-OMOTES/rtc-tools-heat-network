@@ -21,6 +21,9 @@ class _SkipAssetException(Exception):
 
 
 class _ESDLModelBase(_Model):
+
+    primary_port_name_convention = "prim"
+    secondary_port_name_convention = "sec"
     def _esdl_convert(self, converter, assets, prefix):
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharg of a pipe is used to set
@@ -127,12 +130,12 @@ class _ESDLModelBase(_Model):
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity):
                             if isinstance(p, InPort):
-                                if "sec" in p.name.lower():
+                                if self.secondary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Secondary, in_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Primary, in_suf)
                             else:  # OutPort
-                                if "prim" in p.name.lower():
+                                if self.primary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Primary, out_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Secondary, out_suf)
@@ -147,12 +150,12 @@ class _ESDLModelBase(_Model):
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity) and p_heat <= 3:
                             if isinstance(p, InPort):
-                                if "sec" in p.name.lower():
+                                if self.secondary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Secondary, in_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Primary, in_suf)
                             else:  # OutPort
-                                if "prim" in p.name.lower():
+                                if self.primary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Primary, out_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Secondary, out_suf)

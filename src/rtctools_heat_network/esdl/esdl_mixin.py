@@ -750,7 +750,9 @@ def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
                 number = ""
                 for nr in number_list:
                     number = number + str(nr)
-                if "_ret" in x.id:  # note this fix is to create a unique number for the map
+                # note this fix is to create a unique number for the map for when the pipe
+                # duplicator service is used and an additional _ret is added to the id.
+                if "_ret" in x.id:
                     number = number + "000"
                 id_to_idnumber_map[x.id] = int(number)
 

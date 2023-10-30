@@ -57,6 +57,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.rho = rho
         self.cp = cp
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        if "primary_port_name_convention" in kwargs.keys():
+            self.primary_port_name_convention = kwargs["primary_port_name_convention"]
+        if "secondary_port_name_convention" in kwargs.keys():
+            self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
 
     @property
     def _rho_cp_modifiers(self):
@@ -589,6 +593,10 @@ class ESDLHeatModel(_ESDLModelBase):
     def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
         super().__init__(None)
 
-        converter = converter_class(**kwargs)
+        converter = converter_class(**{**kwargs,
+                                     **{"primary_port_name_convention":
+                                            self.primary_port_name_convention,
+                                        "secondary_port_name_convention":
+                                            self.secondary_port_name_convention}})
 
         self._esdl_convert(converter, assets, "Heat")
