@@ -91,7 +91,14 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
         profile_host = profile.host
         containing_asset_id = profile.eContainer().energyasset.id
         to_mw_multiplier = get_mw_multiplier(profile)
-        ssl_setting = True
+        ssl_setting = False
+        if "https" in profile_host:
+            profile_host = profile_host[8:]
+            ssl_setting = True
+        elif "http" in profile_host:
+            profile_host = profile_host[7:]
+        if profile.port == 443:
+            ssl_setting = True
         profile_host = profile_host[8:]
         influx_host = "{}:{}".format(profile_host, profile.port)
         if influx_host in influx_cred_map:
