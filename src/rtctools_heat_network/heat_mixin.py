@@ -4047,8 +4047,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
 
         for p, heat_losses in self.__pipe_topo_heat_losses.items():
-            # assert self.is_hot_pipe(p)
-
             pipe_classes = self.__pipe_topo_pipe_class_map[
                 p if p in self.hot_pipes else self.cold_to_hot_pipe(p)
             ]
