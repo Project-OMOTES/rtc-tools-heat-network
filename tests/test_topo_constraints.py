@@ -69,26 +69,22 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             np.testing.assert_almost_equal(
                 1.0,
                 np.sum(val for val in class_vars.values()),
-                6,
                 err_msg=f"Not exactly 1 pipe class selected for {p}",
             )
 
             np.testing.assert_array_almost_equal(
                 chosen_pc.inner_diameter,
                 self.results[f"{p}__hn_diameter"],
-                5,
                 err_msg=f"{p} inner diameter doesn't match expected",
             )
             np.testing.assert_array_almost_equal(
                 chosen_pc.investment_costs,
                 self.results[f"{p}__hn_cost"],
-                5,
                 err_msg=f"{p} investment costs doesn't match expected",
             )
             np.testing.assert_array_almost_equal(
                 chosen_pc.maximum_discharge,
                 self.results[f"{p}__hn_max_discharge"],
-                5,
                 err_msg=f"{p} maximum discharge doesn't match expected",
             )
 
