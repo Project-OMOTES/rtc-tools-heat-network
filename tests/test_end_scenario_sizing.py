@@ -14,9 +14,18 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class TestEndScenarioSizingHIGHS(EndScenarioSizingHIGHS):
+            def solver_options(self):
+                options = super().solver_options()
+                options["solver"] = "highs"
+                highs_options = options["highs"] = {}
+                highs_options["mip_rel_gap"] = 0.05
+                return options
+
+
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
-        solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
+        solution = run_optimization_problem(TestEndScenarioSizingHIGHS, base_folder=base_folder)
 
         results = solution.extract_results()
         # In the future we want to check the following
@@ -42,7 +51,7 @@ class TestEndScenarioSizing(TestCase):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
-                    np.testing.assert_allclose(heat_buffer, 0.0, atol=1.0e-6)
+                    np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
 
 
 if __name__ == "__main__":
