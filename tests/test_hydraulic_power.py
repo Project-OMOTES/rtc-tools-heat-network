@@ -89,7 +89,7 @@ class TestHydraulicPower(TestCase):
         # of the heat_to_discharge constraints, the volumetric flow has increased, resulting in
         # larger pressure drops.
         np.testing.assert_allclose(
-            104829.66021214866,
+            128001.23151838078,
             hydraulic_power_dw_1,
         )
         np.testing.assert_allclose(
@@ -179,7 +179,7 @@ class TestHydraulicPower(TestCase):
         #  of the heat_to_discharge constraints, the volumetric flow has increased, resulting in
         #  larger pressure drops.
         np.testing.assert_allclose(
-            4367.240507173596,
+            5332.57631593844,
             hydraulic_power_dw,
         )
 

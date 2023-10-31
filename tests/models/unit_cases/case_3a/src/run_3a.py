@@ -121,9 +121,9 @@ class _GoalsAndOptions:
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
-        options["heat_loss_disconnected_pipe"] = False
-        options["neglect_pipe_heat_losses"] = False
+        options["minimum_velocity"] = 0.0001
+        # options["heat_loss_disconnected_pipe"] = False
+        # options["neglect_pipe_heat_losses"] = False
         return options
 
 
@@ -149,7 +149,7 @@ class HeatProblem(
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.0025
         # options["gurobi"] = gurobi_options = {}
-        # gurobi_options["MIPgap"] = 0.001
+        # gurobi_options["MIPgap"] = 0.0001
         return options
 
     def heat_network_options(self):
@@ -361,14 +361,14 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}})
     results = sol.extract_results()
-    import matplotlib.pyplot as plt
-
-    plt.figure()
-    plt.plot(results["HeatStorage_4b0c.Heat_buffer"])
-    plt.figure()
-    plt.plot(results["HeatStorage_4b0c.Stored_heat"])
-    plt.show()
-    a = 1
+    # import matplotlib.pyplot as plt
+    #
+    # plt.figure()
+    # plt.plot(results["HeatStorage_4b0c.Heat_buffer"])
+    # plt.figure()
+    # plt.plot(results["HeatStorage_4b0c.Stored_heat"])
+    # plt.show()
+    # a = 1
     # run_heat_network_optimization(HeatProblem, QTHProblem)

@@ -223,7 +223,12 @@ class HeatProblemSetPoints(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
         return options
 
     def constraints(self, ensemble_member):
