@@ -417,6 +417,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 if heat_loss > 0:
                     self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
+                else:
+                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = self._pipe_heat_loss(
+                        {"neglect_pipe_heat_losses": False}, parameters, pipe)
 
                 for ensemble_member in range(self.ensemble_size):
                     h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
@@ -431,8 +434,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     heat_loss,
                     heat_loss,
                 )
+
                 if heat_loss > 0:
                     self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
+                else:
+                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = self._pipe_heat_loss(
+                        {"neglect_pipe_heat_losses": False}, parameters, pipe)
 
                 for ensemble_member in range(self.ensemble_size):
                     h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
