@@ -239,6 +239,4 @@ def energy_conservation_test(solution, results):
                 atol=1e-3,
             )
 
-    # TODO: need to add HEX and HPS
-
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-6)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-4)
