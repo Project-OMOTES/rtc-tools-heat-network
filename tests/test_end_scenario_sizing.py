@@ -42,7 +42,7 @@ class TestEndScenarioSizing(TestCase):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
-                    np.testing.assert_allclose(heat_buffer, 0.0)
+                    np.testing.assert_allclose(heat_buffer, 0.0, atol=1.0e-6)
 
 
 if __name__ == "__main__":

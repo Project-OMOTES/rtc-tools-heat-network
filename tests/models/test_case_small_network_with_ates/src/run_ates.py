@@ -1,5 +1,8 @@
 import datetime
 
+from rtctools.optimization.single_pass_goal_programming_mixin import CachingQPSol, \
+    SinglePassGoalProgrammingMixin
+
 import esdl
 
 import numpy as np
@@ -75,10 +78,20 @@ class HeatProblem(
     _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # variables for solver settings
+        self._qpsol = None
+
+    def pre(self):
+        super().pre()
+        self._qpsol = CachingQPSol()
+
     def path_goals(self):
         goals = super().path_goals().copy()
 
@@ -86,12 +99,13 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
         return options
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "gurobi"
         return options
 
     def constraints(self, ensemble_member):
@@ -358,13 +372,13 @@ if __name__ == "__main__":
     results = sol.extract_results()
     import matplotlib.pyplot as plt
 
-    plt.figure()
-    plt.plot(results["ATES_033c.Heat_ates"])
-    plt.figure()
-    plt.plot(results["ATES_033c.Stored_heat"])
-    plt.show()
-    a = 2
-    a = 1
+    # plt.figure()
+    # plt.plot(results["ATES_033c.Heat_ates"])
+    # plt.figure()
+    # plt.plot(results["ATES_033c.Stored_heat"])
+    # plt.show()
+    # a = 2
+    # a = 1
 
     # solution = run_optimization_problem(
     #     HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}

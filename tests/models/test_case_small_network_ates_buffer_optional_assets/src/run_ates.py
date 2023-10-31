@@ -89,7 +89,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.005
         options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = False
         return options
@@ -152,7 +152,8 @@ class HeatProblem(
 
 if __name__ == "__main__":
     from pathlib import Path
+    from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 
     base_folder = Path(__file__).resolve().parent.parent
-    solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
+    solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
     results = solution.extract_results()
