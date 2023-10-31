@@ -231,12 +231,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
-            if parameters[f"{p}.disconnectable"]:
-                disconnected_var = f"{p}__is_disconnected"
+            # if parameters[f"{p}.disconnectable"]:
+            disconnected_var = f"{p}__is_disconnected"
 
-                self.__pipe_disconnect_map[p] = disconnected_var
-                self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
-                self.__pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+            self.__pipe_disconnect_map[p] = disconnected_var
+            self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+            self.__pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
@@ -503,11 +503,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         # When optimizing for pipe size, we do not yet support all options
         if self.__pipe_topo_pipe_class_map:
-            if options["minimum_velocity"] > 0.0:
-                raise Exception(
-                    "When optimizing pipe diameters, "
-                    "the `maximum_velocity` option should be set to zero."
-                )
+            # if options["minimum_velocity"] > 0.0:
+            #     raise Exception(
+            #         "When optimizing pipe diameters, "
+            #         "the `maximum_velocity` option should be set to zero."
+            #     )
 
             if np.isfinite(options["maximum_temperature_der"]) and np.isfinite(
                 options["maximum_flow_der"]
@@ -1449,21 +1449,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
 
+
             is_disconnected_var = self.__pipe_disconnect_map.get(p)
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
             else:
                 is_disconnected = self.state(is_disconnected_var)
-
-            # Force heat loss to zero (heat_in = heat_out) when pipe is
-            # disconnected. Note that heat loss is never less than zero, so
-            # we can skip a Big-M formulation in the lower bound.
-            constraint_nominal = (big_m * heat_nominal) ** 0.5
-            constraints.append(((heat_in + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
-            constraints.append(((heat_in - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
-            constraints.append(((heat_out + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
-            constraints.append(((heat_out - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
 
             if p in self.__pipe_topo_heat_losses:
                 # Heat loss is variable depending on pipe class
@@ -1472,36 +1464,36 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 heat_loss_nominal = self.__pipe_topo_heat_loss_nominals[heat_loss_sym_name]
                 constraint_nominal = (heat_nominal * heat_loss_nominal) ** 0.5
 
-                if options["heat_loss_disconnected_pipe"]:
-                    constraints.append(
-                        (
-                            (heat_in - heat_out - heat_loss) / constraint_nominal,
-                            0.0,
-                            0.0,
-                        )
+                # if options["heat_loss_disconnected_pipe"]:
+                constraints.append(
+                    (
+                        (heat_in - heat_out - heat_loss) / constraint_nominal,
+                        0.0,
+                        0.0,
                     )
-                else:
-                    # Force heat loss to `heat_loss` when pipe is connected, and zero otherwise.
-                    heat_loss_nominal = self.__pipe_topo_heat_loss_nominals[heat_loss_sym_name]
-                    constraint_nominal = (big_m * heat_loss_nominal) ** 0.5
-
-                    # Force heat loss to `heat_loss` when pipe is connected.
-                    constraints.append(
-                        (
-                            (heat_in - heat_out - heat_loss)# - is_disconnected * big_m)
-                            / constraint_nominal,
-                            -np.inf,
-                            0.0,
-                        )
-                    )
-                    constraints.append(
-                        (
-                            (heat_in - heat_out - heat_loss)# + is_disconnected * big_m)
-                            / constraint_nominal,
-                            0.0,
-                            np.inf,
-                        )
-                    )
+                )
+                # else:
+                #     # Force heat loss to `heat_loss` when pipe is connected, and zero otherwise.
+                #     heat_loss_nominal = self.__pipe_topo_heat_loss_nominals[heat_loss_sym_name]
+                #     constraint_nominal = (big_m * heat_loss_nominal) ** 0.5
+                #
+                #     # Force heat loss to `heat_loss` when pipe is connected.
+                #     constraints.append(
+                #         (
+                #             (heat_in - heat_out - heat_loss)# - is_disconnected * big_m)
+                #             / constraint_nominal,
+                #             -np.inf,
+                #             0.0,
+                #         )
+                #     )
+                #     constraints.append(
+                #         (
+                #             (heat_in - heat_out - heat_loss)# + is_disconnected * big_m)
+                #             / constraint_nominal,
+                #             0.0,
+                #             np.inf,
+                #         )
+                #     )
 
             else:
                 # Heat loss is constant, i.e. does not depend on pipe class
@@ -1735,10 +1727,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
 
-        if minimum_velocity > 0.0:
-            assert (
-                not self.__pipe_topo_pipe_class_map
-            ), "non-zero minimum velocity not allowed with topology optimization"
+        # if minimum_velocity > 0.0:
+        #     assert (
+        #         not self.__pipe_topo_pipe_class_map
+        #     ), "non-zero minimum velocity not allowed with topology optimization"
 
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.heat_network_components.get("pipe", []):
@@ -1757,7 +1749,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             try:
                 pipe_classes = self.__pipe_topo_pipe_class_map[p].keys()
                 maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
-                minimum_discharge = 0.0
+                minimum_discharge = min([c.area * minimum_velocity for c in pipe_classes if c.area > 0.])
             except KeyError:
                 maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
 
@@ -1769,7 +1761,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 maximum_discharge = 1.0
             big_m = 2.0 * (maximum_discharge + minimum_discharge)
 
-            if minimum_discharge > 0.0 and is_disconnected_var is not None:
+            if minimum_discharge > 0.0:
                 constraint_nominal = (minimum_discharge * big_m) ** 0.5
             else:
                 constraint_nominal = big_m
@@ -1778,7 +1770,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 (
                     (
                         q_pipe
-                        - big_m * (flow_dir)
+                        - big_m * flow_dir
                         + (1 - is_disconnected) * minimum_discharge
                     )
                     / constraint_nominal,
@@ -2144,13 +2136,32 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             scaled_heat_out = self.state(f"{p}.HeatOut.Heat")  # * heat_to_discharge_fac
             pipe_q = self.state(f"{p}.Q")
             q_nominal = self.variable_nominal(f"{p}.Q")
+            heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
 
-            # is_disconnected_var = self.__pipe_disconnect_map.get(p)
+            big_m = 2.0 * np.max(
+                        np.abs(
+                            (
+                                *self.bounds()[f"{p}.HeatIn.Heat"],
+                                *self.bounds()[f"{p}.HeatOut.Heat"],
+                            )
+                        )
+                    )
 
-            # if is_disconnected_var is None:
-            #     is_disconnected = 0.0
-            # else:
-            #     is_disconnected = self.state(is_disconnected_var)
+            is_disconnected_var = self.__pipe_disconnect_map.get(p)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
+            # Force heat loss to zero (heat_in = heat_out) when pipe is
+            # disconnected. Note that heat loss is never less than zero, so
+            # we can skip a Big-M formulation in the lower bound.
+            constraint_nominal = (big_m * heat_nominal) ** 0.5
+            constraints.append(((scaled_heat_in + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((scaled_heat_in - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
+            constraints.append(((scaled_heat_out + (1. - is_disconnected) * big_m) / constraint_nominal, 0.0, np.inf))
+            constraints.append(((scaled_heat_out - (1. - is_disconnected) * big_m) / constraint_nominal, -np.inf, 0.0))
 
             # We do not want Big M to be too tight in this case, as it results
             # in a rather hard yes/no constraint as far as feasibility on e.g.
