@@ -4,6 +4,9 @@ import uuid
 from pathlib import Path
 
 import esdl
+from esdl.profiles.influxdbprofilemanager import ConnectionSettings
+from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+from esdl.profiles.profilemanager import ProfileManager
 
 import numpy as np
 
@@ -201,7 +204,13 @@ class ScenarioOutput(HeatMixin):
                 )
             )
 
-    def _write_updated_esdl(self, db_profiles=False, optimizer_sim=True):
+    def _write_updated_esdl(
+        self,
+        db_profiles=False,
+        optimizer_sim=True,
+        write_result_db_profiles=False,
+        db_connection_settings="",
+    ):
         from esdl.esdl_handler import EnergySystemHandler
         from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
@@ -688,6 +697,111 @@ class ScenarioOutput(HeatMixin):
                 for p in [pipe, cold_pipe]:
                     asset = _name_to_asset(p)
                     asset.delete(recursive=True)
+
+        # ------------------------------------------------------------------------------------------
+        # Write asset result profile data to database
+        # The database contains a measurement (used esdl energy system id as the name for this),
+        # which is a table of the profile results. The each time step is represented by a row of
+        # data, and the columns are: datetime, asset name + "_" variable value
+        if write_result_db_profiles:
+            if db_connection_settings == "":
+                logger.error(
+                    "Writing of asset profile results to database has been specified without"
+                    " specifying data base connection settings",
+                )
+
+            logger.info("Writing asset result profile data to influxDB")
+            results = self.extract_results()
+            variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
+            variables_two_hydraulic_system = [
+                "Primary.HeatIn.Q",
+                "Primary.HeatIn.H",
+                "Secondary.HeatIn.Q",
+                "Secondary.HeatIn.H",
+                "Heat_flow",
+            ]
+            profile_test = ProfileManager()
+            profile_test.profile_type = "DATETIME_LIST"
+            profile_test.profile_header = ["datetime"]
+
+            for ii in range(len(self.times())):
+                data_row = [self.io.datetimes[ii]]
+
+                for asset in [
+                    *self.heat_network_components.get("source", []),
+                    *self.heat_network_components.get("demand", []),
+                    *self.heat_network_components.get("pipe", []),
+                    *self.heat_network_components.get("buffer", []),
+                    *self.heat_network_components.get("ates", []),
+                    *self.heat_network_components.get("heat_exchanger", []),
+                    *self.heat_network_components.get("heat_pump", []),
+                ]:
+                    try:
+                        # For all components dealing with one hydraulic system
+                        for variable in variables_one_hydraulic_system:
+                            if ii == 0:
+                                profile_test.profile_header.append(asset + "_" + variable)
+                            data_row.append(results[f"{asset}." + variable][ii])
+
+                    except Exception:
+                        # For all components dealing with two hydraulic system
+                        for variable in variables_two_hydraulic_system:
+                            if ii == 0:
+                                profile_test.profile_header.append(asset + "_" + variable)
+                            data_row.append(results[f"{asset}." + variable][ii])
+
+                profile_test.profile_data_list.append(data_row)
+
+            profile_test.num_profile_items = len(profile_test.profile_data_list)
+            profile_test.start_datetime = profile_test.profile_data_list[0][0]
+            profile_test.determine_end_datetime()
+
+            conn_settings = ConnectionSettings(
+                host=db_connection_settings["host"],
+                port=db_connection_settings["port"],
+                username=db_connection_settings["username"],
+                password=db_connection_settings["password"],
+                database=db_connection_settings["database"],
+                ssl=db_connection_settings["ssl"],
+                verify_ssl=db_connection_settings["verify_ssl"],
+            )
+
+            influxdb_profile_manager = InfluxDBProfileManager(conn_settings, profile_test)
+            _ = influxdb_profile_manager.save_influxdb(
+                measurement=energy_system.id,
+                ield_names=influxdb_profile_manager.profile_header[1:],
+            )
+            # Code that can be used to remove a specific measurment from the database
+            # try:
+            #     influxdb_profile_manager.influxdb_client.drop_measurement(energy_system.id)
+            # except:
+            #     pass
+            # Code that can be used to check if a specific measurement exists in the database
+            # influxdb_profile_manager.influxdb_client.get_list_measurements()
+
+            # Do not delete: Test code still to be used in test case
+            # try:
+            #     esdl_infl_prof = profs[0]
+            #     np.any(isinstance(esdl_infl_prof, esdl.InfluxDBProfile))
+            # except:
+            #     np.any(isinstance(profs, esdl.InfluxDBProfile))
+            # print("Reading InfluxDB profile from test...")
+            # prof3 = InfluxDBProfileManager(conn_settings)
+            # # prof3.load_influxdb("test", ["Heat_flow"])
+            # prof3.load_influxdb('"' + energy_system.id + '"', profile_test.profile_header[1:4])
+            # # can access values via
+            # # prof3.profile_data_list[0-row][0/1-date/value],
+            # # .strftime("%Y-%m-%dT%H:%M:%SZ")
+            # # prof3.profile_data_list[3][0].strftime("%Y-%m-%dT%H:%M:%SZ")
+            # ts_prof = prof3.get_esdl_timeseries_profile("Heat_flow")
+            # # np.testing.assert_array_equal(ts_prof.values[0], 45)
+            # # np.testing.assert_array_equal(ts_prof.values[1], 900)
+            # # np.testing.assert_array_equal(ts_prof.values[2], 5.6)
+            # # np.testing.assert_array_equal(ts_prof.values[3], 1.2)
+            # # np.testing.assert_array_equal(len(ts_prof.values), 4)
+
+        # ------------------------------------------------------------------------------------------
+        # Save esdl file
 
         self.__optimized_energy_system_handler = esh
         self.optimized_esdl_string = esh.to_string()

@@ -450,7 +450,21 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        connection_settings_influxdb = {
+            "host": "localhost",
+            "port": 8086,
+            "username": None,
+            "password": None,
+            "database": "pyesdl_test",
+            "ssl": False,
+            "verify_ssl": False,
+        }
+
+        self._write_updated_esdl(
+            db_profiles=False,
+            write_result_db_profiles=True,
+            db_connection_settings=connection_settings_influxdb,
+        )
 
     def solver_options(self):
         options = super().solver_options()
