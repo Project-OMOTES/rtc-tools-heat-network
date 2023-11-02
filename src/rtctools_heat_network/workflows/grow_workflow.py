@@ -450,21 +450,8 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        connection_settings_influxdb = {
-            "host": "localhost",
-            "port": 8086,
-            "username": None,
-            "password": None,
-            "database": "pyesdl_test",
-            "ssl": False,
-            "verify_ssl": False,
-        }
 
-        self._write_updated_esdl(
-            db_profiles=False,
-            write_result_db_profiles=True,
-            db_connection_settings=connection_settings_influxdb,
-        )
+        self._write_updated_esdl(db_profiles=False)
 
     def solver_options(self):
         options = super().solver_options()
@@ -531,10 +518,23 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_database": "grow_workflow_test",
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
 
     # results = solution.extract_results()

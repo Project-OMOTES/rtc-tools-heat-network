@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import uuid
 from pathlib import Path
 
@@ -21,6 +22,95 @@ logger = logging.getLogger("rtctools_heat_network")
 
 class ScenarioOutput(HeatMixin):
     __optimized_energy_system_handler = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Settings for influxdb when writing out result profile data to it
+        # Default settings
+        self.write_result_db_profiles = False
+        self.influxdb_username = None
+        self.influxdb_password = None
+
+        base_error_string = "Missing influxdb setting for writing result profile data:"
+        try:
+            self.write_result_db_profiles = kwargs["write_result_db_profiles"]
+
+            if self.write_result_db_profiles not in [True, False]:
+                logger.error(
+                    "Current setting of write_result_db_profiles is: "
+                    f"{self.write_result_db_profiles} and it should be set to True or False"
+                )
+                sys.exit(1)
+
+            if self.write_result_db_profiles:
+                try:
+                    self.influxdb_host = kwargs["influxdb_host"]
+                    if len(self.influxdb_host) == 0:
+                        logger.error(
+                            "Current setting of influxdb_host is an empty string and it should"
+                            " be the name of the host"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} host")
+                    sys.exit(1)
+                try:
+                    self.influxdb_port = kwargs["influxdb_port"]
+                    if not isinstance(self.influxdb_port, int):
+                        logger.error(
+                            "Current setting of influxdb_port is: "
+                            f"{self.influxdb_port} and it should be set to int value (port number)"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} port")
+                    sys.exit(1)
+                try:
+                    self.influxdb_username = kwargs["influxdb_username"]
+                except KeyError:
+                    logger.error(f"{base_error_string} username")
+                    sys.exit(1)
+                try:
+                    self.influxdb_password = kwargs["influxdb_password"]
+                except KeyError:
+                    logger.error(f"{base_error_string} password")
+                    sys.exit(1)
+                try:
+                    self.influxdb_database = kwargs["influxdb_database"]
+                    if len(self.influxdb_database) == 0:
+                        logger.error(
+                            "Current setting of influxdb_database is an empty string and it should"
+                            " be the name of the database"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} password")
+                    sys.exit(1)
+                try:
+                    self.influxdb_ssl = kwargs["influxdb_ssl"]
+                    if self.influxdb_ssl not in [True, False]:
+                        logger.error(
+                            "Current setting of influxdb_ssl is: "
+                            f"{self.influxdb_ssl} and it should be set to True or False"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} ssl")
+                    sys.exit(1)
+                try:
+                    self.influxdb_verify_ssl = kwargs["influxdb_verify_ssl"]
+                    if self.influxdb_verify_ssl not in [True, False]:
+                        logger.error(
+                            "Current setting of influxdb_verify_ssl is: "
+                            f"{self.influxdb_verify_ssl} and it should be set to True or False"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error("f{base_string} verify_ssl")
+                    sys.exit(1)
+        except KeyError:
+            # Not writing out to a influxdb, so no settings are requried
+            pass
 
     def get_optimized_esh(self):
         return self.__optimized_energy_system_handler
@@ -204,13 +294,7 @@ class ScenarioOutput(HeatMixin):
                 )
             )
 
-    def _write_updated_esdl(
-        self,
-        db_profiles=False,
-        optimizer_sim=True,
-        write_result_db_profiles=False,
-        db_connection_settings="",
-    ):
+    def _write_updated_esdl(self, db_profiles=False, optimizer_sim=True):
         from esdl.esdl_handler import EnergySystemHandler
         from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
@@ -703,13 +787,7 @@ class ScenarioOutput(HeatMixin):
         # The database contains a measurement (used esdl energy system id as the name for this),
         # which is a table of the profile results. The each time step is represented by a row of
         # data, and the columns are: datetime, asset name + "_" variable value
-        if write_result_db_profiles:
-            if db_connection_settings == "":
-                logger.error(
-                    "Writing of asset profile results to database has been specified without"
-                    " specifying data base connection settings",
-                )
-
+        if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
             variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
@@ -720,9 +798,9 @@ class ScenarioOutput(HeatMixin):
                 "Secondary.HeatIn.H",
                 "Heat_flow",
             ]
-            profile_test = ProfileManager()
-            profile_test.profile_type = "DATETIME_LIST"
-            profile_test.profile_header = ["datetime"]
+            profiles = ProfileManager()
+            profiles.profile_type = "DATETIME_LIST"
+            profiles.profile_header = ["datetime"]
 
             for ii in range(len(self.times())):
                 data_row = [self.io.datetimes[ii]]
@@ -740,37 +818,38 @@ class ScenarioOutput(HeatMixin):
                         # For all components dealing with one hydraulic system
                         for variable in variables_one_hydraulic_system:
                             if ii == 0:
-                                profile_test.profile_header.append(asset + "_" + variable)
+                                profiles.profile_header.append(asset + "_" + variable)
                             data_row.append(results[f"{asset}." + variable][ii])
 
                     except Exception:
                         # For all components dealing with two hydraulic system
                         for variable in variables_two_hydraulic_system:
                             if ii == 0:
-                                profile_test.profile_header.append(asset + "_" + variable)
+                                profiles.profile_header.append(asset + "_" + variable)
                             data_row.append(results[f"{asset}." + variable][ii])
 
-                profile_test.profile_data_list.append(data_row)
+                profiles.profile_data_list.append(data_row)
 
-            profile_test.num_profile_items = len(profile_test.profile_data_list)
-            profile_test.start_datetime = profile_test.profile_data_list[0][0]
-            profile_test.determine_end_datetime()
+            profiles.num_profile_items = len(profiles.profile_data_list)
+            profiles.start_datetime = profiles.profile_data_list[0][0]
+            profiles.determine_end_datetime()
 
             conn_settings = ConnectionSettings(
-                host=db_connection_settings["host"],
-                port=db_connection_settings["port"],
-                username=db_connection_settings["username"],
-                password=db_connection_settings["password"],
-                database=db_connection_settings["database"],
-                ssl=db_connection_settings["ssl"],
-                verify_ssl=db_connection_settings["verify_ssl"],
+                host=self.influxdb_host,
+                port=self.influxdb_port,
+                username=self.influxdb_username,
+                password=self.influxdb_password,
+                database=self.influxdb_database,
+                ssl=self.influxdb_ssl,
+                verify_ssl=self.influxdb_verify_ssl,
             )
 
-            influxdb_profile_manager = InfluxDBProfileManager(conn_settings, profile_test)
+            influxdb_profile_manager = InfluxDBProfileManager(conn_settings, profiles)
             _ = influxdb_profile_manager.save_influxdb(
                 measurement=energy_system.id,
-                ield_names=influxdb_profile_manager.profile_header[1:],
+                field_names=influxdb_profile_manager.profile_header[1:],
             )
+            # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
             # try:
             #     influxdb_profile_manager.influxdb_client.drop_measurement(energy_system.id)
@@ -788,7 +867,7 @@ class ScenarioOutput(HeatMixin):
             # print("Reading InfluxDB profile from test...")
             # prof3 = InfluxDBProfileManager(conn_settings)
             # # prof3.load_influxdb("test", ["Heat_flow"])
-            # prof3.load_influxdb('"' + energy_system.id + '"', profile_test.profile_header[1:4])
+            # prof3.load_influxdb('"' + energy_system.id + '"', profiles.profile_header[1:4])
             # # can access values via
             # # prof3.profile_data_list[0-row][0/1-date/value],
             # # .strftime("%Y-%m-%dT%H:%M:%SZ")
