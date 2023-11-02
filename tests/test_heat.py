@@ -170,6 +170,11 @@ class TestDisconnectablePipe(TestCase):
 
             return constraints
 
+        def heat_network_options(self):
+            options = super().heat_network_options()
+            options["heat_loss_disconnected_pipe"] = False
+            return options
+
     class ModelDisconnectedNoHeatLoss(ModelDisconnected):
         def heat_network_options(self):
             options = super().heat_network_options()
