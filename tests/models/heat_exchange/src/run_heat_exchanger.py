@@ -172,8 +172,8 @@ class HeatProblemTvar(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
-        # options["heat_loss_disconnected_pipe"] = False
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = False
         return options
 
     def temperature_regimes(self, carrier):
@@ -188,17 +188,7 @@ class HeatProblemTvar(
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
         for carrier, temperatures in self.temperature_carriers().items():
-            if "id_number_mapping" in temperatures.keys():
-                carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            else:
-                number_list = [int(s) for s in carrier if s.isdigit()]
-                number = ""
-                for nr in number_list:
-                    number = number + str(nr)
-                carrier_type = temperatures["__rtc_type"]
-                if carrier_type == "return":
-                    number = number + "000"
-                carrier_id_number_mapping = number
+            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
@@ -226,8 +216,18 @@ class HeatProblemTvarDisableHEX(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = False
         return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+        # we increase the max power of the source to maintain demand matching
+        asset = next(a for a in assets.values() if a.name == "ResidualHeatSource_aec9")
+        asset.attributes["power"] = 1.e6
+
+        return assets
 
     def temperature_regimes(self, carrier):
         temperatures = []
@@ -237,30 +237,23 @@ class HeatProblemTvarDisableHEX(
 
         return temperatures
 
-    # def constraints(self, ensemble_member):
-    #     constraints = super().constraints(ensemble_member)
-    #     # These constraints are added to allow for a quicker solve
-    #     for carrier, temperatures in self.temperature_carriers().items():
-    #         number_list = [int(s) for s in carrier if s.isdigit()]
-    #         number = ""
-    #         for nr in number_list:
-    #             number = number + str(nr)
-    #         carrier_type = temperatures["__rtc_type"]
-    #         if carrier_type == "return":
-    #             number = number + "000"
-    #         carrier_id_number_mapping = number
-    #         temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
-    #         if len(temperature_regimes) > 0:
-    #             for temperature in temperature_regimes:
-    #                 selected_temp_vec = self.state_vector(
-    #                     f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
-    #                 )
-    #                 for i in range(1, len(self.times())):
-    #                     constraints.append(
-    #                         (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
-    #                     )
-    #
-    #     return constraints
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+        # These constraints are added to allow for a quicker solve
+        for carrier, temperatures in self.temperature_carriers().items():
+            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            if len(temperature_regimes) > 0:
+                for temperature in temperature_regimes:
+                    selected_temp_vec = self.state_vector(
+                        f"{int(carrier_id_number_mapping)}_{temperature}"
+                    )
+                    for i in range(1, len(self.times())):
+                        constraints.append(
+                            (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
+                        )
+
+        return constraints
 
 
 # class HeatProblemTvar(

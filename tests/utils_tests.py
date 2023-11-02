@@ -152,6 +152,7 @@ def heat_to_discharge_test(solution, results):
     for d in [
         *solution.heat_network_components.get("heat_exchanger", []),
         *solution.heat_network_components.get("heat_pump", []),
+        *solution.heat_network_components.get("heat_pump_elec", []),
     ]:
         for p in ["Primary", "Secondary"]:
             cp = solution.parameters(0)[f"{d}.{p}.cp"]
@@ -202,8 +203,6 @@ def heat_to_discharge_test(solution, results):
                 <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol
             )
         )
-
-    # TODO: add check for HEX and HPs
 
 
 def energy_conservation_test(solution, results):
