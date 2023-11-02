@@ -22,7 +22,6 @@ class TestEndScenarioSizing(TestCase):
                 highs_options["mip_rel_gap"] = 0.05
                 return options
 
-
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(TestEndScenarioSizingHIGHS, base_folder=base_folder)

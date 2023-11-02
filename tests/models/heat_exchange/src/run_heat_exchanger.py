@@ -225,7 +225,7 @@ class HeatProblemTvarDisableHEX(
         assets = super().esdl_assets
         # we increase the max power of the source to maintain demand matching
         asset = next(a for a in assets.values() if a.name == "ResidualHeatSource_aec9")
-        asset.attributes["power"] = 1.e6
+        asset.attributes["power"] = 1.0e6
 
         return assets
 

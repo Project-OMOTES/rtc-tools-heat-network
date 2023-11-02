@@ -21,9 +21,9 @@ class _SkipAssetException(Exception):
 
 
 class _ESDLModelBase(_Model):
-
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
+
     def _esdl_convert(self, converter, assets, prefix):
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharg of a pipe is used to set

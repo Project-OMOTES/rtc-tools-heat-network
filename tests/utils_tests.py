@@ -41,6 +41,7 @@ def _get_component_temperatures(solution, results, component, side=None):
     dt = supply_t - return_t
     return supply_t, return_t, dt
 
+
 def heat_to_discharge_test(solution, results):
     """
     Test to check if the discharge and heat flow are correlated as how the constraints are intented:

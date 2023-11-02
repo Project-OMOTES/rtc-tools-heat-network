@@ -167,6 +167,7 @@ class HeatProblemB(
         options["solver"] = "highs"
         return options
 
+
 # TODO: add test code below in future work:
 # # test 2. Insulating specific demands to either ensure Tmin is low enough add specific LT
 # sources and thus ensuring enough production capacity or to reduce heat demand enough such that

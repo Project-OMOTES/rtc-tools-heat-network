@@ -29,9 +29,5 @@ class TestMultipleCarriers(TestCase):
         # We check for a system consisting out of 2 hydraulically decoupled networks that the energy
         # balance equations are done with the correct carrier.
         test = TestCase()
-        test.assertTrue(
-            expr=all(heat_demand_3222 <= heat_demand_3222_q * rho * cp * 30)
-        )
-        test.assertTrue(
-            expr=all(heat_demand_18aa <= heat_demand_18aa_q * rho * cp * 40)
-        )
+        test.assertTrue(expr=all(heat_demand_3222 <= heat_demand_3222_q * rho * cp * 30))
+        test.assertTrue(expr=all(heat_demand_18aa <= heat_demand_18aa_q * rho * cp * 40))

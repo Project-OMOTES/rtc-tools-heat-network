@@ -593,10 +593,14 @@ class ESDLHeatModel(_ESDLModelBase):
     def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
         super().__init__(None)
 
-        converter = converter_class(**{**kwargs,
-                                     **{"primary_port_name_convention":
-                                            self.primary_port_name_convention,
-                                        "secondary_port_name_convention":
-                                            self.secondary_port_name_convention}})
+        converter = converter_class(
+            **{
+                **kwargs,
+                **{
+                    "primary_port_name_convention": self.primary_port_name_convention,
+                    "secondary_port_name_convention": self.secondary_port_name_convention,
+                },
+            }
+        )
 
         self._esdl_convert(converter, assets, "Heat")

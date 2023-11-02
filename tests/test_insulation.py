@@ -48,7 +48,7 @@ class TestInsulation(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"]==True, msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
@@ -113,8 +113,7 @@ class TestInsulation(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"],
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(

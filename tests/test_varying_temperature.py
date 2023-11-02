@@ -23,15 +23,13 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
         # Check that the highest supply temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
 
         # Check that the lowest return temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 55.0)
 
-        # FIXME: apparently the demand is not matched, but the bound keeping the source/pipecapacity smaller can not be identified.
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
@@ -45,8 +43,7 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvarsup, base_folder=base_folder)
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in supply temp 80 and 120 deg
         # lowest temperature should be selected because of lower heat losses and
@@ -79,8 +76,7 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvarret, base_folder=base_folder)
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in return temp 30 and 40 deg
         # lowest temperature should be selected because of larger dT causing lowest flow rates
@@ -95,9 +91,7 @@ class TestVaryingTemperature(TestCase):
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check that the lowest temperature (30.0) is the outputted temperature
-        np.testing.assert_allclose(
-            results[f"{4195016129475469474608000}_temperature"], 30.0
-        )
+        np.testing.assert_allclose(results[f"{4195016129475469474608000}_temperature"], 30.0)
         # Verify that also the integer is correctly set
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_30.0"], 1.0)
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_40.0"], 0.0)
@@ -115,8 +109,7 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with three choices of primary supply temperature of which the lowest is
         # infeasible. Therefore optimization should select second lowest option of 80.
@@ -143,10 +136,9 @@ class TestVaryingTemperature(TestCase):
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
         heat_problem = run_optimization_problem(HeatProblemTvarDisableHEX, base_folder=base_folder)
-        #FIXME: apparantly there is a conflict in the constraints for the is_disabled_hex
+        # FIXME: apparantly there is a conflict in the constraints for the is_disabled_hex
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with only one option in temperature which is infeasible for the hex.
         # therefore optimization should disable the heat exchanger
@@ -171,8 +163,7 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvarSecondary, base_folder=base_folder)
 
         test = TestCase()
-        test.assertTrue(heat_problem.solver_stats["success"] == True,
-                        msg="Optimisation did not succeed")
+        test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in secondary supply temp 70 and 90 deg
         # lowest temperature should be selected because of larger dT causing lowest flow rates

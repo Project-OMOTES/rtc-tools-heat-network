@@ -221,15 +221,19 @@ class AssetToQTHComponent(_AssetToComponentBase):
         self._set_q_nominal(asset, q_nominal)
 
         if "_ret" in asset.in_ports[0].carrier.id:
-            temperature_modifiers = {"T_return": temperature,
-                                 "T_supply":
-                                     asset.global_properties["carriers"][
-                                         asset.in_ports[0].carrier.id[:-4]]["temperature"]}
+            temperature_modifiers = {
+                "T_return": temperature,
+                "T_supply": asset.global_properties["carriers"][asset.in_ports[0].carrier.id[:-4]][
+                    "temperature"
+                ],
+            }
         else:
-            temperature_modifiers = {"T_supply": temperature,
-                                     "T_return":
-                                         asset.global_properties["carriers"][
-                                             asset.in_ports[0].carrier.id + "_ret"]["temperature"]}
+            temperature_modifiers = {
+                "T_supply": temperature,
+                "T_return": asset.global_properties["carriers"][
+                    asset.in_ports[0].carrier.id + "_ret"
+                ]["temperature"],
+            }
 
         # TODO: We can do better with the temperature bounds.
         # Maybe global ones (temperature_supply_max / min, and temperature_return_max / min?)
