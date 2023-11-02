@@ -451,7 +451,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
 
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()
@@ -499,7 +499,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         #             "fields": fields
         #         })
         # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()

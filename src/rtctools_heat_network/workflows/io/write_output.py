@@ -1,4 +1,5 @@
 import logging
+import numbers
 import os
 import sys
 import uuid
@@ -294,7 +295,7 @@ class ScenarioOutput(HeatMixin):
                 )
             )
 
-    def _write_updated_esdl(self, db_profiles=False, optimizer_sim=True):
+    def _write_updated_esdl(self, optimizer_sim=True):
         from esdl.esdl_handler import EnergySystemHandler
         from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
@@ -689,46 +690,6 @@ class ScenarioOutput(HeatMixin):
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
 
-        if db_profiles:
-            for name in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("demand", []),
-                *self.heat_network_components.get("pipe", []),
-                *self.heat_network_components.get("buffer", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("heat_pump", []),
-            ]:
-                asset = _name_to_asset(name)
-                try:
-                    # For all components dealing with one hydraulic system
-                    for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-                        profile = esdl.InfluxDBProfile(
-                            database="GROW results",
-                            measurement=name,
-                            field=variable,
-                            port=443,
-                            host="localhost",
-                        )
-                        asset.port[1].profile.append(profile)
-                except Exception:
-                    # For all components dealing with two hydraulic system
-                    for variable in [
-                        "Heat_flow",
-                        "Primary.HeatIn.Q",
-                        "Primary.HeatIn.H",
-                        "Secondary.HeatIn.Q",
-                        "Secondary.HeatIn.H",
-                    ]:
-                        profile = esdl.InfluxDBProfile(
-                            database="GROW results",
-                            measurement=name,
-                            field=variable,
-                            port=443,
-                            host="localhost",
-                        )
-                        asset.port[1].profile.append(profile)
-
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
 
@@ -783,10 +744,14 @@ class ScenarioOutput(HeatMixin):
                     asset.delete(recursive=True)
 
         # ------------------------------------------------------------------------------------------
-        # Write asset result profile data to database
-        # The database contains a measurement (used esdl energy system id as the name for this),
-        # which is a table of the profile results. The each time step is represented by a row of
-        # data, and the columns are: datetime, asset name + "_" variable value
+        # Important: This code below must be placed after the "Placement" code. Reason: it relies
+        # on unplaced assets being deleted.
+        # ------------------------------------------------------------------------------------------
+        # Write asset result profile data to database:
+        #  - The database contains a measurement (used esdl energy system id as the name for this),
+        #    which is a table of the profile results. The each time step is represented by a row of
+        #    data, and the columns are: datetime, asset name + "_" variable value
+        #  - At the same time also set the database attributes for each asset with a profile data
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
@@ -805,7 +770,7 @@ class ScenarioOutput(HeatMixin):
             for ii in range(len(self.times())):
                 data_row = [self.io.datetimes[ii]]
 
-                for asset in [
+                for asset_name in [
                     *self.heat_network_components.get("source", []),
                     *self.heat_network_components.get("demand", []),
                     *self.heat_network_components.get("pipe", []),
@@ -815,18 +780,45 @@ class ScenarioOutput(HeatMixin):
                     *self.heat_network_components.get("heat_pump", []),
                 ]:
                     try:
-                        # For all components dealing with one hydraulic system
-                        for variable in variables_one_hydraulic_system:
+                        # If the asset has been placed
+                        asset = _name_to_asset(asset_name)
+
+                        try:
+                            # For all components dealing with one hydraulic system
+                            if isinstance(
+                                results[f"{asset_name}." + variables_one_hydraulic_system[0]][ii],
+                                numbers.Number,
+                            ):
+                                variables_names = variables_one_hydraulic_system
+                        except Exception:
+                            # For all components dealing with two hydraulic system
+                            if isinstance(
+                                results[f"{asset_name}." + variables_two_hydraulic_system[0]][ii],
+                                numbers.Number,
+                            ):
+                                variables_names = variables_two_hydraulic_system
+
+                        for variable in variables_names:
                             if ii == 0:
-                                profiles.profile_header.append(asset + "_" + variable)
-                            data_row.append(results[f"{asset}." + variable][ii])
+                                # Set header for each column
+                                profiles.profile_header.append(asset_name + "_" + variable)
+
+                                # Set profile database attributes for the esdl asset
+                                profile_attributes = esdl.InfluxDBProfile(
+                                    database=self.influxdb_database,
+                                    measurement=energy_system.id,
+                                    field=profiles.profile_header[-1],
+                                    port=self.influxdb_port,
+                                    host=self.influxdb_host,
+                                )
+                                asset.port[1].profile.append(profile_attributes)
+
+                            # Add variable values in new column
+                            data_row.append(results[f"{asset_name}." + variable][ii])
 
                     except Exception:
-                        # For all components dealing with two hydraulic system
-                        for variable in variables_two_hydraulic_system:
-                            if ii == 0:
-                                profiles.profile_header.append(asset + "_" + variable)
-                            data_row.append(results[f"{asset}." + variable][ii])
+                        # If the asset has been deleted, thus also not placed
+                        pass
 
                 profiles.profile_data_list.append(data_row)
 
