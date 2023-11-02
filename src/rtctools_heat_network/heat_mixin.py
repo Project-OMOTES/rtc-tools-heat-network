@@ -2310,28 +2310,27 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         0.0,
                     )
                 )
-                # only when charging the heat_in should match the heat excactly (like demand)
-                constraints.append(
-                    (
-                        (
-                                heat_out
-                                - discharge * cp * rho * parameters[f"{b}.T_return"]
-                        )
-                        / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"]
-                        - (1 - is_buffer_charging) * big_m) / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+                # # only when charging the heat_in should match the heat excactly (like demand)
+                # constraints.append(
+                #     (
+                #         (
+                #                 heat_out
+                #                 - discharge * cp * rho * parameters[f"{b}.T_return"]
+                #         )
+                #         / constraint_nominal,
+                #         0.0,
+                #         np.inf,
+                #     )
+                # )
+                # constraints.append(
+                #     (
+                #         (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"]
+                #         - (1 - is_buffer_charging) * big_m) / constraint_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
             else:
-                big_m_t = big_m / parameters[f"{b}.T_supply"] * max(supply_temperatures)
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(
                         f"{sup_carrier}_{supply_temperature}"
@@ -2340,10 +2339,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     constraints.append(
                         (
                             (
-                                heat_in
-                                - discharge * cp * rho * supply_temperature
-                                + is_buffer_charging * big_m_t
-                                + (1.0 - sup_temperature_is_selected) * big_m_t
+                                    heat_in
+                                    - discharge * cp * rho * supply_temperature
+                            + (1.0 - sup_temperature_is_selected) * big_m
+                                    + is_buffer_charging * big_m
                             )
                             / constraint_nominal,
                             0.0,
@@ -2352,16 +2351,38 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
                     constraints.append(
                         (
-                            (
-                                heat_in
-                                - discharge * cp * rho * supply_temperature
-                                - (1.0 - sup_temperature_is_selected) * big_m_t
-                            )
+                            (heat_in - discharge * cp * rho * supply_temperature
+                            - (1.0 - sup_temperature_is_selected) * big_m)
                             / constraint_nominal,
                             -np.inf,
                             0.0,
                         )
                     )
+                    # constraints.append(
+                    #     (
+                    #         (
+                    #             heat_in
+                    #             - discharge * cp * rho * supply_temperature
+                    #             + is_buffer_charging * big_m_t
+                    #             + (1.0 - sup_temperature_is_selected) * big_m_t
+                    #         )
+                    #         / constraint_nominal,
+                    #         0.0,
+                    #         np.inf,
+                    #     )
+                    # )
+                    # constraints.append(
+                    #     (
+                    #         (
+                    #             heat_in
+                    #             - discharge * cp * rho * supply_temperature
+                    #             - (1.0 - sup_temperature_is_selected) * big_m_t
+                    #         )
+                    #         / constraint_nominal,
+                    #         -np.inf,
+                    #         0.0,
+                    #     )
+                    # )
 
             if len(return_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
@@ -2387,7 +2408,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
                 )
             else:
-                big_m_t = big_m / parameters[f"{b}.T_return"] * max(return_temperatures)
                 for return_temperature in return_temperatures:
                     ret_temperature_is_selected = self.state(
                         f"{ret_carrier}_{return_temperature}"
@@ -2397,7 +2417,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 heat_out
                                 - discharge * cp * rho * return_temperature
-                                + (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m_t
+                                + (1.0 - ret_temperature_is_selected) * big_m
                             )
                             / heat_nominal,
                             0.0,
@@ -2409,7 +2429,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 heat_out
                                 - discharge * cp * rho * return_temperature
-                                - (1.0 - ret_temperature_is_selected) * big_m_t
+                                - (2.0 - ret_temperature_is_selected - is_buffer_charging) * big_m
                             )
                             / heat_nominal,
                             -np.inf,
