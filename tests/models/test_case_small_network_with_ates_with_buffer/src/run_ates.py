@@ -1,3 +1,5 @@
+import esdl
+
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -10,7 +12,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
-import esdl
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 

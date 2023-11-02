@@ -1,3 +1,5 @@
+import esdl
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -9,7 +11,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
-import esdl
 from rtctools_heat_network.demand_insulation_class import DemandInsulationClass
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin

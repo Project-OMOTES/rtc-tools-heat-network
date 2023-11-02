@@ -210,7 +210,7 @@ class HeatProblemTvarsup(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
+        for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:

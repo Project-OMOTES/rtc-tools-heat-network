@@ -1,6 +1,6 @@
-import numpy as np
-
 import esdl
+
+import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
