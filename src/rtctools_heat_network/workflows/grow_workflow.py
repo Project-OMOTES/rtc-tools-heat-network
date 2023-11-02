@@ -300,7 +300,7 @@ class EndScenarioSizing(
         options["minimum_velocity"] = 0.0001
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options

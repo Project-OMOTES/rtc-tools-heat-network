@@ -1,5 +1,7 @@
 import numpy as np
 
+import esdl
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -112,6 +114,33 @@ class HeatProblem(
 
         return goals
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = True
+
+        return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+
+        asset = next(a for a in assets.values() if a.name == "Pipe3")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe3_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+
+        return assets
+
+    def parameters(self, ensemble_member):
+        parameters = super().parameters(ensemble_member)
+        parameters["GenericConversion_3d3f.min_voltage"] = 230.0
+
+        return parameters
+
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
+
 
 class HeatProblem2(
     _GoalsAndOptions,
@@ -136,6 +165,27 @@ class HeatProblem2(
 
         return goals
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = True
+
+        return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+
+        asset = next(a for a in assets.values() if a.name == "Pipe3")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe3_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+
+        return assets
+
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
+
 
 class ElectricityProblem(
     _GoalsAndOptions,
@@ -148,9 +198,9 @@ class ElectricityProblem(
     def read(self):
         super().read()
 
-        # for d in self.heat_network_components["demand"]:
-        #     new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values*.01
-        #     self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
+        for d in self.heat_network_components["demand"]:
+            new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
+            self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def path_goals(self):
         goals = super().path_goals().copy()
@@ -160,7 +210,39 @@ class ElectricityProblem(
 
         return goals
 
+    # @property
+    # def esdl_assets(self):
+    #     assets = super().esdl_assets
+    #
+    #     # asset = next(a for a in assets.values() if a.name == "GenericConversion_3d3f")
+    #     # asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+    #     asset = next(a for a in assets.values() if a.name == "Pipe_408e")
+    #     asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+    #     asset = next(a for a in assets.values() if a.name == "Pipe_408e_ret")
+    #     asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+    #     asset = next(a for a in assets.values() if a.name == "Pipe_ce68")
+    #     asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+    #     asset = next(a for a in assets.values() if a.name == "Pipe_ce68_ret")
+    #     asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+    #
+    #     return assets
+    #
+    # def pipe_classes(self, p):
+    #     return self._override_pipe_classes.get(p, [])
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = False
+
+        return options
+
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem2)
+    sol = run_optimization_problem(HeatProblem)
+    results = sol.extract_results()
+    print(results["GenericConversion_3d3f.Power_elec"])
+    print(results["ResidualHeatSource_aec9.Heat_source"])
+    # print(results["Pipe3__hn_diameter"])
+    # print(sol.bounds()["Pipe3__hn_diameter"])
     # run_optimization_problem(ElectricityProblem)

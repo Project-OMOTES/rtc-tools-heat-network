@@ -306,5 +306,5 @@ class HeatProblemTvarDisableHEX(
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblemTvarSecondary)
+    solution = run_optimization_problem(HeatProblem)
     results = solution.extract_results()

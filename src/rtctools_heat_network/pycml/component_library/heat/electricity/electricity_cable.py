@@ -17,8 +17,8 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         # values for NAYY 4x50 SE
         # from: https://pandapower.readthedocs.io/en/v2.6.0/std_types/basic.html
         self.max_current = 142.0
-        self.max_voltage = 1000.0
-        self.min_voltage = 230.0
+        self.max_voltage = 1.5e4
+        self.min_voltage = 1.0e4
         self.nominal_current = self.max_current / 2.0
         self.nominal_voltage = (self.max_voltage + self.min_voltage) / 2.0
         self.r = 1.0e-4 * self.length  # TODO: temporary value

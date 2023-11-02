@@ -803,7 +803,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         +--------------------------------------+-----------+-----------------------------+
         | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
-        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``False``                    |
+        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
         +--------------------------------------+-----------+-----------------------------+
         | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
         +--------------------------------------+-----------+-----------------------------+
@@ -855,7 +855,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["maximum_temperature_der"] = 2.0
         options["maximum_flow_der"] = np.inf
         options["neglect_pipe_heat_losses"] = False
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False

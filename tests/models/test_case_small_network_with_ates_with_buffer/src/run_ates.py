@@ -10,6 +10,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
+import esdl
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 
@@ -98,7 +99,7 @@ class HeatProblem(
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
         options["neglect_pipe_heat_losses"] = True
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
         return options
 
     def constraints(self, ensemble_member):
@@ -120,6 +121,24 @@ class HeatProblem(
         # options["solver"] = "gurobi"
 
         return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+
+        asset = next(a for a in assets.values() if a.name == "Pipe_8125")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_8125_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_9768")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_9768_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+
+        return assets
+
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
 
     def read(self):
         """

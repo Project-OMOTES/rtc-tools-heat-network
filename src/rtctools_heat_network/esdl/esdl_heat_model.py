@@ -522,11 +522,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
-            ElectrticityIn=dict(
+            ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
                 I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
             ),
-            length=asset.attributes.get("length", 1.0),
         )
 
         return ElectricityDemand, modifiers
@@ -577,14 +576,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0, max=1000.0, nominal=230.0),
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
                 I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1230.0 / 2.0),
+                Power=dict(nominal=142.0 * 1.25e4),
             ),
             ElectricityIn=dict(
-                V=dict(min=0.0, max=1000.0, nominal=230.0),
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
                 I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1230.0 / 2.0),
+                Power=dict(nominal=142.0 * 1.25e4),
             ),
         )
         return ElectricityCable, modifiers

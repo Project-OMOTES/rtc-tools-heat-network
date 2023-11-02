@@ -182,8 +182,6 @@ class ESDLMixin(
         for asset in self.esdl_assets.values():
             if asset.asset_type == "Pipe":
                 p = asset.name
-                if self.is_cold_pipe(p):
-                    continue
 
                 if asset.attributes["state"].name == "OPTIONAL":
                     c = self._override_pipe_classes[p] = []

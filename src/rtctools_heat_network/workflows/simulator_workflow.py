@@ -322,6 +322,13 @@ class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
     def times(self, variable=None) -> np.ndarray:
         return super().times(variable)[:5]
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+
+        options["heat_loss_disconnected_pipe"] = False
+
+        return options
+
 
 class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
     def read(self):

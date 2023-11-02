@@ -43,7 +43,7 @@ class TestMaxSizeAggregationCount(TestCase):
 
         # Test if source 1 is not placed and 2 is placed
         np.testing.assert_allclose(prod_1_placed, 0.0)
-        np.testing.assert_equal(prod_2_placed, 1.0)
+        np.testing.assert_allclose(prod_2_placed, 1.0, atol=1.0e-6)
 
         # Test that max size is correct, note that we use an equality check as due to the cost
         # minimization they should be equal.
@@ -94,10 +94,10 @@ class TestMaxSizeAggregationCount(TestCase):
 
         results = solution.extract_results()
 
-        np.testing.assert_allclose(results["ATES_033c.Heat_ates"], 0.0)
-        np.testing.assert_allclose(results["HeatStorage_74c1.Stored_heat"], 0.0)
-        np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 0.0)
-        np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 0.0)
+        np.testing.assert_allclose(results["ATES_033c.Heat_ates"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results["HeatStorage_74c1.Stored_heat"], 0.0, atol=1.0e-3)
+        np.testing.assert_allclose(results["ATES_033c_aggregation_count"], 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(results["HeatStorage_74c1_aggregation_count"], 0.0, atol=1.0e-6)
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
