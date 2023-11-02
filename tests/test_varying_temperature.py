@@ -29,7 +29,7 @@ class TestVaryingTemperature(TestCase):
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
 
         # Check that the lowest return temperature is selected
-        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 55.0)
 
         # FIXME: apparently the demand is not matched, but the bound keeping the source/pipecapacity smaller can not be identified.
         demand_matching_test(heat_problem, results)
