@@ -107,7 +107,7 @@ class HeatProblem(
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
-        options["solver"] = "gurobi"
+        # options["solver"] = "gurobi"
         return options
 
     def constraints(self, ensemble_member):
@@ -140,7 +140,7 @@ class HeatProblem(
             # TODO: the approach of picking one peak day was introduced for a network with a tree
             #  layout and all big sources situated at the root of the tree. It is not guaranteed
             #  that an optimal solution is reached in different network topologies.
-            nr_of_days = len(total_demand) // 24
+            nr_of_days = len(total_demand) // (24 * 5)
             new_date_times = list()
             for day in range(nr_of_days):
                 new_date_times.append(self.io.datetimes[day * 24])
@@ -169,7 +169,6 @@ class HeatProblem(
 class HeatProblemPlacingOverTime(HeatProblem):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["neglect_pipe_heat_losses"] = True
 
         return options
 

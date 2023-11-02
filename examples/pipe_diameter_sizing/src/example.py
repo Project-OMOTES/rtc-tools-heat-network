@@ -64,7 +64,7 @@ class PipeDiameterSizingProblem(
 ):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
+        options["minimum_velocity"] = 0.0001
         options["minimize_head_losses"] = True
         return options
 
@@ -106,14 +106,9 @@ class PipeDiameterSizingProblem(
 
     def priority_completed(self, priority):
         super().priority_completed(priority)
-        self._hot_start = True
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
-        # options["hot_start"] = getattr(self, "_hot_start", False)
-        # cbc_options = options["cbc"] = {}
-        # cbc_options["seconds"] = 500.0
         return options
 
 
@@ -171,14 +166,5 @@ if __name__ == "__main__":
 
     heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
     results = heat_problem.extract_results()
-    print(results["Pipe_2927_ret__hn_diameter"])
-    print(results["Pipe_2927_ret.HeatIn.Heat"])
-    print(results["Pipe_2927_ret.HeatIn.Q"] * 4200 * 988 * 45)
-    print(results["Pipe_2927_ret__flow_direct_var"])
-    print(results["Pipe_2927_ret__is_disconnected"])
-    print(results["GeothermalSource_fafd.HeatIn.Heat"])
-    print(results["GeothermalSource_fafd.HeatIn.Q"] * 4200 * 988 * 45)
-    print(results["GeothermalSource_fafd.HeatOut.Heat"])
-    print(results["GeothermalSource_fafd.Heat_source"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

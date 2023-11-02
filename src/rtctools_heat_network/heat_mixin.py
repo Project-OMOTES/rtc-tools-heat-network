@@ -266,27 +266,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__pipe_topo_heat_loss_parameters.append({})
 
         for carrier, temperatures in self.temperature_carriers().items():
-            # if "id_number_mapping" in temperatures.keys():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
-            # carrier_type = ""
             temp_var_name = carrier_id_number_mapping + "_temperature"
-            # else:
-            #     number_list = [int(s) for s in carrier if s.isdigit()]
-            #     number = ""
-            #     for nr in number_list:
-            #         number = number + str(nr)
-            #     carrier_type = temperatures["__rtc_type"]
-            #     if carrier_type == "return":
-            #         number = number + "000"
-            #     carrier_id_number_mapping = number
-            #     temp_var_name = carrier_id_number_mapping + f"__{carrier_type}_temperature"
             self.__temperature_regime_var[temp_var_name] = ca.MX.sym(temp_var_name)
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) == 0:
-                # if carrier_type == "":
                 temperature = temperatures["temperature"]
-                # else:
-                #     temperature = temperatures[carrier_type + "Temperature"]
                 self.__temperature_regime_var_bounds[temp_var_name] = (temperature, temperature)
             elif len(temperature_regimes) == 1:
                 temperature = temperature_regimes[0]
@@ -298,12 +283,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
 
             for temperature_regime in temperature_regimes:
-                # if carrier_type == "":
                 carrier_selected_var = carrier_id_number_mapping + f"_{temperature_regime}"
-                # else:
-                #     carrier_selected_var = (
-                #         carrier_id_number_mapping + f"__{temperature_regime}"
-                #     )
                 self.__carrier_selected_var[carrier_selected_var] = ca.MX.sym(carrier_selected_var)
                 self.__carrier_selected_var_bounds[carrier_selected_var] = (0.0, 1.0)
 
@@ -416,13 +396,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 if heat_loss > 0:
                     self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = self._pipe_heat_loss(
-                        {"neglect_pipe_heat_losses": False}, parameters, pipe
+                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = max(
+                        self._pipe_heat_loss({"neglect_pipe_heat_losses": False}, parameters, pipe),
+                        1.0,
                     )
 
                 for ensemble_member in range(self.ensemble_size):
                     h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                    h[f"{pipe}.Heat_loss"] = self._pipe_heat_loss(options, parameters, pipe)
+                    h[f"{pipe}.Heat_loss"] = max(
+                        self._pipe_heat_loss(options, parameters, pipe), 1.0
+                    )
 
             elif len(pipe_classes) == 1:
                 # No pipe class decision to make for this pipe w.r.t. heat loss
@@ -652,7 +635,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("pipe", [])]:
-                nominal_fixed_operational = parameters[f"{asset_name}.length"]
+                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("buffer", [])]:
@@ -820,7 +803,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         +--------------------------------------+-----------+-----------------------------+
         | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
-        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
+        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``False``                    |
         +--------------------------------------+-----------+-----------------------------+
         | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
         +--------------------------------------+-----------+-----------------------------+
@@ -872,7 +855,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["maximum_temperature_der"] = 2.0
         options["maximum_flow_der"] = np.inf
         options["neglect_pipe_heat_losses"] = False
-        options["heat_loss_disconnected_pipe"] = True
+        options["heat_loss_disconnected_pipe"] = False
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
@@ -3666,7 +3649,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = "qpsol"
-        options["solver"] = "cbc"
+        options["solver"] = "highs"
         return options
 
     def compiler_options(self):

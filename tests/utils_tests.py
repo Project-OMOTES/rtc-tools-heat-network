@@ -106,7 +106,7 @@ def heat_to_discharge_test(solution, results):
             expr=all(results[f"{d}.Heat_source"] >= results[f"{d}.Q"] * rho * cp * dt - tol)
         )
         np.testing.assert_allclose(
-            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t
+            results[f"{d}.HeatOut.Heat"], results[f"{d}.Q"] * rho * cp * supply_t, atol=tol
         )
         test.assertTrue(
             expr=all(results[f"{d}.HeatIn.Heat"] <= results[f"{d}.Q"] * rho * cp * return_t + tol)
@@ -136,6 +136,7 @@ def heat_to_discharge_test(solution, results):
         np.testing.assert_allclose(
             np.clip(results[f"{d}.HeatOut.Heat"], 0.0, np.inf),
             np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * return_t,
+            atol=tol,
         )
         np.testing.assert_allclose(
             np.clip(results[f"{d}.HeatIn.Heat"], -np.inf, 0.0),

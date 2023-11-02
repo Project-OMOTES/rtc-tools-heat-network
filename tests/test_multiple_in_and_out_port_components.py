@@ -40,6 +40,8 @@ class TestHEX(TestCase):
         np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-9)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
+        # Check that heat is flowing through the hex
+        np.testing.assert_array_less(-prim_heat[:-1], 0.0)
 
 
 class TestHP(TestCase):

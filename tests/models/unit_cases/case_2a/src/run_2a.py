@@ -8,11 +8,11 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
-from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TargetDemandGoal(Goal):
@@ -89,6 +89,11 @@ class HeatProblem(
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 class QTHProblem(
     _GoalsAndOptions,
@@ -108,4 +113,5 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    run_heat_network_optimization(HeatProblem, QTHProblem)
+    run_optimization_problem(HeatProblem)
+    # run_heat_network_optimization(HeatProblem, QTHProblem)

@@ -55,7 +55,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
+        self.function_range = (0.0, 20e6)
         self.source = source
         self.function_nominal = 1e6
 
@@ -121,34 +121,27 @@ class HeatProblemTvarSecondary(
         temperatures = []
         if carrier == 7212673879469902607010:
             # supply
-            temperatures = [70.0, 90.0]
+            temperatures = [70.0, 110.0]
 
         return temperatures
 
-    # def constraints(self, ensemble_member):
-    #     constraints = super().constraints(ensemble_member)
-    #     # These constraints are added to allow for a quicker solve
-    #     for carrier, temperatures in self.temperature_carriers().items():
-    #         number_list = [int(s) for s in carrier if s.isdigit()]
-    #         number = ""
-    #         for nr in number_list:
-    #             number = number + str(nr)
-    #         carrier_type = temperatures["__rtc_type"]
-    #         if carrier_type == "return":
-    #             number = number + "000"
-    #         carrier_id_number_mapping = number
-    #         temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
-    #         if len(temperature_regimes) > 0:
-    #             for temperature in temperature_regimes:
-    #                 selected_temp_vec = self.state_vector(
-    #                     f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
-    #                 )
-    #                 for i in range(1, len(self.times())):
-    #                     constraints.append(
-    #                         (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
-    #                     )
-    #
-    #     return constraints
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+        # These constraints are added to allow for a quicker solve
+        for carrier, temperatures in self.temperature_carriers().items():
+            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
+            temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
+            if len(temperature_regimes) > 0:
+                for temperature in temperature_regimes:
+                    selected_temp_vec = self.state_vector(
+                        f"{int(carrier_id_number_mapping)}_{temperature}"
+                    )
+                    for i in range(1, len(self.times())):
+                        constraints.append(
+                            (selected_temp_vec[i] - selected_temp_vec[i - 1], 0.0, 0.0)
+                        )
+
+        return constraints
 
 
 class HeatProblemTvar(
@@ -310,5 +303,5 @@ class HeatProblemTvarDisableHEX(
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(HeatProblemTvarSecondary)
     results = solution.extract_results()

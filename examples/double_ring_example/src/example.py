@@ -156,7 +156,7 @@ class HeatProblem(
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    model_name = "Westland_Heat"
+    model_name = "Double_ring_Heat"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -164,7 +164,6 @@ class HeatProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["hot_start"] = self.__hot_start
         return options
 
     def priority_completed(self, priority):
@@ -182,7 +181,7 @@ class QTHProblem(
     ModelicaMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    model_name = "Westland_QTH"
+    model_name = "Double_ring_QTH"
 
     def goal_programming_options(self):
         options = super().goal_programming_options()
