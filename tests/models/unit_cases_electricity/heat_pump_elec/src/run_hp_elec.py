@@ -46,14 +46,14 @@ class _GoalsAndOptions:
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["heat_loss_disconnected_pipe"] = False
-        options["minimum_velocity"] = 0.0
+        # options["heat_loss_disconnected_pipe"] = False
+        options["minimum_velocity"] = 0.0001
 
         return options
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        # options["solver"] = "gurobi"
         return options
 
 
@@ -162,5 +162,5 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem)
-    run_optimization_problem(ElectricityProblem)
+    run_optimization_problem(HeatProblem2)
+    # run_optimization_problem(ElectricityProblem)

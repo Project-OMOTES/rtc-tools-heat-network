@@ -229,6 +229,9 @@ def energy_conservation_test(solution, results):
     for d in solution.heat_network_components.get("heat_pump", []):
         energy_sum += results[f"{d}.Power_elec"]
 
+    for d in solution.heat_network_components.get("heat_pump_elec", []):
+        energy_sum += results[f"{d}.Power_elec"]
+
     for p in solution.heat_network_components.get("pipe", []):
         energy_sum -= abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"])
         if f"{p}__is_disconnected" in results.keys():

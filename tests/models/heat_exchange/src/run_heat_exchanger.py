@@ -10,6 +10,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
@@ -113,7 +114,9 @@ class HeatProblemTvarSecondary(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.0001
+        options["heat_loss_disconnected_pipe"] = True
+        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
 
@@ -121,14 +124,14 @@ class HeatProblemTvarSecondary(
         temperatures = []
         if carrier == 7212673879469902607010:
             # supply
-            temperatures = [70.0, 110.0]
+            temperatures = [70.0, 90.0]
 
         return temperatures
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
+        for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
@@ -180,7 +183,7 @@ class HeatProblemTvar(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
+        for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
@@ -233,7 +236,7 @@ class HeatProblemTvarDisableHEX(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
+        for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:

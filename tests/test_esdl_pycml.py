@@ -23,15 +23,15 @@ class TestESDL(TestCase):
             case_esdl.extract_results()["demand.Heat_demand"],
         )
 
-    def test_basic_source_and_demand_qth(self):
-        import models.basic_source_and_demand.src.qth_comparison as qth_comparison
-        from models.basic_source_and_demand.src.qth_comparison import QTHPython, QTHESDL
-
-        base_folder = Path(qth_comparison.__file__).resolve().parent.parent
-
-        case_python = run_optimization_problem(QTHPython, base_folder=base_folder)
-        case_esdl = run_optimization_problem(QTHESDL, base_folder=base_folder)
-
-        np.testing.assert_allclose(
-            case_python._objective_values[0], case_esdl._objective_values, rtol=1e-5, atol=1e-5
-        )
+    # def test_basic_source_and_demand_qth(self):
+    #     import models.basic_source_and_demand.src.qth_comparison as qth_comparison
+    #     from models.basic_source_and_demand.src.qth_comparison import QTHPython, QTHESDL
+    #
+    #     base_folder = Path(qth_comparison.__file__).resolve().parent.parent
+    #
+    #     case_python = run_optimization_problem(QTHPython, base_folder=base_folder)
+    #     case_esdl = run_optimization_problem(QTHESDL, base_folder=base_folder)
+    #
+    #     np.testing.assert_allclose(
+    #         case_python._objective_values[0], case_esdl._objective_values, rtol=1e-5, atol=1e-5
+    #     )

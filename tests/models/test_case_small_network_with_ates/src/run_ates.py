@@ -1,10 +1,5 @@
 import datetime
 
-from rtctools.optimization.single_pass_goal_programming_mixin import (
-    CachingQPSol,
-    SinglePassGoalProgrammingMixin,
-)
-
 import esdl
 
 import numpy as np
@@ -14,8 +9,13 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
+)
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
 

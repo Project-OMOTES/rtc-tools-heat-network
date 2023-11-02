@@ -377,7 +377,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
-            Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
             **params,
@@ -518,8 +518,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
+        max_current = 142.0
 
-        modifiers = dict(Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0))
+        modifiers = dict(
+            Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
+            ElectrticityIn=dict(
+                Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
+                I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
+            ),
+            length=asset.attributes.get("length", 1.0),
+        )
 
         return ElectricityDemand, modifiers
 
@@ -569,7 +577,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0), I=dict(min=-142.0, max=142.0), Power=dict(nominal=1e2)
+                V=dict(min=0.0, max=1000.0, nominal=230.0),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1230.0 / 2.0),
+            ),
+            ElectricityIn=dict(
+                V=dict(min=0.0, max=1000.0, nominal=230.0),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1230.0 / 2.0),
             ),
         )
         return ElectricityCable, modifiers
