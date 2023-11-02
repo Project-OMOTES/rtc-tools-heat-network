@@ -12,7 +12,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassG
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
 
@@ -94,7 +93,7 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        options["minimum_velocity"] = 0.0001
 
         return options
 
