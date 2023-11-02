@@ -10,7 +10,7 @@ from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 
 class TestEndScenarioSizingAnnualized(TestCase):
     def test_end_scenario_sizing_annualized(self):
-        from models.test_case_small_network_optional_assets_annualized.src.run_annualized import HeatProblemAnnulized
+        from models.test_case_small_network_optional_assets_annualized.src.run_annualized import HeatProblemDiscAnnualizedCost
         import models.test_case_small_network_optional_assets_annualized.src.run_annualized as run_annualized
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
@@ -18,7 +18,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         # solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
-        solution = run_optimization_problem(HeatProblemAnnulized, base_folder=base_folder)
+        solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
 
         results = solution.extract_results()
         # In the future we want to check the following
