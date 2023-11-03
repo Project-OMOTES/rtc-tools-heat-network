@@ -14,15 +14,14 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.timeseries import Timeseries
 
 from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
-
-from .base_component_type_mixin import BaseComponentTypeMixin
-from .head_loss_mixin import (
+from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
+from rtctools_heat_network.head_loss_mixin import (
     HeadLossOption,
     _HeadLossMixin,
     _MinimizeHeadLosses as _MinimizeHeadLossesBase,
     _MinimizeHydraulicPower as _MinimizeHydraulicPowerBase,
 )
-from .heat_network_common import (
+from rtctools_heat_network.heat_network_common import (
     CheckValveStatus,
     ControlValveDirection,
     NodeConnectionDirection,
