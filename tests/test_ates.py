@@ -10,6 +10,11 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestAtes(TestCase):
     def test_ates(self):
+        """
+        This test checks the constraints concerning the heat2discharge and energy conservation for
+        the ates. THe heat loss model used annd the typical cyclic constraint that will be applied
+        in most use cases.
+        """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import (
             HeatProblem,
