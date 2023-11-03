@@ -373,5 +373,5 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblemPlacingOverTime)
     results = sol.extract_results()

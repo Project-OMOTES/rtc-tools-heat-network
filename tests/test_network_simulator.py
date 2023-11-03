@@ -42,9 +42,9 @@ class TestNetworkSimulator(TestCase):
         np.testing.assert_allclose(
             results["HeatProducer_1.Heat_source"],
             0.0,
-            err_msg="Heat producer 1 should only cater for the heat loss "
-            "in the connected pipe, due to producer 2 being sufficient for "
-            "the total heat demand and it has the 1st priority for usage",
+            err_msg="Heat producer 1 should be completely disabled "
+            ", due to producer 2 being sufficient for "
+            "the total heat demand (incl. heat losses) and it has the 1st priority for usage",
             rtol=1.0e-3,
             atol=1.0e-3,
         )

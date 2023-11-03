@@ -176,6 +176,11 @@ class HeatProblemSetPointConstraints(
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 class HeatProblemTvarsup(
     _GoalsAndOptions,
@@ -357,10 +362,9 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    # sol = run_optimization_problem(
-    #     HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}}
-    # )
-    sol = run_optimization_problem(HeatProblemProdProfile)
+    sol = run_optimization_problem(
+        HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
+    )
     results = sol.extract_results()
     # import matplotlib.pyplot as plt
     #

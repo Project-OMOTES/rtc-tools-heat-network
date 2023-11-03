@@ -152,7 +152,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Heat_demand=dict(max=max_demand),
+            Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
@@ -228,7 +228,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         self._set_q_nominal(asset, q_nominal)
 
-        hfr_max = self.rho * self.cp * q_max * temperature
+        # TODO: This might be an underestimation. We need to add the total
+        #  heat losses in the system to get a proper upper bound. Maybe move
+        #  calculation of Heat bounds to the HeatMixin?
+        hfr_max = 2.0 * (
+            self.rho * self.cp * q_max * temperature
+        )  # TODO: are there any physical implications of using this bound
 
         assert hfr_max > 0.0
 
