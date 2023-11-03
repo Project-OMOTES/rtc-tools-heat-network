@@ -8,7 +8,7 @@ from rtctools._internal.alias_tools import AliasDict
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.timeseries import Timeseries
 
-from rtctools_heat_network.qth_mixin import HeadLossOption, QTHMixin
+from rtctools_heat_network.qth_not_maintained.qth_mixin import HeadLossOption, QTHMixin
 
 
 class BufferTargetDischargeGoal(Goal):

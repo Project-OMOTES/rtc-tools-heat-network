@@ -3,7 +3,7 @@ import logging
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from . import __version__
+from .. import __version__
 
 
 def run_heat_network_optimization(heat_class, qht_class, *args, log_level=logging.INFO, **kwargs):

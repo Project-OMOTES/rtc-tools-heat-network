@@ -4,8 +4,8 @@ import numpy as np
 
 from rtctools.optimization.timeseries import Timeseries
 
-from .base_component_type_mixin import BaseComponentTypeMixin
-from .heat_network_common import PipeFlowDirection
+from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
+from rtctools_heat_network.heat_network_common import PipeFlowDirection
 
 
 class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):

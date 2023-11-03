@@ -30,7 +30,7 @@ from rtctools_heat_network.modelica_component_type_mixin import (
 )
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
-from rtctools_heat_network.qth_mixin import QTHMixin
+from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 from .common import Asset
 from .esdl_heat_model import ESDLHeatModel
