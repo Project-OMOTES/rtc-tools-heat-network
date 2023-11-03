@@ -18,7 +18,7 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
 
         # This optimization problem is to see whether the correct minimum delta temperaute is
-        # chose by the optimization, minimum of 21 deg is needed, only the 75/60 option is
+        # chose by the optimization, minimum of 21 deg is needed, only the 85/60 option is
         # feasible, note that a maximum velocity is set low to achieve this.
         results = heat_problem.extract_results()
 
@@ -28,7 +28,7 @@ class TestVaryingTemperature(TestCase):
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
 
         # Check that the lowest return temperature is selected
-        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 55.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)

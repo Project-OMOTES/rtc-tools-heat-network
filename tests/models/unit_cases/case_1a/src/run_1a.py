@@ -12,7 +12,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.qth_mixin import QTHMixin
+from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 
 class TargetDemandGoal(Goal):
@@ -78,7 +78,7 @@ class HeatProblemTvar(HeatProblem):
 
         if carrier == 3625334968694477359000:
             # return
-            temperatures = [55.0, 60.0]
+            temperatures = [60.0, 65.0]
 
         return temperatures
 
