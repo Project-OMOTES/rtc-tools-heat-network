@@ -2972,7 +2972,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         unique_pipe_classes = self.get_unique_pipe_classes()
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
-        for p in self.hot_pipes:
+        for p in self.heat_network_components.get("pipe", []):
             try:
                 pipe_classes = self.__pipe_topo_pipe_class_map[p]
             except KeyError:
@@ -3125,20 +3125,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             0.0,
                         )
                     )
-
-            # set the max discharge
-            max_discharge = self.extra_variable(self.__pipe_topo_max_discharge_map[p])
-            max_discharges = [c.maximum_discharge for c in pipe_classes.keys()]
-            max_discharge_expr = sum(s * d for s, d in zip(variables.values(), max_discharges))
-
-            constraints.append(
-                (
-                    (max_discharge - max_discharge_expr)
-                    / self.variable_nominal(self.__pipe_topo_max_discharge_map[p]),
-                    0.0,
-                    0.0,
-                )
-            )
 
             # Match the indicators to the diameter symbol
             diam_sym_name = self.__pipe_topo_diameter_map[p]
