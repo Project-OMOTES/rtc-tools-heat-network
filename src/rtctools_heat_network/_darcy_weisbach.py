@@ -109,8 +109,8 @@ def get_linear_pipe_dh_vs_q_fit(
     diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
 ):
     """
-    This function a set of linear line coefficients to approximate a head loss curve with a set
-    of linear inequality constraints.
+    This function returns a set of coefficients to approximate a head loss curve with linear
+    functions in the form of: head loss = b + (a * Q)
     """
     area = math.pi * diameter**2 / 4
 

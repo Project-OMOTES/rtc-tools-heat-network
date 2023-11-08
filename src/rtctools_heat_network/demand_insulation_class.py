@@ -5,9 +5,12 @@ from dataclasses import dataclass
 class DemandInsulationClass:
     """
     This class defines the properties for an insulation level/standard. The optimizer can
-    select out of a list of insulation levels for each demand. Insulation also affects the demand
-    profile and thus the amount of energy that is consumed and the required temperature and thus
-    can also affect the feasible network temperature selected.
+    select out of a list of insulation levels for each demand. There is a cost associated to
+    changing a demand from its existing insulation level to another insulation level. Once the
+    insulation is installed it will affect the demand profile and thus the amount of energy that is
+    consumed. It will also affect the required temperature at the demand which can have an impact
+    on the feasible network temperature selected. For these reasons this class consists out of the
+    following variables:
     - name_insulation_level: Defines the name of the insulation level
     - name_demand: Demand asset to which the insulation level can apply
     - minimum_temperature_deg: Is the minimum temperature needed at the demand in unit deg.

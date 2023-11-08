@@ -20,7 +20,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
     def pre(self):
         """
-        In this pre method the topology object of the heat network is constructed. Meaning that for
+        In this function the topology object of the heat network is constructed. Meaning that for
         nodes, busses and storage assets their relevant information on the direction and connections
         on the ports is gathered and stored in the topology object.
         """

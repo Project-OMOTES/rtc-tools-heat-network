@@ -10,13 +10,13 @@ from .heat_network_common import PipeFlowDirection
 
 class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
     """
-    This class determins implied flow direction based upon the lb and ub of the problem.
-    This method is only applied for the non-linear problem which is currently not used.
+    This class determines implied flow direction based upon the lower bounds and upper bounds of
+    the problem. This method is only applied for the non-linear problem which is currently not used.
     """
 
     def pre(self):
         """
-        In this pre method a dict is constructed with the implied flow directions based upon bounds
+        In this function a dict is constructed with the implied flow directions based upon bounds
         on flow, Q.
         """
         super().pre()
@@ -48,8 +48,8 @@ class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
 
     def constant_inputs(self, ensemble_member):
         """
-        Returns a timeseries object with the lower and ubber bound of the direction constraints.
-        This object is then used to update the bounds of the problem.
+        Returns a timeseries object with the lower and upper bound of the direction constraints for
+        all the pipes. This object is then used to update the bounds of the problem.
         """
         inputs = super().constant_inputs(ensemble_member)
         for p, d in self.__implied_directions[ensemble_member].items():
