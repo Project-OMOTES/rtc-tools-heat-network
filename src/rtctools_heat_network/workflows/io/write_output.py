@@ -783,6 +783,25 @@ class ScenarioOutput(HeatMixin):
                         # If the asset has been placed
                         asset = _name_to_asset(asset_name)
 
+                        # Get index of outport which will be used to assign the profile data to
+                        index_outport = -1
+                        for ip in range(len(asset.port)):
+                            if asset.port[ip].name == "Out":
+                                if index_outport == -1:
+                                    index_outport = ip
+                                else:
+                                    logger.error(
+                                        f"Asset {asset_name} has more than 1 outport, which is"
+                                        "intended for use to assign result profile data to"
+                                    )
+                                    sys.exit(1)
+                        if index_outport == -1:
+                            logger.error(
+                                f"Variable {index_outport} has not been assigned to the asset"
+                                "outport"
+                            )
+                            sys.exit(1)
+
                         try:
                             # For all components dealing with one hydraulic system
                             if isinstance(
@@ -811,7 +830,7 @@ class ScenarioOutput(HeatMixin):
                                     port=self.influxdb_port,
                                     host=self.influxdb_host,
                                 )
-                                asset.port[1].profile.append(profile_attributes)
+                                asset.port[index_outport].profile.append(profile_attributes)
 
                             # Add variable values in new column
                             data_row.append(results[f"{asset_name}." + variable][ii])

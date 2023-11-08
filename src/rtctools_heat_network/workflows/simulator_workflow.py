@@ -355,10 +355,23 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_database": "grow_workflow_test",
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         NetworkSimulatorHIGHSWeeklyTimeStep,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
 
 
