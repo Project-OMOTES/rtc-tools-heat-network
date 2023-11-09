@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from rtctools_heat_network.util import run_optimization_problem
+from rtctools.util import run_optimization_problem
 
 
 class TestSetpointConstraints(TestCase):

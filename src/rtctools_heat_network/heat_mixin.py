@@ -75,6 +75,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_cost_nominals = {}
 
         self.__pipe_topo_heat_loss_var = {}
+        self.__pipe_topo_heat_loss_path_var = {}
         self.__pipe_topo_heat_loss_var_bounds = {}
         self.__pipe_topo_heat_loss_map = {}
         self.__pipe_topo_heat_loss_nominals = {}
@@ -222,7 +223,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # Mixed-integer formulation applies only to hot pipes, not to cold
         # pipes.
         for p in self.heat_network_components.get("pipe", []):
-            flow_dir_var = f"{p}__flow_direct_var"
+            neighbour = self.has_related_pipe(p)
+            if neighbour and p not in self.hot_pipes:
+                flow_dir_var = f"{self.hot_to_cold_pipe(p)}__flow_direct_var"
+            else:
+                flow_dir_var = f"{p}__flow_direct_var"
 
             self.__pipe_to_flow_direct_map[p] = flow_dir_var
             self.__flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
@@ -248,7 +253,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
             if parameters[f"{p}.disconnectable"]:
-                disconnected_var = f"{p}__is_disconnected"
+                neighbour = self.has_related_pipe(p)
+                if neighbour and p not in self.hot_pipes:
+                    disconnected_var = f"{self.hot_to_cold_pipe(p)}__is_disconnected"
+                else:
+                    disconnected_var = f"{p}__is_disconnected"
 
                 self.__pipe_disconnect_map[p] = disconnected_var
                 self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
@@ -414,7 +423,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # override the .Heat_loss parameter for cold pipes, even though
             # it is not actually used in the optimization problem.
             heat_loss_var_name = f"{pipe}__hn_heat_loss"
-            self.__pipe_topo_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if len(self.temperature_regimes(carrier_id)) == 0:
+                self.__pipe_topo_heat_loss_var[heat_loss_var_name] = ca.MX.sym(
+                    heat_loss_var_name)
+            else:
+                self.__pipe_topo_heat_loss_path_var[heat_loss_var_name] = ca.MX.sym(
+                    heat_loss_var_name)
             self.__pipe_topo_heat_loss_map[pipe] = heat_loss_var_name
 
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
@@ -1016,6 +1031,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__pipe_topo_pipe_class_discharge_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_cost_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_heat_loss_ordering_var.values())
+        variables.extend(self.__pipe_topo_heat_loss_var.values())
         return variables
 
     @property
@@ -1023,7 +1039,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables = super().path_variables.copy()
         variables.extend(self.__flow_direct_var.values())
         variables.extend(self.__pipe_disconnect_var.values())
-        variables.extend(self.__pipe_topo_heat_loss_var.values())
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
@@ -1033,6 +1048,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__disabled_hex_var.values())
         variables.extend(self.__cumulative_investments_made_in_eur_var.values())
         variables.extend(self.__asset_is_realized_var.values())
+        variables.extend(self.__pipe_topo_heat_loss_path_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -3163,7 +3179,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             pipe_classes = []
 
             heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
-            heat_loss_sym = self.__state_vector_scaled(heat_loss_sym_name, ensemble_member)
 
             constraint_nominal = self.variable_nominal(heat_loss_sym_name)
 
@@ -3172,6 +3187,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # TODO: change to formualtion where only pipes with vayring temp have heat loss path variable
             if len(temperatures) == 0:
+                heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                 try:
                     heat_losses = self.__pipe_topo_heat_losses[p]
                     big_m = 2.0 * self.bounds()[heat_loss_sym_name][1]
@@ -3183,8 +3199,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 (
                                     heat_loss_sym
-                                    - heat_losses[count] #* np.ones((len(self.times()),1))
-                                    + (1.0 - pc) * big_m #* np.ones((len(self.times()),1))
+                                    - heat_losses[count]
+                                    + (1.0 - pc) * big_m
                                 )
                                 / constraint_nominal,
                                 0.0,
@@ -3195,8 +3211,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 (
                                     heat_loss_sym
-                                    - heat_losses[count] #* np.ones((len(self.times()),1))
-                                    - (1.0 - pc) * big_m #* np.ones((len(self.times()),1))
+                                    - heat_losses[count]
+                                    - (1.0 - pc) * big_m
                                 )
                                 / constraint_nominal,
                                 -np.inf,
@@ -3219,8 +3235,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
             else:
+                heat_loss_sym = self.__state_vector_scaled(heat_loss_sym_name, ensemble_member)
                 for temperature in temperatures:
-                    temperature_is_selected = self.state(
+                    temperature_is_selected = self.state_vector(
                         f"{carrier}_{temperature}"
                     )
                     if len(pipe_classes) == 0:
@@ -3235,7 +3252,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 (
                                     heat_loss_sym
-                                    - heat_loss
+                                    - heat_loss * np.ones((len(self.times()), 1))
                                     + (1.0 - temperature_is_selected) * big_m
                                 )
                                 / constraint_nominal,
@@ -3247,7 +3264,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             (
                                 (
                                     heat_loss_sym
-                                    - heat_loss
+                                    - heat_loss * np.ones((len(self.times()), 1))
                                     - (1.0 - temperature_is_selected) * big_m
                                 )
                                 / constraint_nominal,
@@ -3274,8 +3291,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                                 (
                                     (
                                         heat_loss_sym
-                                        - heat_losses[count]
-                                        + (1.0 - pc) * big_m
+                                        - heat_losses[count] * np.ones(len(self.times()))
+                                        + (1.0 - pc) * big_m * np.ones(len(self.times()))
                                         + (1.0 - temperature_is_selected) * big_m
                                     )
                                     / constraint_nominal,
@@ -3287,8 +3304,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                                 (
                                     (
                                         heat_loss_sym
-                                        - heat_losses[count]
-                                        - (1.0 - pc) * big_m
+                                        - heat_losses[count] * np.ones(len(self.times()))
+                                        - (1.0 - pc) * big_m * np.ones(len(self.times()))
                                         - (1.0 - temperature_is_selected) * big_m
                                     )
                                     / constraint_nominal,
