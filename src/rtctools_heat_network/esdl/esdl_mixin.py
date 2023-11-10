@@ -35,6 +35,7 @@ from rtctools_heat_network.qth_mixin import QTHMixin
 from .common import Asset
 from .esdl_heat_model import ESDLHeatModel
 from .esdl_qth_model import ESDLQTHModel
+from .esdl_parser import ESDLStringParser
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -67,13 +68,12 @@ class ESDLMixin(
     __minimum_pipe_size_name = "DN150"
 
     def __init__(self, *args, **kwargs):
+        esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
-        if esdl_string is not None:
-            esdl_path = None
-            self.esdl_string = base64.b64decode(esdl_string).decode("utf-8")
-            self.__run_info = None
-        else:
-            self.esdl_string = None
+        if esdl_string is None:
+            # TODO: remove this runinfo stuff, instead a path to the the ESDL file should be
+            #  provided as esdl_string too though I'm not sure if reusing the same argument name is
+            #  nice.
             self.esdl_run_info_path = kwargs.get(
                 "esdl_run_info_path", Path(kwargs["input_folder"]) / "RunInfo.xml"
             )
@@ -85,12 +85,16 @@ class ESDLMixin(
                 self.esdl_pi_output_data_config = _ESDLOutputDataConfig
 
             self.__run_info = _RunInfoReader(self.esdl_run_info_path)
-            esdl_path = self.__run_info.esdl_file
+            esdl_string = self.__run_info.esdl_file
 
-        self.__esdl_assets, self._profiles, self.__esdl_carriers = _esdl_to_assets(
-            self.esdl_string, esdl_path
-        )
+        esdl_parser = esdl_parser_class(esdl_string=esdl_string)
+        self.__esdl_assets = esdl_parser.get_assets()
+        self.__esdl_carriers = esdl_parser.get_carrier_properties()
+        self.__esdl_model = esdl_parser.get_esdl_model()
 
+
+        # TODO: check with Jim if this can be removed. Seems like old stuff from cf overriding stuff
+        # which I guess is no longer used?
         if self.__run_info is not None and self.__run_info.parameters_file is not None:
             self.__esdl_assets = _overwrite_parameters(
                 self.__run_info.parameters_file, self.__esdl_assets
