@@ -1,4 +1,5 @@
 import logging
+import sys
 from datetime import timedelta as td
 
 import esdl
@@ -124,6 +125,19 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             profile.startDate,
             profile.endDate,
         )
+        # Error check: ensure that the profile data has a time resolutuon of 3600s (1hour) as
+        # expected
+        for idp in range(len(time_series_data.profile_data_list) - 1):
+            time_resolution = (
+                time_series_data.profile_data_list[idp + 1][0]
+                - time_series_data.profile_data_list[idp][0]
+            )
+            if time_resolution.seconds != 3600:
+                logger.error(
+                    f"The time resolution of the profile:{profile.measurement}-{profile.field} is"
+                    "not 3600s as expected"
+                )
+                sys.exit(1)
 
         data_points = {
             t[0].strftime("%Y-%m-%dT%H:%M:%SZ"): t[1] for t in time_series_data.profile_data_list
