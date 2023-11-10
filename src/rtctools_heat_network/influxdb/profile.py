@@ -118,14 +118,11 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
         )
         time_series_data = InfluxDBProfileManager(conn_settings)
 
-        # TODO: to be resolve the need for this line of code below - Edwin
-        end_date = profile.endDate.replace(hour=profile.endDate.hour + 1)
-
         time_series_data.load_influxdb(
             '"' + profile.measurement + '"',
             [profile.field],
             profile.startDate,
-            end_date,
+            profile.endDate,
         )
 
         data_points = {
