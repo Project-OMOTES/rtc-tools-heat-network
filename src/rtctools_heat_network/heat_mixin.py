@@ -482,7 +482,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = np.min(
+                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = np.median(
                     [x for x in heat_losses if x > 0]
                 )
 
@@ -1583,7 +1583,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 # Heat loss is variable depending on pipe class
                 heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
                 try:
-                    heat_loss = self.__pipe_topo_heat_loss_var[heat_loss_sym_name]
+                    heat_loss = self.variable(heat_loss_sym_name)
                 except KeyError:
                     heat_loss = self.__pipe_topo_heat_loss_path_var[heat_loss_sym_name]
                 heat_loss_nominal = self.variable_nominal(heat_loss_sym_name)
@@ -3215,34 +3215,43 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     heat_losses = self.__pipe_topo_heat_losses[p]
                     big_m = 2.0 * self.bounds()[heat_loss_sym_name][1]
                     pipe_classes = self.__pipe_topo_pipe_class_map[p]
+                    variables = [
+                        self.extra_variable(var_name, ensemble_member)
+                        for pc, var_name in pipe_classes.items()
+                    ]
                     count = 0
+                    heat_loss_expr = 0.
+                    for i in range(len(heat_losses)):
+                        heat_loss_expr = heat_loss_expr + variables[i] * heat_losses[i]
+                    constraints.append(
+                        ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, np.inf))
                     for pc_var_name in pipe_classes.values():
                         pc = self.extra_variable(pc_var_name)
-                        constraints.append(
-                            (
-                                (
-                                    heat_loss_sym
-                                    - heat_losses[count]
-                                    + (1.0 - pc) * big_m
-                                )
-                                / constraint_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
-                        constraints.append(
-                            (
-                                (
-                                    heat_loss_sym
-                                    - heat_losses[count]
-                                    - (1.0 - pc) * big_m
-                                )
-                                / constraint_nominal,
-                                -np.inf,
-                                0.0,
-                            )
-                        )
-                        count += 1
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             heat_loss_sym
+                        #             - heat_losses[count]
+                        #             + (1.0 - pc) * big_m
+                        #         )
+                        #         / (constraint_nominal * big_m) ** 0.5,
+                        #         0.0,
+                        #         np.inf,
+                        #     )
+                        # )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             heat_loss_sym
+                        #             - heat_losses[count]
+                        #             - (1.0 - pc) * big_m
+                        #         )
+                        #         / (constraint_nominal * big_m) ** 0.5,
+                        #         -np.inf,
+                        #         0.0,
+                        #     )
+                        # )
+                        # count += 1
                 except KeyError:
                     heat_loss = self._pipe_heat_loss(
                     self.heat_network_options(),
