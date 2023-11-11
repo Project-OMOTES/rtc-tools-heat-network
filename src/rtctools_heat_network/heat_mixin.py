@@ -482,7 +482,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = np.median(
+                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = 10. * np.median(
                     [x for x in heat_losses if x > 0]
                 )
 
@@ -546,9 +546,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         pipe_class_cost_ordering_name
                     ] = (0.0, 1.0)
 
-                    pipe_class_heat_loss_ordering_name = (
-                        f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
-                    )
+                    # pipe_class_heat_loss_ordering_name = (
+                    #     f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                    # )
 
                     self.__pipe_topo_pipe_class_heat_loss_ordering_map[pipe][
                         c
@@ -1878,7 +1878,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     (
                         (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
                         / heat_nominal,
-                        0.0,
+                        -np.inf,
                         0.0,
                     )
                 )
@@ -2218,14 +2218,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         np.inf,
                     )
                 )
-                constraints.append(
-                    (
-                        (heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"])
-                        / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+                # constraints.append(
+                #     (
+                #         (heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"])
+                #         / constraint_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
             else:
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
@@ -2269,18 +2269,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         np.inf,
                     )
                 )
-                constraints.append(
-                    (
-                        (
-                            heat_out
-                            - discharge * cp * rho * parameters[f"{b}.T_return"]
-                            - (1.0 - is_buffer_charging) * big_m
-                        )
-                        / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+                # constraints.append(
+                #     (
+                #         (
+                #             heat_out
+                #             - discharge * cp * rho * parameters[f"{b}.T_return"]
+                #             - (1.0 - is_buffer_charging) * big_m
+                #         )
+                #         / constraint_nominal,
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
             else:
                 for return_temperature in return_temperatures:
                     ret_temperature_is_selected = self.state(f"{ret_carrier}_{return_temperature}")
@@ -3624,18 +3624,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
             elif parameters[f"{asset_name}.state"] == 2:  # Optional assets for use
                 if asset_name in [*self.heat_network_components.get("pipe", [])]:
-                    if asset_name in self.cold_pipes:
-                        # we optimize purely on hot pipes
-                        continue
                     investment_cost_coefficient = self.extra_variable(
                         self.__pipe_topo_cost_map[asset_name], ensemble_member
                     )
-                    asset_size = parameters[f"{asset_name}.length"] * 2.0
-                    nominal = max(
-                        parameters[f"{asset_name}.investment_cost_coefficient"]
-                        * parameters[f"{asset_name}.length"],
-                        1.0,
-                    )
+                    asset_size = parameters[f"{asset_name}.length"]
+                    nominal = self.variable_nominal(self.__pipe_topo_cost_map[asset_name])
                 else:
                     max_var = self._asset_max_size_map[asset_name]
                     asset_size = self.extra_variable(max_var, ensemble_member)
