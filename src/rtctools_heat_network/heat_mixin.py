@@ -482,7 +482,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = 10. * np.median(
+                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = 100. * np.median(
                     [x for x in heat_losses if x > 0]
                 )
 
@@ -1819,8 +1819,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     (
                         (heat_out - discharge * cp * rho * parameters[f"{d}.T_return"])
                         / heat_nominal,
+                        -np.inf,
                         0.0,
-                        np.inf,
                     )
                 )
             else:
@@ -1878,7 +1878,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     (
                         (heat_out - discharge * cp * rho * parameters[f"{s}.T_supply"])
                         / heat_nominal,
-                        -np.inf,
+                        0.0,
                         0.0,
                     )
                 )
@@ -2218,14 +2218,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         np.inf,
                     )
                 )
-                # constraints.append(
-                #     (
-                #         (heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"])
-                #         / constraint_nominal,
-                #         -np.inf,
-                #         0.0,
-                #     )
-                # )
+                constraints.append(
+                    (
+                        (heat_in - discharge * cp * rho * parameters[f"{b}.T_supply"])
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
             else:
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
@@ -2261,26 +2261,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if len(return_temperatures) == 0:
                 constraint_nominal = (heat_nominal * cp * rho * dt * q_nominal) ** 0.5
                 # Only when consuming/charging the heatout should match the q rho cp Tret
-                constraints.append(
-                    (
-                        (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"])
-                        / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
                 # constraints.append(
                 #     (
-                #         (
-                #             heat_out
-                #             - discharge * cp * rho * parameters[f"{b}.T_return"]
-                #             - (1.0 - is_buffer_charging) * big_m
-                #         )
+                #         (heat_out - discharge * cp * rho * parameters[f"{b}.T_return"])
                 #         / constraint_nominal,
-                #         -np.inf,
                 #         0.0,
+                #         np.inf,
                 #     )
                 # )
+                constraints.append(
+                    (
+                        (
+                            heat_out
+                            - discharge * cp * rho * parameters[f"{b}.T_return"]
+                            - (1.0 - is_buffer_charging) * big_m
+                        )
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
             else:
                 for return_temperature in return_temperatures:
                     ret_temperature_is_selected = self.state(f"{ret_carrier}_{return_temperature}")
