@@ -786,19 +786,20 @@ class ScenarioOutput(HeatMixin):
                         # Get index of outport which will be used to assign the profile data to
                         index_outport = -1
                         for ip in range(len(asset.port)):
-                            if asset.port[ip].name == "Out":
+                            if isinstance(asset.port[ip], esdl.OutPort):
                                 if index_outport == -1:
                                     index_outport = ip
                                 else:
-                                    logger.error(
-                                        f"Asset {asset_name} has more than 1 outport, which is"
-                                        "intended for use to assign result profile data to"
+                                    logger.warning(
+                                        f"Asset {asset_name} has more than 1 OutPort, and the "
+                                        "profile data has been assigned to the 1st OutPort"
                                     )
-                                    sys.exit(1)
+                                    break
+
                         if index_outport == -1:
                             logger.error(
                                 f"Variable {index_outport} has not been assigned to the asset"
-                                "outport"
+                                "OutPort"
                             )
                             sys.exit(1)
 
