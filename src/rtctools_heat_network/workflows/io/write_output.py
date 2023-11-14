@@ -857,9 +857,11 @@ class ScenarioOutput(HeatMixin):
             )
 
             influxdb_profile_manager = InfluxDBProfileManager(conn_settings, profiles)
+            # tags = {"region": "us-west"}  # test tags
             _ = influxdb_profile_manager.save_influxdb(
                 measurement=energy_system.id,
                 field_names=influxdb_profile_manager.profile_header[1:],
+                # tags=tags,
             )
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
@@ -890,6 +892,18 @@ class ScenarioOutput(HeatMixin):
             # # np.testing.assert_array_equal(ts_prof.values[2], 5.6)
             # # np.testing.assert_array_equal(ts_prof.values[3], 1.2)
             # # np.testing.assert_array_equal(len(ts_prof.values), 4)
+
+            # Test tags
+            # prof3 = InfluxDBProfileManager(conn_settings)
+            # dicts = [{"tag": "region", "value": "us-west"}]
+            # prof3.load_influxdb(
+            #     '"' + energy_system.id + '"' , ["ResidualHeatSource_72d7_HeatIn.Q"],
+            #     profiles.start_datetime,
+            #     profiles.end_datetime,
+            #     dicts,
+            # )
+            # test = 0.0
+            
 
         # ------------------------------------------------------------------------------------------
         # Save esdl file
