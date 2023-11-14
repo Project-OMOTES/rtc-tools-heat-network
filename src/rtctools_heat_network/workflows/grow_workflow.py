@@ -464,7 +464,6 @@ def main(runinfo_path, log_level):
         "influxdb_port": 8086,
         "influxdb_username": None,
         "influxdb_password": None,
-        "influxdb_database": "grow_workflow_test",
         "influxdb_ssl": False,
         "influxdb_verify_ssl": False,
     }
