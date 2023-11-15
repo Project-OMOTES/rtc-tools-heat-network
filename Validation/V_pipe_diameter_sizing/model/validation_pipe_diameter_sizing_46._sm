@@ -1,0 +1,52 @@
+WANDA STEADY    version 4.6.3.4533M_x86 
+
+This file contains the log of the computation process,
+including all component messages
+
+
+STEADY    started at  11:20:24  15-11-2023
+
+( I )  INFORMATION       Reading hydraulic data Physical-component input properties
+( I )  INFORMATION       Reading hydraulic system
+( I )  INFORMATION       Interpreting hydraulic system
+( I )  INFORMATION       Reading hydraulic data Physical-node      input properties
+At   0.0000     s VALVE    laVve                     Starts in open phase
+( I )  INFORMATION       Hydraulic steady state computation
+ Number of H-iterations:  10
+( I )  INFORMATION       Steady state solution found
+( I )  INFORMATION       Hydraulic steady state computation
+ Number of H-iterations:  11
+( I )  INFORMATION       Steady state solution found
+At   0.0000     s VALVE    laVve                     Starts in open phase
+At   0.0000     s VALVE    laVve                     Position is 0.1005 [-]
+                                                                                
+P O O L   R E P O R T                                                           
+======================================                                          
+Pool size:                    ********                                          
+Maximum number of pool arrays:     200                                          
+Maximum occupied pool size:       4358                                          
+Number of arrays used:              34                                          
+Pool utilisation:                 3860                                          
+Free pool space:              99995641                                          
+ 
+                                                                                
+H Y D R A U L I C   S Y S T E M   S T A T I S T I C S                           
+=====================================================                           
+Number of pipes components:                 2
+Number of supplier type components:         2
+Number of fall type components:             2
+Total number of hydraulic components:       6
+Number of H-nodes:                          5
+Number of Control components:               0
+                                                                                
+M E S S A G E   R E P O R T                                                     
+====================================================                            
+Number of informations:               11
+Number of warnings:                    0
+Number of errors:                      0
+Number of severe errors:               0
+Number of terminating errors:          0
+Total number of messages:             11
+
+
+STEADY    finished at  11:20:24  15-11-2023

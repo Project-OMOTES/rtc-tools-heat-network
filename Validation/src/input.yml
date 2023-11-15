@@ -1,0 +1,28 @@
+Pipe:
+  Length: 1600
+  Wall roughness: 0.002
+  Heat transf. input: Table
+#  Heat transfer. table:
+#      Columns: [ Outer layer diam (mm), Heat cond. coef. (W/m.K) ]
+#        Rows:
+#          - [ 100, 3 ]
+#  Heat trans. ground: yes
+#  Ground coverage: 2
+#  Thermal conductivity ground: yes
+#  Heat transfer. coef. at gl: 0
+#  Adjacent pipe: yes
+#  Pipe pair number: 1
+#  Distance between centre of pip: 2
+#  Ambient temp. at t = 0 [s]: 10
+#  Heat by tracing: 10
+Consumer:
+#  C-value (dH=CQ^2): 0.001
+  Initial heat supply: -1000000
+  Return temperature: 40.0
+Producer:
+  Constant temperature: 80.0
+  Power: 5000000
+
+
+
+

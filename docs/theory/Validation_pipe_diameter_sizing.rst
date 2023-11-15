@@ -1,6 +1,33 @@
-.. _sec_heat_loss:
-Heat loss
-=========
+.. _sec_V_pipe_D:
+Pipe diameter sizing
+====================
+
+
+=============================================================== ========================================================= =======================
+parameter                                                       Description                                               Units
+=============================================================== ========================================================= =======================
+:math:`Q_{demand}`                                              Pressure at node 1 and node 2                             Pa
+:math:`T_{supply}, T_{return}`                                  Temperature supply, temperature retun                               m
+:math:`f`                                                       Friction factor                                           \-
+:math:`D`                                                       Inner diameter of the pipe                                m
+:math:`e`                                                       Wall roughness of the pipe                           m
+:math:`\bar{\rho}=\frac{\rho_{1}+\rho_{2}}{2}`                  Average density                                           kg/m\ :sup:`3`
+:math:`c_p`
+:math:`g`                                                       Gravitational acceleration                                m/s\ :sup:`2`
+:math:`L`                                                       Length of the pipe                                        m
+:math:`\dot{m}`                                                 Mass flow rate through the pipe                           kg/s
+:math:`\h_{depth}`
+:math:`\T_{ground}`
+:math:`Q_{loss}`
+:math:`k_{iso}`
+:math:`k_{ground}`
+:math:`d_{iso}`
+:math:`CAPEX`
+:math:`OPEX`
+:math:`y`
+:math:`OPEX_{var}`
+:math:`OPEX_{fixed}`
+=============================================================== ========================================================= =======================
 
 Three types of heatlosses in the pipeline are considered, in accordance to the `NEN-EN 13941+A1 <https://www.nen.nl/nen-en-13941-1-2019-a1-2022-en-290896>`_.
 These are heat loss through:
