@@ -4415,7 +4415,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # REMOVE
         self._number_of_years=30
         # asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
-
         asset_categories  = ["source"]
         
         parameters = super().parameters(ensemble_member)
@@ -4436,8 +4435,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 INTEREST_RATE = 0.05
                 NOMINAL = 1.e6
                 
-                asset_life_years = self._number_of_years 
-                # asset.technical_life
+                asset_life_years = self._number_of_years
+                # parameters[f"{asset_name}.technical_life"]
+                # asset_life_years = symbol_name.technical_life
+                # parameters["HeatProducer_2.technical_life"]
+
+                
                 AEC_expression = calculate_annualized_equivalent_cost(investment_and_installation_cost, INTEREST_RATE, asset_life_years)
 
                 constraints.append(((symbol - AEC_expression) / NOMINAL, 0.0, 0.0))

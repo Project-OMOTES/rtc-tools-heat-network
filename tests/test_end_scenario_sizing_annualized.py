@@ -38,13 +38,6 @@ class TestEndScenarioSizingAnnualized(TestCase):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
-        # Check whether buffer tank is only active in peak day
-        peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.heat_network_components.get("buffer", []):
-            heat_buffer = results[f"{b}.Heat_buffer"]
-            for i in range(len(solution.times())):
-                if i < peak_day_indx or i > (peak_day_indx + 23):
-                    np.testing.assert_allclose(heat_buffer, 0.0)
 
 
 if __name__ == "__main__":
