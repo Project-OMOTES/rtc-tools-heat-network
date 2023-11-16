@@ -10,6 +10,8 @@ from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.profiles.profilemanager import ProfileManager
 
+# from esdl.profiles.excelprofilemanager import ExcelProfileManager
+
 import numpy as np
 
 import pandas as pd
@@ -17,6 +19,7 @@ import pandas as pd
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
+
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -850,24 +853,58 @@ class ScenarioOutput(HeatMixin):
                         tags=optim_simulation_tag,
                     )
                     # -- Test tags -- # do not delete - to be used in test case
-                    # prof3 = InfluxDBProfileManager(influxdb_conn_settings)
+
+                    # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
                     # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
-                    # prof3.load_influxdb(
+                    # prof_loaded_from_influxdb.load_influxdb(
                     #     # '"' + "ResidualHeatSource_72d7" + '"' ,
                     #     '"' + asset_name + '"' ,
-                    #     ["HeatIn.Q"],
+                    #     variables_one_hydraulic_system,
+                    #     # ["HeatIn.Q"],
                     #     # ["HeatIn.H"],
                     #     # ["Heat_flow"],
                     #     profiles.start_datetime,
                     #     profiles.end_datetime,
                     #     dicts,
                     # )
-                    # test = 0.0
+
+                    # ------------------------------------------------------------------------------
+                    # Do not delete the code below: is used in the development of profile viewer in
+                    # mapeditor
+                    # Write database to excel file and read in to recreate the database
+                    # database name: input esdl id
+                    # tags when saving to database: optim_simulation_tag = {"output_esdl_id":
+                    # output_esdl_id}
+
+                    # print("Save ESDL profile data to excel")
+                    # excel_prof_saved = ExcelProfileManager(
+                    #     source_profile=prof_loaded_from_influxdb
+                    # )
+                    # file_path_setting = (
+                    #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\{asset_name}.xlsx"
+                    # )
+                    # excel_prof_saved.save_excel(
+                    #     file_path=file_path_setting,
+                    #     sheet_name=input_energy_system_id
+                    # )
+                    # print("Read data from Excel")
+                    # excel_prof_read = ExcelProfileManager()
+                    # excel_prof_read.load_excel(file_path_setting)
+                    # print("Create database")
+                    # influxdb_profile_manager_create_new = InfluxDBProfileManager(
+                    #     influxdb_conn_settings, excel_prof_read
+                    # )
+                    # optim_simulation_tag = {"output_esdl_id": energy_system.id}
+                    # _ = influxdb_profile_manager_create_new.save_influxdb(
+                    #     measurement=asset_name,
+                    #     field_names=influxdb_profile_manager_create_new.profile_header[1:],
+                    #     tags=optim_simulation_tag,
+                    # )
+                    # ------------------------------------------------------------------------------
 
                 except Exception:
                     # If the asset has been deleted, thus also not placed
                     pass
-
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
             # try:
