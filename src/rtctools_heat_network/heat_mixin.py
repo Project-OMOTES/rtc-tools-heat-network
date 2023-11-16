@@ -4432,7 +4432,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
-                INTEREST_RATE = 0.05
+                INTEREST_RATE = 0.00
                 NOMINAL = 1.e6
                 
                 asset_life_years = self._number_of_years
@@ -4441,9 +4441,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 # parameters["HeatProducer_2.technical_life"]
 
                 
-                AEC_expression = calculate_annualized_equivalent_cost(investment_and_installation_cost, INTEREST_RATE, asset_life_years)
+                annuity_factor = calculate_annuity_factor(INTEREST_RATE, asset_life_years)
 
-                constraints.append(((symbol - AEC_expression) / NOMINAL, 0.0, 0.0))
+                constraints.append(((symbol - investment_and_installation_cost*annuity_factor) / NOMINAL, 0.0, 0.0))
 
         return constraints
 
@@ -4746,24 +4746,22 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
 
 
-def calculate_annualized_equivalent_cost(present_value, interest_rate, years_asset_life):
+def calculate_annuity_factor(discount_rate, years_asset_life):
     """
-    Calculate the annualized_equivalent_cost of a present_value
-    at an annual interest_rate over a specified number years_asset_life.
+    Calculate the annuity factor, given an annual discount_rate over a specified number years_asset_life.
 
     Parameters:
-        present_value (float): Present Value.
-        interest_rate (float): Annual Interest Rate (expressed as a decimal, e.g., 0.05 for 5%).
+        discount_rate (float): Annual discount rate (expressed as a decimal, e.g., 0.05 for 5%).
         years_asset_life (int): Number of Years.
 
     Returns:
         float: annualized_equivalent_cost.
 
     """
-    if interest_rate == 0:
-        annualized_equivalent_cost = present_value / years_asset_life
+    if discount_rate == 0:
+        annuity_factor = 1 / years_asset_life
     else:
-        annualized_equivalent_cost = present_value * (interest_rate / (1 - (1 + interest_rate) ** (-years_asset_life)))
-    return annualized_equivalent_cost
+        annuity_factor = (discount_rate / (1 - (1 + discount_rate) ** (-years_asset_life)))
+    return annuity_factor
 
 

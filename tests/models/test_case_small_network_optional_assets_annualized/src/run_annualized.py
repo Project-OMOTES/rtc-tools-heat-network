@@ -38,7 +38,7 @@ class CommonCostGoal(Goal):
         self.number_of_years = number_of_years
         self.target_max = 0.0
         self.function_range = (0.0, 1.0e8)
-        self.function_nominal = 1.0e7
+        self.function_nominal = 1.0e6
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
@@ -70,7 +70,7 @@ class CommonCostGoal(Goal):
 
     def calculate_cost(self, optimization_problem, cost, divide_by_years):
         if divide_by_years:
-# TODO: use number of years of individual assets
+            # TODO: use number of years of individual assets
             return optimization_problem.extra_variable(cost) / self.number_of_years
         else:
             return optimization_problem.extra_variable(cost)
@@ -78,7 +78,7 @@ class CommonCostGoal(Goal):
 
 class MinimizeNoDiscountedCostGoal(CommonCostGoal):
     def investment_cost(self, optimization_problem, asset_categories):
-        divide_by_years = True
+        divide_by_years = False
         cost_map_keys = ["_asset_installation_cost_map", "_asset_investment_cost_map"]
         return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
         # return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
@@ -86,7 +86,7 @@ class MinimizeNoDiscountedCostGoal(CommonCostGoal):
 
 class MinimizeDiscAnnualizedCostGoal(CommonCostGoal):
     def investment_cost(self, optimization_problem, asset_categories):
-        divide_by_years = True
+        divide_by_years = False
         cost_map_keys = ["_annualized_capex_var_map"]
         return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
 
