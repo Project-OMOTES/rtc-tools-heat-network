@@ -160,6 +160,7 @@ class EndScenarioSizing(
             self.__indx_max_peak,
             self.__heat_demand_nominal,
         ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
+
         logger.info("HeatProblem read")
 
     def bounds(self):
@@ -180,7 +181,8 @@ class EndScenarioSizing(
         options["minimum_velocity"] = 0.0
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
+        # options["neglect_pipe_heat_losses"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
@@ -255,8 +257,9 @@ class EndScenarioSizing(
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.05
+        gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
 
         return options
 

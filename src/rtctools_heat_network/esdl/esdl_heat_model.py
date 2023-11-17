@@ -231,11 +231,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self._set_q_nominal(asset, q_nominal)
 
         # TODO: This might be an underestimation. We need to add the total
-        # heat losses in the system to get a proper upper bound. Maybe move
-        # calculation of Heat bounds to the HeatMixin?
+        #  heat losses in the system to get a proper upper bound. Maybe move
+        #  calculation of Heat bounds to the HeatMixin?
         delta_temperature = supply_temperature - return_temperature
-        # hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
-        hfr_max = (
+        hfr_max = 2.0 * (
             self.rho * self.cp * q_max * delta_temperature
         )  # TODO: are there any physical implications of using this bound
 
