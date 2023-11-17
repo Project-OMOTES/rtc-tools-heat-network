@@ -152,8 +152,6 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
 
         # TODO add test case. Currently no test case for esdl parsing
         # Convert Power and Energy to standard unit of Watt and Joules
-        # Note: at the time of this code below being implemented pyESDL catered for limited
-        # power/energy units which is in the process of being expanded
         for idf in range(len(df)):
             if (
                 profile.profileQuantityAndUnit.reference.physicalQuantity

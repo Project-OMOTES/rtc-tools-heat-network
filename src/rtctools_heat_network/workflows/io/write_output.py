@@ -740,11 +740,15 @@ class ScenarioOutput(HeatMixin):
         # Important: This code below must be placed after the "Placement" code. Reason: it relies
         # on unplaced assets being deleted.
         # ------------------------------------------------------------------------------------------
-        # Write asset result profile data to database:
+        # Write asset result profile data to database. The datbase is setup as follows:
+        #   - The each time step is represented by a row of data, with columns datetime, field
+        #     values
+        #   - Database name: input esdl id
+        #   - Measurment: asset name
+        #   - Fields: profile value for the specific variable
         #  - The database contains a measurement (used esdl energy system id as the name for this),
         #    which is a table of the profile results. The each time step is represented by a row of
         #    data, and the columns are: datetime, asset name + "_" variable value
-        #  - At the same time also set the database attributes for each asset with a profile data
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
