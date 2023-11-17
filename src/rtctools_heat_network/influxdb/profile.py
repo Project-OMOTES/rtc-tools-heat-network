@@ -128,6 +128,39 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             profile.startDate,
             profile.endDate,
         )
+
+        # Error check start and end dates of profiles
+        # TODO: uncomment code below once pyESDL bug has been resolved
+        # if time_series_data.end_datetime != profile.endDate:
+        #     logger.error(
+        #         f"The user input profile end datetime: {profile.endDate} does not match the end"
+        #         f" datetime in the datbase: {time_series_data.end_datetime} for variable: "
+        #         f"{profile.field}"
+        #     )
+        #     sys.exit(1)
+        if time_series_data.start_datetime != profile.startDate:
+            logger.error(
+                f"The user input profile start datetime: {profile.startDate} does not match the"
+                f" start date in the datbase: {time_series_data.start_datetime} for variable: "
+                f"{profile.field}"
+            )
+            sys.exit(1)
+        if time_series_data.start_datetime != time_series_data.profile_data_list[0][0]:
+            logger.error(
+                f"The profile's variable value for the start datetime: "
+                f"{time_series_data.start_datetime} does not match the start datetime of the"
+                f" profile data: {time_series_data.profile_data_list[0][0]}"
+            )
+            sys.exit(1)
+        # TODO: uncomment code below once pyESDL bug has been resolved
+        # if time_series_data.end_datetime != time_series_data.profile_data_list[-1][0]:
+        #     logger.error(
+        #         f"The profile's variable value for the end datetime: "
+        #         f"{time_series_data.end_datetime} does not match the end datetime of the"
+        #         f" profile data: {time_series_data.profile_data_list[-1][0]}"
+        #     )
+        #     sys.exit(1)
+
         # Error check: ensure that the profile data has a time resolutuon of 3600s (1hour) as
         # expected
         for idp in range(len(time_series_data.profile_data_list) - 1):
