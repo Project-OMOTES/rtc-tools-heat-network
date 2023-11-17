@@ -482,7 +482,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = 100. * np.median(
+                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = np.median(
                     [x for x in heat_losses if x > 0]
                 )
 
@@ -1667,9 +1667,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             try:
                 pipe_classes = self.__pipe_topo_pipe_class_map[p].keys()
                 maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
-                minimum_discharge = min(
-                    [c.area * minimum_velocity for c in pipe_classes if c.area > 0.0]
-                )
+                var_names = self.__pipe_topo_pipe_class_map[p].values()
+                dn_none = self.__pipe_topo_pipe_class_var[list(var_names)[0]]
+                minimum_discharge = min([c.area * minimum_velocity for c in pipe_classes if c.area > 0.0])
             except KeyError:
                 maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
 
@@ -1677,6 +1677,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
                 else:
                     minimum_discharge = 0.0
+                dn_none = 0.
+
             if maximum_discharge == 0.0:
                 maximum_discharge = 1.0
             big_m = 2.0 * (maximum_discharge + minimum_discharge)
@@ -1686,9 +1688,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 constraint_nominal = big_m
 
+
             constraints.append(
                 (
-                    (q_pipe - big_m * flow_dir + (1 - is_disconnected) * minimum_discharge)
+                    (q_pipe - big_m * (flow_dir + dn_none) + (1 - is_disconnected) * minimum_discharge)
                     / constraint_nominal,
                     -np.inf,
                     0.0,
@@ -1696,12 +1699,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             )
             constraints.append(
                 (
-                    (q_pipe + big_m * (1 - flow_dir) - (1 - is_disconnected) * minimum_discharge)
+                    (q_pipe + big_m * (1 - flow_dir + dn_none) - (1 - is_disconnected) * minimum_discharge)
                     / constraint_nominal,
                     0.0,
                     np.inf,
                 )
             )
+            constraints.append((dn_none - is_disconnected, -np.inf, 0.0))
             minimum_heat = (
                 minimum_discharge
                 * parameters[f"{p}.cp"]
@@ -2114,7 +2118,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             for heat in [scaled_heat_in]:
                 if self.heat_network_options()["neglect_pipe_heat_losses"]:
                     constraints.append(
-                        ((heat * heat_to_discharge_fac - pipe_q) / q_nominal, 0.0, 0.0)
+                        ((heat - pipe_q * (cp * rho * temp)) / self.variable_nominal(f"{p}.HeatIn.Heat"), 0.0, 0.0)
                     )
                 else:
                     assert big_m > 0.0

@@ -1,9 +1,10 @@
-from .grow_workflow import EndScenarioSizing, EndScenarioSizingCBC, EndScenarioSizingHIGHS
+from .grow_workflow import EndScenarioSizing, EndScenarioSizingCBC, EndScenarioSizingHIGHS, EndScenarioSizingStaged
 from .simulator_workflow import (
     NetworkSimulator,
     NetworkSimulatorHIGHS,
     NetworkSimulatorHIGHSTestCase,
     NetworkSimulatorHIGHSWeeklyTimeStep,
+
 )
 
 
@@ -15,4 +16,5 @@ __all__ = [
     "NetworkSimulatorHIGHS",
     "NetworkSimulatorHIGHSTestCase",
     "NetworkSimulatorHIGHSWeeklyTimeStep",
+    "EndScenarioSizingStaged",
 ]

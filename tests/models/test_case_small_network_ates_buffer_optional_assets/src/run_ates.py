@@ -152,8 +152,37 @@ class HeatProblem(
 
 if __name__ == "__main__":
     from pathlib import Path
-    from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
+    from rtctools_heat_network.workflows import EndScenarioSizingStaged, EndScenarioSizing
+    import time
 
+    start_time = time.time()
     base_folder = Path(__file__).resolve().parent.parent
-    solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
+    # solution = run_optimization_problem(EndScenarioSizingStaged, stage=1, base_folder=base_folder)
+    # results = solution.extract_results()
+    # boolean_bounds = {}
+    # # We give bounds for stage 2 by allowing up to 2 DN sizes larger than what was found in the
+    # # stage 1 optimization.
+    # pc_map = solution._HeatMixin__pipe_topo_pipe_class_map
+    # for pipe_classes in pc_map.values():
+    #     v_prev = 0.0
+    #     for var_name in pipe_classes.values():
+    #         v = results[var_name][0]
+    #         boolean_bounds[var_name] = (v, v)
+    #         if v_prev == 1.0:
+    #             boolean_bounds[var_name] = (0.0, 1.0)
+    #         v_prev = v
+    #
+    # # Run a full horizon optimization to find the optimal sizes and placement variables
+    # problem_s2 = run_optimization_problem(
+    #     EndScenarioSizingStaged, base_folder=base_folder,
+    #     stage=2,
+    #     boolean_bounds=boolean_bounds,
+    # )
+
+    solution = run_optimization_problem(EndScenarioSizing, base_folder=base_folder)
     results = solution.extract_results()
+    print(results["Pipe_352c__hn_diameter"])
+    # print(results["Pipe_352c__hn_pipe_class_None"])
+    a=1
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

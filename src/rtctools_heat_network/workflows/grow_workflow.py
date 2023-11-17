@@ -178,7 +178,7 @@ class EndScenarioSizing(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.01
+        options["minimum_velocity"] = 0.001
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
         # options["neglect_pipe_heat_losses"] = True
@@ -232,6 +232,10 @@ class EndScenarioSizing(
         for a in self.heat_network_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
+            # stored_heat = self.__state_vector_scaled(f"{a}.Stored_heat", ensemble_member)
+            # value=self.variable_nominal(f"{a}.Stored_heat")*0.
+            # constraints.append(((stored_heat[-1])/self.variable_nominal(f"{a}.Stored_heat"), value, value))
+            # constraints.append(((stored_heat[0])/self.variable_nominal(f"{a}.Stored_heat"), value, value))
 
         for b in self.heat_network_components.get("buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
@@ -323,6 +327,8 @@ class EndScenarioSizing(
         results = self.extract_results()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        # Optimized ESDL
+        self._write_updated_esdl()
 
         for d in self.heat_network_components.get("demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
@@ -339,67 +345,64 @@ class EndScenarioSizing(
             )
             return
 
-        root = self._get_runinfo_path_root()
-        parameters_dict = dict()
-        workdir = root.findtext("pi:outputResultsFile", namespaces=ns)
-        if workdir is None:
-            logger.error("No workdir specified, skipping writing results")
-            return
-
-        parameter_path = os.path.join(workdir, "parameters.json")
-        for key, value in parameters.items():
-            new_value = value  # [x for x in value]
-            parameters_dict[key] = new_value
-        if parameter_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            parameter_path = os.path.join(workdir, "parameters.json")
-            if not Path(workdir).is_absolute():
-                parameter_path = Path(workdir).resolve().parent
-                parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
-        with open(parameter_path, "w") as file:
-            json.dump(parameters_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        bounds_dict = dict()
-        # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        bounds_path = os.path.join(workdir, "bounds.json")
-        for key, value in bounds.items():
-            if "Stored_heat" not in key:
-                new_value = value  # [x for x in value]
-                # if len(new_value) == 1:
-                #     new_value = new_value[0]
-                bounds_dict[key] = new_value
-        if bounds_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            bounds_path = os.path.join(workdir, "bounds.json")
-            if not Path(workdir).is_absolute():
-                bounds_path = Path(workdir).resolve().parent
-                bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-        with open(bounds_path, "w") as file:
-            json.dump(bounds_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        results_dict = dict()
-
-        for key, values in results.items():
-            new_value = values.tolist()
-            if len(new_value) == 1:
-                new_value = new_value[0]
-            results_dict[key] = new_value
-
-        results_path = os.path.join(workdir, "results.json")
-        if results_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            results_path = os.path.join(workdir, "results.json")
-            if not Path(workdir).is_absolute():
-                results_path = Path(workdir).resolve().parent
-                results_path = os.path.join(results_path.__str__() + "results.json")
-        with open(results_path, "w") as file:
-            json.dump(results_dict, fp=file)
-
-        # Optimized ESDL
-        self._write_updated_esdl()
+        # root = self._get_runinfo_path_root()
+        # parameters_dict = dict()
+        # workdir = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # if workdir is None:
+        #     logger.error("No workdir specified, skipping writing results")
+        #     return
+        #
+        # parameter_path = os.path.join(workdir, "parameters.json")
+        # for key, value in parameters.items():
+        #     new_value = value  # [x for x in value]
+        #     parameters_dict[key] = new_value
+        # if parameter_path is None:
+        #     workdir = root.findtext("pi:workDir", namespaces=ns)
+        #     parameter_path = os.path.join(workdir, "parameters.json")
+        #     if not Path(workdir).is_absolute():
+        #         parameter_path = Path(workdir).resolve().parent
+        #         parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
+        # with open(parameter_path, "w") as file:
+        #     json.dump(parameters_dict, fp=file)
+        #
+        # root = self._get_runinfo_path_root()
+        # bounds_dict = dict()
+        # # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # bounds_path = os.path.join(workdir, "bounds.json")
+        # for key, value in bounds.items():
+        #     if "Stored_heat" not in key:
+        #         new_value = value  # [x for x in value]
+        #         # if len(new_value) == 1:
+        #         #     new_value = new_value[0]
+        #         bounds_dict[key] = new_value
+        # if bounds_path is None:
+        #     workdir = root.findtext("pi:workDir", namespaces=ns)
+        #     bounds_path = os.path.join(workdir, "bounds.json")
+        #     if not Path(workdir).is_absolute():
+        #         bounds_path = Path(workdir).resolve().parent
+        #         bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
+        # with open(bounds_path, "w") as file:
+        #     json.dump(bounds_dict, fp=file)
+        #
+        # root = self._get_runinfo_path_root()
+        # results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # results_dict = dict()
+        #
+        # for key, values in results.items():
+        #     new_value = values.tolist()
+        #     if len(new_value) == 1:
+        #         new_value = new_value[0]
+        #     results_dict[key] = new_value
+        #
+        # results_path = os.path.join(workdir, "results.json")
+        # if results_path is None:
+        #     workdir = root.findtext("pi:workDir", namespaces=ns)
+        #     results_path = os.path.join(workdir, "results.json")
+        #     if not Path(workdir).is_absolute():
+        #         results_path = Path(workdir).resolve().parent
+        #         results_path = os.path.join(results_path.__str__() + "results.json")
+        # with open(results_path, "w") as file:
+        #     json.dump(results_dict, fp=file)
 
 
 def connect_database():
@@ -466,6 +469,31 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
 
         return options
 
+class EndScenarioSizingStaged(EndScenarioSizingHIGHS):
+    _stage = 0
+
+    def __init__(self, stage=None,
+        boolean_bounds=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._stage = stage
+        self.__boolean_bounds = boolean_bounds
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        if self._stage == 1:
+            options["neglect_pipe_heat_losses"] = True
+            options["minimum_velocity"] = 0.0
+
+        return options
+
+    def bounds(self):
+        bounds = super().bounds()
+
+        if self._stage == 2:
+            bounds.update(self.__boolean_bounds)
+
+        return bounds
 
 class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):

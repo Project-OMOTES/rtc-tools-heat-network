@@ -219,7 +219,7 @@ class _AssetToComponentBase:
             in {
                 "source",
                 "buffer",
-                # "ates",
+                "ates",
                 # "heat_exchanger",
                 # "demand",
                 # "heat_pump",

@@ -68,8 +68,8 @@ class PipeDiameterSizingProblem(
 ):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.01
-        options["heat_loss_disconnected_pipe"] = False
+        options["minimum_velocity"] = 0.001
+        options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options["neglect_pipe_heat_losses"] = True
