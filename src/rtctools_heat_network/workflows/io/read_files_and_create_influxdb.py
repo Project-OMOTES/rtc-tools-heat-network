@@ -34,7 +34,6 @@ excel_files = glob.glob(os.path.join(raw_data_files_folder, "*.xlsx"))
 
 
 for file in excel_files:
-
     print("Read data from Excel")
     excel_prof_read = ExcelProfileManager()
     excel_prof_read.load_excel(file)
@@ -49,4 +48,3 @@ for file in excel_files:
         field_names=influxdb_profile_manager_create_new.profile_header[1:],
         tags=optim_simulation_tag,
     )
-    test = 0.0

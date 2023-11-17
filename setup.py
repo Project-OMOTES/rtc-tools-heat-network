@@ -58,7 +58,7 @@ setup(
         "pyecore",
         "pymoca >= 0.9.0",
         "rtc-tools == 2.6.0a3",
-        "pyesdl >= 23.10.1",
+        "pyesdl >= 23.11",
         "pandas >= 1.3.1, < 2.0",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
