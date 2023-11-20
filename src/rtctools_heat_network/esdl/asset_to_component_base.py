@@ -220,10 +220,9 @@ class _AssetToComponentBase:
                 "source",
                 "buffer",
                 "ates",
-                # "heat_exchanger",
-                # "demand",
-                # "heat_pump",
-                # "heat_pump_elec",
+                "heat_exchanger",
+                "heat_pump",
+                "heat_pump_elec",
             }
         }
 
