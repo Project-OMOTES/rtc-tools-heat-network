@@ -506,16 +506,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     neighbour = self.has_related_pipe(pipe)
                     if neighbour and pipe not in self.hot_pipes:
                         cold_pipe = self.cold_to_hot_pipe(pipe)
-                        pipe_class_var_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}"
-                        )
+                        pipe_class_var_name = f"{cold_pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_discharge_ordering")
+                            f"{cold_pipe}__hn_pipe_class_{c.name}_discharge_ordering"
+                        )
                         pipe_class_cost_ordering_name = (
                             f"{cold_pipe}__hn_pipe_class_{c.name}_cost_ordering"
                         )
                         pipe_class_heat_loss_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering")
+                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                        )
                     else:
                         pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
@@ -1649,11 +1649,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         minimum_velocity = options["minimum_velocity"]
         maximum_velocity = options["maximum_velocity"]
 
-        # if minimum_velocity > 0.0:
-        #     assert (
-        #         not self.__pipe_topo_pipe_class_map
-        #     ), "non-zero minimum velocity not allowed with topology optimization"
-
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.heat_network_components.get("pipe", []):
             flow_dir_var = self.__pipe_to_flow_direct_map[p]
@@ -1720,7 +1715,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     np.inf,
                 )
             )
-            constraints.append((dn_none - is_disconnected, -np.inf, 0.0))
 
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
@@ -1744,6 +1738,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 constraints.append(
                     ((heat_out + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf)
                 )
+
+            big_m = 2.0 * np.max(
+                np.abs(
+                    (
+                        *self.bounds()[f"{p}.HeatIn.Heat"],
+                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                    )
+                )
+            )
 
         # Pipes that are connected in series should have the same heat direction.
         for pipes in self.heat_network_topology.pipe_series:

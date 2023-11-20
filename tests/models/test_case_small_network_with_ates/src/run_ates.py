@@ -168,6 +168,7 @@ class HeatProblem(
 class HeatProblemPlacingOverTime(HeatProblem):
     def heat_network_options(self):
         options = super().heat_network_options()
+        options["include_asset_is_realized"] = True
 
         return options
 
@@ -199,8 +200,8 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
         # to avoid ates in short problem
         for a in self.heat_network_components.get("ates", []):
-            heat_ated = self.state_vector(f"{a}.Heat_ates")
-            constraints.append((heat_ated, 0.0, 0.0))
+            heat_ates = self.state_vector(f"{a}.Heat_ates")
+            constraints.append((heat_ates, 0.0, 0.0))
 
         return constraints
 

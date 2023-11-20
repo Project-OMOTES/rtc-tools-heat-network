@@ -16,7 +16,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
 
@@ -71,9 +70,9 @@ class PipeDiameterSizingProblem(
         options["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options["neglect_pipe_heat_losses"] = True
-        # options["minimize_head_losses"] = True
+        options["minimize_head_losses"] = True
         return options
 
     def pipe_classes(self, pipe):

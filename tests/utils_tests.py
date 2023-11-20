@@ -126,28 +126,46 @@ def heat_to_discharge_test(solution, results):
         # dt = solution.parameters(0)[f"{d}.dT"]
         # supply_t = solution.parameters(0)[f"{d}.T_supply"]
         # return_t = solution.parameters(0)[f"{d}.T_return"]
-        supply_t, return_t, dt = _get_component_temperatures(solution, results, d)
+        supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
+        indices = results[f"{d}.HeatIn.Q"] >= 0
+        if isinstance(supply_temp, float):
+            supply_t = supply_temp
+        else:
+            supply_t = supply_temp[indices]
+        if isinstance(return_temp, float):
+            return_t = return_temp
+        else:
+            return_t = return_temp[indices]
         test.assertTrue(
             expr=all(
-                np.clip(results[f"{d}.HeatIn.Heat"], 0.0, np.inf)
-                <= (np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * supply_t + tol)
+                results[f"{d}.HeatIn.Heat"][indices]
+                <= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t + tol)
             )
         )
         np.testing.assert_allclose(
-            np.clip(results[f"{d}.HeatOut.Heat"], 0.0, np.inf),
-            np.clip(results[f"{d}.HeatIn.Q"], 0.0, np.inf) * rho * cp * return_t,
+            results[f"{d}.HeatOut.Heat"][indices],
+            results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t,
             atol=tol,
         )
+        indices = results[f"{d}.HeatIn.Q"] <= 0
+        if isinstance(supply_t, float):
+            supply_t = supply_temp
+        else:
+            supply_t = supply_temp[indices]
+        if isinstance(return_temp, float):
+            return_t = return_temp
+        else:
+            return_t = return_temp[indices]
         np.testing.assert_allclose(
-            np.clip(results[f"{d}.HeatIn.Heat"], -np.inf, 0.0),
-            np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * supply_t,
+            results[f"{d}.HeatIn.Heat"][indices],
+            results[f"{d}.HeatIn.Q"][indices] * rho * cp * supply_t,
             atol=tol,
         )
 
         test.assertTrue(
             expr=all(
-                np.clip(results[f"{d}.HeatOut.Heat"], -np.inf, 0.0) + tol
-                >= (np.clip(results[f"{d}.HeatIn.Q"], -np.inf, 0.0) * rho * cp * return_t)
+                results[f"{d}.HeatOut.Heat"][indices]
+                >= (results[f"{d}.HeatIn.Q"][indices] * rho * cp * return_t - tol)
             )
         )
 
@@ -188,21 +206,38 @@ def heat_to_discharge_test(solution, results):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
-        # dt = solution.parameters(0)[f"{p}.dT"]
+        indices = results[f"{p}.Q"] >= 0
         if f"{carrier_id}_temperature" in results.keys():
-            temperature = results[f"{carrier_id}_temperature"]
+            temperature = results[f"{carrier_id}_temperature"][indices]
         else:
             temperature = solution.parameters(0)[f"{p}.temperature"]
         test.assertTrue(
             expr=all(
-                abs(results[f"{p}.HeatIn.Heat"])
-                <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol
+                results[f"{p}.HeatIn.Heat"][indices]
+                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
             )
         )
         test.assertTrue(
             expr=all(
-                abs(results[f"{p}.HeatOut.Heat"])
-                <= abs(results[f"{p}.Q"]) * rho * cp * temperature + tol
+                results[f"{p}.HeatOut.Heat"][indices]
+                <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
+            )
+        )
+        indices = results[f"{p}.Q"] <= 0
+        if f"{carrier_id}_temperature" in results.keys():
+            temperature = results[f"{carrier_id}_temperature"][indices]
+        else:
+            temperature = solution.parameters(0)[f"{p}.temperature"]
+        test.assertTrue(
+            expr=all(
+                results[f"{p}.HeatIn.Heat"][indices]
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
+            )
+        )
+        test.assertTrue(
+            expr=all(
+                results[f"{p}.HeatOut.Heat"][indices]
+                >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
             )
         )
 
