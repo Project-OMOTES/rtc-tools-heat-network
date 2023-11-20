@@ -66,4 +66,4 @@ class MinimizeTCO(Goal):
                 optimization_problem._asset_installation_cost_map[asset]
             )
 
-        return obj / 1.e6
+        return obj / 1.0e6
