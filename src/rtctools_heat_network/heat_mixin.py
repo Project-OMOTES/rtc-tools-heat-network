@@ -65,7 +65,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__disabled_hex_var = {}
         self.__disabled_hex_var_bounds = {}
 
-        # To avoid atrificail energy at t0
+        # To avoid artificial energy generation at t0
         self.__buffer_t0_bounds = {}
 
         # Variable for the diameter of a pipe during pipe-class optimization
