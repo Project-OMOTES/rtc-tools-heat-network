@@ -206,7 +206,7 @@ def heat_to_discharge_test(solution, results):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
-        indices = results[f"{p}.Q"] >= 0
+        indices = results[f"{p}.Q"] > 0
         if f"{carrier_id}_temperature" in results.keys():
             temperature = results[f"{carrier_id}_temperature"][indices]
         else:
@@ -223,7 +223,7 @@ def heat_to_discharge_test(solution, results):
                 <= results[f"{p}.Q"][indices] * rho * cp * temperature + tol
             )
         )
-        indices = results[f"{p}.Q"] <= 0
+        indices = results[f"{p}.Q"] < 0
         if f"{carrier_id}_temperature" in results.keys():
             temperature = results[f"{carrier_id}_temperature"][indices]
         else:
@@ -239,6 +239,21 @@ def heat_to_discharge_test(solution, results):
                 results[f"{p}.HeatOut.Heat"][indices]
                 >= results[f"{p}.Q"][indices] * rho * cp * temperature - tol
             )
+        )
+        indices = results[f"{p}.Q"] == 0
+        if f"{carrier_id}_temperature" in results.keys():
+            temperature = results[f"{carrier_id}_temperature"][indices]
+        else:
+            temperature = solution.parameters(0)[f"{p}.temperature"]
+        np.testing.assert_allclose(
+            results[f"{p}.HeatIn.Heat"][indices],
+            results[f"{p}.Q"][indices] * rho * cp * temperature,
+            atol=tol,
+        )
+        np.testing.assert_allclose(
+            results[f"{p}.HeatOut.Heat"][indices],
+            results[f"{p}.Q"][indices] * rho * cp * temperature,
+            atol=tol,
         )
 
 
