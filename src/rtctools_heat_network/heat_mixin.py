@@ -1715,9 +1715,34 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     np.inf,
                 )
             )
+            big_m = 2.0 * np.max(
+                np.abs(
+                    (
+                        *self.bounds()[f"{p}.HeatIn.Heat"],
+                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                    )
+                )
+            )
+            # Note we only need one on the heat as the desired behaviour is propegated by the
+            # constraints heat_in - heat_out - heat_loss == 0.
+            constraints.append(
+                (
+                    (heat_in - big_m * flow_dir) / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(
+                (
+                    (heat_in + big_m * (1 - flow_dir)) / big_m,
+                    0.0,
+                    np.inf,
+                )
+            )
 
             # If a pipe is disconnected, the discharge should be zero
             if is_disconnected_var is not None:
+                big_m = 2.0 * (maximum_discharge + minimum_discharge)
                 constraints.append(((q_pipe - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0))
                 constraints.append(((q_pipe + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf))
                 big_m = 2.0 * np.max(

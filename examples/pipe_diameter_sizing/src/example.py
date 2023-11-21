@@ -176,5 +176,7 @@ if __name__ == "__main__":
 
     heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
     results = heat_problem.extract_results()
+    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
+    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
