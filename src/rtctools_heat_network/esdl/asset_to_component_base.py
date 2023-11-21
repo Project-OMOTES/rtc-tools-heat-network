@@ -129,9 +129,7 @@ class _AssetToComponentBase:
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
 
-    def _pipe_get_diameter_and_insulation(
-        self, asset: Asset
-    ) -> Tuple[float, list, list]:
+    def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
         """
         There are multiple ways to specify pipe properties like diameter and
         material / insulation. We assume that DN `diameter` takes precedence
