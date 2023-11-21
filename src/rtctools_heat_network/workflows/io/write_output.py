@@ -401,6 +401,7 @@ class ScenarioOutput(HeatMixin):
                 ),
             )
         )
+        energy_system.instance[0].area.KPIs = kpis_top_level
         # ------------------------------------------------------------------------------------------
         # Cost breakdowns per polygon areas (can consist of several assets of differents types)
         # Notes:
@@ -408,8 +409,10 @@ class ScenarioOutput(HeatMixin):
         # - We assume that all energy produced outside of the the subarea comes in via a heat
         #   exchanger that is part of the subarea.
         # TODO: Investigate if no cost in the ESDL then this breaks ESDL visibility
-        total_energy_produced_wh = {}
-        total_energy_consumed_wh = {}
+        total_energy_produced_locally_wh = {}
+        total_energy_consumed_locally_wh = {}
+        estimated_energy_consumed_locally_wh = {}
+        estimated_energy_consumed_regional_wh = {}
 
         for subarea in energy_system.instance[0].area.area:
             area_investment_cost = 0.0
@@ -474,32 +477,53 @@ class ScenarioOutput(HeatMixin):
                         or asset_type == "GasHeater"
                     ):
                         try:
-                            total_energy_produced_wh[subarea.id] += np.sum(
+                            total_energy_produced_locally_wh[subarea.name] += np.sum(
                                 results[f"{asset_name}.Heat_source"][1:]
                                 * (self.times()[1:] - self.times()[0:-1])
-                                / 3600
+                                / 3600.0
                             )
                         except KeyError:
-                            total_energy_produced_wh[subarea.id] = np.sum(
+                            total_energy_produced_locally_wh[subarea.name] = np.sum(
                                 results[f"{asset_name}.Heat_source"][1:]
                                 * (self.times()[1:] - self.times()[0:-1])
-                                / 3600
+                                / 3600.0
                             )
                     if (
                         asset_type == "HeatingDemand"
                     ):
                         try:
-                            total_energy_consumed_wh[subarea.id] += np.sum(
+                            temp1 = 0.0
+                            total_energy_consumed_locally_wh[subarea.name] += np.sum(
                                 results[f"{asset_name}.Heat_demand"][1:]
                                 * (self.times()[1:] - self.times()[0:-1])
-                                / 3600
+                                / 3600.0
                             )
                         except KeyError:
-                            total_energy_consumed_wh[subarea.id] = np.sum(
+                            total_energy_consumed_locally_wh[subarea.name] = np.sum(
                                 results[f"{asset_name}.Heat_demand"][1:]
                                 * (self.times()[1:] - self.times()[0:-1])
-                                / 3600
+                                / 3600.0
                             )
+                            temp = 0.0
+
+                # end if placed loop
+            # end asset loop
+
+
+            try:
+                total_energy_produced_locally_wh_area = (
+                    total_energy_produced_locally_wh[subarea.name]
+                )
+            except KeyError:
+                total_energy_produced_locally_wh_area = 0.0
+
+            estimated_energy_consumed_locally_wh[subarea.name] = (
+                total_energy_produced_locally_wh_area
+                / total_energy_consumed_locally_wh[subarea.name] * 100.0
+            )
+            estimated_energy_consumed_regional_wh[subarea.name] = (
+                (1.0 - estimated_energy_consumed_locally_wh[subarea.name]) * 100.0
+            )
 
 
             # Here we add KPIs to the polygon area which allows to visualize them by hoovering over
@@ -554,13 +578,13 @@ class ScenarioOutput(HeatMixin):
                 )
 
             try:
-                if total_energy_consumed_wh[subarea.id] >= 0.0:
+                if total_energy_consumed_locally_wh[subarea.name] >= 0.0:
                     kpis.kpi.append(
                         esdl.DoubleKPI(
-                            value=total_energy_consumed_wh[subarea.id],
-                            name="Area peak vs total energy [%]",
+                            value=estimated_energy_consumed_locally_wh[subarea.name],
+                            name="Local energy consumed [%]",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                # physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
                                 unit=esdl.UnitEnum.PERCENT,
                                 multiplier=esdl.MultiplierEnum.NONE,
                             ),
@@ -568,10 +592,21 @@ class ScenarioOutput(HeatMixin):
                     )
                     kpis.kpi.append(
                         esdl.DoubleKPI(
-                            value=total_energy_consumed_wh[subarea.id] / 1.0e9,
+                            value=estimated_energy_consumed_regional_wh[subarea.name],
+                            name="Regional energy consumed [%]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                # physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                unit=esdl.UnitEnum.PERCENT,
+                                multiplier=esdl.MultiplierEnum.NONE,
+                            ),
+                        )
+                    )
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=total_energy_consumed_locally_wh[subarea.name] / 1.0e9,
                             name="Area total energy consumed [GWh]",
                             quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY,
                                 unit=esdl.UnitEnum.WATTHOUR,
                                 multiplier=esdl.MultiplierEnum.GIGA,
                             ),
@@ -635,10 +670,8 @@ class ScenarioOutput(HeatMixin):
             #         )
             #     )
             # )
-        # ------------------------------------------------------------------------------------------
-        # Save KPIs
-        energy_system.instance[0].area.KPIs = kpis_top_level
-        subarea.KPIs = kpis
+            subarea.KPIs = kpis
+        # ebd sub-area loop
 
         # end KPIs
         # ------------------------------------------------------------------------------------------
