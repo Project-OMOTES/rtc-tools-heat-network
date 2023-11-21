@@ -4896,7 +4896,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def priority_completed(self, priority):
         """
         This function is called after a priority of goals is completed. This function is used to
-        specific operations between consecutive goals. Here we set some parameter attributes after
+        specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
         options = self.heat_network_options()
