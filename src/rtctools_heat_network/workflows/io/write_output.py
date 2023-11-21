@@ -553,6 +553,35 @@ class ScenarioOutput(HeatMixin):
                     )
                 )
 
+            try:
+                if total_energy_consumed_wh[subarea.id] >= 0.0:
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=total_energy_consumed_wh[subarea.id],
+                            name="Area peak vs total energy [%]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                unit=esdl.UnitEnum.PERCENT,
+                                multiplier=esdl.MultiplierEnum.NONE,
+                            ),
+                        )
+                    )
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=total_energy_consumed_wh[subarea.id] / 1.0e9,
+                            name="Area total energy consumed [GWh]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                unit=esdl.UnitEnum.WATTHOUR,
+                                multiplier=esdl.MultiplierEnum.GIGA,
+                            ),
+                        )
+                    )
+            except KeyError:
+                # Continue because this area does not have any energy consumption
+                pass
+
+
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
             kpi_name = f"{subarea.name}: Asset cost breakdown [EUR]"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
@@ -591,34 +620,6 @@ class ScenarioOutput(HeatMixin):
                         ),
                     )
                 )
-
-            try:
-                if total_energy_consumed_wh[subarea.id] >= 0.0:
-                    kpis.kpi.append(
-                        esdl.DoubleKPI(
-                            value=total_energy_consumed_wh[subarea.id],
-                            name="Area peak vs total energy [%]",
-                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
-                                unit=esdl.UnitEnum.PERCENT,
-                                multiplier=esdl.MultiplierEnum.NONE,
-                            ),
-                        )
-                    )
-                    kpis.kpi.append(
-                        esdl.DoubleKPI(
-                            value=total_energy_consumed_wh[subarea.id] / 1.0e9,
-                            name="Area total energy consumed [GWh]",
-                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
-                                physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
-                                unit=esdl.UnitEnum.WATTHOUR,
-                                multiplier=esdl.MultiplierEnum.GIGA,
-                            ),
-                        )
-                    )
-            except KeyError:
-                # Continue because this area does not have any energy consumption
-                pass
 
             # Here we add a distribution KPI to the subarea to which gives a piechart
             # !!!!!!!!!!!!!!! This will only work if the source is in the area?
