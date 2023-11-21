@@ -1,6 +1,6 @@
 import json
-from typing import Tuple
 import xml.etree.ElementTree as ET  # noqa: N817
+from typing import Tuple
 
 import requests
 

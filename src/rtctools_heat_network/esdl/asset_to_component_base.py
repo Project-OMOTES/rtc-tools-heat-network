@@ -3,7 +3,7 @@ import logging
 import math
 import os
 from pathlib import Path
-from typing import Dict, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type, Union
 
 import esdl
 from esdl import TimeUnitEnum, UnitEnum
@@ -130,8 +130,8 @@ class _AssetToComponentBase:
         return getattr(self, dispatch_method_name)(asset)
 
     def _pipe_get_diameter_and_insulation(
-            self,
-            asset: Asset) -> Tuple[float, list[float], list[float]]:
+        self, asset: Asset
+    ) -> Tuple[float, list[float], list[float]]:
         """
         There are multiple ways to specify pipe properties like diameter and
         material / insulation. We assume that DN `diameter` takes precedence
@@ -666,9 +666,7 @@ class _AssetToComponentBase:
         return value
 
     @staticmethod
-    def get_cost_value_and_unit(
-            cost_info: esdl.SingleValue
-    ) -> Tuple[float, esdl.UnitEnum, esdl.UnitEnum, esdl.TimeUnitEnum]:
+    def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
         """
         This function returns the cost with unit information.
 
