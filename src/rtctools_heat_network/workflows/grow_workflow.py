@@ -543,6 +543,25 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 
 
 def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization=True):
+    """
+    This function is used to run end_scenario_sizing problem. There are a few variations of the
+    same basic class. The main functionality this function adds is the staged approach, where
+    we first solve without heat_losses, to then solve the same problem with heat losses but
+    constraining the problem to only allow for the earlier found pipe classes and one size up.
+
+    This staged approach is done to speed up the problem, as the problem without heat losses is
+    much faster as it avoids inequality big_m constraints for the heat to discharge on pipes. The
+    one size up possibility is to avoid infeasibilities in compensating for the heat losses.
+
+    Parameters
+    ----------
+    end_scenario_problem_class : The end scenario problem class.
+    staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
+
+    Returns
+    -------
+
+    """
     import time
 
     boolean_bounds = {}
