@@ -131,7 +131,7 @@ class _AssetToComponentBase:
 
     def _pipe_get_diameter_and_insulation(
         self, asset: Asset
-    ) -> Tuple[float, list[float], list[float]]:
+    ) -> Tuple[float, list, list]:
         """
         There are multiple ways to specify pipe properties like diameter and
         material / insulation. We assume that DN `diameter` takes precedence
