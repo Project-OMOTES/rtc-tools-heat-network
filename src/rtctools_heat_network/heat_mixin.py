@@ -4781,7 +4781,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def history(self, ensemble_member):
         """
-        In this history function we avoid the optimization using aritificial energy for storage
+        In this history function we avoid the optimization using artificial energy for storage
         assets as the history is not defined.
         """
         history = super().history(ensemble_member)
