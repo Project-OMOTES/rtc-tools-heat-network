@@ -16,6 +16,8 @@ import numpy as np
 
 import pandas as pd
 
+import pytz
+
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
@@ -834,6 +836,8 @@ class ScenarioOutput(HeatMixin):
                                     field=profiles.profile_header[-1],
                                     port=self.influxdb_port,
                                     host=self.influxdb_host,
+                                    startDate=pytz.utc.localize(self.io.datetimes[0]),
+                                    endDate=pytz.utc.localize(self.io.datetimes[-1]),
                                 )
                                 asset.port[index_outport].profile.append(profile_attributes)
 
@@ -843,8 +847,8 @@ class ScenarioOutput(HeatMixin):
                         profiles.profile_data_list.append(data_row)
                     # end time steps
                     profiles.num_profile_items = len(profiles.profile_data_list)
-                    profiles.start_datetime = profiles.profile_data_list[0][0]
-                    profiles.end_datetime = profiles.profile_data_list[-1][0]
+                    profiles.start_datetime = pytz.utc.localize(profiles.profile_data_list[0][0])
+                    profiles.end_datetime = pytz.utc.localize(profiles.profile_data_list[-1][0])
 
                     influxdb_profile_manager = InfluxDBProfileManager(
                         influxdb_conn_settings, profiles
