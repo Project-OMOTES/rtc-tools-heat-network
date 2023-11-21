@@ -4755,7 +4755,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     def constraints(self, ensemble_member):
         """
         This function adds the normal constraints to the problem. Unlike the path constraints these
-        are not applied to evergy time-step in the problem. Meaning that these constraints either
+        are not applied to every time-step in the problem. Meaning that these constraints either
         consider global variables that are independent of time-step or that the relevant time-steps
         are indexed within the constraint formulation.
         """
