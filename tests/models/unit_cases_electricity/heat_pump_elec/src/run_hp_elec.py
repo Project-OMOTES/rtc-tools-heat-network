@@ -168,7 +168,7 @@ class HeatProblem2(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
-        options["heat_loss_disconnected_pipe"] = True
+        options["heat_loss_disconnected_pipe"] = False
 
         return options
 
@@ -239,7 +239,7 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblem2)
     results = sol.extract_results()
     print(results["GenericConversion_3d3f.Power_elec"])
     print(results["ResidualHeatSource_aec9.Heat_source"])
