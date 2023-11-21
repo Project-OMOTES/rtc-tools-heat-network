@@ -5,7 +5,6 @@ import esdl
 
 import numpy as np
 
-from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -24,6 +23,9 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
+from rtctools_heat_network.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 from rtctools_heat_network.workflows.utils.helpers import main_decorator
 
 
@@ -53,7 +55,7 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values))
+        self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
         self.priority = priority
         self.order = order
@@ -309,7 +311,7 @@ class NetworkSimulator(
 class NetworkSimulatorHIGHS(NetworkSimulator):
     def post(self):
         super().post()
-        self._write_updated_esdl(db_profiles=False, optimizer_sim=False)
+        self._write_updated_esdl(optimizer_sim=False)
 
     def solver_options(self):
         options = super().solver_options()
@@ -324,65 +326,51 @@ class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
 
 
 class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.__indx_max_peak = None
+        self.__day_steps = 5
+
+    def parameters(self, ensemble_member):
+        parameters = super().parameters(ensemble_member)
+        parameters["peak_day_index"] = self.__indx_max_peak
+        parameters["time_step_days"] = self.__day_steps
+        return parameters
+
     def read(self):
         """
-        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile.
+        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
+        except for the day with the peak demand.
         """
-        # TODO: moves functions like these to a local place for repatitive use. Reduce code
-        # duplication
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
-        new_datastore = DataStore(self)
-        new_datastore.reference_datetime = self.io.datetimes[0]
-
-        for ensemble_member in range(self.ensemble_size):
-            total_demand = sum(
-                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
-                for demand in demands
-            )
-
-            # TODO: the approach of picking one peak day was introduced for a network with a tree
-            #  layout and all big sources situated at the root of the tree. It is not guaranteed
-            #  that an optimal solution is reached in different network topologies.
-            number_of_steps_merged = 24 * 7
-            nr_of_days = len(total_demand) // number_of_steps_merged
-            new_date_times = list()
-            for day in range(nr_of_days):
-                new_date_times.append(self.io.datetimes[day * number_of_steps_merged])
-            new_date_times = np.asarray(new_date_times)
-
-            for demand in demands:
-                var_name = f"{demand}.target_heat_demand"
-                data = self.get_timeseries(
-                    variable=var_name, ensemble_member=ensemble_member
-                ).values
-                new_data = list()
-                for day in range(nr_of_days):
-                    data_for_day = data[
-                        day * number_of_steps_merged : (day + 1) * number_of_steps_merged
-                    ]
-                    new_data.append(np.mean(data_for_day))
-                new_datastore.set_timeseries(
-                    variable=var_name,
-                    datetimes=new_date_times,
-                    values=np.asarray(new_data),
-                    ensemble_member=ensemble_member,
-                    check_duplicates=True,
-                )
-
-            self.io = new_datastore
-            logger.info("HeatProblem read")
+        self.__indx_max_peak, _ = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(
+            self, self.__day_steps
+        )
+        logger.info("HeatProblem read")
 
 
 # -------------------------------------------------------------------------------------------------
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         NetworkSimulatorHIGHSWeeklyTimeStep,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
 
 
