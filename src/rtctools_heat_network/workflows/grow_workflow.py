@@ -423,37 +423,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()
@@ -471,37 +441,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()
@@ -520,10 +460,22 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
 
     # results = solution.extract_results()
