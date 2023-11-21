@@ -542,6 +542,37 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         return options
 
 
+def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization=True):
+    import time
+
+    boolean_bounds = {}
+
+    start_time = time.time()
+    if staged_pipe_optimization:
+        solution = run_optimization_problem(end_scenario_problem_class, stage=1)
+        results = solution.extract_results()
+
+        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
+        # stage 1 optimization.
+        pc_map = solution._HeatMixin__pipe_topo_pipe_class_map
+        for pipe_classes in pc_map.values():
+            v_prev = 0.0
+            for var_name in pipe_classes.values():
+                v = results[var_name][0]
+                boolean_bounds[var_name] = (v, v)
+                if v_prev == 1.0:
+                    boolean_bounds[var_name] = (0.0, 1.0)
+                v_prev = v
+
+    _ = run_optimization_problem(
+        end_scenario_problem_class,
+        stage=2,
+        boolean_bounds=boolean_bounds,
+    )
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")

@@ -249,11 +249,13 @@ def heat_to_discharge_test(solution, results):
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
+            err_msg=f"{p} has mismatch in heat to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
+            err_msg=f"{p} has mismatch in heat to discharge",
         )
 
 
