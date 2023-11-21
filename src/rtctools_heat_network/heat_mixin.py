@@ -45,7 +45,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
-        # Boolean variable to switch assets on/off or to increment their size for the entire time horizon.
+        # Boolean variable to switch assets on/off or to increment their size for the entire time
+        # horizon.
         self.__asset_aggregation_count_var = {}
         self.__asset_aggregation_count_var_bounds = {}
         self._asset_aggregation_count_var_map = {}
@@ -4920,8 +4921,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         In this post function we check the optimization results for accurately solving the
         constraints. We do this for the head losses and check if they are consistent with the flow
-        direction. Whether, the minimum velocity is actually met. And whether, the directions of heat
-        match the directions of the flow.
+        direction. Whether, the minimum velocity is actually met. And whether, the directions of
+        heat match the directions of the flow.
         """
         super().post()
 
