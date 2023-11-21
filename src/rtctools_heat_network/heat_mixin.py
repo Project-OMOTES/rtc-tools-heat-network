@@ -80,7 +80,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_cost_map = {}
         self.__pipe_topo_cost_nominals = {}
 
-        # Variable for the heat-loss (not specific forpipe-class optimization anymore)
+        # Variable for the heat-loss (not specific for pipe-class optimization)
         self.__pipe_topo_heat_loss_var = {}
         self.__pipe_topo_heat_loss_var_bounds = {}
         self.__pipe_topo_heat_loss_map = {}
