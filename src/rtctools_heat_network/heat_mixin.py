@@ -111,7 +111,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__temperature_regime_var = {}
         self.__temperature_regime_var_bounds = {}
 
-        # Integer variable whether descrete temperature option has been selected
+        # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
 
