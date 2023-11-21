@@ -45,7 +45,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
-        # Boolean variable to switch assets on/off or to increment their size.
+        # Boolean variable to switch assets on/off or to increment their size for the entire time horizon.
         self.__asset_aggregation_count_var = {}
         self.__asset_aggregation_count_var_bounds = {}
         self._asset_aggregation_count_var_map = {}
