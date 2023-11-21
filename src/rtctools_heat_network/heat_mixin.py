@@ -35,7 +35,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         In this __init__ we prepace the dicts for the variables added by th HeatMixin
         """
-        # Boolean path-variable for the direction of the flow in to out port is positive.
+        # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
         self.__flow_direct_var = {}
         self.__flow_direct_bounds = {}
         self.__pipe_to_flow_direct_map = {}
