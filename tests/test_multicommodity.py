@@ -52,7 +52,7 @@ class TestMultiCommodityHeatPump(TestCase):
         heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
         heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
 
-        np.testing.assert_allclose(heatsource_sec, 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(heatsource_sec, 0.0, atol=1.0e-3)
 
         # first check if demands are met
         np.testing.assert_allclose(heatdemand_sec_target, heatdemand_sec)

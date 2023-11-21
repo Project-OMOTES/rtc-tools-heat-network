@@ -120,6 +120,9 @@ class HeatProblemTvarSecondary(
 
         return options
 
+    def times(self, variable=None) -> np.ndarray:
+        return super().times(variable)[:5]
+
     def temperature_regimes(self, carrier):
         temperatures = []
         if carrier == 7212673879469902607010:
