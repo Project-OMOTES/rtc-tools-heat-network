@@ -844,7 +844,7 @@ class ScenarioOutput(HeatMixin):
                     # end time steps
                     profiles.num_profile_items = len(profiles.profile_data_list)
                     profiles.start_datetime = profiles.profile_data_list[0][0]
-                    profiles.determine_end_datetime()
+                    profiles.end_datetime = profiles.profile_data_list[-1][0]
 
                     influxdb_profile_manager = InfluxDBProfileManager(
                         influxdb_conn_settings, profiles
