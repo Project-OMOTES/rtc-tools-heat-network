@@ -1,23 +1,111 @@
 import logging
+import numbers
 import os
+import sys
 import uuid
 from pathlib import Path
 
 import esdl
+from esdl.profiles.influxdbprofilemanager import ConnectionSettings
+from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
+from esdl.profiles.profilemanager import ProfileManager
+
+# from esdl.profiles.excelprofilemanager import ExcelProfileManager
 
 import numpy as np
 
 import pandas as pd
 
+import pytz
+
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
+
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
 class ScenarioOutput(HeatMixin):
     __optimized_energy_system_handler = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Settings for influxdb when writing out result profile data to it
+        # Default settings
+        self.write_result_db_profiles = False
+        self.influxdb_username = None
+        self.influxdb_password = None
+
+        base_error_string = "Missing influxdb setting for writing result profile data:"
+        try:
+            self.write_result_db_profiles = kwargs["write_result_db_profiles"]
+
+            if self.write_result_db_profiles not in [True, False]:
+                logger.error(
+                    "Current setting of write_result_db_profiles is: "
+                    f"{self.write_result_db_profiles} and it should be set to True or False"
+                )
+                sys.exit(1)
+
+            if self.write_result_db_profiles:
+                try:
+                    self.influxdb_host = kwargs["influxdb_host"]
+                    if len(self.influxdb_host) == 0:
+                        logger.error(
+                            "Current setting of influxdb_host is an empty string and it should"
+                            " be the name of the host"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} host")
+                    sys.exit(1)
+                try:
+                    self.influxdb_port = kwargs["influxdb_port"]
+                    if not isinstance(self.influxdb_port, int):
+                        logger.error(
+                            "Current setting of influxdb_port is: "
+                            f"{self.influxdb_port} and it should be set to int value (port number)"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} port")
+                    sys.exit(1)
+                try:
+                    self.influxdb_username = kwargs["influxdb_username"]
+                except KeyError:
+                    logger.error(f"{base_error_string} username")
+                    sys.exit(1)
+                try:
+                    self.influxdb_password = kwargs["influxdb_password"]
+                except KeyError:
+                    logger.error(f"{base_error_string} password")
+                    sys.exit(1)
+                try:
+                    self.influxdb_ssl = kwargs["influxdb_ssl"]
+                    if self.influxdb_ssl not in [True, False]:
+                        logger.error(
+                            "Current setting of influxdb_ssl is: "
+                            f"{self.influxdb_ssl} and it should be set to True or False"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error(f"{base_error_string} ssl")
+                    sys.exit(1)
+                try:
+                    self.influxdb_verify_ssl = kwargs["influxdb_verify_ssl"]
+                    if self.influxdb_verify_ssl not in [True, False]:
+                        logger.error(
+                            "Current setting of influxdb_verify_ssl is: "
+                            f"{self.influxdb_verify_ssl} and it should be set to True or False"
+                        )
+                        sys.exit(1)
+                except KeyError:
+                    logger.error("f{base_string} verify_ssl")
+                    sys.exit(1)
+        except KeyError:
+            # Not writing out to a influxdb, so no settings are requried
+            pass
 
     def get_optimized_esh(self):
         return self.__optimized_energy_system_handler
@@ -201,7 +289,7 @@ class ScenarioOutput(HeatMixin):
                 )
             )
 
-    def _write_updated_esdl(self, db_profiles=False, optimizer_sim=True):
+    def _write_updated_esdl(self, optimizer_sim=True):
         from esdl.esdl_handler import EnergySystemHandler
         from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
@@ -215,6 +303,7 @@ class ScenarioOutput(HeatMixin):
         else:
             energy_system = esh.load_from_string(self.esdl_string)
 
+        input_energy_system_id = energy_system.id
         energy_system.id = str(uuid.uuid4())
         if optimizer_sim:
             energy_system.name = energy_system.name + "_GrowOptimized"
@@ -596,46 +685,6 @@ class ScenarioOutput(HeatMixin):
                 else:
                     asset.state = esdl.AssetStateEnum.ENABLED
 
-        if db_profiles:
-            for name in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("demand", []),
-                *self.heat_network_components.get("pipe", []),
-                *self.heat_network_components.get("buffer", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("heat_pump", []),
-            ]:
-                asset = _name_to_asset(name)
-                try:
-                    # For all components dealing with one hydraulic system
-                    for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-                        profile = esdl.InfluxDBProfile(
-                            database="GROW results",
-                            measurement=name,
-                            field=variable,
-                            port=443,
-                            host="localhost",
-                        )
-                        asset.port[1].profile.append(profile)
-                except Exception:
-                    # For all components dealing with two hydraulic system
-                    for variable in [
-                        "Heat_flow",
-                        "Primary.HeatIn.Q",
-                        "Primary.HeatIn.H",
-                        "Secondary.HeatIn.Q",
-                        "Secondary.HeatIn.H",
-                    ]:
-                        profile = esdl.InfluxDBProfile(
-                            database="GROW results",
-                            measurement=name,
-                            field=variable,
-                            port=443,
-                            host="localhost",
-                        )
-                        asset.port[1].profile.append(profile)
-
         # Pipes:
         edr_pipe_properties_to_copy = ["innerDiameter", "outerDiameter", "diameter", "material"]
 
@@ -688,6 +737,222 @@ class ScenarioOutput(HeatMixin):
                 for p in [pipe, cold_pipe]:
                     asset = _name_to_asset(p)
                     asset.delete(recursive=True)
+
+        # ------------------------------------------------------------------------------------------
+        # Important: This code below must be placed after the "Placement" code. Reason: it relies
+        # on unplaced assets being deleted.
+        # ------------------------------------------------------------------------------------------
+        # Write asset result profile data to database. The datbase is setup as follows:
+        #   - The each time step is represented by a row of data, with columns datetime, field
+        #     values
+        #   - Database name: input esdl id
+        #   - Measurment: asset name
+        #   - Fields: profile value for the specific variable
+        #   - Tags used as filters: output esdl id
+
+        if self.write_result_db_profiles:
+            logger.info("Writing asset result profile data to influxDB")
+            results = self.extract_results()
+            variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
+            variables_two_hydraulic_system = [
+                "Primary.HeatIn.Q",
+                "Primary.HeatIn.H",
+                "Secondary.HeatIn.Q",
+                "Secondary.HeatIn.H",
+                "Heat_flow",
+            ]
+
+            influxdb_conn_settings = ConnectionSettings(
+                host=self.influxdb_host,
+                port=self.influxdb_port,
+                username=self.influxdb_username,
+                password=self.influxdb_password,
+                database=input_energy_system_id,
+                ssl=self.influxdb_ssl,
+                verify_ssl=self.influxdb_verify_ssl,
+            )
+
+            for asset_name in [
+                *self.heat_network_components.get("source", []),
+                *self.heat_network_components.get("demand", []),
+                *self.heat_network_components.get("pipe", []),
+                *self.heat_network_components.get("buffer", []),
+                *self.heat_network_components.get("ates", []),
+                *self.heat_network_components.get("heat_exchanger", []),
+                *self.heat_network_components.get("heat_pump", []),
+            ]:
+                profiles = ProfileManager()
+                profiles.profile_type = "DATETIME_LIST"
+                profiles.profile_header = ["datetime"]
+                try:
+                    # If the asset has been placed
+                    asset = _name_to_asset(asset_name)
+
+                    # Get index of outport which will be used to assign the profile data to
+                    index_outport = -1
+                    for ip in range(len(asset.port)):
+                        if isinstance(asset.port[ip], esdl.OutPort):
+                            if index_outport == -1:
+                                index_outport = ip
+                            else:
+                                logger.warning(
+                                    f"Asset {asset_name} has more than 1 OutPort, and the "
+                                    "profile data has been assigned to the 1st OutPort"
+                                )
+                                break
+
+                    if index_outport == -1:
+                        logger.error(
+                            f"Variable {index_outport} has not been assigned to the asset OutPort"
+                        )
+                        sys.exit(1)
+
+                    for ii in range(len(self.times())):
+                        data_row = [self.io.datetimes[ii]]
+                        try:
+                            # For all components dealing with one hydraulic system
+                            if isinstance(
+                                results[f"{asset_name}." + variables_one_hydraulic_system[0]][ii],
+                                numbers.Number,
+                            ):
+                                variables_names = variables_one_hydraulic_system
+                        except Exception:
+                            # For all components dealing with two hydraulic system
+                            if isinstance(
+                                results[f"{asset_name}." + variables_two_hydraulic_system[0]][ii],
+                                numbers.Number,
+                            ):
+                                variables_names = variables_two_hydraulic_system
+
+                        for variable in variables_names:
+                            if ii == 0:
+                                # Set header for each column
+                                profiles.profile_header.append(variable)
+
+                                # Set profile database attributes for the esdl asset
+                                profile_attributes = esdl.InfluxDBProfile(
+                                    database=input_energy_system_id,
+                                    measurement=asset_name,
+                                    field=profiles.profile_header[-1],
+                                    port=self.influxdb_port,
+                                    host=self.influxdb_host,
+                                    startDate=pytz.utc.localize(self.io.datetimes[0]),
+                                    endDate=pytz.utc.localize(self.io.datetimes[-1]),
+                                )
+                                asset.port[index_outport].profile.append(profile_attributes)
+
+                            # Add variable values in new column
+                            data_row.append(results[f"{asset_name}." + variable][ii])
+
+                        profiles.profile_data_list.append(data_row)
+                    # end time steps
+                    profiles.num_profile_items = len(profiles.profile_data_list)
+                    profiles.start_datetime = pytz.utc.localize(profiles.profile_data_list[0][0])
+                    profiles.end_datetime = pytz.utc.localize(profiles.profile_data_list[-1][0])
+
+                    influxdb_profile_manager = InfluxDBProfileManager(
+                        influxdb_conn_settings, profiles
+                    )
+                    optim_simulation_tag = {"output_esdl_id": energy_system.id}
+                    _ = influxdb_profile_manager.save_influxdb(
+                        measurement=asset_name,
+                        field_names=influxdb_profile_manager.profile_header[1:],
+                        tags=optim_simulation_tag,
+                    )
+                    # -- Test tags -- # do not delete - to be used in test case
+
+                    # prof_loaded_from_influxdb = InfluxDBProfileManager(influxdb_conn_settings)
+                    # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
+                    # prof_loaded_from_influxdb.load_influxdb(
+                    #     # '"' + "ResidualHeatSource_72d7" + '"' ,
+                    #     '"' + asset_name + '"' ,
+                    #     variables_one_hydraulic_system,
+                    #     # ["HeatIn.Q"],
+                    #     # ["HeatIn.H"],
+                    #     # ["Heat_flow"],
+                    #     profiles.start_datetime,
+                    #     profiles.end_datetime,
+                    #     dicts,
+                    # )
+
+                    # ------------------------------------------------------------------------------
+                    # Do not delete the code below: is used in the development of profile viewer in
+                    # mapeditor
+                    # Write database to excel file and read in to recreate the database
+                    # database name: input esdl id
+                    # tags when saving to database: optim_simulation_tag = {"output_esdl_id":
+                    # output_esdl_id}
+
+                    # print("Save ESDL profile data to excel")
+                    # excel_prof_saved = ExcelProfileManager(
+                    #     source_profile=prof_loaded_from_influxdb
+                    # )
+                    # file_path_setting = (
+                    #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\{asset_name}.xlsx"
+                    # )
+                    # excel_prof_saved.save_excel(
+                    #     file_path=file_path_setting,
+                    #     sheet_name=input_energy_system_id
+                    # )
+                    # print("Read data from Excel")
+                    # excel_prof_read = ExcelProfileManager()
+                    # excel_prof_read.load_excel(file_path_setting)
+                    # print("Create database")
+                    # influxdb_profile_manager_create_new = InfluxDBProfileManager(
+                    #     influxdb_conn_settings, excel_prof_read
+                    # )
+                    # optim_simulation_tag = {"output_esdl_id": energy_system.id}
+                    # _ = influxdb_profile_manager_create_new.save_influxdb(
+                    #     measurement=asset_name,
+                    #     field_names=influxdb_profile_manager_create_new.profile_header[1:],
+                    #     tags=optim_simulation_tag,
+                    # )
+                    # ------------------------------------------------------------------------------
+
+                except Exception:
+                    # If the asset has been deleted, thus also not placed
+                    pass
+            # TODO: create test case
+            # Code that can be used to remove a specific measurment from the database
+            # try:
+            #     influxdb_profile_manager.influxdb_client.drop_measurement(energy_system.id)
+            # except:
+            #     pass
+            # Code that can be used to check if a specific measurement exists in the database
+            # influxdb_profile_manager.influxdb_client.get_list_measurements()
+
+            # Do not delete: Test code still to be used in test case
+            # try:
+            #     esdl_infl_prof = profs[0]
+            #     np.any(isinstance(esdl_infl_prof, esdl.InfluxDBProfile))
+            # except:
+            #     np.any(isinstance(profs, esdl.InfluxDBProfile))
+            # print("Reading InfluxDB profile from test...")
+            # prof3 = InfluxDBProfileManager(conn_settings)
+            # # prof3.load_influxdb("test", ["Heat_flow"])
+            # prof3.load_influxdb('"' + energy_system.id + '"', profiles.profile_header[1:4])
+            # # can access values via
+            # # prof3.profile_data_list[0-row][0/1-date/value],
+            # # .strftime("%Y-%m-%dT%H:%M:%SZ")
+            # # prof3.profile_data_list[3][0].strftime("%Y-%m-%dT%H:%M:%SZ")
+            # ts_prof = prof3.get_esdl_timeseries_profile("Heat_flow")
+            # # np.testing.assert_array_equal(ts_prof.values[0], 45)
+            # # np.testing.assert_array_equal(ts_prof.values[1], 900)
+            # # np.testing.assert_array_equal(ts_prof.values[2], 5.6)
+            # # np.testing.assert_array_equal(ts_prof.values[3], 1.2)
+            # # np.testing.assert_array_equal(len(ts_prof.values), 4)
+            # # -- Test tags --
+            # prof3 = InfluxDBProfileManager(influxdb_conn_settings)
+            # dicts = [{"tag": "output_esdl_id", "value": energy_system.id}]
+            # prof3.load_influxdb(
+            #     '"' + "ResidualHeatSource_72d7" + '"' , ["HeatIn.Q"],
+            #     profiles.start_datetime,
+            #     profiles.end_datetime,
+            #     dicts,
+            # )
+            # test = 0.0
+        # ------------------------------------------------------------------------------------------
+        # Save esdl file
 
         self.__optimized_energy_system_handler = esh
         self.optimized_esdl_string = esh.to_string()
