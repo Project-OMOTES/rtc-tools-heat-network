@@ -4918,9 +4918,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def post(self):
         """
-        In this post function we check the optimization results in accurately solving for the
+        In this post function we check the optimization results for accurately solving the
         constraints. We do this for the head losses and check if they are consistent with the flow
-        direction. Whether, the minimum velocity is actually met. Whether, the directions of heat
+        direction. Whether, the minimum velocity is actually met. And whether, the directions of heat
         match the directions of the flow.
         """
         super().post()
