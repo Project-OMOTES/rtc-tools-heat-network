@@ -9,6 +9,16 @@ from .heat_two_port import HeatTwoPort
 
 
 class Buffer(HeatTwoPort, BaseAsset):
+    """
+    The buffer component is to model heat storage in a tank. This means that we model a tank of hot
+    water being filled and radiating heat away (heat loss) over the hot surfaces. We assume that the
+    hot surfaces are those in contact with hot water.
+
+    Like all storage assets we enforce that they must be connected as a demand. The heat to
+    discharge constraints are set in the HeatMixin, where we use a big_m formulation to enforce the
+    correct constraints depending on whether the buffer is charging or discharging.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

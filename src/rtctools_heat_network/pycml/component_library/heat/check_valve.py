@@ -4,6 +4,11 @@ from ._non_storage_component import _NonStorageComponent
 
 
 class CheckValve(_NonStorageComponent):
+    """
+    The check valve component is one to ensure that flow can only go through in the positive
+    direction of that component. This is done with constraints in the HeatMixin.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,
