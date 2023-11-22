@@ -5,6 +5,13 @@ from .._internal import BaseAsset
 
 
 class ElectricityCable(ElectricityTwoPort, BaseAsset):
+    """
+    The electricity cable component is used to model voltage and power drops in the electricity
+    lines. We model the power losses by over estimating them with the maximum current. We ensure
+    that the power is always less than what the current is able to carry by an equality constraint
+    at the demand where we enforce the minimum voltage.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

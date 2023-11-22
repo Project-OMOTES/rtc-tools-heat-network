@@ -4,6 +4,11 @@ from .._internal.electricity_component import ElectricityComponent
 
 
 class ElectricityPort(ElectricityComponent, Connector):
+    """
+    The electricity port is used to model the variables at a port where two assets are connected.
+    For electricity networks we model the electrical power (P), the voltage (V) and the current (I).
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -13,6 +18,10 @@ class ElectricityPort(ElectricityComponent, Connector):
 
 
 class ElectricityTwoPort(ElectricityComponent):
+    """
+    For electricity components that transport power we have a two port component.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

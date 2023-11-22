@@ -8,6 +8,12 @@ from .._internal.electricity_component import ElectricityComponent
 
 
 class ElectricitySource(ElectricityComponent, BaseAsset):
+    """
+    The electricity source component is used to generate electrical power and provide that to the
+    network. As we set the equality constraint on the demand side we do not have to set any
+    constraint at the source side.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
