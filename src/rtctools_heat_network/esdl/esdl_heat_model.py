@@ -40,6 +40,11 @@ class _ESDLInputException(Exception):
 
 
 class AssetToHeatComponent(_AssetToComponentBase):
+    """
+    This class is used to convert the esdl assets with their properties to pycml objects and set
+    their respective properties.
+    """
+
     def __init__(
         self,
         *args,
@@ -59,10 +64,37 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.min_fraction_tank_volume = min_fraction_tank_volume
 
     @property
-    def _rho_cp_modifiers(self):
+    def _rho_cp_modifiers(self) -> Tuple(float, float):
+        """
+        For giving the density, rho, in kg/m3 and specic heat, cp, in J/(K*kg)
+
+        Returns
+        -------
+        rho and cp
+        """
         return dict(rho=self.rho, cp=self.cp)
 
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+        """
+        This function converts the buffer object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the dimensions of the buffer needed for heat loss computation. Currently, assume
+        cylinder with height equal to radius.
+        - setting a minimum fill level and minimum asscociated heat
+        - Setting a maximum stored energy based on the size.
+        - Setting a cap on the thermal power.
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Buffer class with modifiers
+        """
         assert asset.asset_type == "HeatStorage"
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
@@ -142,6 +174,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Buffer, modifiers
 
     def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
+        """
+        This function converts the demand object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting a cap on the thermal power.
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Demand class with modifiers
+        """
         assert asset.asset_type in {"GenericConsumer", "HeatingDemand"}
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
@@ -159,6 +207,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Demand, modifiers
 
     def convert_node(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
+        """
+        This function converts the node object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the amount of connections
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Node class with modifiers
+        """
         assert asset.asset_type == "Joint"
 
         sum_in = 0
@@ -196,6 +258,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Node, modifiers
 
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
+        """
+        This function converts the buffer object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the dimensions of the pipe needed for heat loss computation. Currently, assume
+        cylinder with height equal to radius.
+        - setting if a pipe is disconnecteable for the optimization.
+        - Setting the isolative properties of the pipe.
+        - Setting a cap on the thermal power.
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Pipe class with modifiers
+        """
         assert asset.asset_type == "Pipe"
 
         length = asset.attributes["length"]
