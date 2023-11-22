@@ -54,6 +54,12 @@ class ESDLMixin(
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This class is used to be able to parse an ESDL file and utilize the definition of the energy
+    system in that file. Furthermore, it contains functionality to extract profiles specified like
+    for example demand profiles.
+    """
+
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries = False
@@ -66,7 +72,26 @@ class ESDLMixin(
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name = "DN150"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
+        """
+        In this __init__ function we do the parsing of the esdl file based on either a string which
+        is provided or read it in based on a file location specified in the run_info.
+
+        We put the assets, profiles and carriers in attributes of the class to later instantiate
+        the PyCML objects and write the desired time-series.
+
+        We set file locations for the input files and for the diagnostic file.
+
+        We create a dict with all possible pipe classes for the optional pipes to later add them
+        to the optimization problem. This is done in this Mixin as we here use the information of
+        the EDR database which is linked to ESDL and the Mapeditor.
+
+        Parameters
+        ----------
+        args : none
+        kwargs : esdl_string and esdl_run_info_path
+        """
+
         esdl_string = kwargs.get("esdl_string", None)
         if esdl_string is not None:
             esdl_path = None
@@ -157,7 +182,16 @@ class ESDLMixin(
 
         super().__init__(*args, **kwargs)
 
-    def pre(self):
+    def pre(self) -> None:
+        """
+        In this pre method we create a dict with a mapping between the esdl id and the name. We
+        also check that every asset has an unique name, which is needed for us to create unique
+        variable names.
+
+        Returns
+        -------
+        None
+        """
         super().pre()
         for esdl_id, esdl_asset in self.esdl_assets.items():
             if esdl_asset.name in self.name_to_esdl_id_map:
@@ -167,7 +201,18 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def override_pipe_classes(self):
+    def override_pipe_classes(self) -> None:
+        """
+        In this method we populate the _override_pipe_classes dict, which gives a list of possible
+        pipe classes for every pipe. We do this only when a pipe has the state OPTIONAL. We use the
+        EDR pipe classes. We assume that it is possible to remove a pipe PipeClass None, but also
+        that there is a minimum layed pipe size of DN150 to limit the search space. This seems
+        reasonable as we focus upon regional and primary networks.
+
+        Returns
+        -------
+        None
+        """
         maximum_velocity = self.heat_network_options()["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
@@ -219,22 +264,62 @@ class ESDLMixin(
                     c.append(no_pipe_class)
 
     @property
-    def esdl_assets(self):
+    def esdl_assets(self) -> Dict:
+        """
+        property method to retrieve the esdl assets which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict of the esdl assets with their properties
+        """
         return self.__esdl_assets
 
     @property
-    def esdl_carriers(self):
+    def esdl_carriers(self) -> Dict:
+        """
+        property method to retrieve the esdl carriers which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict with the id of the carrier and the attributes in the value
+        """
         return self.__esdl_carriers
 
     @property
-    def esdl_asset_id_to_name_map(self):
+    def esdl_asset_id_to_name_map(self) -> Dict:
+        """
+        A map between the id and the name of an asset. Very bad naming of the attribute...
+
+        Returns
+        -------
+        A dict with the id to name map.
+        """
         return self.__timeseries_id_map.copy()
 
     @property
-    def esdl_asset_name_to_id_map(self):
+    def esdl_asset_name_to_id_map(self) -> Dict:
+        """
+        A map between the name and the id of an asset. Very bad naming of the attribute...
+
+        Returns
+        -------
+        A dict with the name to id map.
+        """
         return dict(zip(self.__timeseries_id_map.values(), self.__timeseries_id_map.keys()))
 
     def get_asset_from_asset_name(self, asset_name: str) -> esdl.Asset:
+        """
+        This function returns the esdl asset with its properties based on the name you provide
+
+        Parameters
+        ----------
+        asset_name : string with the asset name of the esdl asset.
+
+        Returns
+        -------
+        The esdl asset with its attributes and global properties
+        """
+
         asset_id = self.esdl_asset_name_to_id_map[asset_name]
         return self.esdl_assets[asset_id]
 
