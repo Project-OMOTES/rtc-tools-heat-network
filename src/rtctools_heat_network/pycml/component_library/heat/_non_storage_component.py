@@ -26,8 +26,8 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         # of a component.
         self.Heat_nominal = self.cp * self.rho * self.Q_nominal * 100.0
 
-        self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)
+        # self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
+        # self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
@@ -36,8 +36,8 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
 
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
-        self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
-        self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)
+        # self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
+        # self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)
 
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)

@@ -313,8 +313,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         prim_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2
@@ -324,8 +324,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2

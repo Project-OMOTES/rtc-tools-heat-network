@@ -582,8 +582,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # TODO: if temperature is variable these bounds should be set differently
             max_heat = 2.0 * cp * rho * temperature * max_discharge
 
-            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_in"] = (-max_heat, max_heat)
-            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_out"] = (-max_heat, max_heat)
+            # self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_in"] = (-max_heat, max_heat)
+            # self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Heat_out"] = (-max_heat, max_heat)
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatIn.Heat"] = (-max_heat, max_heat)
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatOut.Heat"] = (-max_heat, max_heat)
 
