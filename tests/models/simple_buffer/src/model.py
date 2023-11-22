@@ -35,11 +35,11 @@ class Model(_Model):
             Source,
             "source",
             Heat_source=dict(min=0.75e5, max=1.25e5, nominal=1e5),
-            Heat_out=dict(max=2e5),
+            HeatOut=dict(Heat=dict(max=2e5)),
             **supply_return_modifiers,
         )
 
-        self.add_variable(Demand, "demand", Heat_in=dict(max=2e5), **supply_return_modifiers)
+        self.add_variable(Demand, "demand", HeatIn=dict(Heat=dict(max=2e5)), **supply_return_modifiers)
 
         self.add_variable(
             Buffer,

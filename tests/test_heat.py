@@ -105,12 +105,12 @@ class TestMinMaxPressureOptions(TestCase):
 
             results = case.extract_results()
             for p in case.heat_network_components["pipe"]:
-                min_head_in = min(results[f"{p}.H_in"])
-                min_head_out = min(results[f"{p}.H_out"])
+                min_head_in = min(results[f"{p}.HeatIn.H"])
+                min_head_out = min(results[f"{p}.HeatOut.H"])
                 min_head = min([min_head, min_head_in, min_head_out])
 
-                max_head_in = max(results[f"{p}.H_in"])
-                max_head_out = max(results[f"{p}.H_out"])
+                max_head_in = max(results[f"{p}.HeatIn.H"])
+                max_head_out = max(results[f"{p}.HeatOut.H"])
                 max_head = max([max_head, max_head_in, max_head_out])
 
             return min_head / 10.2, max_head / 10.2

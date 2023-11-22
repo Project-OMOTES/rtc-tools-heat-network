@@ -33,16 +33,16 @@ class ModelHeat(_Model):
             Source,
             "source1",
             Heat_source=dict(min=0.0, max=1.5e6, nominal=1e6),
-            Heat_in=dict(nominal=self.heat_nominal_cold_pipes),
-            Heat_out=dict(nominal=self.heat_nominal_hot_pipes),
+            HeatIn=dict(Heat=dict(nominal=self.heat_nominal_cold_pipes)),
+            HeatOut=dict(Heat=dict(nominal=self.heat_nominal_hot_pipes)),
             **supply_return_modifiers,
         )
         self.add_variable(
             Source,
             "source2",
             Heat_source=dict(min=0.0, max=1.5e7, nominal=1e6),
-            Heat_in=dict(nominal=self.heat_nominal_cold_pipes),
-            Heat_out=dict(nominal=self.heat_nominal_hot_pipes),
+            HeatIn=dict(Heat=dict(nominal=self.heat_nominal_cold_pipes)),
+            HeatOut=dict(Heat==dict(nominal=self.heat_nominal_hot_pipes)),
             **supply_return_modifiers,
         )
 

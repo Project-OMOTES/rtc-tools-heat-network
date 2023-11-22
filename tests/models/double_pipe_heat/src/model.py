@@ -21,14 +21,14 @@ class Model(_Model):
             "source",
             Heat_source=dict(min=0.75e5, max=1.25e5),
             Heat_flow=dict(min=0.75e5, max=1.25e5),
-            Heat_out=dict(max=self.max_heat),
+            HeatOut=dict(Heat=dict(max=self.max_heat)),
             **supply_return_modifiers,
         )
 
         self.add_variable(
             Demand,
             "demand",
-            Heat_in=dict(max=self.max_heat),
+            HeatIn=dict(Heat=dict(max=self.max_heat)),
             Heat_demand=dict(min=0.0, max=self.max_heat),
             Heat_flow=dict(min=0.0, max=self.max_heat),
             **supply_return_modifiers,
