@@ -23,7 +23,7 @@ class _SkipAssetException(Exception):
 class _ESDLModelBase(_Model):
     def _esdl_convert(self, converter, assets, prefix):
         # Sometimes we need information of one component in order to convert
-        # another. For example, the nominal discharg of a pipe is used to set
+        # another. For example, the nominal discharge of a pipe is used to set
         # the nominal discharge of its connected components.
         retry_assets = list(assets.values())
         skip_assets = list()
