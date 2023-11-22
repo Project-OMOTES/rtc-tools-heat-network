@@ -28,6 +28,8 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
 
         # self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
         # self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)
+        self.HeatIn.Heat.nominal = self.Heat_nominal
+        self.HeatOut.Heat.nominal = self.Heat_nominal
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
