@@ -6,6 +6,10 @@ from .._internal.gas_component import GasComponent
 
 
 class GasDemand(GasComponent, BaseAsset):
+    """
+    A gas demand consumes flow from the network.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
