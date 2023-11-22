@@ -259,7 +259,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         """
-        This function converts the buffer object in esdl to a set of modifiers that can be used in
+        This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
         - Setting the dimensions of the pipe needed for heat loss computation. Currently, assume
@@ -350,6 +350,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Pipe, modifiers
 
     def convert_pump(self, asset: Asset) -> Tuple[Type[Pump], MODIFIERS]:
+        """
+        This function converts the pump object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Pump class with modifiers
+        """
         assert asset.asset_type == "Pump"
 
         modifiers = dict(
