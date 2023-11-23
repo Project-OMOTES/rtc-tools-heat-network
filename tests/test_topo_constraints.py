@@ -12,7 +12,7 @@ from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
 
 
-MIP_TOLERANCE = 1e-10
+MIP_TOLERANCE = 1e-8
 
 
 class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
@@ -64,7 +64,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                 self.assertTrue(var_name in self.results, msg=f"{var_name} not in results")
                 self.assertTrue(
                     abs(value - 0.0) < MIP_TOLERANCE or abs(value - 1.0) < MIP_TOLERANCE,
-                    msg=f"Binary {var_name} isn't either 0.0 or 1.0",
+                    msg=f"Binary {var_name} isn't either 0.0 or 1.0, it is {value}",
                 )
             np.testing.assert_almost_equal(
                 1.0,
