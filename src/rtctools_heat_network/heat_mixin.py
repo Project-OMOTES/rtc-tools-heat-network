@@ -513,9 +513,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         pipe_class_cost_ordering_name = (
                             f"{cold_pipe}__hn_pipe_class_{c.name}_cost_ordering"
                         )
-                        pipe_class_heat_loss_ordering_name = (
-                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
-                        )
                     else:
                         pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
@@ -523,9 +520,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                         pipe_class_cost_ordering_name = (
                             f"{pipe}__hn_pipe_class_{c.name}_cost_ordering"
-                        )
-                        pipe_class_heat_loss_ordering_name = (
-                            f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
 
                     self.__pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
@@ -553,6 +547,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     self.__pipe_topo_pipe_class_cost_ordering_var_bounds[
                         pipe_class_cost_ordering_name
                     ] = (0.0, 1.0)
+
+                    pipe_class_heat_loss_ordering_name = (
+                        f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                    )
 
                     self.__pipe_topo_pipe_class_heat_loss_ordering_map[pipe][
                         c
