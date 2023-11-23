@@ -42,7 +42,7 @@ class ModelHeat(_Model):
             "source2",
             Heat_source=dict(min=0.0, max=1.5e7, nominal=1e6),
             HeatIn=dict(Heat=dict(nominal=self.heat_nominal_cold_pipes)),
-            HeatOut=dict(Heat==dict(nominal=self.heat_nominal_hot_pipes)),
+            HeatOut=dict(Heat == dict(nominal=self.heat_nominal_hot_pipes)),
             **supply_return_modifiers,
         )
 

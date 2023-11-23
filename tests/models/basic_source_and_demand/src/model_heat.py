@@ -23,7 +23,9 @@ class Model(_Model):
             **supply_return_modifiers,
         )
 
-        self.add_variable(Demand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers)
+        self.add_variable(
+            Demand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers
+        )
 
         self.add_variable(
             Pipe,

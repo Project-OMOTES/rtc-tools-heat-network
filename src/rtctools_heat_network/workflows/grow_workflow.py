@@ -491,6 +491,7 @@ class EndScenarioSizingStaged(EndScenarioSizing):
 
         return bounds
 
+
 class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     def solver_options(self):
         options = super().solver_options()
@@ -502,7 +503,6 @@ class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
         options["gurobi"] = None
 
         return options
-
 
 
 class EndScenarioSizingCBC(EndScenarioSizing):
