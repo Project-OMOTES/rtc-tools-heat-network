@@ -1689,6 +1689,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             else:
                 constraint_nominal = big_m
 
+            # when DN=0 the flow_dir variable can be 0 or 1, thus these constraints then need to be
+            # disabled
             constraints.append(
                 (
                     (
@@ -1761,15 +1763,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 constraints.append(
                     ((heat_out + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf)
                 )
-
-            big_m = 2.0 * np.max(
-                np.abs(
-                    (
-                        *self.bounds()[f"{p}.HeatIn.Heat"],
-                        *self.bounds()[f"{p}.HeatOut.Heat"],
-                    )
-                )
-            )
 
         # Pipes that are connected in series should have the same heat direction.
         for pipes in self.heat_network_topology.pipe_series:
