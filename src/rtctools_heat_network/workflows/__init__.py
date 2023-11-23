@@ -18,9 +18,11 @@ __all__ = [
     "EndScenarioSizing",
     "EndScenarioSizingCBC",
     "EndScenarioSizingHIGHS",
+    "EndScenarioSizingStaged",
+    "EndScenarioSizingStagedHIGHS",
+    "run_end_scenario_sizing",
     "NetworkSimulator",
     "NetworkSimulatorHIGHS",
     "NetworkSimulatorHIGHSTestCase",
     "NetworkSimulatorHIGHSWeeklyTimeStep",
-    "EndScenarioSizingStaged",
 ]

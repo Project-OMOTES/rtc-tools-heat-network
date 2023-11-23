@@ -565,7 +565,6 @@ def main(runinfo_path, log_level):
         log_level=log_level,
         **kwargs,
     )
-
     # results = solution.extract_results()
 
 
