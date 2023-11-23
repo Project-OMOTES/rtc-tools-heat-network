@@ -32,13 +32,13 @@ class TargetDemandGoal(Goal):
 
 class CommonCostGoal(Goal):
     order = 1
+    priority = 2
 
-    def __init__(self, priority=2, number_of_years=30.0):
-        self.priority = priority
+    def __init__(self, number_of_years=30.0):
         self.number_of_years = number_of_years
         self.target_max = 0.0
         self.function_range = (0.0, 1.0e8)
-        self.function_nominal = 1.0e6
+        self.function_nominal = 1.0e7
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
@@ -50,8 +50,7 @@ class CommonCostGoal(Goal):
         cost_map_keys = ["_asset_fixed_operational_cost_map"]
         obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
 
-        asset_categories = ["source"]
-        # asset_categories = ["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"]
+        asset_categories = ["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"]
         obj += self.investment_cost(optimization_problem, asset_categories)
         return obj
 
@@ -81,8 +80,7 @@ class MinimizeNoDiscountedCostGoal(CommonCostGoal):
         divide_by_years = False
         cost_map_keys = ["_asset_installation_cost_map", "_asset_investment_cost_map"]
         return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
-        # return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
-
+    
 
 class MinimizeDiscAnnualizedCostGoal(CommonCostGoal):
     def investment_cost(self, optimization_problem, asset_categories):
@@ -205,10 +203,10 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
     
-    # solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
-    # results = solution.extract_results()
-    # print('\n HeatProblemAnnualized Completed \n \n')
-
-    solution = run_optimization_problem(HeatProblemNoDiscTotalCost, base_folder=base_folder)
+    solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
     results = solution.extract_results()
     print('\n HeatProblemAnnualized Completed \n \n')
+
+    # solution = run_optimization_problem(HeatProblemNoDiscTotalCost, base_folder=base_folder)
+    # results = solution.extract_results()
+    # print('\n HeatProblemAnnualized Completed \n \n')

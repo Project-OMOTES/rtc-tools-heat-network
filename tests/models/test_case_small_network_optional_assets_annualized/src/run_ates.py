@@ -110,6 +110,7 @@ class HeatProblem(
     def solver_options(self):
         options = super().solver_options()
         # options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 

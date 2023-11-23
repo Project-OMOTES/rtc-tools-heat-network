@@ -764,7 +764,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self._annualized_capex_var_map[asset] = annualized_capex_var_name
             self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(annualized_capex_var_name)
             self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf)#(lb, ub)
-            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.
+            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.e6 # TODO: set as the investment_nominal + installation_nominal
 
         for asset in [
             *self.heat_network_components.get("source", []),
@@ -4413,7 +4413,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
 
         # REMOVE
-        self._number_of_years=30
+        self._number_of_years=1
         # asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
         asset_categories  = ["source"]
         
@@ -4426,21 +4426,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 symbol = self.extra_variable(symbol_name) # casadi symbol
 
                 investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-                investment_cost_symbol = self.extra_variable(investment_cost_symbol_name)
+                investment_cost_symbol = self.extra_variable(investment_cost_symbol_name, ensemble_member)
                 installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-                installation_cost_symbol = self.extra_variable(installation_cost_symbol_name)
+                installation_cost_symbol = self.extra_variable(installation_cost_symbol_name, ensemble_member)
 
                 investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
                 INTEREST_RATE = 0.00
-                NOMINAL = 1.e6
+                NOMINAL = self.variable_nominal(symbol_name)
                 
                 asset_life_years = self._number_of_years
                 # parameters[f"{asset_name}.technical_life"]
                 # asset_life_years = symbol_name.technical_life
                 # parameters["HeatProducer_2.technical_life"]
 
-                
                 annuity_factor = calculate_annuity_factor(INTEREST_RATE, asset_life_years)
 
                 constraints.append(((symbol - investment_and_installation_cost*annuity_factor) / NOMINAL, 0.0, 0.0))
