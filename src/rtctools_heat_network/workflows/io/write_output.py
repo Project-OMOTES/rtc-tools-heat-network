@@ -556,7 +556,9 @@ class ScenarioOutput(HeatMixin):
                         self._asset_fixed_operational_cost_map[asset_name]
                     ][0]
 
-                    # Calculate the total energy [Wh] consumed/produced in an area
+                    # Calculate the total energy [Wh] consumed/produced in an are.
+                    # Note: heat losses of buffers, ATES' and pipes are included in the area energy
+                    # consumption
                     if asset_name in self.heat_network_components.get("source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
