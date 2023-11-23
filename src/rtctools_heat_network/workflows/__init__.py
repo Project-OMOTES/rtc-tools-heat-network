@@ -3,6 +3,7 @@ from .grow_workflow import (
     EndScenarioSizingCBC,
     EndScenarioSizingHIGHS,
     EndScenarioSizingStaged,
+    EndScenarioSizingStagedHIGHS,
 )
 from .simulator_workflow import (
     NetworkSimulator,

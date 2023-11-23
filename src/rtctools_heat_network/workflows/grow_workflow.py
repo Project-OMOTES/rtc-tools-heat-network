@@ -466,7 +466,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         return options
 
 
-class EndScenarioSizingStaged(EndScenarioSizingHIGHS):
+class EndScenarioSizingStaged(EndScenarioSizing):
     _stage = 0
 
     def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
@@ -490,6 +490,19 @@ class EndScenarioSizingStaged(EndScenarioSizingHIGHS):
             bounds.update(self.__boolean_bounds)
 
         return bounds
+
+class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
 
 
 class EndScenarioSizingCBC(EndScenarioSizing):
@@ -578,7 +591,7 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
             v_prev = 0.0
             for var_name in pipe_classes.values():
                 v = results[var_name][0]
-                boolean_bounds[var_name] = (v, v)
+                boolean_bounds[var_name] = (0.0, abs(v))
                 if v_prev == 1.0:
                     boolean_bounds[var_name] = (0.0, 1.0)
                 v_prev = v
