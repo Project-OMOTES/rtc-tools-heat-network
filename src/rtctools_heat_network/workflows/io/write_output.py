@@ -955,6 +955,7 @@ class ScenarioOutput(HeatMixin):
                                     host=self.influxdb_host,
                                     startDate=pytz.utc.localize(self.io.datetimes[0]),
                                     endDate=pytz.utc.localize(self.io.datetimes[-1]),
+                                    id=str(uuid.uuid4()),
                                 )
                                 asset.port[index_outport].profile.append(profile_attributes)
 
