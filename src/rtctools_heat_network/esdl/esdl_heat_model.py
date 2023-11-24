@@ -68,7 +68,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
 
     @property
-    def _rho_cp_modifiers(self) -> Tuple(float, float):
+    def _rho_cp_modifiers(self) -> Dict:
         """
         For giving the density, rho, in kg/m3 and specic heat, cp, in J/(K*kg)
 
