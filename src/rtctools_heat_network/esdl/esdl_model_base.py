@@ -1,8 +1,9 @@
 import logging
+from typing import Dict
 
 import esdl
 from esdl import InPort
-
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 
 from rtctools_heat_network.pycml import Model as _Model
 
@@ -21,10 +22,33 @@ class _SkipAssetException(Exception):
 
 
 class _ESDLModelBase(_Model):
+    """
+    This is the ESDL base class that is used to convert from the esdl parsed assets to the pycml
+    model description. In the base class we specify how the network is connected, meaning which
+    asset is connected to which asset as this is the same for different model types (both
+    Heat and QTH). Per model type we have a specialization for the converting of the assets as
+    different models might need different information from the esdl file.
+    """
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
 
-    def _esdl_convert(self, converter, assets, prefix):
+    def _esdl_convert(self, converter: _AssetToComponentBase, assets: Dict, prefix: str) -> None:
+        """
+        In this function we convert the esdl parsed assets and instantiate the pycml objects for
+        those assets. We use the converter to create those pycml objects. Afterwards we look at the
+        connections specified in the esdl and create the relevant maps between ports to then also
+        connect the pycml ports of the assets.
+
+        Parameters
+        ----------
+        converter : class with the different converter functions for all asset types.
+        assets : a dict with all the parsed esdl assets and their attributes
+        prefix : prefix for the name of the model type Heat or QTH at the moment
+
+        Returns
+        -------
+        None
+        """
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharge of a pipe is used to set
         # the nominal discharge of its connected components.
