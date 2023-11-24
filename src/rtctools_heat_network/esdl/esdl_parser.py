@@ -1,6 +1,8 @@
 import base64
+from typing import Dict, Optional
 
 import esdl.esdl_handler
+from pyecore.ecore import EString
 
 from pyecore.resources import ResourceSet
 
@@ -12,25 +14,28 @@ class _ESDLInputException(Exception):
 
 
 class BaseESDLParser:
+    _global_properties: Dict[str, Dict]
+    _assets: Dict[EString, Asset]
+    _energy_system: Optional[esdl.EnergySystem]
 
     def __init__(self):
         self._global_properties = {"carriers": dict()}
         self._assets = dict()
-        self._esdl_model = None
+        self._energy_system = None
         self._read_esdl()
 
-    def _load_esdl_model(self):
+    def _load_esdl_model(self) -> None:
         """
         This function should be implemented by the child. The function doesn't return anything but
         should set the _esdl_model property.
         """
         raise NotImplementedError
 
-    def _read_esdl(self):
+    def _read_esdl(self) -> None:
         self._load_esdl_model()
         id_to_idnumber_map = {}
 
-        for x in self._esdl_model.energySystemInformation.carriers.carrier.items:
+        for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.HeatCommodity):
                 if x.supplyTemperature != 0.0 and x.returnTemperature == 0.0:
                     type_ = "supply"
@@ -81,7 +86,7 @@ class BaseESDLParser:
             c["supplyTemperature"] = supply_temperature
             c["returnTemperature"] = return_temperature
 
-        for x in self._esdl_model.energySystemInformation.carriers.carrier.items:
+        for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.ElectricityCommodity):
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
@@ -94,7 +99,7 @@ class BaseESDLParser:
         component_names = set()
 
         # loop through assets
-        for el in self._esdl_model.eAllContents():
+        for el in self._energy_system.eAllContents():
             if isinstance(el, esdl.Asset):
                 if hasattr(el, "name") and el.name:
                     el_name = el.name
@@ -145,37 +150,39 @@ class BaseESDLParser:
                     self._global_properties,
                 )
 
-    def get_assets(self):
+    def get_assets(self) -> Dict[EString, Asset]:
         return self._assets
 
-    def get_carrier_properties(self):
+    def get_carrier_properties(self) -> Dict:
         return self._global_properties["carriers"]
 
-    def get_esdl_model(self):
-        return self._esdl_model
+    def get_esdl_model(self) -> esdl.EnergySystem:
+        return self._energy_system
 
 
 class ESDLStringParser(BaseESDLParser):
+    _esdl_string: str
 
-    def __init__(self, esdl_string):
+    def __init__(self, esdl_string: str):
         if isinstance(esdl_string, bytes):
             self._esdl_string = base64.b64decode(esdl_string).decode('utf-8')
         else:
             self._esdl_string = esdl_string
         super().__init__()
 
-    def _load_esdl_model(self):
+    def _load_esdl_model(self) -> None:
         esh = esdl.esdl_handler.EnergySystemHandler()
-        self._esdl_model = esh.load_from_string(self._esdl_string)
+        self._energy_system = esh.load_from_string(self._esdl_string)
 
 
 class ESDLFileParser(BaseESDLParser):
+    _esdl_path: str
 
-    def __init__(self, esdl_string):
+    def __init__(self, esdl_string: str):
         self._esdl_path = esdl_string
         super().__init__()
 
-    def _load_esdl_model(self):
+    def _load_esdl_model(self) -> None:
         # correct profile attribute
         esdl.ProfileElement.from_.name = "from"
         setattr(esdl.ProfileElement, "from", esdl.ProfileElement.from_)
@@ -187,6 +194,6 @@ class ESDLFileParser(BaseESDLParser):
         resource_existing = rset_existing.get_resource(str(self._esdl_path))
         created_energy_system = resource_existing.contents[0]
 
-        self._esdl_model = created_energy_system
+        self._energy_system = created_energy_system
 
 
