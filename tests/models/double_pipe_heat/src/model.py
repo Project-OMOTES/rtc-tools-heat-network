@@ -10,6 +10,7 @@ class Model(_Model):
 
         self.T_supply = 75.0
         self.T_return = 45.0
+        self.max_heat = 4200 * 988 * self.T_supply
 
         supply_return_modifiers = dict(
             T_supply=self.T_supply, T_return=self.T_return, Q_nominal=self.Q_nominal
@@ -19,11 +20,19 @@ class Model(_Model):
             Source,
             "source",
             Heat_source=dict(min=0.75e5, max=1.25e5),
-            Heat_out=dict(max=2e5),
+            Heat_flow=dict(min=0.75e5, max=1.25e5),
+            HeatOut=dict(Heat=dict(max=self.max_heat)),
             **supply_return_modifiers,
         )
 
-        self.add_variable(Demand, "demand", Heat_in=dict(max=2e5), **supply_return_modifiers)
+        self.add_variable(
+            Demand,
+            "demand",
+            HeatIn=dict(Heat=dict(max=self.max_heat)),
+            Heat_demand=dict(min=0.0, max=self.max_heat),
+            Heat_flow=dict(min=0.0, max=self.max_heat),
+            **supply_return_modifiers,
+        )
 
         self.add_variable(
             Pipe,
@@ -31,7 +40,8 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_supply,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -41,7 +51,8 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -51,7 +62,8 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_supply,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -61,7 +73,8 @@ class Model(_Model):
             length=1000.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -71,7 +84,8 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_supply,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -81,7 +95,8 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -91,7 +106,8 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_supply,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 
@@ -101,7 +117,8 @@ class Model(_Model):
             length=0.0,
             diameter=0.15,
             temperature=self.T_return,
-            HeatIn=dict(Heat=dict(min=-2e5, max=2e5)),
+            HeatIn=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
+            HeatOut=dict(Heat=dict(min=-self.max_heat, max=self.max_heat)),
             **supply_return_modifiers,
         )
 

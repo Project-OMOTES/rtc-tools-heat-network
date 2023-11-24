@@ -12,6 +12,10 @@ from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMi
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
@@ -60,20 +64,35 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        # for s in self.heat_network_components["source"]:
-        #     goals.append(MinimizeSourcesHeatGoal(s))
+        for s in self.heat_network_components["source"]:
+            goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
 
 
 class HeatProblem(
     _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # variables for solver settings
+        self._qpsol = None
+
+    def pre(self):
+        super().pre()
+        self._qpsol = CachingQPSol()
+
     def path_goals(self):
         goals = super().path_goals().copy()
 
@@ -81,12 +100,13 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.0001
         return options
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["casadi_solver"] = self._qpsol
+        # options["solver"] = "gurobi"
         return options
 
     def constraints(self, ensemble_member):
@@ -119,7 +139,7 @@ class HeatProblem(
             # TODO: the approach of picking one peak day was introduced for a network with a tree
             #  layout and all big sources situated at the root of the tree. It is not guaranteed
             #  that an optimal solution is reached in different network topologies.
-            nr_of_days = len(total_demand) // 24
+            nr_of_days = len(total_demand) // (24 * 5)
             new_date_times = list()
             for day in range(nr_of_days):
                 new_date_times.append(self.io.datetimes[day * 24])
@@ -148,7 +168,7 @@ class HeatProblem(
 class HeatProblemPlacingOverTime(HeatProblem):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["neglect_pipe_heat_losses"] = True
+        options["include_asset_is_realized"] = True
 
         return options
 
@@ -180,8 +200,8 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
         # to avoid ates in short problem
         for a in self.heat_network_components.get("ates", []):
-            heat_ated = self.state_vector(f"{a}.Heat_ates")
-            constraints.append((heat_ated, 0.0, 0.0))
+            heat_ates = self.state_vector(f"{a}.Heat_ates")
+            constraints.append((heat_ates, 0.0, 0.0))
 
         return constraints
 
@@ -204,7 +224,12 @@ class HeatProblemSetPoints(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
         return options
 
     def constraints(self, ensemble_member):
@@ -351,16 +376,3 @@ class HeatProblemSetPoints(
 if __name__ == "__main__":
     sol = run_optimization_problem(HeatProblemPlacingOverTime)
     results = sol.extract_results()
-    # import matplotlib.pyplot as plt
-    #
-    # plt.figure()
-    # plt.plot(results["ATES_033c.Heat_ates"])
-    # plt.figure()
-    # plt.plot(results["ATES_033c.Stored_heat"])
-    # plt.show()
-    # a = 2
-    a = 1
-
-    # solution = run_optimization_problem(
-    #     HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}}
-    # )

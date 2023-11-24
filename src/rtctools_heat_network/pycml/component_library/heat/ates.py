@@ -62,7 +62,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
         self.add_equation(self.Q - self.HeatOut.Q)
 
-        # Heat stored in the ates
+        # # Heat stored in the ates
         self.add_equation(
             (self.der(self.Stored_heat) - self.Heat_ates + self.Heat_loss)
             / self._heat_loss_eq_nominal_ates

@@ -24,23 +24,25 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         # particularly helps the scaling/range of the constraints that relate
         # the heat loss (if it is variable/optional) to the heat in- and out
         # of a component.
-        self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal / 100.0
+        self.Heat_nominal = self.cp * self.rho * self.Q_nominal * 100.0
 
-        self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
-        self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)
+        # self.add_variable(Variable, "Heat_in", nominal=self.Heat_nominal)
+        # self.add_variable(Variable, "Heat_out", nominal=self.Heat_nominal)
+        self.HeatIn.Heat.nominal = self.Heat_nominal
+        self.HeatOut.Heat.nominal = self.Heat_nominal
 
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
 
-        self.add_variable(Variable, "H_in")
-        self.add_variable(Variable, "H_out")
+        # self.add_variable(Variable, "H_in")
+        # self.add_variable(Variable, "H_out")
 
         self.add_variable(Variable, "Heat_flow", nominal=self.Heat_nominal)
 
-        self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
-        self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)
+        # self.add_equation((self.Heat_out - self.HeatOut.Heat) / self.Heat_nominal)
+        # self.add_equation((self.Heat_in - self.HeatIn.Heat) / self.Heat_nominal)
 
         self.add_equation(self.HeatIn.Q - self.Q)
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
 
-        self.add_equation(self.HeatIn.H - self.H_in)
-        self.add_equation(self.HeatOut.H - self.H_out)
+        # self.add_equation(self.HeatIn.H - self.H_in)
+        # self.add_equation(self.HeatOut.H - self.H_out)

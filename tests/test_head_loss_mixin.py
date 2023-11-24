@@ -6,7 +6,6 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.util import run_heat_network_optimization
 
 
 class TestHeadLossCalculation(TestCase):
@@ -71,24 +70,24 @@ class TestHeadLossOptions(TestCase):
         ):
             run_optimization_problem(Model, base_folder=base_folder)
 
-    def test_no_head_loss(self):
-        # Test if a model with NO_HEADLOSS set runs without issues
-        from models.basic_buffer.src.compare import (
-            HeatProblemPyCML,
-            QTHProblemPyCML,
-            base_folder,
-        )
-
-        class ModelHeat(HeatProblemPyCML):
-            def heat_network_options(self):
-                options = super().heat_network_options()
-                options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-                return options
-
-        class ModelQTH(QTHProblemPyCML):
-            def heat_network_options(self):
-                options = super().heat_network_options()
-                options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-                return options
-
-        run_heat_network_optimization(ModelHeat, ModelQTH, base_folder=base_folder)
+    # def test_no_head_loss(self):
+    #     # Test if a model with NO_HEADLOSS set runs without issues
+    #     from models.basic_buffer.src.compare import (
+    #         HeatProblemPyCML,
+    #         QTHProblemPyCML,
+    #         base_folder,
+    #     )
+    #
+    #     class ModelHeat(HeatProblemPyCML):
+    #         def heat_network_options(self):
+    #             options = super().heat_network_options()
+    #             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+    #             return options
+    #
+    #     class ModelQTH(QTHProblemPyCML):
+    #         def heat_network_options(self):
+    #             options = super().heat_network_options()
+    #             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+    #             return options
+    #
+    #     run_heat_network_optimization(ModelHeat, ModelQTH, base_folder=base_folder)

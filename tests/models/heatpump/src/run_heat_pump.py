@@ -48,6 +48,12 @@ class _GoalsAndOptions:
 
         return options
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+
+        return options
+
 
 class MinimizeSourcesHeatGoal(Goal):
     priority = 2
@@ -101,6 +107,19 @@ class HeatProblem(
 
         return goals
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.001
+        options["heat_loss_disconnected_pipe"] = True
+
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(HeatProblem)
+    results = solution.extract_results()

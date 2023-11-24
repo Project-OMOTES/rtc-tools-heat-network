@@ -1,3 +1,5 @@
+import esdl
+
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -96,9 +98,9 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.0001
         options["neglect_pipe_heat_losses"] = True
-        options["heat_loss_disconnected_pipe"] = False
+        options["heat_loss_disconnected_pipe"] = True
         return options
 
     def constraints(self, ensemble_member):
@@ -116,9 +118,28 @@ class HeatProblem(
 
     def solver_options(self):
         options = super().solver_options()
+        options["solver"] = "highs"
         # options["solver"] = "gurobi"
 
         return options
+
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+
+        asset = next(a for a in assets.values() if a.name == "Pipe_8125")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_8125_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_9768")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+        asset = next(a for a in assets.values() if a.name == "Pipe_9768_ret")
+        asset.attributes["state"] = esdl.AssetStateEnum.OPTIONAL
+
+        return assets
+
+    def pipe_classes(self, p):
+        return self._override_pipe_classes.get(p, [])
 
     def read(self):
         """
