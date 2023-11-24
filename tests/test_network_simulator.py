@@ -37,8 +37,8 @@ class TestNetworkSimulator(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        # Check that producer 1 (merit oder = 2) is only used for the supply of heat lossed in the
-        # connected and is does not contribute to the heating demands 1, 2 and 3
+        # Check that producer 1 (merit oder = 2) is not used
+        # and is does not contribute to the heating demands 1, 2 and 3
         np.testing.assert_allclose(
             results["HeatProducer_1.Heat_source"],
             0.0,

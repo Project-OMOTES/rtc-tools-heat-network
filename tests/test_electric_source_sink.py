@@ -64,8 +64,8 @@ class TestMILPElectricSourceSink(TestCase):
         )
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        max_ = 32660.0  # This max is based on max current and voltage requirement at consumer
-        v_min = 230  # set as minimum voltage for cables
+        max_ = 142.0 * 1.5e4  # This max is based on max current and voltage requirement at consumer
+        v_min = 1.0e4  # set as minimum voltage for cables
 
         results = run_optimization_problem(
             ElectricityProblemMaxCurr, base_folder=base_folder

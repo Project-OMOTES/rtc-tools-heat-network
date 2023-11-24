@@ -25,7 +25,7 @@ class HeatPumpElec(HeatPump):
         # TODO: potentially we can keep the component type as heat_pump and set subcomponent to
         # heat_pump_elec, first need to check if there wouldn't be anything conflicting then.
         self.component_type = "heat_pump_elec"
-        self.min_voltage = 230.0  # TODO: check if needed
+        self.min_voltage = 1.0e4
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_equation(((self.ElectricityIn.Power - self.Power_elec) / self.elec_power_nominal))

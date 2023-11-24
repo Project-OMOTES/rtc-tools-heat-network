@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from ._non_storage_component import _NonStorageComponent
@@ -11,6 +13,9 @@ class Pump(_NonStorageComponent):
 
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
+
+        self.temperature = nan
+        self.carrier_id = -1
 
         self.component_type = "pump"
 

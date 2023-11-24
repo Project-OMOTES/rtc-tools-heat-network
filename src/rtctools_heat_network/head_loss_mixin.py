@@ -382,8 +382,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 pipe_elevation = 0.0
                 min_head = min_pressure * 10.2 + pipe_elevation
                 max_head = max_pressure * 10.2 + pipe_elevation
-                self.__pipe_head_bounds[f"{p}.H_in"] = (min_head, max_head)
-                self.__pipe_head_bounds[f"{p}.H_out"] = (min_head, max_head)
+                self.__pipe_head_bounds[f"{p}.HeatIn.H"] = (min_head, max_head)
+                self.__pipe_head_bounds[f"{p}.HeatOut.H"] = (min_head, max_head)
 
         head_loss_option = options["head_loss_option"]
         if head_loss_option not in HeadLossOption.__members__.values():
@@ -918,11 +918,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
         for pipe in self.heat_network_components.get("pipe", []):
             dh = self.state(f"{pipe}.dH")
-            h_down = self.state(f"{pipe}.H_out")
-            h_up = self.state(f"{pipe}.H_in")
+            h_down = self.state(f"{pipe}.HeatOut.H")
+            h_up = self.state(f"{pipe}.HeatIn.H")
 
             constraint_nominal = (
-                self.variable_nominal(f"{pipe}.dH") * self.variable_nominal(f"{pipe}.H_in")
+                self.variable_nominal(f"{pipe}.dH") * self.variable_nominal(f"{pipe}.HeatIn.H")
             ) ** 0.5
             constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 
@@ -945,7 +945,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         for d in components.get("demand", []):
             constraints.append(
                 (
-                    self.state(f"{d}.H_in") - self.state(f"{d}.H_out"),
+                    self.state(f"{d}.HeatIn.H") - self.state(f"{d}.HeatOut.H"),
                     min_head_loss,
                     np.inf,
                 )
@@ -1046,7 +1046,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 min_head_loss = None
 
                 for demand in components["demand"]:
-                    head_loss = results[f"{demand}.H_in"] - results[f"{demand}.H_out"]
+                    head_loss = results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
                     if min_head_loss is None:
                         min_head_loss = head_loss
                     else:

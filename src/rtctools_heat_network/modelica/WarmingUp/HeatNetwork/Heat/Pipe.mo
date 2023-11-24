@@ -12,6 +12,8 @@ block Pipe
   final parameter Real area = 0.25 * 3.14159265358979323846 * diameter ^ 2;
   parameter Real temperature;
 
+  parameter Real carrier_id = -1;
+
   // Parameters determining the heat loss
   // All of these have default values in the library function
   parameter SI.Thickness insulation_thickness;

@@ -16,7 +16,7 @@ class ElectricityDemand(ElectricityComponent, BaseAsset):
         super().__init__(name, **modifiers)
 
         self.component_type = "electricity_demand"
-        self.min_voltage = 230.0
+        self.min_voltage = 1.0e4
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Electricity_demand", min=0.0)

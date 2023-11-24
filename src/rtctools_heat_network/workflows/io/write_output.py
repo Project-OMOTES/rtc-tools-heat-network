@@ -498,6 +498,11 @@ class ScenarioOutput(HeatMixin):
         # - We assume that all energy produced outside of the the subarea comes in via a heat
         #   exchanger that is part of the subarea.
         # TODO: Investigate if no cost in the ESDL then this breaks ESDL visibility
+        total_energy_produced_locally_wh = {}
+        total_energy_consumed_locally_wh = {}
+        estimated_energy_from_local_source_perc = {}
+        estimated_energy_from_regional_source_perc = {}
+
         for subarea in energy_system.instance[0].area.area:
             area_investment_cost = 0.0
             area_installation_cost = 0.0
@@ -551,10 +556,79 @@ class ScenarioOutput(HeatMixin):
                         self._asset_fixed_operational_cost_map[asset_name]
                     ][0]
 
-            # Here we add KPIs to the polygon area which allows to visualize them by hoovering over
+                    # Calculate the total energy [Wh] consumed/produced in an are.
+                    # Note: heat losses of buffers, ATES' and pipes are included in the area energy
+                    # consumption
+                    if asset_name in self.heat_network_components.get("source", []):
+                        try:
+                            total_energy_produced_locally_wh[subarea.name] += np.sum(
+                                results[f"{asset_name}.Heat_source"][1:]
+                                * (self.times()[1:] - self.times()[0:-1])
+                                / 3600.0
+                            )
+                        except KeyError:
+                            total_energy_produced_locally_wh[subarea.name] = np.sum(
+                                results[f"{asset_name}.Heat_source"][1:]
+                                * (self.times()[1:] - self.times()[0:-1])
+                                / 3600.0
+                            )
+                    if asset_name in self.heat_network_components.get("demand", []):
+                        flow_variable = results[f"{asset_name}.Heat_demand"][1:]
+                    elif asset_name in self.heat_network_components.get("buffer", []):
+                        flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
+                    elif asset_name in self.heat_network_components.get("ates", []):
+                        flow_variable = results[f"{asset_name}.Heat_ates"][1:]
+                    elif asset_name in self.heat_network_components.get("pipe", []):
+                        flow_variable = (
+                            np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
+                        )
+                    else:
+                        flow_variable = ""
+                    if (
+                        asset_name in self.heat_network_components.get("demand", [])
+                        or asset_name in self.heat_network_components.get("buffer", [])
+                        or asset_name in self.heat_network_components.get("ates", [])
+                        or asset_name in self.heat_network_components.get("pipe", [])
+                    ):
+                        try:
+                            total_energy_consumed_locally_wh[subarea.name] += np.sum(
+                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                            )
+                        except KeyError:
+                            total_energy_consumed_locally_wh[subarea.name] = np.sum(
+                                flow_variable * (self.times()[1:] - self.times()[0:-1]) / 3600.0
+                            )
+                    # end Calculate the total energy consumed/produced in an area
+                # end if placed loop
+            # end asset loop
+
+            # Calculate the estimated energy source [%] for an area
+            try:
+                total_energy_produced_locally_wh_area = total_energy_produced_locally_wh[
+                    subarea.name
+                ]
+            except KeyError:
+                total_energy_produced_locally_wh_area = 0.0
+
+            try:
+                estimated_energy_from_local_source_perc[subarea.name] = min(
+                    total_energy_produced_locally_wh_area
+                    / total_energy_consumed_locally_wh[subarea.name]
+                    * 100.0,
+                    100.0,
+                )
+                estimated_energy_from_regional_source_perc[subarea.name] = min(
+                    (100.0 - estimated_energy_from_local_source_perc[subarea.name]), 100.0
+                )
+            except KeyError:
+                # Nothing to do, go on to next section of code
+                pass
+
+            # Here we add KPIs to the polygon area which allows to visualize them by hovering over
             # it with the mouse
             # Only update kpis if one of the costs > 0, else esdl file will be corrupted
-            if area_investment_cost > 0.0 or area_installation_cost > 0.0:
+            # TODO: discuss strange behaviour with Edwin - temporarily use of "True" in line below
+            if area_investment_cost > 0.0 or area_installation_cost > 0.0 or True:
                 kpis.kpi.append(
                     esdl.DoubleKPI(
                         value=area_investment_cost / 1.0e6,
@@ -578,7 +652,8 @@ class ScenarioOutput(HeatMixin):
                     )
                 )
             # Only update kpis if one of the costs > 0, else esdl file will be corrupted
-            if area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0:
+            # TODO: discuss strange behaviour with Edwin - temporarily use of "True" in line below
+            if area_variable_opex_cost > 0.0 or area_fixed_opex_cost > 0.0 or True:
                 kpis.kpi.append(
                     esdl.DoubleKPI(
                         value=area_variable_opex_cost / 1.0e6,
@@ -602,6 +677,46 @@ class ScenarioOutput(HeatMixin):
                     )
                 )
 
+            try:
+                if total_energy_consumed_locally_wh[subarea.name] >= 0.0:
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=round(estimated_energy_from_local_source_perc[subarea.name], 1),
+                            name="Estimated energy from local source(s) [%]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                unit=esdl.UnitEnum.PERCENT,
+                                multiplier=esdl.MultiplierEnum.NONE,
+                            ),
+                        )
+                    )
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=round(
+                                estimated_energy_from_regional_source_perc[subarea.name], 1
+                            ),
+                            name="Estimated energy from regional source(s) [%]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                unit=esdl.UnitEnum.PERCENT,
+                                multiplier=esdl.MultiplierEnum.NONE,
+                            ),
+                        )
+                    )
+                    kpis.kpi.append(
+                        esdl.DoubleKPI(
+                            value=round(total_energy_consumed_locally_wh[subarea.name] / 1.0e9, 1),
+                            name="Total energy consumed [GWh]",
+                            quantityAndUnit=esdl.esdl.QuantityAndUnitType(
+                                physicalQuantity=esdl.PhysicalQuantityEnum.ENERGY,
+                                unit=esdl.UnitEnum.WATTHOUR,
+                                multiplier=esdl.MultiplierEnum.GIGA,
+                            ),
+                        )
+                    )
+            except KeyError:
+                # Do nothing because this area does not have any energy consumption
+                pass
+
+            # Create plots in the dashboard
             # Top level KPIs: Cost breakdown in a polygon area (for all assest grouped together)
             kpi_name = f"{subarea.name}: Asset cost breakdown [EUR]"
             if (area_installation_cost > 0.0 or area_investment_cost > 0.0) and (
@@ -656,6 +771,8 @@ class ScenarioOutput(HeatMixin):
             #     )
             # )
             subarea.KPIs = kpis
+        # ebd sub-area loop
+
         # end KPIs
         # ------------------------------------------------------------------------------------------
         # Placement

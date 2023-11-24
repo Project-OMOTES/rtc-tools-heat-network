@@ -57,6 +57,23 @@ class BaseComponentTypeMixin:
 
         return f"{pipe[:-5]}_hot"
 
+    def has_related_pipe(self, pipe: str) -> bool:
+        """
+        This function checks whether a pipe has a related hot/cold pipe. This is done based on the
+        name convention.
+
+        :params pipe: is the pipe name.
+        :returns: True if the pipe has a related pipe, else False.
+        """
+        related = False
+        if self.is_hot_pipe(pipe):
+            if self.hot_to_cold_pipe(pipe) in self.heat_network_components.get("pipe", []):
+                related = True
+        elif self.is_cold_pipe(pipe):
+            if self.cold_to_hot_pipe(pipe) in self.heat_network_components.get("pipe", []):
+                related = True
+        return related
+
     @property
     def hot_pipes(self) -> List[str]:
         """

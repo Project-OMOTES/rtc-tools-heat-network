@@ -20,8 +20,8 @@ class Demand(_NonStorageComponent):
             name,
             **self.merge_modifiers(
                 dict(
-                    Heat_in=dict(min=0.0),
-                    Heat_out=dict(min=0.0),
+                    HeatIn=dict(Heat=dict(min=0.0)),
+                    HeatOut=dict(Heat=dict(min=0.0)),
                 ),
                 modifiers,
             ),

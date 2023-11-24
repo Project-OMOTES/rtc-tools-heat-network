@@ -5,9 +5,16 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
 
 class TestAtes(TestCase):
     def test_ates(self):
+        """
+        This test checks the constraints concerning the heat2discharge and energy conservation for
+        the ates. THe heat loss model used annd the typical cyclic constraint that will be applied
+        in most use cases.
+        """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import (
             HeatProblem,
@@ -33,6 +40,10 @@ class TestAtes(TestCase):
 
         # Test begin and end same state
         np.testing.assert_allclose(stored_heat[0], stored_heat[-1])
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
 
 
 if __name__ == "__main__":

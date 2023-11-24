@@ -62,6 +62,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.rho = rho
         self.cp = cp
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        if "primary_port_name_convention" in kwargs.keys():
+            self.primary_port_name_convention = kwargs["primary_port_name_convention"]
+        if "secondary_port_name_convention" in kwargs.keys():
+            self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
 
     @property
     def _rho_cp_modifiers(self) -> Tuple(float, float):
@@ -300,13 +304,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
-        supply_temperature = temperature_modifiers["T_supply"]
-        return_temperature = temperature_modifiers["T_return"]
-
-        if "_ret" in asset.attributes["name"]:
-            temperature = return_temperature
-        else:
-            temperature = supply_temperature
+        temperature = temperature_modifiers["temperature"]
 
         # Compute the maximum heat flow based on an assumed maximum velocity
         area = math.pi * diameter**2 / 4.0
@@ -318,9 +316,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: This might be an underestimation. We need to add the total
         #  heat losses in the system to get a proper upper bound. Maybe move
         #  calculation of Heat bounds to the HeatMixin?
-        delta_temperature = supply_temperature - return_temperature
         hfr_max = 2.0 * (
-            self.rho * self.cp * q_max * delta_temperature
+            self.rho * self.cp * q_max * temperature
         )  # TODO: are there any physical implications of using this bound
 
         assert hfr_max > 0.0
@@ -329,7 +326,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             length=length,
             diameter=diameter,
-            temperature=temperature,
             disconnectable=self._is_disconnectable_pipe(asset),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
@@ -436,8 +432,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         prim_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2
@@ -447,8 +443,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2
@@ -524,7 +520,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
-            Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
             **params,
@@ -756,8 +752,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
+        max_current = 142.0
 
-        modifiers = dict(Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0))
+        modifiers = dict(
+            Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
+            ElectricityIn=dict(
+                Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
+                I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
+            ),
+        )
 
         return ElectricityDemand, modifiers
 
@@ -850,7 +853,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0), I=dict(min=-142.0, max=142.0), Power=dict(nominal=1e2)
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1.25e4),
+            ),
+            ElectricityIn=dict(
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1.25e4),
             ),
         )
         return ElectricityCable, modifiers
@@ -908,6 +918,14 @@ class ESDLHeatModel(_ESDLModelBase):
     def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
         super().__init__(None)
 
-        converter = converter_class(**kwargs)
+        converter = converter_class(
+            **{
+                **kwargs,
+                **{
+                    "primary_port_name_convention": self.primary_port_name_convention,
+                    "secondary_port_name_convention": self.secondary_port_name_convention,
+                },
+            }
+        )
 
         self._esdl_convert(converter, assets, "Heat")
