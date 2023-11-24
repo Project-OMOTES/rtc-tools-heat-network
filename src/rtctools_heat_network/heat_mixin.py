@@ -513,6 +513,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         pipe_class_cost_ordering_name = (
                             f"{cold_pipe}__hn_pipe_class_{c.name}_cost_ordering"
                         )
+                        pipe_class_heat_loss_ordering_name = (
+                            f"{cold_pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
+                        )
                     else:
                         pipe_class_var_name = f"{pipe}__hn_pipe_class_{c.name}"
                         pipe_class_ordering_name = (
@@ -520,6 +523,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                         pipe_class_cost_ordering_name = (
                             f"{pipe}__hn_pipe_class_{c.name}_cost_ordering"
+                        )
+                        pipe_class_heat_loss_ordering_name = (
+                            f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
 
                     self.__pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
@@ -547,10 +553,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     self.__pipe_topo_pipe_class_cost_ordering_var_bounds[
                         pipe_class_cost_ordering_name
                     ] = (0.0, 1.0)
-
-                    pipe_class_heat_loss_ordering_name = (
-                        f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
-                    )
 
                     self.__pipe_topo_pipe_class_heat_loss_ordering_map[pipe][
                         c
@@ -3022,7 +3024,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if not self.heat_network_options()["neglect_pipe_heat_losses"]:
             for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
                 heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
-                heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
+                if pipe in self.hot_pipes and self.has_related_pipe(p):
+                    heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
+                    cold_name = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)]
+                    heat_loss_sym += self.extra_variable(cold_name, ensemble_member)
+                elif pipe in self.hot_pipes and not self.has_related_pipe(p):
+                    heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
+
                 heat_losses = self.__pipe_topo_heat_losses[pipe]
 
                 big_m = 2.0 * max(heat_losses)
