@@ -33,7 +33,6 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             profile_host = profile_host[7:]
         if profile.port == 443:
             ssl_setting = True
-        profile_host = profile_host[8:]
         influx_host = "{}:{}".format(profile_host, profile.port)
         if influx_host in influx_cred_map:
             (username, password) = influx_cred_map[influx_host]
