@@ -10,8 +10,8 @@ from esdl import TimeUnitEnum, UnitEnum
 
 from rtctools_heat_network.pycml import Model as _Model
 
+from ._exceptions import _RetryLaterException, _SkipAssetException
 from .common import Asset
-from .esdl_model_base import _RetryLaterException, _SkipAssetException
 
 logger = logging.getLogger("rtctools_heat_network")
 

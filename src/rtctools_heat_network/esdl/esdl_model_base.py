@@ -7,18 +7,12 @@ from esdl import InPort
 from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 from rtctools_heat_network.pycml import Model as _Model
 
+from ._exceptions import _RetryLaterException, _SkipAssetException
+
 logger = logging.getLogger("rtctools_heat_network")
 
 
 RETRY_LOOP_LIMIT = 100
-
-
-class _RetryLaterException(Exception):
-    pass
-
-
-class _SkipAssetException(Exception):
-    pass
 
 
 class _ESDLModelBase(_Model):
