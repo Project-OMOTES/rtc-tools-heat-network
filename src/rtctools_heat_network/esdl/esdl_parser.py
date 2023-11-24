@@ -1,3 +1,5 @@
+import base64
+
 import esdl.esdl_handler
 
 from pyecore.resources import ResourceSet
@@ -156,19 +158,22 @@ class BaseESDLParser:
 class ESDLStringParser(BaseESDLParser):
 
     def __init__(self, esdl_string):
+        if isinstance(esdl_string, bytes):
+            self._esdl_string = base64.b64decode(esdl_string).decode('utf-8')
+        else:
+            self._esdl_string = esdl_string
         super().__init__()
-        self.esdl_string = esdl_string
 
     def _load_esdl_model(self):
         esh = esdl.esdl_handler.EnergySystemHandler()
-        self._esdl_model = esh.load_from_string(self.esdl_string)
+        self._esdl_model = esh.load_from_string(self._esdl_string)
 
 
 class ESDLFileParser(BaseESDLParser):
 
     def __init__(self, esdl_string):
-        super().__init__()
         self._esdl_path = esdl_string
+        super().__init__()
 
     def _load_esdl_model(self):
         # correct profile attribute

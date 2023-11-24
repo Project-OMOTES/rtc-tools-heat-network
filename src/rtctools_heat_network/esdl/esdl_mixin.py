@@ -92,14 +92,6 @@ class ESDLMixin(
         self.__esdl_carriers = esdl_parser.get_carrier_properties()
         self.__esdl_model = esdl_parser.get_esdl_model()
 
-
-        # TODO: check with Jim if this can be removed. Seems like old stuff from cf overriding stuff
-        # which I guess is no longer used?
-        if self.__run_info is not None and self.__run_info.parameters_file is not None:
-            self.__esdl_assets = _overwrite_parameters(
-                self.__run_info.parameters_file, self.__esdl_assets
-            )
-
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
 
@@ -494,96 +486,96 @@ class ESDLMixin(
             for variable, values in self.__timeseries_import.items(ensemble_member):
                 self.io.set_timeseries(variable, timeseries_import_times, values, ensemble_member)
 
-    def write(self):
-        super().write()
-
-        if getattr(self, "__output_timeseries_file", None) is None:
-            return
-
-        output_timeseries_file = Path(self.__output_timeseries_file)
-        assert output_timeseries_file.is_absolute()
-        assert output_timeseries_file.suffix == ".xml"
-
-        timeseries_export_basename = output_timeseries_file.stem
-        output_folder = output_timeseries_file.parent
-
-        try:
-            self.__timeseries_export = pi.Timeseries(
-                self.esdl_pi_output_data_config(self.__timeseries_id_map),
-                output_folder,
-                timeseries_export_basename,
-                binary=False,
-                pi_validate_times=self.esdl_pi_validate_timeseries,
-            )
-        except IOError:
-            raise Exception(
-                "ESDLMixin: {}.xml not found in {}.".format(
-                    timeseries_export_basename, output_folder
-                )
-            )
-
-        # Get time stamps
-        times = self.times()
-        if len(set(times[1:] - times[:-1])) == 1:
-            dt = timedelta(seconds=times[1] - times[0])
-        else:
-            dt = None
-
-        output_keys = [k for k, v in self.__timeseries_export.items()]
-
-        # Start of write output
-        # Write the time range for the export file.
-        self.__timeseries_export.times = [
-            self.__timeseries_import.times[self.__timeseries_import.forecast_index]
-            + timedelta(seconds=s)
-            for s in times
-        ]
-
-        # Write other time settings
-        self.__timeseries_export.forecast_datetime = self.__timeseries_import.forecast_datetime
-        self.__timeseries_export.dt = dt
-        self.__timeseries_export.timezone = self.__timeseries_import.timezone
-
-        # Write the ensemble properties for the export file.
-        if self.ensemble_size > 1:
-            self.__timeseries_export.contains_ensemble = True
-        self.__timeseries_export.ensemble_size = self.ensemble_size
-        self.__timeseries_export.contains_ensemble = self.ensemble_size > 1
-
-        # Start looping over the ensembles for extraction of the output values.
-        for ensemble_member in range(self.ensemble_size):
-            results = self.extract_results(ensemble_member)
-
-            # For all variables that are output variables the values are
-            # extracted from the results.
-            for variable in output_keys:
-                try:
-                    values = results[variable]
-                    if len(values) != len(times):
-                        values = self.interpolate(
-                            times,
-                            self.times(variable),
-                            values,
-                            self.interpolation_method(variable),
-                        )
-                except KeyError:
-                    try:
-                        ts = self.get_timeseries(variable, ensemble_member)
-                        if len(ts.times) != len(times):
-                            values = self.interpolate(times, ts.times, ts.values)
-                        else:
-                            values = ts.values
-                    except KeyError:
-                        logger.warning(
-                            "ESDLMixin: Output requested for non-existent variable {}. "
-                            "Will not be in output file.".format(variable)
-                        )
-                        continue
-
-                self.__timeseries_export.set(variable, values, ensemble_member=ensemble_member)
-
-        # Write output file to disk
-        self.__timeseries_export.write()
+    # def write(self):
+    #     super().write()
+    #
+    #     if getattr(self, "__output_timeseries_file", None) is None:
+    #         return
+    #
+    #     output_timeseries_file = Path(self.__output_timeseries_file)
+    #     assert output_timeseries_file.is_absolute()
+    #     assert output_timeseries_file.suffix == ".xml"
+    #
+    #     timeseries_export_basename = output_timeseries_file.stem
+    #     output_folder = output_timeseries_file.parent
+    #
+    #     try:
+    #         self.__timeseries_export = pi.Timeseries(
+    #             self.esdl_pi_output_data_config(self.__timeseries_id_map),
+    #             output_folder,
+    #             timeseries_export_basename,
+    #             binary=False,
+    #             pi_validate_times=self.esdl_pi_validate_timeseries,
+    #         )
+    #     except IOError:
+    #         raise Exception(
+    #             "ESDLMixin: {}.xml not found in {}.".format(
+    #                 timeseries_export_basename, output_folder
+    #             )
+    #         )
+    #
+    #     # Get time stamps
+    #     times = self.times()
+    #     if len(set(times[1:] - times[:-1])) == 1:
+    #         dt = timedelta(seconds=times[1] - times[0])
+    #     else:
+    #         dt = None
+    #
+    #     output_keys = [k for k, v in self.__timeseries_export.items()]
+    #
+    #     # Start of write output
+    #     # Write the time range for the export file.
+    #     self.__timeseries_export.times = [
+    #         self.__timeseries_import.times[self.__timeseries_import.forecast_index]
+    #         + timedelta(seconds=s)
+    #         for s in times
+    #     ]
+    #
+    #     # Write other time settings
+    #     self.__timeseries_export.forecast_datetime = self.__timeseries_import.forecast_datetime
+    #     self.__timeseries_export.dt = dt
+    #     self.__timeseries_export.timezone = self.__timeseries_import.timezone
+    #
+    #     # Write the ensemble properties for the export file.
+    #     if self.ensemble_size > 1:
+    #         self.__timeseries_export.contains_ensemble = True
+    #     self.__timeseries_export.ensemble_size = self.ensemble_size
+    #     self.__timeseries_export.contains_ensemble = self.ensemble_size > 1
+    #
+    #     # Start looping over the ensembles for extraction of the output values.
+    #     for ensemble_member in range(self.ensemble_size):
+    #         results = self.extract_results(ensemble_member)
+    #
+    #         # For all variables that are output variables the values are
+    #         # extracted from the results.
+    #         for variable in output_keys:
+    #             try:
+    #                 values = results[variable]
+    #                 if len(values) != len(times):
+    #                     values = self.interpolate(
+    #                         times,
+    #                         self.times(variable),
+    #                         values,
+    #                         self.interpolation_method(variable),
+    #                     )
+    #             except KeyError:
+    #                 try:
+    #                     ts = self.get_timeseries(variable, ensemble_member)
+    #                     if len(ts.times) != len(times):
+    #                         values = self.interpolate(times, ts.times, ts.values)
+    #                     else:
+    #                         values = ts.values
+    #                 except KeyError:
+    #                     logger.warning(
+    #                         "ESDLMixin: Output requested for non-existent variable {}. "
+    #                         "Will not be in output file.".format(variable)
+    #                     )
+    #                     continue
+    #
+    #             self.__timeseries_export.set(variable, values, ensemble_member=ensemble_member)
+    #
+    #     # Write output file to disk
+    #     self.__timeseries_export.write()
 
 
 class _ESDLInputDataConfig:
@@ -706,22 +698,6 @@ class _RunInfoReader:
                 self.output_diagnostic_file = work_dir / self.output_diagnostic_file
         except IndexError:
             self.output_diagnostic_file = None
-
-
-def _overwrite_parameters(parameters_file, assets):
-    paramroot = ET.parse(parameters_file).getroot()
-    groups = paramroot.findall("pi:group", ns)
-
-    for parameter in groups:
-        id_ = parameter.attrib["id"]
-        param_name = parameter[0].attrib["id"]
-        param_value = parameter[0][0].text
-
-        asset = assets[id_]
-        type_ = type(asset.attributes[param_name])
-        asset.attributes[param_name] = type_(param_value)
-
-    return assets
 
 
 def _esdl_to_assets(esdl_string, esdl_path: Union[Path, str]):
