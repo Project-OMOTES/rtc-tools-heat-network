@@ -311,7 +311,7 @@ class NetworkSimulator(
 class NetworkSimulatorHIGHS(NetworkSimulator):
     def post(self):
         super().post()
-        self._write_updated_esdl(db_profiles=False, optimizer_sim=False)
+        self._write_updated_esdl(optimizer_sim=False)
 
     def solver_options(self):
         options = super().solver_options()
@@ -323,6 +323,13 @@ class NetworkSimulatorHIGHS(NetworkSimulator):
 class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
     def times(self, variable=None) -> np.ndarray:
         return super().times(variable)[:5]
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+
+        options["heat_loss_disconnected_pipe"] = False
+
+        return options
 
 
 class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
@@ -355,10 +362,22 @@ class NetworkSimulatorHIGHSWeeklyTimeStep(NetworkSimulatorHIGHS):
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Network Simulator")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         NetworkSimulatorHIGHSWeeklyTimeStep,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
 
 

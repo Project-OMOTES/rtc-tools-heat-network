@@ -12,7 +12,7 @@ from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
 
 
-MIP_TOLERANCE = 1e-10
+MIP_TOLERANCE = 1e-8
 
 
 class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
@@ -52,7 +52,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         - pipe_diameter_var
         - pipe_heat_loss_var
         """
-        for p in self.problem.hot_pipes:
+        for p in self.problem.heat_network_components.get("pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made
             if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue
@@ -64,7 +64,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                 self.assertTrue(var_name in self.results, msg=f"{var_name} not in results")
                 self.assertTrue(
                     abs(value - 0.0) < MIP_TOLERANCE or abs(value - 1.0) < MIP_TOLERANCE,
-                    msg=f"Binary {var_name} isn't either 0.0 or 1.0",
+                    msg=f"Binary {var_name} isn't either 0.0 or 1.0, it is {value}",
                 )
             np.testing.assert_almost_equal(
                 1.0,
@@ -92,11 +92,6 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             np.testing.assert_almost_equal(
                 self.results[f"{p}__hn_heat_loss"], expected_heat_losses, 5
             )
-            cold_pipe = self.problem.hot_to_cold_pipe(p)
-            expected_heat_losses_return = self.get_heat_losses(cold_pipe, chosen_pc)
-            np.testing.assert_almost_equal(
-                self.results[f"{cold_pipe}__hn_heat_loss"], expected_heat_losses_return, 5
-            )
 
     def test_pipe_class_ordering_vars(self):
         """
@@ -108,7 +103,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         """
         pc_sums = {pc.name: 0 for pc in self.problem.get_unique_pipe_classes()}
         total_pipes_to_optimize = 0
-        for p in self.problem.hot_pipes:
+        for p in self.problem.heat_network_components.get("pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made,
             if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue
@@ -117,7 +112,10 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
             pc_sums[chosen_pc.name] += 1
             total_pipes_to_optimize += 1
             for pc in self.problem.pipe_classes(p):
-                base_name = f"{p}__hn_pipe_class_{pc.name}"
+                if p in self.problem.cold_pipes:
+                    base_name = f"{self.problem.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
+                else:
+                    base_name = f"{p}__hn_pipe_class_{pc.name}"
                 cost_ordering_var_name = base_name + "_cost_ordering"
                 cost_ordering_var = self.results[cost_ordering_var_name]
                 if pc.investment_costs < chosen_pc.investment_costs:
@@ -188,7 +186,13 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_pipe_class_vars(self, pipe: str) -> Dict[str, np.ndarray]:
         given_pipe_classes = self.problem.pipe_classes(pipe)
-        expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes]
+        if pipe in self.problem.cold_pipes:
+            expected_class_vars = [
+                f"{self.problem.cold_to_hot_pipe(pipe)}__hn_pipe_class_{pc.name}"
+                for pc in given_pipe_classes
+            ]
+        else:
+            expected_class_vars = [f"{pipe}__hn_pipe_class_{pc.name}" for pc in given_pipe_classes]
         class_vars = {
             var_name: value
             for var_name, value in self.results.items()

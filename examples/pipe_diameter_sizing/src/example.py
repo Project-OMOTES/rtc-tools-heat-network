@@ -5,12 +5,14 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.goal_programming_mixin import (
     Goal,
-    GoalProgrammingMixin,
 )
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-from rtctools.optimization.single_pass_goal_programming_mixin import CachingQPSol
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
+)
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
@@ -59,13 +61,18 @@ class MinimizeLDGoal(Goal):
 class PipeDiameterSizingProblem(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
+        options["heat_loss_disconnected_pipe"] = True
+        options["maximum_temperature_der"] = np.inf
+        # options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # options["neglect_pipe_heat_losses"] = True
+        options["minimize_head_losses"] = True
         return options
 
     def pipe_classes(self, pipe):
@@ -106,7 +113,6 @@ class PipeDiameterSizingProblem(
 
     def priority_completed(self, priority):
         super().priority_completed(priority)
-        self._hot_start = True
 
     def solver_options(self):
         options = super().solver_options()
@@ -169,5 +175,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
+    results = heat_problem.extract_results()
+    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
+    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -178,11 +178,11 @@ class EndScenarioSizing(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = True
         # options["neglect_pipe_heat_losses"] = True
+        options["heat_loss_disconnected_pipe"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
@@ -323,6 +323,8 @@ class EndScenarioSizing(
         results = self.extract_results()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        # Optimized ESDL
+        self._write_updated_esdl()
 
         for d in self.heat_network_components.get("demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
@@ -398,9 +400,6 @@ class EndScenarioSizing(
         with open(results_path, "w") as file:
             json.dump(results_dict, fp=file)
 
-        # Optimized ESDL
-        self._write_updated_esdl()
-
 
 def connect_database():
     client = InfluxDBClient(
@@ -423,38 +422,47 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
+
+class EndScenarioSizingStaged(EndScenarioSizing):
+    _stage = 0
+
+    def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._stage = stage
+        self.__boolean_bounds = boolean_bounds
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        if self._stage == 1:
+            options["neglect_pipe_heat_losses"] = True
+            options["minimum_velocity"] = 0.0
+
+        return options
+
+    def bounds(self):
+        bounds = super().bounds()
+
+        if self._stage == 2:
+            bounds.update(self.__boolean_bounds)
+
+        return bounds
+
+
+class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -471,37 +479,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()
@@ -517,15 +495,76 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         return options
 
 
+def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization=True):
+    """
+    This function is used to run end_scenario_sizing problem. There are a few variations of the
+    same basic class. The main functionality this function adds is the staged approach, where
+    we first solve without heat_losses, to then solve the same problem with heat losses but
+    constraining the problem to only allow for the earlier found pipe classes and one size up.
+
+    This staged approach is done to speed up the problem, as the problem without heat losses is
+    much faster as it avoids inequality big_m constraints for the heat to discharge on pipes. The
+    one size up possibility is to avoid infeasibilities in compensating for the heat losses.
+
+    Parameters
+    ----------
+    end_scenario_problem_class : The end scenario problem class.
+    staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
+
+    Returns
+    -------
+
+    """
+    import time
+
+    boolean_bounds = {}
+
+    start_time = time.time()
+    if staged_pipe_optimization:
+        solution = run_optimization_problem(end_scenario_problem_class, stage=1)
+        results = solution.extract_results()
+
+        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
+        # stage 1 optimization.
+        pc_map = solution._HeatMixin__pipe_topo_pipe_class_map
+        for pipe_classes in pc_map.values():
+            v_prev = 0.0
+            for var_name in pipe_classes.values():
+                v = results[var_name][0]
+                boolean_bounds[var_name] = (0.0, abs(v))
+                if v_prev == 1.0:
+                    boolean_bounds[var_name] = (0.0, 1.0)
+                v_prev = v
+
+    _ = run_optimization_problem(
+        end_scenario_problem_class,
+        stage=2,
+        boolean_bounds=boolean_bounds,
+    )
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
-
     # results = solution.extract_results()
 
 

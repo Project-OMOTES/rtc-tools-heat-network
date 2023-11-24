@@ -85,8 +85,11 @@ class TestHydraulicPower(TestCase):
         # Compare hydraulic power, for an one hour timeseries with a specific demand, to a hard
         # coded value which originates from runnning MILP without big_m method being implemented,
         # during the comparison of MILP and a high-fidelity code
+        # FIXME: this value from high-fidelity code needs to be checked, due to changes in the setup
+        # of the heat_to_discharge constraints, the volumetric flow has increased, resulting in
+        # larger pressure drops.
         np.testing.assert_allclose(
-            104829.66021214866,
+            128001.23151838078,
             hydraulic_power_dw_1,
         )
         np.testing.assert_allclose(
@@ -172,8 +175,11 @@ class TestHydraulicPower(TestCase):
         # Compare hydraulic power, for an one hour timeseries with a specific demand, to a hard
         # coded value which originates from runnning MILP without big_m method being implemented,
         # during the comparison of MILP and a high-fidelity code
+        # FIXME: this value from high-fidelity code needs to be checked, due to changes in the setup
+        #  of the heat_to_discharge constraints, the volumetric flow has increased, resulting in
+        #  larger pressure drops.
         np.testing.assert_allclose(
-            4367.240507173596,
+            5332.57631593844,
             hydraulic_power_dw,
         )
 

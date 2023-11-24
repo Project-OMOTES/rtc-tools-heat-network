@@ -21,6 +21,9 @@ class _SkipAssetException(Exception):
 
 
 class _ESDLModelBase(_Model):
+    primary_port_name_convention = "prim"
+    secondary_port_name_convention = "sec"
+
     def _esdl_convert(self, converter, assets, prefix):
         # Sometimes we need information of one component in order to convert
         # another. For example, the nominal discharg of a pipe is used to set
@@ -60,15 +63,15 @@ class _ESDLModelBase(_Model):
         gas_node_suf = "GasConn"
 
         skip_asset_ids = {a.id for a in skip_assets}
-        pipe_assets = [
-            a
-            for a in assets.values()
-            if (
-                a.asset_type == "Pipe"
-                and a.id not in skip_asset_ids
-                and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
-            )
-        ]
+        # pipe_assets = [
+        #     a
+        #     for a in assets.values()
+        #     if (
+        #         a.asset_type == "Pipe"
+        #         and a.id not in skip_asset_ids
+        #         and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
+        #     )
+        # ]
         node_assets = [
             a
             for a in assets.values()
@@ -102,24 +105,6 @@ class _ESDLModelBase(_Model):
             if (a.asset_type != "Joint" and a.asset_type != "Bus") and a.id not in skip_asset_ids
         ]
 
-        # Here we check that every pipe and node has the correct coupled carrier for their _ret
-        # asset.
-        for asset in [*pipe_assets, *node_assets]:
-            asset_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-            couple_asset_carrier = next(
-                x.global_properties["carriers"][x.in_ports[0].carrier.id]
-                for x in [*pipe_assets, *node_assets]
-                if (
-                    x.name.replace("_ret", "") == asset.name.replace("_ret", "")
-                    and x.name != asset.name
-                )
-            )
-            if asset_carrier["name"] != couple_asset_carrier["name"]:
-                raise Exception(
-                    f"{asset.name} and {asset.name}_ret do not have the matching "
-                    f"carriers specified"
-                )
-
         # First we map all port ids to their respective PyCML ports. We only
         # do this for non-nodes, as for nodes we don't quite know what port
         # index a connection has to use yet.
@@ -145,12 +130,12 @@ class _ESDLModelBase(_Model):
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity):
                             if isinstance(p, InPort):
-                                if "_ret" in p.carrier.name:
+                                if self.secondary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Secondary, in_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Primary, in_suf)
                             else:  # OutPort
-                                if "_ret" in p.carrier.name:
+                                if self.primary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Primary, out_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Secondary, out_suf)
@@ -165,12 +150,12 @@ class _ESDLModelBase(_Model):
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity) and p_heat <= 3:
                             if isinstance(p, InPort):
-                                if "_ret" in p.carrier.name:
+                                if self.secondary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Secondary, in_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Primary, in_suf)
                             else:  # OutPort
-                                if "_ret" in p.carrier.name:
+                                if self.primary_port_name_convention in p.name.lower():
                                     port_map[p.id] = getattr(component.Primary, out_suf)
                                 else:
                                     port_map[p.id] = getattr(component.Secondary, out_suf)
