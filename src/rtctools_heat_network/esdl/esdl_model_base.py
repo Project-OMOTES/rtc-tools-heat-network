@@ -3,8 +3,8 @@ from typing import Dict
 
 import esdl
 from esdl import InPort
-from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 from rtctools_heat_network.pycml import Model as _Model
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -29,6 +29,7 @@ class _ESDLModelBase(_Model):
     Heat and QTH). Per model type we have a specialization for the converting of the assets as
     different models might need different information from the esdl file.
     """
+
     primary_port_name_convention = "prim"
     secondary_port_name_convention = "sec"
 

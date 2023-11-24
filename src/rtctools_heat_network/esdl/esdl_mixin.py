@@ -4,7 +4,7 @@ import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Union, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import esdl
 from esdl.esdl_handler import EnergySystemHandler
@@ -787,6 +787,7 @@ class _ESDLInputDataConfig:
     This class is used to specify naming standard for input data, specifically for demand and
     production profiles.
     """
+
     def __init__(self, id_map: Dict, heat_network_components: Dict) -> None:
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map = id_map
