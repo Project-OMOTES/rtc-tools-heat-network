@@ -3023,15 +3023,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # These are the constraints to order the heat loss of the pipe classes.
         if not self.heat_network_options()["neglect_pipe_heat_losses"]:
             for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
-                heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
-                if pipe in self.hot_pipes and self.has_related_pipe(p):
+                if pipe in self.hot_pipes and self.has_related_pipe(pipe):
+                    heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                     cold_name = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)]
                     heat_loss_sym += self.extra_variable(cold_name, ensemble_member)
-                elif pipe in self.hot_pipes and not self.has_related_pipe(p):
+                    heat_losses = [h1 + h2 for h1, h2 in zip(self.__pipe_topo_heat_losses[pipe],
+                                                             self.__pipe_topo_heat_losses[
+                                                                 self.hot_to_cold_pipe(pipe)])]
+                elif pipe in self.hot_pipes and not self.has_related_pipe(pipe):
+                    heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
-                heat_losses = self.__pipe_topo_heat_losses[pipe]
+                    heat_losses = self.__pipe_topo_heat_losses[pipe]
+                else: #cold pipe
+                    continue
 
                 big_m = 2.0 * max(heat_losses)
                 for var_name, heat_loss in zip(pipe_classes.values(), heat_losses):
