@@ -757,6 +757,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("gas_demand", []),
+                *self.heat_network_components.get("electrolyzer", []),
+                *self.heat_network_components.get("gas_tank_storage", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:

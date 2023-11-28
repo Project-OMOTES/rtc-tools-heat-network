@@ -14,10 +14,12 @@ from rtctools_heat_network.pycml.component_library.heat import (
     ElectricityDemand,
     ElectricityNode,
     ElectricitySource,
+    Electrolyzer,
     GasDemand,
     GasNode,
     GasPipe,
     GasSource,
+    GasTankStorage,
     GeothermalSource,
     HeatExchanger,
     HeatPump,
@@ -779,7 +781,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -906,6 +908,44 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict()
 
         return GasSource, modifiers
+
+    def convert_electrolyzer(self, asset: Asset) -> Tuple[Type[Electrolyzer], MODIFIERS]:
+        """
+        This function converts the Electrolyzer object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Electrolyzer class with modifiers
+        """
+        assert asset.asset_type in {"Electrolyzer"}
+
+        modifiers = dict()
+
+        return Electrolyzer, modifiers
+
+    def convert_gas_tank_storage(self, asset: Asset) -> Tuple[Type[GasTankStorage], MODIFIERS]:
+        """
+        This function converts the GasTankStorage object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasTankStorage class with modifiers
+        """
+        assert asset.asset_type in {"GasStorage"}
+
+        modifiers = dict()
+
+        return GasTankStorage, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):
