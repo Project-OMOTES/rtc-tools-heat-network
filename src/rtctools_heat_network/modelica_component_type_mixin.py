@@ -21,8 +21,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     def pre(self):
         """
         In this function the topology object of the heat network is constructed. Meaning that for
-        nodes, busses and storage assets their relevant information on the direction and connections
-        on the ports is gathered and stored in the topology object.
+        nodes, busses and storage assets their relevant information on the positive flow direction
+        and connections on the ports is gathered and stored in the topology object.
         """
         components = self.heat_network_components
         nodes = components.get("node", [])

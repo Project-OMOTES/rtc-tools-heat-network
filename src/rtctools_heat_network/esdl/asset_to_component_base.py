@@ -133,17 +133,17 @@ class _AssetToComponentBase:
 
     def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
         """
-        There are multiple ways to specify pipe properties like diameter and
-        material / insulation. We assume that DN `diameter` takes precedence
-        over `innerDiameter` and `material` (while logging warnings if both
-        are specified)
+        There are multiple ways to specify pipe properties like inner-diameter and
+        pipe/insulation material and thickness.  The user specified nominal diameter (DN size)
+        takes precedence over potential user specified innerDiameter and material (while logging
+        warnings when either of these two variables are specified in combination with the pipe DN)
         Parameters
         ----------
         asset : Asset pipe object with it's properties from ESDL
 
         Returns
         -------
-        diameter, insulation_thicknesses, conductivies_insulation
+        inner_diameter, insulation_thicknesses, conductivies_insulation
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
@@ -189,12 +189,12 @@ class _AssetToComponentBase:
         if edr_dn_size:
             # Get insulation and diameter properties from EDR asset with this size.
             edr_asset = self._edr_pipes[self.STEEL_S1_PIPE_EDR_ASSETS[edr_dn_size]]
-            diameter = edr_asset["inner_diameter"]
+            inner_diameter = edr_asset["inner_diameter"]
             insulation_thicknesses = edr_asset["insulation_thicknesses"]
             conductivies_insulation = edr_asset["conductivies_insulation"]
         else:
             assert asset.attributes["innerDiameter"]
-            diameter = asset.attributes["innerDiameter"]
+            inner_diameter = asset.attributes["innerDiameter"]
 
             # Insulation properties
             material = asset.attributes["material"]
@@ -209,7 +209,7 @@ class _AssetToComponentBase:
                     insulation_thicknesses = [x.layerWidth for x in components]
                     conductivies_insulation = [x.matter.thermalConductivity for x in components]
 
-        return diameter, insulation_thicknesses, conductivies_insulation
+        return inner_diameter, insulation_thicknesses, conductivies_insulation
 
     def _is_disconnectable_pipe(self, asset: Asset) -> bool:
         """

@@ -10,10 +10,11 @@ class Source(_NonStorageComponent):
     The source component is there to insert thermal power (Heat) into the network.
 
     The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
-    temperature of the source matches the heat, similar as with the demands. This allows us to
-    guarantee  that the flow can always carry the heat and that thermal losses are always
-    estimated conservatively. It also implicitly assumes that the temperature drops in the
-    network are small and thus satisfy minimum temperature requirements.
+    temperature of the source matches the absolute thermal power, Q * cp * rho * T_sup == Heat,
+    similar as with the demands. This allows us to guarantee that the flow can always carry the
+    heat and that thermal losses are always estimated conservatively. It also implicitly assumes
+    that the temperature drops in the network are small and thus satisfy minimum temperature
+    requirements.
     """
 
     def __init__(self, name, **modifiers):

@@ -20,13 +20,12 @@ class EDRPipeClass(PipeClass):
     @classmethod
     def from_edr_class(cls, name: str, edr_class_name: str, maximum_velocity: float):
         """
-        This function creates an EDR pipe object with a name and retrieving the information from
-        the specified edr class.
+        This function creates an EDR pipe object of the specified edr class.
 
         Parameters
         ----------
-        name : The name to be used for the class
-        edr_class_name : The name of the edr pipe we will use the attributes of
+        name : The name assigned to the specific pipe class
+        edr_class_name : The name of the pipe class in the edr
         maximum_velocity : The maximum velocity in m/s
 
         Returns

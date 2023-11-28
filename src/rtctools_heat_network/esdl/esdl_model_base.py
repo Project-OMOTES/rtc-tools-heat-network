@@ -30,9 +30,9 @@ class _ESDLModelBase(_Model):
     def _esdl_convert(self, converter: _AssetToComponentBase, assets: Dict, prefix: str) -> None:
         """
         In this function we convert the esdl parsed assets and instantiate the pycml objects for
-        those assets. We use the converter to create those pycml objects. Afterwards we look at the
-        connections specified in the esdl and create the relevant maps between ports to then also
-        connect the pycml ports of the assets.
+        those assets. We use the converter to create those pycml objects and the same time we look
+        at the connections specified in the esdl and create the relevant maps between ports to then
+        also connect the pycml ports of the assets.
 
         Parameters
         ----------
