@@ -8,10 +8,9 @@ from .heat_two_port import HeatTwoPort
 
 class _NonStorageComponent(HeatTwoPort, BaseAsset):
     """
-    A non storage component is an asset type that does not have a state that makes time-steps
-    interdependent. In the NonStorageComponent we define most of the properties being utilized by
-    all components, like rho and cp. Furthermore, we specify some easy in between variables which
-    make it easier to access states later on.
+    A non storage component is an asset type that does not have states that have interdependent
+    time-steps, it does have time-varying states like Heat_flow. In the NonStorageComponent we
+    define most of the properties being utilized by all components, like rho and cp.
     """
 
     def __init__(self, name, **modifiers):
