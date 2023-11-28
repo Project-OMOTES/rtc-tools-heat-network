@@ -19,7 +19,8 @@ class ElectricityPort(ElectricityComponent, Connector):
 
 class ElectricityTwoPort(ElectricityComponent):
     """
-    For electricity components that transport power we have a two port component.
+    For electricity components that transport power we have a two port component to allow for
+    electricity flow in and out of the component.
     """
 
     def __init__(self, name, **modifiers):

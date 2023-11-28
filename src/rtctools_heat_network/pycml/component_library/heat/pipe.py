@@ -14,8 +14,10 @@ class Pipe(_NonStorageComponent):
     over-estimated.
 
     The heat to discharge constraints are set in the HeatMixin. Where we ensure that the heat must
-    be smaller that what the flow can carry. Meaning that the flow does lose energy but not
-    temperature. In this manner the energy losses will always be overestimated as in reality the
+    be smaller than the flow can carry, as we overestimate the heat losses with the outgoing
+    temperature at the demand/source/storage assets where in reality this temperature drops
+    throughout the network. Meaning that the flow does lose energy but not temperature. In this
+    manner the energy losses will always be overestimated as in reality the
     flow will also have a temperature drop.
     """
 

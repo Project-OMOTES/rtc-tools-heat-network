@@ -10,7 +10,7 @@ from esdl import TimeUnitEnum, UnitEnum
 
 from rtctools_heat_network.pycml import Model as _Model
 
-from ._exceptions import _RetryLaterException, _SkipAssetException
+from ._exceptions import _RetryLaterException
 from .common import Asset
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -143,7 +143,7 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        inner_diameter, insulation_thicknesses, conductivies_insulation
+        pipe inner diameter, thickness and conductivity of each insulation layer
         """
 
         full_name = f"{asset.asset_type} '{asset.name}'"
@@ -215,8 +215,8 @@ class _AssetToComponentBase:
         """
         This function checks if the pipe is connected to specific assets (e.g. source) and if so
         returns true. The true here means that we will later make a is_disconnected variable
-        allowing for optionally disconnecting a pipe from a step of the optimization avoiding the
-        need to compensate the heat losses for that pipe.
+        allowing for optionally disconnecting a pipe from the optimization meaning it will not have
+        any flow, but also avoiding the need to compensate the heat losses for that pipe.
 
         Parameters
         ----------
@@ -282,8 +282,10 @@ class _AssetToComponentBase:
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
         """
-        This function return the nominal volumetric flow in m3/s for an asset by checking the dict
-        that has all q_nominal for the ports of all pipes.
+        This function returns the nominal volumetric flow in m3/s for an asset by checking the dict
+        that has all q_nominal for the ports of all pipes. Since all ports must have at least one
+        pipe connected to them, this allows us to find all needed nominals. Assets can either be
+        connected to one or two hydraulic systems.
 
         Parameters
         ----------
@@ -291,8 +293,8 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        Either the connected nominal if it is only connected to one hydraulic system, otherwise a
-        dict with both.
+        Either the connected nominal flow [m3/s] if it is only connected to one hydraulic system,
+        otherwise a dict with the flow nominals of both the primary and secondary side.
         """
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             try:
@@ -451,8 +453,8 @@ class _AssetToComponentBase:
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
         """
         This function returns a dict containing all relevant temperatures associated with the asset
-        needed for the optimization. These are the temperatures of the carrier on inport and outport
-        and sometimes those on the associated return network.
+        needed for the optimization. These are the temperatures of the carrier at the inport and
+        outport.
 
         Parameters
         ----------
@@ -519,7 +521,8 @@ class _AssetToComponentBase:
     @staticmethod
     def get_state(asset: Asset) -> float:
         """
-        This function returns a number for the state so that it can be stored in the parameters.
+        This function returns a float value, which represents the state (Enabled/disabled/optional)
+        of an asset, so that it can be stored in the parameters.
 
         Parameters
         ----------
@@ -527,7 +530,7 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        float representing the state
+        float value representing the asset's state
         """
 
         if asset.attributes["state"].name == "DISABLED":
@@ -540,7 +543,7 @@ class _AssetToComponentBase:
 
     def get_variable_opex_costs(self, asset: Asset) -> float:
         """
-        Returns the variable opex costs of an asset in Euros per Wh
+        Returns the variable opex costs coefficient of an asset in Euros per Wh.
 
         Parameters
         ----------
@@ -592,7 +595,7 @@ class _AssetToComponentBase:
 
     def get_fixed_opex_costs(self, asset: Asset) -> float:
         """
-        Returns the fixed opex costs of an asset in Euros per W.
+        Returns the fixed opex cost coefficient of an asset in Euros per W.
 
         Parameters
         ----------
@@ -689,11 +692,11 @@ class _AssetToComponentBase:
     @staticmethod
     def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
         """
-        This function returns the cost with unit information.
+        This function returns the cost coefficient with unit information thereof.
 
         Parameters
         ----------
-        cost_info : The singlevalue object with the float and unit info
+        cost_info : The single value object with the float and unit info.
 
         Returns
         -------
@@ -715,7 +718,8 @@ class _AssetToComponentBase:
 
     def get_installation_costs(self, asset: Asset) -> float:
         """
-        This function return the installation cost in EUR for a single aggregation count.
+        This function return the installation cost coefficient in EUR for a single aggregation
+        count.
 
         Parameters
         ----------
@@ -723,7 +727,7 @@ class _AssetToComponentBase:
 
         Returns
         -------
-        A float with the installation cost.
+        A float with the installation cost coefficient.
         """
 
         cost_info = asset.attributes["costInformation"].installationCosts
@@ -752,7 +756,7 @@ class _AssetToComponentBase:
 
     def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
-        Returns the investment costs of an asset in Euros per W (in most cases).
+        Returns the investment cost coefficient of an asset in Euros per size unit (mostly W).
 
         Parameters
         ----------
@@ -841,17 +845,3 @@ class _AssetToComponentBase:
                 f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
             )
             return 0.0
-
-    def convert_skip(self, asset: Asset) -> _SkipAssetException:
-        """
-        To throw an exception if the asset is skipped.
-
-        Parameters
-        ----------
-        asset : The asset object.
-
-        Returns
-        -------
-        Exception
-        """
-        raise _SkipAssetException(asset)

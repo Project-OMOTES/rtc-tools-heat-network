@@ -10,7 +10,7 @@ class Asset:
     id: str of the esdl id of the asset.
     in_ports: by default none, otherwise list of ports.
     out_ports: by default none, otherwise list of ports.
-    Attributes: dict of all the specified attributes of the esdl asset.
+    attributes: dict of all the specified attributes of the esdl asset.
     global_properties: all the global properties specified in the esdl like the carriers.
     """
 

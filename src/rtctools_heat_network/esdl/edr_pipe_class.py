@@ -10,9 +10,9 @@ class EDRPipeClass(PipeClass):
     Dataclass specifically to save the EDR pipe class information in. Note that we here utilize the
     edr information for:
 
-    diameter: in meter
-    u_1, u_2: insulative properties
-    investment cost: in Eur/m
+    diameter: inner diameter in meter
+    u_1, u_2: insulative properties [W/(m*K)]
+    investment cost: investment cost coefficient in Eur/m
     """
 
     xml_string: str

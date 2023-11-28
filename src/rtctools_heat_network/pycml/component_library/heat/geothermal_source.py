@@ -5,8 +5,9 @@ from .source import Source
 
 class GeothermalSource(Source):
     """
-    The geothermal source component is used to model geothermal doublets. The main reason for this
-    component instead of using just a regular source is that to have the integer behaviour of
+    The geothermal source component is used to model geothermal doublets. It is equivilent to a
+    normal source with the only difference being in the modelling of doublets. The main reason for
+    this component instead of using just a regular source is that to have the integer behaviour of
     increasing the amount of doublets. In the HeatMixin an integer is created _aggregation_count to
     model the amount of doublets and the maximum power will scale with this integer instead of
     continuous. This will also ensure that the cost will scale with this integer.

@@ -11,9 +11,10 @@ class Demand(_NonStorageComponent):
     The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
     temperature of the demand matches the absolute thermal power, Q * cp * rho * T_ret == Heat,
     similar as with the sources. This allows us to guarantee that the flow can always carry the
-    heat and that thermal losses are always estimated conservatively. It also implicitly assumes
-    that the temperature drops in the network are small and thus satisfy minimum temperature
-    requirements.
+    heat and that thermal losses are always estimated conservatively, as the heat losses further
+    downstream in the network are over-estimated with T_ret where in reality this temperature
+    drops. It also implicitly assumes that the temperature drops in the network are small and thus
+    satisfy minimum temperature requirements.
     """
 
     def __init__(self, name, **modifiers):
