@@ -3758,6 +3758,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("gas_demand", []),
+                *self.heat_network_components.get("gas_tank_storage", []),
+                *self.heat_network_components.get("electrolyzer", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -3868,6 +3870,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
+                *self.heat_network_components.get("electrolyzer", []),
+                *self.heat_network_components.get("gas_tank_storage", []),
             ]:
                 # currently no support for joints
                 continue
@@ -3978,6 +3982,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("gas_demand", []),
+                *self.heat_network_components.get("gas_tank_storage", []),
+                *self.heat_network_components.get("electrolyzer", []),
             ]:
                 # no support for joints right now
                 continue

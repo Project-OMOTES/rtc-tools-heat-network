@@ -42,7 +42,7 @@ class _GoalsAndOptions:
 
         for demand in self.heat_network_components["gas_demand"]:
             price_profile = f"{demand}.gas_price"
-            state = f"{demand}.Gas_demand"
+            state = f"{demand}.Gas_demand_flow"
 
             goals.append(RevenueGoal(state, price_profile))
 
