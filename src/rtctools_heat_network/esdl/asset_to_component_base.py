@@ -76,7 +76,7 @@ class _AssetToComponentBase:
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
-        "Electrolyzer":
+        "Electrolyzer": "electrolyzer",
         "Bus": "electricity_node",
         "GenericConsumer": "demand",
         "HeatExchange": "heat_exchanger",
@@ -85,6 +85,7 @@ class _AssetToComponentBase:
         "GasHeater": "source",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
+        "GasStorage": "gas_tank_storage",
         "GenericProducer": "source",
         "GeothermalSource": "source",
         "HeatProducer": "source",
@@ -96,6 +97,7 @@ class _AssetToComponentBase:
         "HeatStorage": "buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
+        "WindPark": "electricity_source",
         "CheckValve": "check_valve",
     }
 

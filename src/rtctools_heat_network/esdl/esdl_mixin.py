@@ -602,6 +602,18 @@ class ESDLMixin(
                     )
                 except KeyError:
                     pass
+                try:
+                    values = csv_data[
+                        f"{demand.replace(' ', '')}.electricity_price"
+                    ].to_numpy()
+                    self.io.set_timeseries(
+                        demand + ".electricity_price",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
             for source in self.heat_network_components.get("electricity_source", []):
                 try:
                     values = csv_data[
