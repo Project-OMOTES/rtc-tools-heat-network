@@ -76,6 +76,7 @@ class _AssetToComponentBase:
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
+        "Electrolyzer":
         "Bus": "electricity_node",
         "GenericConsumer": "demand",
         "HeatExchange": "heat_exchanger",
