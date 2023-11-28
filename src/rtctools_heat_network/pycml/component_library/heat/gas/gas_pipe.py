@@ -7,6 +7,11 @@ from .._internal import BaseAsset
 
 
 class GasPipe(GasTwoPort, BaseAsset):
+    """
+    The gas_pipe component is used to model head loss through the pipe. At the moment we only have
+    a placeholder linear head loss formulation in place.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
