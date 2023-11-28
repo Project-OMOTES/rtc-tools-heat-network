@@ -7,7 +7,6 @@ from .electricity.electricity_cable import ElectricityCable
 from .electricity.electricity_demand import ElectricityDemand
 from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
-from .electricity.electrolyzer import Electrolyzer
 from .electricity.heat_pump_elec import HeatPumpElec
 from .gas.gas_demand import GasDemand
 from .gas.gas_node import GasNode
@@ -20,6 +19,7 @@ from .heat_four_port import HeatFourPort
 from .heat_port import HeatPort
 from .heat_pump import HeatPump
 from .heat_two_port import HeatTwoPort
+from .multicommodity.electrolyzer import Electrolyzer
 from .node import Node
 from .pipe import Pipe
 from .pump import Pump
