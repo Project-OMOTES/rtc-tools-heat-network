@@ -4253,19 +4253,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         linearized.
         """
         constraints = []
+        parameters = self.parameters(ensemble_member)
         for asset in self.heat_network_components.get("electrolyzer", []):
 
             # units kg in 1 hour? -> to resolve names etc further in code
             gas_mass_out = self.state(f"{asset}.Gas_mass_out")
             # units W/kW ? -> to resolve names etc further in code
             power_consumed = self.state(f"{asset}.Power_consumed")
-
-            # coef_a = 80.0
-            # coef_b = 1.5
-            # coef_c = 3.0
-            coef_a = 462.962963
-            coef_b = 0.022130
-            coef_c = 56.509259
 
             # Min and max values of theoretical curve
             max_power_in = 51.0
@@ -4292,13 +4286,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Multiple linear lines
             curve_fit_number_of_lines = 1
             linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
-                coef_a,
-                coef_b,
-                coef_c,
+                parameters[f"{asset}.a_eff_coefficient"],
+                parameters[f"{asset}.b_eff_coefficient"],
+                parameters[f"{asset}.c_eff_coefficient"],
                 time_duration,
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=min_power_in,
-                electrical_power_max=max_power_in
+                electrical_power_min=parameters[f"{asset}.minimum_load"],
+                electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"]
             )
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_out_vect = ca.repmat(gas_mass_out, len(linear_coef_a))

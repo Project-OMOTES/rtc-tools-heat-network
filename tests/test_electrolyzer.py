@@ -60,20 +60,24 @@ class TestElectrolyzer(TestCase):
                                          results[f"{cable}.ElectricityOut.I"] + tol)
 
         # Electrolyser
-        coef_a = 462.962963
-        coef_b = 0.022130
-        coef_c = 56.509259
+        coef_a = milp_problem.parameters(0)["Electrolyzer_fc66.a_eff_coefficient"]
+        coef_b = milp_problem.parameters(0)["Electrolyzer_fc66.b_eff_coefficient"]
+        coef_c = milp_problem.parameters(0)["Electrolyzer_fc66.c_eff_coefficient"]
         a, b = milp_problem._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                 coef_a,
                 coef_b,
                 coef_c,
                 1.,
                 n_lines=1,
-                electrical_power_min=1.,
-                electrical_power_max=51.
+                electrical_power_min=milp_problem.parameters(0)["Electrolyzer_fc66.minimum_load"],
+                electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"]
         )
 
-        np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_out"],
-                                     results["Electrolyzer_fc66.ElectricityIn.Power"]*b[0] + a[0])
+        np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_out"],
+                                   results["Electrolyzer_fc66.GasOut.Q"] *
+                                   milp_problem.parameters(0)["Electrolyzer_fc66.density"])
+        for i in range(len(a)):
+            np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_out"],
+                                         results["Electrolyzer_fc66.ElectricityIn.Power"]*b[i] + a[i])
 
         a=1

@@ -967,23 +967,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_load = asset.attributes["maxLoad"]
         eff_min_load = asset.attributes["effMinLoad"] * 1.e3
         eff_max_load = asset.attributes["effMaxLoad"] * 1.e3
-        eff_min = asset.attributes["efficiency"] * 1.e3
+        eff_max = asset.attributes["efficiency"] * 1.e3
         def equations(x):
             a, b, c = x
             eq1 = a/min_load + b*min_load + c - eff_min_load
             eq2 = a/max_load + b*max_load + c - eff_max_load
-            eq3 = a/(min_load*2.5) + b*(min_load*2.5) + c - eff_min
+            eq3 = a/(min_load*2.5) + b*(min_load*2.5) + c - eff_max
             return [eq1, eq2, eq3]
 
+        # Here we approximate the efficiency curve of the electrolyzer with the function:
+        # 1/eff = a/P_e + b*P_e + c. We find the coefficients with a simple solve function.
+        # At the moment we abbuse the efficiency attribute of esdl to quantify the maximum
+        # operational efficiency.
         a, b, c = fsolve(equations, (0, 0, 0))
-
-
 
         modifiers = dict(
             min_voltage=v_min,
             a_eff_coefficient=a,
             b_eff_coefficient=b,
             c_eff_coefficient=c,
+            minimum_load=min_load,
             Q_nominal=self._get_connected_q_nominal(asset),
             GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))),
             ElectricityIn=dict(

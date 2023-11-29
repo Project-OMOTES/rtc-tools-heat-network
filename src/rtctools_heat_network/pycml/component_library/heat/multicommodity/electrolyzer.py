@@ -35,6 +35,8 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.b_eff_coefficient = nan
         self.c_eff_coefficient = nan
 
+        self.minimum_load = nan
+
         self.density = 2.5  # H2 density [kg/m3] at 30bar
         self.nominal_gass_mass_out = 1.0
         self.nominal_power_consumed = 1.0
@@ -54,4 +56,4 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         # ... [kg ??]
         self.add_variable(GasPort, "GasOut")
         self.add_variable(Variable, "Gas_mass_out", min=0.0, nominal=self.nominal_gass_mass_out)
-        # self.add_equation((self.GasOut - self.Gas_mass_out) / self.Gass_mass_out_nominal)
+        self.add_equation((self.GasOut.Q * self.density - self.Gas_mass_out) / self.Gass_mass_out_nominal)
