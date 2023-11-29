@@ -4299,7 +4299,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # # end Temp: 1 line hard coded
 
             # Multiple linear lines
-            curve_fit_number_of_lines = 1
+            curve_fit_number_of_lines = 3
             linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                 parameters[f"{asset}.a_eff_coefficient"],
                 parameters[f"{asset}.b_eff_coefficient"],
@@ -4314,7 +4314,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect),
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) /
+                        self.variable_nominal(f"{asset}.Gas_mass_flow_out"),
                         -np.inf,
                         0.0,
                     ),

@@ -987,6 +987,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             b_eff_coefficient=b,
             c_eff_coefficient=c,
             minimum_load=min_load,
+            nominal_power_consumed=max_power/2.,
             Q_nominal=self._get_connected_q_nominal(asset),
             GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))),
             ElectricityIn=dict(
