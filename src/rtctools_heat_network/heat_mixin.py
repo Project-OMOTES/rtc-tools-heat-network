@@ -4311,7 +4311,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
-            nominal = (self.variable_nominal(f"{asset}.Gas_mass_flow_out") * linear_coef_a * self.variable_nominal(f"{asset}.Power_consumed")) ** 0.5
+            nominal = (self.variable_nominal(f"{asset}.Gas_mass_flow_out") *
+                       min(min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed"),
+                           min(linear_coef_b[linear_coef_b>0.]))) ** 0.5
             constraints.extend(
                 [
                     (

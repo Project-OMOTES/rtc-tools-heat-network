@@ -48,7 +48,7 @@ class _GoalsAndOptions:
 
             goals.append(RevenueGoal(state, price_profile, nominal))
 
-        for demand in self.heat_network_components["gas_demand"]:
+        for demand in self.heat_network_components.get("gas_demand", []):
             price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_mass_flow"
             nominal=self.variable_nominal(state)*np.median(self.get_timeseries(price_profile).values)
@@ -87,7 +87,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "highs"
+        options["solver"] = "highs"
 
         return options
 
