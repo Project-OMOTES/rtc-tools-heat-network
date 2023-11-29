@@ -174,6 +174,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
+        # Variable for when in time an asset switched on due to meeting a requirement
+        self.__asset_is_switched_on_map = {}
+        self.__asset_is_switched_on_var = {}
+        self.__asset_is_switched_on_bounds = {}
+
         # Variable for the maximum size of an asset
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
@@ -941,6 +946,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     aggr_count_max = 0.0
                 self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
+        if options["include_asset_is_switched_on"]:
+            for asset in [
+                *self.heat_network_components.get("electrolyzer", []),
+            ]:
+                var_name = f"{asset}__asset_is_switched_on"
+                self.__asset_is_switched_on_map[asset] = var_name
+                self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
+                self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
@@ -967,6 +981,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
         | ``include_asset_is_realized ``       | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
+        +--------------------------------------+-----------+-----------------------------+
+        | ``include_asset_is_switched_on ``    | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
@@ -1016,6 +1033,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["minimize_head_losses"] = False
         options["include_demand_insulation_options"] = False
         options["include_asset_is_realized"] = False
+        options["include_asset_is_switched_on"] = False
 
         return options
 
@@ -1124,6 +1142,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__cumulative_investments_made_in_eur_var.values())
         variables.extend(self.__asset_is_realized_var.values())
         variables.extend(self.__pipe_topo_heat_loss_path_var.values())
+        variables.extend(self.__asset_is_switched_on_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -1142,6 +1161,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             or variable in self.__disabled_hex_var
             or variable in self.__asset_aggregation_count_var
             or variable in self.__asset_is_realized_var
+            or variable in self.__asset_is_switched_on_var
             or variable in self.__pipe_topo_pipe_class_discharge_ordering_var
             or variable in self.__pipe_topo_pipe_class_cost_ordering_var
             or variable in self.__pipe_topo_pipe_class_heat_loss_ordering_var
@@ -4314,12 +4334,37 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) /
-                        self.variable_nominal(f"{asset}.Gas_mass_flow_out"),
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect)
+                        / self.variable_nominal(f"{asset}.Gas_mass_flow_out"),
                         -np.inf,
                         0.0,
                     ),
                 ]
+            )
+
+            # Add constraints to ensure the electrolyzer is switched off when it reaches a power
+            # input below the minimum operating value
+            var_name = self.__asset_is_switched_on_map[asset]
+            asset_is_switched_on = self.state(var_name)
+
+            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
+            constraints.append(
+                (
+                    (
+                        power_consumed
+                        - parameters[f"{asset}.minimum_load"]
+                        + (1.0 - asset_is_switched_on) * big_m
+                    )
+                    / self.variable_nominal(f"{asset}.Power_consumed"),
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                ((power_consumed + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
             )
 
         return constraints

@@ -81,3 +81,12 @@ class TestElectrolyzer(TestCase):
                                          results["Electrolyzer_fc66.ElectricityIn.Power"]*b[i] + a[i])
 
         a=1
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    test = TestElectrolyzer()
+    sol = test.test_electrolyzer()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

@@ -27,7 +27,10 @@ class RevenueGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         canonical, sign = optimization_problem.alias_relation.canonical_signed(self.state)
-        symbols = sign * optimization_problem.state_vector(canonical, ensemble_member) * optimization_problem.variable_nominal(self.state)
+        symbols = (
+            sign * optimization_problem.state_vector(canonical, ensemble_member)
+            * optimization_problem.variable_nominal(self.state)
+        )
         price_profile = optimization_problem.get_timeseries(self.price_profile).values
         sum = 0.
         for i in range(len(price_profile)):
@@ -84,7 +87,13 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        # options["solver"] = "gurobi"
+
+        return options
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["include_asset_is_switched_on"] = True
 
         return options
 
