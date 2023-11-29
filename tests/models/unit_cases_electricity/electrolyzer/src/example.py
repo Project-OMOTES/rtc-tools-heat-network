@@ -19,32 +19,38 @@ class RevenueGoal(Goal):
 
     order = 1
 
-    def __init__(self, state, price_profile):
+    def __init__(self, state, price_profile, nominal):
         self.state = state
 
         self.price_profile = price_profile
-        # self.function_range = (-np.inf, 0.)
-        self.function_nominal = 1.e6
+        self.function_nominal = nominal
 
     def function(self, optimization_problem, ensemble_member):
-        return -optimization_problem.state(self.state)
+        canonical, sign = optimization_problem.alias_relation.canonical_signed(self.state)
+        symbols = sign * optimization_problem.state_vector(canonical, ensemble_member) * optimization_problem.variable_nominal(self.state)
+        price_profile = optimization_problem.get_timeseries(self.price_profile).values
+        sum = 0.
+        for i in range(len(price_profile)):
+            sum += symbols[i] * price_profile[i]
+
+        return -sum
 
 
 class _GoalsAndOptions:
-    def path_goals(self):
-        goals = super().path_goals().copy()
+    def goals(self):
+        goals = super().goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
             price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
 
-            goals.append(RevenueGoal(state, price_profile))
+            goals.append(RevenueGoal(state, price_profile, 1.e6))
 
         for demand in self.heat_network_components["gas_demand"]:
             price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_flow"
 
-            goals.append(RevenueGoal(state, price_profile))
+            goals.append(RevenueGoal(state, price_profile, 1.e6))
 
         return goals
 

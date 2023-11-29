@@ -617,6 +617,18 @@ class ESDLMixin(
             for source in self.heat_network_components.get("electricity_source", []):
                 try:
                     values = csv_data[
+                        f"{source.replace(' ', '')}.maximum_production"
+                    ].to_numpy()
+                    self.io.set_timeseries(
+                        source + ".maximum_production",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
+                try:
+                    values = csv_data[
                         f"{source.replace(' ', '')}.target_electricity_source"
                     ].to_numpy()
                     self.io.set_timeseries(
@@ -632,6 +644,18 @@ class ESDLMixin(
                     values = csv_data[f"{demand.replace(' ', '')}.target_gas_demand"].to_numpy()
                     self.io.set_timeseries(
                         demand + ".target_gas_demand",
+                        timeseries_import_times,
+                        values,
+                        ensemble_member,
+                    )
+                except KeyError:
+                    pass
+                try:
+                    values = csv_data[
+                        f"{demand.replace(' ', '')}.gas_price"
+                    ].to_numpy()
+                    self.io.set_timeseries(
+                        demand + ".gas_price",
                         timeseries_import_times,
                         values,
                         ensemble_member,
