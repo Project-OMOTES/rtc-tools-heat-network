@@ -30,6 +30,11 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         # ...
         self.component_type = "electrolyzer"
+
+        self.a_eff_coefficient = nan
+        self.b_eff_coefficient = nan
+        self.c_eff_coefficient = nan
+
         self.density = 2.5  # H2 density [kg/m3] at 30bar
         self.nominal_gass_mass_out = 1.0
         self.nominal_power_consumed = 1.0
