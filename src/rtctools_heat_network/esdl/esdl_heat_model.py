@@ -896,7 +896,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Gas_demand_flow=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+            GasIn=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)))
          )
 
         return GasDemand, modifiers

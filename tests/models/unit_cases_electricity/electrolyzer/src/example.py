@@ -48,14 +48,14 @@ class _GoalsAndOptions:
 
         for demand in self.heat_network_components["gas_demand"]:
             price_profile = f"{demand}.gas_price"
-            state = f"{demand}.Gas_demand_flow"
+            state = f"{demand}.Gas_demand_mass_flow"
 
             goals.append(RevenueGoal(state, price_profile, 1.e6))
 
         return goals
 
 
-class ElectricityProblem(
+class MILPProblem(
     _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -70,6 +70,6 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(ElectricityProblem)
+    elect = run_optimization_problem(MILPProblem)
     r = elect.extract_results()
     print(r["Electrolyzer_fc66.ElectricityIn.Power"])
