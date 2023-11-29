@@ -4183,6 +4183,42 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __electrolyzer_path_constaint(self, ensemble_member):
+        """
+        ....
+        """
+        constraints = []
+        for asset in self.heat_network_components.get("electrolyzer", []):
+            gas_mass_out = self.state(f"{asset}.Gas_mass_out")
+            power_consumed = self.state(f"{asset}.Power_consumed")
+            
+            coef_a = 1.0
+            coef_b = 1.0
+            coef_c = 1.0
+            max_power_in = 1.0
+            time_duration = 3600.0  # 1 hour
+
+            eff = (coef_a / max_power_in) + (coef_b * max_power_in) + coef_c
+            max_gas_mass_out = (1.0 / eff) * max_power_in * time_duration
+            gass_mass_out_linearized = max_gas_mass_out * power_consumed / max_power_in
+            
+            constraint_nominal = max_gas_mass_out
+
+            # big_m = 2.0 * max_gas_mass_out
+            # is_disconnected ?
+            
+
+            # symbolic ??:
+            constraints.append(
+                (
+                    (gas_mass_out - gass_mass_out_linearized) / constraint_nominal,
+                    -np.inf,
+                    0.0,
+                )
+            )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -4215,6 +4251,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(
             self.__cumulative_investments_made_in_eur_path_constraints(ensemble_member)
         )
+        constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
 
         return constraints
 
