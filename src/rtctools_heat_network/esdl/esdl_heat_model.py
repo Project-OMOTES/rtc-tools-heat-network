@@ -761,13 +761,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
-        max_current = 142.0
+        min_voltage = asset.in_ports[0].carrier.voltage
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
         modifiers = dict(
+            min_voltage=min_voltage,
             Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
-                I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=min_voltage, nominal=min_voltage)
             ),
         )
 
@@ -793,11 +796,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_supply = asset.attributes.get(
             "power", math.inf
         )  # I think it would break with math.inf as input
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.out_ports[0].carrier.voltage
 
         modifiers = dict(
             Electricity_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ElectricityOut=dict(
-                V=dict(min=0.0), I=dict(min=0.0), Power=dict(nominal=max_supply / 2.0)
+                V=dict(min=v_min, nominal=v_min),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                Power=dict(nominal=max_supply / 2.0)
             ),
         )
 
@@ -862,17 +869,26 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"ElectricityCable"}
 
+        max_power = asset.attributes["capacity"]
+        min_voltage = asset.in_ports[0].carrier.voltage
+        max_current = max_power / min_voltage
+        self._set_electricity_current_nominal_and_max(asset, max_current / 2., max_current)
+
         modifiers = dict(
+            max_current=max_current,
+            min_voltage=min_voltage,
+            nominal_current=max_current / 2.,
+            nominal_voltage=min_voltage,
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
-                I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1.25e4),
+                V=dict(min=min_voltage, nominal=min_voltage),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.),
             ),
             ElectricityIn=dict(
-                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
-                I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1.25e4),
+                V=dict(min=min_voltage, nominal=min_voltage),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.),
             ),
         )
         return ElectricityCable, modifiers
@@ -940,9 +956,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"Electrolyzer"}
 
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.in_ports[0].carrier.voltage
+        max_power = asset.attributes.get(
+            "power", math.inf
+        )
+
         modifiers = dict(
+            min_voltage=v_min,
             Q_nominal=self._get_connected_q_nominal(asset),
-            GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)))
+            GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))),
+            ElectricityIn=dict(
+                Power=dict(min=0., max=max_power, nominal=max_power/2.),
+                I=dict(min=0., max=i_max, nominal=i_nom),
+                V=dict(min=v_min, nominal=v_min)
+            )
         )
 
         return Electrolyzer, modifiers

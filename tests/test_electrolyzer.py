@@ -41,11 +41,23 @@ class TestElectrolyzer(TestCase):
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14.Set_point"])
 
+        # Checks on the storage
         timestep = 3600.
         rho = milp_problem.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(np.diff(results["GasStorage_e492.Stored_gas_mass"]), results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep)
+        np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.)
+        np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.)
 
-
+        for cable in milp_problem.heat_network_components.get("electricity_cable", []):
+            ub = milp_problem.esdl_assets[milp_problem.esdl_asset_name_to_id_map[f"{cable}"]].attributes["capacity"]
+            np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"], ub + tol)
+            lb = \
+            milp_problem.esdl_assets[milp_problem.esdl_asset_name_to_id_map[f"{cable}"]].in_ports[0].carrier.voltage
+            tol = 1.e-2
+            np.testing.assert_array_less(lb - tol, results[f"{cable}.ElectricityOut.V"])
+            np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"],
+                                         results[f"{cable}.ElectricityOut.V"] *
+                                         results[f"{cable}.ElectricityOut.I"] + tol)
 
 
 

@@ -54,6 +54,20 @@ class _GoalsAndOptions:
 
         return goals
 
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for gs in self.heat_network_components.get("gas_tank_storage", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
+            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((storage_t0, 0., 0.))
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
+            gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((gas_flow_t0, 0., 0.))
+
+        return constraints
+
+
 
 class MILPProblem(
     _GoalsAndOptions,

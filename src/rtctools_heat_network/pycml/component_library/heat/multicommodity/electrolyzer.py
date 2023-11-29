@@ -38,6 +38,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         # ...
         self.Q_nominal = nan
+        self.min_voltage = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.nominal_power_consumed)
