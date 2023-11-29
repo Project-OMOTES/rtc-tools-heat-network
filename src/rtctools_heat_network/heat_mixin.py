@@ -4272,7 +4272,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         This functions add the constraints for the gas mass flow production based as a functions of
         electrical power input. This production is approximated by an electrolyzer efficience curve
-        (energy/gas mass vs electrical power input, [kWs/kg] vs [W]) which is then linearized.
+        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized.
         """
         constraints = []
         for asset in self.heat_network_components.get("electrolyzer", []):
