@@ -59,6 +59,24 @@ class TestElectrolyzer(TestCase):
                                          results[f"{cable}.ElectricityOut.V"] *
                                          results[f"{cable}.ElectricityOut.I"] + tol)
 
+        # Electrolyser
+        coef_a = 462.962963
+        coef_b = 0.022130
+        coef_c = 56.509259
+        a, b = milp_problem._get_linear_coef_electrolyzer_mass_vs_epower_fit(
+                coef_a,
+                coef_b,
+                coef_c,
+                1.,
+                n_lines=1,
+                electrical_power_min=1.,
+                electrical_power_max=51.
+        )
+
+        np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_out"],
+                                     results["Electrolyzer_fc66.ElectricityIn.Power"]*b[0] + a[0])
+
+
 
 
         a=1

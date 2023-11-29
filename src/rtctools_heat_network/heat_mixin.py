@@ -4219,7 +4219,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return max_gas_mass_out
 
-    def __get_linear_coef_electrolyzer_mass_vs_epower_fit(
+    def _get_linear_coef_electrolyzer_mass_vs_epower_fit(
         self, coef_a, coef_b, coef_c, time_duration, n_lines, electrical_power_min=1.0,
         electrical_power_max=51.0
     ) -> tuple[np.array, np.array]:
@@ -4270,7 +4270,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Min and max values of theoretical curve
             max_power_in = 51.0
             min_power_in = 1.0
-            time_duration = 3600.0  # 1 hour
+            time_duration = 1.0 # 1 hour
 
             # # Temp: 1 line hard coded
             # # Linearized gass mass out based on the following curve:
@@ -4291,7 +4291,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             # Multiple linear lines
             curve_fit_number_of_lines = 1
-            linear_coef_a, linear_coef_b = self.__get_linear_coef_electrolyzer_mass_vs_epower_fit(
+            linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
                 coef_a,
                 coef_b,
                 coef_c,
