@@ -4200,47 +4200,132 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __get_electrolyzer_gas_mass_out(
+        self, coef_a, coef_b, coef_c, electrical_power_input, time_duration
+    ) -> float:
+        """
+        This function returns the gas mass out of an electrolyzer based on the theoretical
+        efficiency curve: Energy [kWh?] / gas mass [kg?] = (coef_a / electrical_power_input) +
+        (b * electrical_power_input) + coef_c
+        """
+
+        eff = (
+            (coef_a / electrical_power_input) + (coef_b * electrical_power_input)
+            + coef_c
+        )
+        max_gas_mass_out = (1.0 / eff) * electrical_power_input * time_duration
+
+        return max_gas_mass_out
+
+    def __get_linear_coef_electrolyzer_mass_vs_epower_fit(
+        self, coef_a, coef_b, coef_c, time_duration, n_lines, electrical_power_min=1.0,
+        electrical_power_max=51.0
+    ) -> tuple[np.array, np.array]:
+        """
+        This function returns a set of coefficients to approximate a gaa mass curve with linear
+        functions in the form of: gass mass = b + (a * electrical_power)
+        """
+
+        electrical_power_points = np.linspace(
+            electrical_power_min, electrical_power_max, n_lines + 1
+        )
+
+        gass_mass_points = np.array(
+            [
+                self.__get_electrolyzer_gas_mass_out(
+                    coef_a, coef_b, coef_c, ep, time_duration
+                ) for ep in electrical_power_points
+            ]
+        )
+
+        a_vals = np.diff(gass_mass_points) / np.diff(electrical_power_points)
+        b_vals = gass_mass_points[1:] - a_vals * electrical_power_points[1:]
+
+        return a_vals, b_vals
+
     def __electrolyzer_path_constaint(self, ensemble_member):
         """
-        ....
+        This functions add the constraints for the gas production based as a functions of electrical
+        power input. This production is approximated by an electrolyzer efficience curve
+        (energy/gas produced? vs electrical power input, [kWh/kg] vs [W] ) which is then
+        linearized.
         """
         constraints = []
         for asset in self.heat_network_components.get("electrolyzer", []):
+
+            # units kg in 1 hour? -> to resolve names etc further in code
             gas_mass_out = self.state(f"{asset}.Gas_mass_out")
+            # units W/kW ? -> to resolve names etc further in code
             power_consumed = self.state(f"{asset}.Power_consumed")
-            
-            coef_a = 1.0
-            coef_b = 1.0
-            coef_c = 1.0
-            max_power_in = 1.0
+
+            # coef_a = 80.0
+            # coef_b = 1.5
+            # coef_c = 3.0
+            coef_a = 462.962963
+            coef_b = 0.022130
+            coef_c = 56.509259
+
+            # Min and max values of theoretical curve
+            max_power_in = 51.0
+            min_power_in = 1.0
             time_duration = 3600.0  # 1 hour
 
-            eff = (coef_a / max_power_in) + (coef_b * max_power_in) + coef_c
-            max_gas_mass_out = (1.0 / eff) * max_power_in * time_duration
-            gass_mass_out_linearized = max_gas_mass_out * power_consumed / max_power_in
-            
-            constraint_nominal = max_gas_mass_out
+            # # Temp: 1 line hard coded
+            # # Linearized gass mass out based on the following curve:
+            # # gass mass out = (1/efficiency) * electrical power input * time duration [kg ?]
+            # eff = (coef_a / max_power_in) + (coef_b * max_power_in) + coef_c
+            # max_gas_mass_out = (1.0 / eff) * max_power_in * time_duration
+            # gass_mass_out_linearized = max_gas_mass_out * power_consumed / max_power_in
+            # constraint_nominal = max_gas_mass_out
+            # # symbolic error check??:
+            # constraints.append(
+            #     (
+            #         (gas_mass_out - gass_mass_out_linearized) / constraint_nominal,
+            #         -np.inf,
+            #         0.0,
+            #     )
+            # )
+            # # end Temp: 1 line hard coded
 
-            # big_m = 2.0 * max_gas_mass_out
-            # is_disconnected ?
-            
-
-            # symbolic ??:
-            constraints.append(
-                (
-                    (gas_mass_out - gass_mass_out_linearized) / constraint_nominal,
-                    -np.inf,
-                    0.0,
-                )
+            # Multiple linear lines
+            curve_fit_number_of_lines = 1
+            linear_coef_a, linear_coef_b = self.__get_linear_coef_electrolyzer_mass_vs_epower_fit(
+                coef_a,
+                coef_b,
+                coef_c,
+                time_duration,
+                n_lines=curve_fit_number_of_lines,
+                electrical_power_min=min_power_in,
+                electrical_power_max=max_power_in
             )
+            power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
+            gas_mass_out_vect = ca.repmat(gas_mass_out, len(linear_coef_a))
+            gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
+            constraints.extend(
+                [
+                    (
+                        (gas_mass_out_vect - gass_mass_out_linearized_vect),
+                        -np.inf,
+                        0.0,
+                    ),
+                ]
+            )
+
         return constraints
 
     def __wind_park_set_point_constraints(self, ensemble_member):
+        """
+        This function adds constraints for wind parks which generates electrical power. The
+        produced electrical power is capped with a user specified percentage value of the maximum
+        value.
+        """
         constraints = []
 
         for wp in self.heat_network_components.get("wind_park", []):
             set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
-            electricity_source = self.__state_vector_scaled(f"{wp}.Electricity_source", ensemble_member)
+            electricity_source = self.__state_vector_scaled(
+                f"{wp}.Electricity_source", ensemble_member
+            )
             max = self.bounds()[f"{wp}.Electricity_source"][1].values
             nominal = self.variable_nominal(f"{wp}.Electricity_source")
 
