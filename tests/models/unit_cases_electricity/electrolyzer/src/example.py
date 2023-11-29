@@ -43,14 +43,17 @@ class _GoalsAndOptions:
         for demand in self.heat_network_components["electricity_demand"]:
             price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
+            nominal = self.variable_nominal(state) * np.median(
+                self.get_timeseries(price_profile).values)
 
-            goals.append(RevenueGoal(state, price_profile, 1.e6))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
         for demand in self.heat_network_components["gas_demand"]:
             price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_mass_flow"
+            nominal=self.variable_nominal(state)*np.median(self.get_timeseries(price_profile).values)
 
-            goals.append(RevenueGoal(state, price_profile, 1.e6))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
         return goals
 
@@ -84,7 +87,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        # options["solver"] = "highs"
 
         return options
 

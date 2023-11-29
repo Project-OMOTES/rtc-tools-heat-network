@@ -34,9 +34,9 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.add_variable(Variable, "dH", nominal=self.Q_nominal * self.r)
 
         # head is lost over the pipe
-        self.add_equation(((self.GasOut.H - (self.GasIn.H - self.dH)) / self.nominal_head))
+        self.add_equation(((self.GasOut.H - (self.GasIn.H - self.dH)) / (self.Q_nominal*self.r)))
         # for now simple linear head loss
-        self.add_equation(((self.dH - self.GasIn.Q * self.r) / self.nominal_head_loss))
+        self.add_equation(((self.dH - self.GasIn.Q * self.r) / (self.Q_nominal*self.r)))
         # Flow should be preserved
         self.add_equation(((self.GasIn.Q - self.GasOut.Q) / self.Q_nominal))
         # shadow Q for aliases

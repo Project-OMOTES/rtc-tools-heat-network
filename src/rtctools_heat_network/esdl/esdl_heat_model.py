@@ -768,6 +768,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             min_voltage=min_voltage,
+            elec_power_nominal=max_demand / 2.0,
             Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
@@ -802,6 +803,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         v_min = asset.out_ports[0].carrier.voltage
 
         modifiers = dict(
+            power_nominal=max_supply / 2.0,
             Electricity_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ElectricityOut=dict(
                 V=dict(min=v_min, nominal=v_min),
@@ -839,6 +841,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for x in asset.attributes["port"].items:
             if node_carrier is None:
                 node_carrier = x.carrier.name
+                nominal_voltage = x.carrier.voltage
             else:
                 if node_carrier != x.carrier.name:
                     raise _ESDLInputException(
@@ -849,7 +852,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(n=sum_in + sum_out)
+        modifiers = dict(
+            voltage_nominal=nominal_voltage,
+            n=sum_in + sum_out
+        )
 
         return ElectricityNode, modifiers
 
