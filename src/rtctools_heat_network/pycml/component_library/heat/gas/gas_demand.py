@@ -20,7 +20,9 @@ class GasDemand(GasComponent, BaseAsset):
 
         self.Q_nominal =  nan
 
-        self.add_variable(GasPort, "GasIn")
-        self.add_variable(Variable, "Gas_demand_flow", min=0.0)
+        self.density = 2.5  # H2 density [kg/m3] at 30bar
 
-        self.add_equation((self.GasIn.Q - self.Gas_demand_flow))
+        self.add_variable(GasPort, "GasIn")
+        self.add_variable(Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal * self.density)
+
+        self.add_equation(((self.GasIn.Q * self.density - self.Gas_demand_mass_flow) / (self.Q_nominal * self.density)))

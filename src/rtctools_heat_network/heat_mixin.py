@@ -3588,7 +3588,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
 
             # Power loss constraint
-            constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0))
+            # constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0))
+            constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
 
         return constraints
 
@@ -3606,6 +3607,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for elec_demand in [
             *self.heat_network_components.get("electricity_demand", []),
             *self.heat_network_components.get("heat_pump_elec", []),
+            *self.heat_network_components.get("electrolyzer", []),
         ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")

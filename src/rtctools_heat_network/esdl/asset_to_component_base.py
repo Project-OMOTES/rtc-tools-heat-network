@@ -110,6 +110,8 @@ class _AssetToComponentBase:
         """
         self._port_to_q_nominal = {}
         self._port_to_q_max = {}
+        self._port_to_i_nominal = {}
+        self._port_to_i_max = {}
         self._port_to_esdl_component_type = {}
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
@@ -313,6 +315,31 @@ class _AssetToComponentBase:
         except:
             pass
 
+    def _set_electricity_current_nominal_and_max(self, asset: Asset, i_nominal: float, i_max: float) -> None:
+        """
+        This function populates a dict with the electricity current nominals [A] for the ports of
+        all electricity cables.
+
+        Parameters
+        ----------
+        asset :
+        q_max : float of the electricity current nominal
+
+        Returns
+        -------
+        None
+        """
+        try:
+            self._port_to_i_nominal[asset.in_ports[0]] = i_nominal
+            self._port_to_i_max[asset.in_ports[0]] = i_max
+        except:
+            pass
+        try:
+            self._port_to_i_nominal[asset.out_ports[0]] = i_nominal
+            self._port_to_i_max[asset.out_ports[0]] = i_max
+        except:
+            pass
+
     def _get_connected_q_max(self, asset: Asset) -> float:
         if asset.in_ports is None or asset.asset_type == "Electrolyzer":
             connected_port = asset.out_ports[0].connectedTo[0]
@@ -333,6 +360,30 @@ class _AssetToComponentBase:
             else:
                 raise _RetryLaterException(
                     f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+                )
+
+    def _get_connected_i_nominal_and_max(self, asset: Asset) -> Tuple[float, float]:
+        if asset.in_ports is None:
+            connected_port = asset.out_ports[0].connectedTo[0]
+            i_max = self._port_to_i_max.get(connected_port, None)
+            i_nom = self._port_to_i_nominal.get(connected_port, None)
+            if i_max is not None:
+                self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
+                return i_max, i_nom
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max and nominal current for {asset.asset_type} '{asset.name}'"
+                )
+        elif asset.out_ports is None or asset.asset_type == "Electrolyzer":
+            connected_port = asset.in_ports[0].connectedTo[0]
+            i_max = self._port_to_i_max.get(connected_port, None)
+            i_nom = self._port_to_i_nominal.get(connected_port, None)
+            if i_max is not None:
+                self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
+                return i_max, i_nom
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max and nominal current for {asset.asset_type} '{asset.name}'"
                 )
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
