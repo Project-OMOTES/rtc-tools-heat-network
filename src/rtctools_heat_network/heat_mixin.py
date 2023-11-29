@@ -186,6 +186,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self._change_setpoint_bounds = {}
         self._component_to_change_setpoint_map = {}
 
+        self.__windpark_upper_bounds = {}
+
         if "timed_setpoints" in kwargs and isinstance(kwargs["timed_setpoints"], dict):
             self._timed_setpoints = kwargs["timed_setpoints"]
 
@@ -676,6 +678,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if len(self.times()) > 2:
             self.__check_buffer_values_and_set_bounds_at_t0()
 
+        self.__update_windpark_upper_bounds()
+
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size
@@ -759,6 +763,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_demand", []),
                 *self.heat_network_components.get("electrolyzer", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
+                *self.heat_network_components.get("wind_park", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
@@ -1206,6 +1211,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__pipe_topo_pipe_class_discharge_ordering_var_bounds)
         bounds.update(self.__pipe_topo_pipe_class_cost_ordering_var_bounds)
         bounds.update(self.__pipe_topo_pipe_class_heat_loss_ordering_var_bounds)
+        bounds.update(self.__windpark_upper_bounds)
         return bounds
 
     def _pipe_heat_loss(
@@ -1349,6 +1355,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
+
+    def __update_windpark_upper_bounds(self):
+
+        t = self.times()
+        for wp in self.heat_network_components.get("wind_park", []):
+            lb = Timeseries(t, np.zeros(len(self.times())))
+            ub = self.get_timeseries(f"{wp}.maximum_production")
+            self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
 
     def __check_buffer_values_and_set_bounds_at_t0(self):
         """
@@ -3760,6 +3774,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_demand", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
                 *self.heat_network_components.get("electrolyzer", []),
+                *self.heat_network_components.get("wind_park", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -3872,6 +3887,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("electrolyzer", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
+                *self.heat_network_components.get("wind_park", []),
             ]:
                 # currently no support for joints
                 continue
@@ -3984,6 +4000,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_demand", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
                 *self.heat_network_components.get("electrolyzer", []),
+                *self.heat_network_components.get("wind_park", []),
             ]:
                 # no support for joints right now
                 continue
@@ -4183,6 +4200,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         return constraints
 
+    def __wind_park_set_point_constraints(self, ensemble_member):
+        constraints  = []
+
+        for wp in self.heat_network_components.get("wind_park", []):
+            set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
+            electricity_source = self.__state_vector_scaled(f"{wp}.Electricity_source", ensemble_member)
+            max = self.bounds()[f"{wp}.Electricity_source"][1].values
+            nominal = self.variable_nominal(f"{wp}.Electricity_source")
+
+            constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -4235,6 +4266,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
         constraints.extend(self.__max_size_constraints(ensemble_member))
+        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
 
         for component_name, params in self._timed_setpoints.items():
             constraints.extend(

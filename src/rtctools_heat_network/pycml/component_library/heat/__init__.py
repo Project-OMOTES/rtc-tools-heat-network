@@ -9,6 +9,7 @@ from .electricity.electricity_node import ElectricityNode
 from .electricity.electricity_source import ElectricitySource
 from .electricity.electrolyzer import Electrolyzer
 from .electricity.heat_pump_elec import HeatPumpElec
+from .electricity.windpark import WindPark
 from .gas.gas_demand import GasDemand
 from .gas.gas_node import GasNode
 from .gas.gas_pipe import GasPipe
@@ -52,4 +53,5 @@ __all__ = [
     "Pipe",
     "Pump",
     "Source",
+    "WindPark",
 ]

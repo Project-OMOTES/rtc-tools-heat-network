@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
 from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import \
     ElectricityComponent
@@ -30,6 +32,8 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         # heat_pump_elec, first need to check if there wouldn't be anything conflicting then.
         self.component_type = "electrolyzer"
         self.min_voltage = 1.0e4
+
+        self.Q_nominal = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(GasPort, "GasOut")

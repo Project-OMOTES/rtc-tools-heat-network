@@ -28,6 +28,7 @@ from rtctools_heat_network.pycml.component_library.heat import (
     Pipe,
     Pump,
     Source,
+    WindPark
 )
 
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
@@ -55,6 +56,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho=988.0,
         cp=4200.0,
         min_fraction_tank_volume=0.05,
+        v_max_gas = 15.0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -63,6 +65,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.v_max = v_max
         self.rho = rho
         self.cp = cp
+        self.v_max_gas = v_max_gas
         self.min_fraction_tank_volume = min_fraction_tank_volume
         if "primary_port_name_convention" in kwargs.keys():
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
@@ -300,6 +303,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ) = self._pipe_get_diameter_and_insulation(asset)
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
+            self._set_q_nominal(asset, q_nominal)
+            q_max = math.pi * diameter ** 2 / 4.0 * self.v_max_gas
+            self._set_q_max(asset, q_max)
             modifiers = dict(length=length, diameter=diameter)
 
             return GasPipe, modifiers
@@ -794,7 +801,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
 
-        return ElectricitySource, modifiers
+        if asset.asset_type == "ElectricityProducer":
+            return ElectricitySource, modifiers
+        if asset.asset_type == "WindPark":
+            return WindPark, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         """
@@ -884,7 +894,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasDemand"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            Gas_demand_flow=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+         )
 
         return GasDemand, modifiers
 
@@ -905,7 +918,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasProducer"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            Gas_source_flow=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)),
+        )
 
         return GasSource, modifiers
 
@@ -924,7 +940,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"Electrolyzer"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)))
+        )
 
         return Electrolyzer, modifiers
 
@@ -943,7 +962,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasStorage"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            volume=asset.attributes["volume"],
+            Gas_tank_flow=dict(min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+        )
 
         return GasTankStorage, modifiers
 
