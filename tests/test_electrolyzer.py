@@ -73,7 +73,7 @@ class TestElectrolyzer(TestCase):
                 electrical_power_max=51.
         )
 
-        np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_out"],
+        np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_flow_out"],
                                      results["Electrolyzer_fc66.ElectricityIn.Power"]*b[0] + a[0])
 
 
