@@ -109,6 +109,7 @@ class _AssetToComponentBase:
         In this init we initialize some dicts and we load the edr pipes.
         """
         self._port_to_q_nominal = {}
+        self._port_to_q_max = {}
         self._port_to_esdl_component_type = {}
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
@@ -280,8 +281,59 @@ class _AssetToComponentBase:
         -------
         None
         """
-        self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
-        self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
+        try:
+            self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
+        except:
+            pass
+        try:
+            self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
+        except:
+            pass
+
+    def _set_q_max(self, asset: Asset, q_max: float) -> None:
+        """
+        This function populates a dict with the max volumetric flow in m3/s for the ports of all
+        pipes.
+
+        Parameters
+        ----------
+        asset :
+        q_max : float of the max flow through that pipe
+
+        Returns
+        -------
+        None
+        """
+        try:
+            self._port_to_q_max[asset.in_ports[0]] = q_max
+        except:
+            pass
+        try:
+            self._port_to_q_max[asset.out_ports[0]] = q_max
+        except:
+            pass
+
+    def _get_connected_q_max(self, asset: Asset) -> float:
+        if asset.in_ports is None or asset.asset_type == "Electrolyzer":
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_max = self._port_to_q_max.get(connected_port, None)
+            if q_max is not None:
+                self._set_q_nominal(asset, q_max)
+                return q_max
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif asset.out_ports is None:
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_max = self._port_to_q_max.get(connected_port, None)
+            if q_max is not None:
+                self._set_q_max(asset, q_max)
+                return q_max
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+                )
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
         """
@@ -299,7 +351,27 @@ class _AssetToComponentBase:
         Either the connected nominal flow [m3/s] if it is only connected to one hydraulic system,
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
-        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+        if asset.in_ports is None:
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_nominal = self._port_to_q_nominal.get(connected_port, None)
+            if q_nominal is not None:
+                self._set_q_nominal(asset, q_nominal)
+                return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif asset.out_ports is None:
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_nominal = self._port_to_q_nominal.get(connected_port, None)
+            if q_nominal is not None:
+                self._set_q_nominal(asset, q_nominal)
+                return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             try:
                 connected_port = asset.in_ports[0].connectedTo[0]
                 q_nominal = self._port_to_q_nominal[connected_port]

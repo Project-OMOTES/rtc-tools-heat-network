@@ -1,4 +1,7 @@
 from rtctools_heat_network.pycml import Variable
+
+from numpy import nan
+
 from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
 from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import \
     ElectricityComponent
@@ -33,6 +36,8 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.Power_consumed_nominal = 1.0
 
         # ...
+        self.Q_nominal = nan
+
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.nominal_power_consumed)
         # self.add_equation(

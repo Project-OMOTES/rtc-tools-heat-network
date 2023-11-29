@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from .gas_base import GasPort
@@ -16,6 +18,8 @@ class GasSource(GasComponent, BaseAsset):
         self.component_type = "gas_source"
 
         self.min_head = 30.0
+
+        self.Q_nominal = nan
 
         self.add_variable(GasPort, "GasOut")
         self.add_variable(Variable, "Gas_source_flow", min=0.0)
