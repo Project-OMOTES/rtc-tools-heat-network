@@ -47,13 +47,13 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.Q_nominal = nan
         self.min_voltage = nan
 
-        self.add_variable(ElectricityPort, "ElectricityIn")
+        self.add_variable(ElectricityPort, "ElectricityIn")  # [W]
         self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.nominal_power_consumed)
         self.add_equation(
             (self.ElectricityIn.Power - self.Power_consumed) / self.Power_consumed_nominal
-        )
+        )  # [W]
 
-        # ... [kg ??]
         self.add_variable(GasPort, "GasOut")
-        self.add_variable(Variable, "Gas_mass_out", min=0.0, nominal=self.nominal_gass_mass_out)
-        self.add_equation((self.GasOut.Q * self.density - self.Gas_mass_out) / self.Gass_mass_out_nominal)
+        self.add_variable(Variable, "Gas_mass_flow_out", min=0.0, nominal=self.nominal_gass_mass_out)  # [kg/s]
+        self.add_equation((self.GasOut.Q * self.density - self.Gas_mass_flow_out) / self.Gass_mass_out_nominal)
+

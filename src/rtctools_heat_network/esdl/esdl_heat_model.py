@@ -963,11 +963,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get(
             "power", math.inf
         )
-        min_load = asset.attributes["minLoad"]
-        max_load = asset.attributes["maxLoad"]
-        eff_min_load = asset.attributes["effMinLoad"] * 1.e3
-        eff_max_load = asset.attributes["effMaxLoad"] * 1.e3
-        eff_max = asset.attributes["efficiency"] * 1.e3
+        min_load = float(asset.attributes["minLoad"])
+        max_load = float(asset.attributes["maxLoad"])
+        eff_min_load = asset.attributes["effMinLoad"] * 1.e3 / 3600.
+        eff_max_load = asset.attributes["effMaxLoad"] * 1.e3 / 3600.
+        eff_max = asset.attributes["efficiency"] * 1.e3 / 3600.
         def equations(x):
             a, b, c = x
             eq1 = a/min_load + b*min_load + c - eff_min_load
