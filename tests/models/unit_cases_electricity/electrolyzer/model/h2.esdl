@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="5" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="6" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="268b080c-6ee2-4498-9e7e-2c0105376c39">
     <carriers xsi:type="esdl:Carriers" id="3ef72f2f-98da-4818-a63b-ac13b04c897c">
       <carrier xsi:type="esdl:ElectricityCommodity" voltage="50000.0" name="elec" id="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d"/>
@@ -8,7 +8,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" name="Untitled instance" id="cea2b988-2dbc-4f9b-b816-685f307d174c">
     <area xsi:type="esdl:Area" id="5f49c2c8-6193-45a2-ad7f-457b44a81d93" name="Untitled area">
-      <asset xsi:type="esdl:Electrolyzer" effMaxLoad="68.0" id="fc6644db-15b9-4a3f-9637-044644b496e9" effMinLoad="67.0" efficiency="63.0" name="Electrolyzer_fc66" power="500000000.0">
+      <asset xsi:type="esdl:Electrolyzer" effMaxLoad="68.0" maxLoad="500000000" id="fc6644db-15b9-4a3f-9637-044644b496e9" effMinLoad="67.0" efficiency="63.0" minLoad="50000000" name="Electrolyzer_fc66" power="500000000.0">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="ce1699b8-34d4-43b9-a77a-1bfb08a9c36c" id="b3233805-b82b-406c-98fb-fc7bac66bb78"/>
         <port xsi:type="esdl:OutPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="Out" id="5079eeaa-5083-49ce-94d3-07e55348e747" connectedTo="175baa37-443c-4b4f-8e07-ce9707f27bac"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.91407805051185" lon="4.718627929687501"/>

@@ -30,24 +30,30 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         # ...
         self.component_type = "electrolyzer"
+
+        self.a_eff_coefficient = nan
+        self.b_eff_coefficient = nan
+        self.c_eff_coefficient = nan
+
+        self.minimum_load = nan
+
         self.density = 2.5  # H2 density [kg/m3] at 30bar
-        self.nominal_gass_mass_out = 1.0
-        self.nominal_power_consumed = 1.0
-        self.Gass_mass_out_nominal = 1.0
-        self.Power_consumed_nominal = 1.0
+
 
         # ...
         self.Q_nominal = nan
         self.min_voltage = nan
 
+        self.nominal_gass_mass_out = self.Q_nominal * self.density
+        self.nominal_power_consumed = nan
+
         self.add_variable(ElectricityPort, "ElectricityIn")  # [W]
         self.add_variable(Variable, "Power_consumed", min=0.0, nominal=self.nominal_power_consumed)
         self.add_equation(
-            (self.ElectricityIn.Power - self.Power_consumed) / self.Power_consumed_nominal
+            (self.ElectricityIn.Power - self.Power_consumed) / self.nominal_power_consumed
         )  # [W]
 
-        self.add_variable(GasPort, "GasOut")  # variable to be converted to -> [kg/s]
-        self.add_variable(
-            Variable, "Gas_mass_flow_out", min=0.0, nominal=self.nominal_gass_mass_out
-        )  # [kg/s]
-        # self.add_equation((self.GasOut - self.Gas_mass_out) / self.Gass_mass_out_nominal)
+        self.add_variable(GasPort, "GasOut")
+        self.add_variable(Variable, "Gas_mass_flow_out", min=0.0, nominal=self.nominal_gass_mass_out)  # [kg/s]
+        self.add_equation((self.GasOut.Q * self.density - self.Gas_mass_flow_out) / self.nominal_gass_mass_out)
+

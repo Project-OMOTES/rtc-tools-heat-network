@@ -82,6 +82,12 @@ class MILPProblem(
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "gurobi"
+
+        return options
+
 
 if __name__ == "__main__":
     elect = run_optimization_problem(MILPProblem)
