@@ -763,8 +763,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             annualized_capex_var_name = f"{asset}__annualized_capex"
             self._annualized_capex_var_map[asset] = annualized_capex_var_name
             self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(annualized_capex_var_name)
-            self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf)#(lb, ub)
-            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.e6 # TODO: set as the investment_nominal + installation_nominal
+            self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf) #(lb, ub)
+            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.e6 # TODO: set as the investment_nominal + installation_nominal nominal_investment = self.variable_nominal(installation_cost_symbol_name) + self.variable_nominal(investment_cost_symbol_name) 
 
         for asset in [
             *self.heat_network_components.get("source", []),

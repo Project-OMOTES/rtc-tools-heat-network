@@ -84,7 +84,7 @@ class MinimizeNoDiscountedCostGoal(CommonCostGoal):
 
 class MinimizeDiscAnnualizedCostGoal(CommonCostGoal):
     def investment_cost(self, optimization_problem, asset_categories):
-        divide_by_years = False
+        divide_by_years = True
         cost_map_keys = ["_annualized_capex_var_map"]
         return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
 
