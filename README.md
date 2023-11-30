@@ -1,7 +1,8 @@
-# MPC Development
+# RTC Tools Heat Network
 
-For more details, visit the documentation at http://warmingup.pages.ci.tno.nl/rtc-tools-heat-network/
+This repository is part of the 'Nieuwe Warmte Nu Design Toolkit' project. 
 
+RTC Tools Heat Network is used for ESDLs containing a heat network. It can optimize and low-fidelity simulate OPEX and CAPEX costs as well as provide the optimal asset placements.
 
 ## Release
 This package is released on pypi [here](https://pypi.org/project/rtc-tools-heat-network/) whenever a new tag is pushed.
