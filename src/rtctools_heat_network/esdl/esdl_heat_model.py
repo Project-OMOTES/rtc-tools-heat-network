@@ -424,6 +424,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
             technical_life=asset.attributes["technicalLifetime"] if asset.attributes["technicalLifetime"] else 30.,
+            discount_rate=asset.attributes["costInformation"].discountRate.value if asset.attributes["costInformation"].discountRate.value else 0.,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._supply_return_temperature_modifiers(asset),

@@ -764,7 +764,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self._annualized_capex_var_map[asset] = annualized_capex_var_name
             self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(annualized_capex_var_name)
             self.__annualized_capex_var_bounds[annualized_capex_var_name] = (0., np.inf)#(lb, ub)
-            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.e6 # TODO: set as the investment_nominal + installation_nominal
+            self.__annualized_capex_var_nominals[annualized_capex_var_name] = 1.e6 # TODO: set as the investment_nominal + installation_nominal = = self.variable_nominal(installation_cost_symbol_name) + self.variable_nominal(investment_cost_symbol_name)
 
         for asset in [
             *self.heat_network_components.get("source", []),
@@ -4434,6 +4434,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                 INTEREST_RATE = 0.00
                 NOMINAL = self.variable_nominal(symbol_name)
+
+                # discount_rate =parameters[f"{asset_name}.discount_rate"]
+                # nominal = self.variable_nominal(symbol_name)
                 
                 asset_life_years = self._number_of_years
                 # parameters[f"{asset_name}.technical_life"]
@@ -4443,6 +4446,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 annuity_factor = calculate_annuity_factor(INTEREST_RATE, asset_life_years)
 
                 constraints.append(((symbol - investment_and_installation_cost*annuity_factor) / NOMINAL, 0.0, 0.0))
+
+                # TODO: Change these variable names:
+                # annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+
+                # constraints.append(((symbol - investment_and_installation_cost*annuity_factor) / nominal, 0.0, 0.0))
+
 
         return constraints
 

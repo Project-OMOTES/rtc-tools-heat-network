@@ -23,6 +23,7 @@ class Source(_NonStorageComponent):
         self.price = nan  # TODO: delete not needed anymore
         self.co2_coeff = 1.0
         self.technical_life = nan
+        self.discount_rate = nan
 
         # Assumption: heat in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero

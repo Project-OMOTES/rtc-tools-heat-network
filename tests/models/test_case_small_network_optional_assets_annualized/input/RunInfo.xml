@@ -10,6 +10,6 @@
     <workDir>.</workDir>
     <inputTimeSeriesFile>Warmte_test.csv</inputTimeSeriesFile>
     <properties>
-        <string key="ESDL_File_Path" value="../model/test_case_small_network_optional_assets_annualized.esdl"/>
+        <string key="ESDL_File_Path" value="../model/annualized_test_case_discount5.esdl"/>
     </properties>
 </Run>
