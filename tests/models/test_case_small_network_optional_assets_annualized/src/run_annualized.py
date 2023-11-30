@@ -33,12 +33,12 @@ class TargetDemandGoal(Goal):
 
 class MinimizeDiscAnnualizedCostGoal(Goal):
 
-    '''This class represents an optimization goal that minimizes the
+    """This class represents an optimization goal that minimizes the
       discounted annualized cost of a heat network model.
 
     It takes the annualized cost calculated by the model and minimizes
     it by changing optimization variables such as asset sizes.
-    '''
+    """
 
     order = 1
     priority = 2
@@ -54,28 +54,46 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
         assets_and_cost_keys = [
             (["source", "ates"], ["_asset_variable_operational_cost_map"]),
             (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
-            (["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"], ["_annualized_capex_var_map"])
-            ]
+            (
+                [
+                    "source",
+                    "ates",
+                    "buffer",
+                    "demand",
+                    "heat_exchanger",
+                    "heat_pump",
+                    "pipe",
+                ],
+                ["_annualized_capex_var_map"],
+            ),
+        ]
 
         for asset_categories, cost_map_keys in assets_and_cost_keys:
             obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
 
         return obj
 
-    def sum_cost(self, optimization_problem, asset_categories: List[str], cost_map_keys: List[str]):
+    def sum_cost(
+        self,
+        optimization_problem,
+        asset_categories: List[str],
+        cost_map_keys: List[str],
+    ):
         """
         Sums up the cost for the given optimization problem, asset categories,
         and cost map keys.
         """
         obj = 0.0
         for asset_category in asset_categories:
-            for asset in optimization_problem.heat_network_components.get(asset_category, []):
+            for asset in optimization_problem.heat_network_components.get(
+                asset_category, []
+            ):
                 for cost_map_key in cost_map_keys:
                     cost_map = getattr(optimization_problem, cost_map_key)
                     cost = cost_map.get(asset, 0)
                     obj += optimization_problem.extra_variable(cost)
         return obj
-    
+
 
 class _GoalsAndOptions:
     def path_goals(self) -> List[Goal]:
@@ -167,7 +185,6 @@ class HeatProblem(
 
 
 class HeatProblemDiscAnnualizedCost(HeatProblem):
-
     def goals(self) -> List[Goal]:
         goals = super().goals().copy()
 
@@ -176,9 +193,37 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         return goals
 
 
+# class HeatProblemDiscAnnualizedCost_Modified_Parameters(HeatProblemDiscAnnualizedCost):
+
+#     @property
+#     def esdl_assets(self):
+#         assets = super().esdl_assets
+
+#         asset = next(a for a in assets.values() if a.name == "HeatProducer_1")
+#         asset.attributes["technical_lifetime"] = 1
+
+#         return assets
+
+
+class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost):
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+        for i in range(1, 3):  # HeatProducers
+            asset_name = f"HeatProducer_{i}"
+            asset = next((a for a in assets.values() if a.name == asset_name), None)
+            if asset is not None:
+                asset.attributes["technical_lifetime"] = 1
+                asset.attributes["costInformation"].discountRate.value = 0.0
+        return assets
+
+
 if __name__ == "__main__":
     from pathlib import Path
+
     base_folder = Path(__file__).resolve().parent.parent
-    solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
+    solution = run_optimization_problem(
+        HeatProblemDiscAnnualizedCost, base_folder=base_folder
+    )
     results = solution.extract_results()
-    print('\n HeatProblemAnnualized Completed \n \n')
+    print("\n HeatProblemAnnualized Completed \n \n")
