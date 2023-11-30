@@ -42,7 +42,7 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
-        
+
         assets_and_cost_keys = [
             (["source", "ates"], ["_asset_variable_operational_cost_map"]),
             (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
@@ -61,18 +61,15 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
                 for cost_map_key in cost_map_keys:
                     cost_map = getattr(optimization_problem, cost_map_key)
                     cost = cost_map.get(asset, 0)
-                    obj += self.calculate_cost(optimization_problem, cost, divide_by_years)
+                    obj += optimization_problem.extra_variable(cost)
         return obj
 
-    def investment_cost(self, optimization_problem, asset_categories):
-        pass
-
-    def calculate_cost(self, optimization_problem, cost, divide_by_years=False):
-        if divide_by_years:
-            # TODO: use number of years of individual assets
-            return optimization_problem.extra_variable(cost) / self.number_of_years
-        else:
-            return optimization_problem.extra_variable(cost)
+    # def calculate_cost(self, optimization_problem, cost, divide_by_years=False):
+    #     if divide_by_years:
+    #         # TODO: use number of years of individual assets
+    #         return optimization_problem.extra_variable(cost) / self.number_of_years
+    #     else:
+    #         return optimization_problem.extra_variable(cost)
 
 
 class _GoalsAndOptions:
