@@ -46,14 +46,17 @@ class _GoalsAndOptions:
         for demand in self.heat_network_components["electricity_demand"]:
             price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
+            nominal = self.variable_nominal(state) * np.median(
+                self.get_timeseries(price_profile).values)
 
-            goals.append(RevenueGoal(state, price_profile, 1.e6))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
-        for demand in self.heat_network_components["gas_demand"]:
+        for demand in self.heat_network_components.get("gas_demand", []):
             price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_mass_flow"
+            nominal=self.variable_nominal(state)*np.median(self.get_timeseries(price_profile).values)
 
-            goals.append(RevenueGoal(state, price_profile, 1.e6))
+            goals.append(RevenueGoal(state, price_profile, nominal))
 
         return goals
 
@@ -67,6 +70,15 @@ class _GoalsAndOptions:
             canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0., 0.))
+
+        for elec in self.heat_network_components.get("electrolyzer", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{elec}.Power_consumed")
+            power = sign * self.state_vector(canonical, ensemble_member)[0]
+            nominal = self.variable_nominal(f"{elec}.Power_consumed")
+            constraints.append(((power * nominal - 1.e8) / nominal, 0., 0.))
+            power = sign * self.state_vector(canonical, ensemble_member)[1]
+            nominal = self.variable_nominal(f"{elec}.Power_consumed")
+            constraints.append(((power * nominal) / nominal, 0., 0.))
 
         return constraints
 
@@ -87,7 +99,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 
@@ -102,3 +114,4 @@ if __name__ == "__main__":
     elect = run_optimization_problem(MILPProblem)
     r = elect.extract_results()
     print(r["Electrolyzer_fc66.ElectricityIn.Power"])
+    print(r["Electrolyzer_fc66.Gas_mass_flow_out"])

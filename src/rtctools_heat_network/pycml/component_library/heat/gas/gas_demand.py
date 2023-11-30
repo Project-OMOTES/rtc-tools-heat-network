@@ -18,7 +18,7 @@ class GasDemand(GasComponent, BaseAsset):
         self.component_type = "gas_demand"
         self.min_head = 30.0
 
-        self.Q_nominal =  nan
+        self.Q_nominal = nan
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
 
