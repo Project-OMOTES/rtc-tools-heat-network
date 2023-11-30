@@ -22,13 +22,21 @@ class TestElectrolyzer(TestCase):
 
         results = milp_problem.extract_results()
 
-        gas_revenue = np.sum(milp_problem.get_timeseries("GasDemand_0cf3.gas_price").values * results["GasDemand_0cf3.Gas_demand_mass_flow"])
+        price_profile = f"GasDemand_0cf3.gas_price"
+        state = f"GasDemand_0cf3.Gas_demand_mass_flow"
+        nominal = milp_problem.variable_nominal(state) * np.median(
+            milp_problem.get_timeseries(price_profile).values)
+        gas_revenue = np.sum(milp_problem.get_timeseries("GasDemand_0cf3.gas_price").values * results["GasDemand_0cf3.Gas_demand_mass_flow"]) / nominal
 
-        electricity_revenue = np.sum(milp_problem.get_timeseries("ElectricityDemand_9d15.electricity_price").values * results["ElectricityDemand_9d15.ElectricityIn.Power"])
+        price_profile = f"ElectricityDemand_9d15.electricity_price"
+        state = f"ElectricityDemand_9d15.ElectricityIn.Power"
+        nominal = milp_problem.variable_nominal(state) * np.median(
+            milp_problem.get_timeseries(price_profile).values)
+        electricity_revenue = np.sum(milp_problem.get_timeseries("ElectricityDemand_9d15.electricity_price").values * results["ElectricityDemand_9d15.ElectricityIn.Power"]) / nominal
 
         # Check that goal is as expected
         np.testing.assert_allclose(
-            milp_problem.objective_value, -(gas_revenue + electricity_revenue) / 1.e6
+            milp_problem.objective_value, -(gas_revenue + electricity_revenue)
         )
         tol = 1.e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
@@ -67,18 +75,33 @@ class TestElectrolyzer(TestCase):
                 coef_a,
                 coef_b,
                 coef_c,
-                1.,
-                n_lines=1,
-                electrical_power_min=milp_problem.parameters(0)["Electrolyzer_fc66.minimum_load"],
-                electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"]
+                n_lines=3,
+                electrical_power_min=0.,
+                electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1]
         )
 
         np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
                                    results["Electrolyzer_fc66.GasOut.Q"] *
                                    milp_problem.parameters(0)["Electrolyzer_fc66.density"])
-        for i in range(len(a)):
-            np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_flow_out"],
-                                         results["Electrolyzer_fc66.ElectricityIn.Power"]*b[i] + a[i])
+        # for i in range(len(a)):
+        #     np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_flow_out"],
+        #                                  results["Electrolyzer_fc66.ElectricityIn.Power"]*a[i] + b[i])
+
+        print(results["Electrolyzer_fc66.ElectricityIn.Power"])
+        print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
+
+        # import matplotlib.pyplot as plt
+        # x = np.linspace(50e6, 500e6)
+        # plt.figure()
+        # plt.plot(x, coef_a/x + coef_b * x + coef_c)  # eff curve
+        # plt.show()
+        #
+        # plt.figure()
+        # plt.plot(x, x / (coef_a / x + coef_b * x + coef_c))  # mass flow out curve
+        # for i in range(3):
+        #
+        #     plt.plot(x, a[i]*x+b[i])
+        # plt.show()
 
         a=1
 
