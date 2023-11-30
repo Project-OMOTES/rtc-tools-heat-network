@@ -106,10 +106,13 @@ def wanda_model_setup(wanda_file,wanda_bin,input_file):
     wanda_model.save_model_input()
     wanda_model.close()
 
-def wanda_model_run_stst(wanda_file,wanda_bin,diameters):
+def wanda_model_run_stst(wanda_file,wanda_bin,diameters, insulation = False):
     Q_loss = []
+    Q_loss_friction = []
+    Q_loss_tracing = []
+    discharge_supply = []
     dh = []
-    print('here')
+    dp = []
 
     for diameter in diameters:
         wanda_model = pywanda.WandaModel(wanda_file, wanda_bin)
@@ -118,18 +121,59 @@ def wanda_model_run_stst(wanda_file,wanda_bin,diameters):
             if component.get_name() == 'P_supply' or component.get_name() == 'P_return':
                 prop = component.get_property('Inner diameter')
                 prop.set_scalar(diameter)
+                if insulation == True:
+                    # prop = component.get_property('Heat transfer. in fluid')
+                    # prop_table = component.get_property('Heat transf. table diameter').get_table()
+                    # prop_table.set_float_column('Outer layer diameter', [0.0])
+                    # prop_table.set_float_column('Heat cond. coef.', [0.0])
+                    component.get_property('Heat transf. input').set_scalar('Table layers')
+                    prop_table = component.get_property('Heat transf. table layer').get_table()
+                    prop_table.clear_table()
+                    layer_thickness = diameter/2
+                    prop_table.set_float_column('Thickness', [0.0, layer_thickness])
+                    # thermal conductivity steel: 45 W/mK
+                    # thermal conductivity PUR: 0.022 W/mK
+                    prop_table.set_float_column('Heat cond. coef.', [45, 0.022])
+            # if component.get_name() == 'VALVE Valve':
+            #     prop = component.get_property('Inner diameter')
+            #     prop.set_scalar(diameter)
+
+
+
         print(' start run_wanda_model for diameter ', diameter)
         wanda_model.save_model_input()
         wanda_model.run_steady()
         print('finished run_wanda_model for diameter ', diameter)
         # print('run_wanda_model for diameter', diameter)
         wanda_model.reload_output()
-        Q_loss.append(wanda_model.get_component('pipe_supply').get_property('Total heat flux'))
-        H1 = wanda_model.get_component('pipe_supply').get_property('Head1')
-        H2 = wanda_model.get_component('pipe_supply').get_property('Head2')
-        dh.append(H1-H2)
+        heat_loss = wanda_model.get_component('PIPE P_supply').get_property('Heat loss').get_series()
+        Q_loss.append(heat_loss[0])
+        tot_heat_gain = wanda_model.get_component('PIPE P_supply').get_property('Total heat gain').get_series()
+        friction_heat = wanda_model.get_component('PIPE P_supply').get_property('Friction heat').get_series()
+        Q_loss_friction.append(friction_heat[0])
+        heat_by_tracing = wanda_model.get_component('PIPE P_supply').get_property('Heat by tracing').get_series()
+        Q_loss_tracing.append(heat_by_tracing[0])
+        discharge_pipe = wanda_model.get_component('PIPE P_supply').get_property('Discharge').get_series()
+        discharge_supply.append(discharge_pipe[0])
+        H1 = wanda_model.get_component('PIPE P_supply').get_property('Head 1').get_series()
+        H2 = wanda_model.get_component('PIPE P_supply').get_property('Head 2').get_series()
+        dh.append(H1[0]-H2[0])
+
+        p1 = wanda_model.get_component('PIPE P_supply').get_property('Pressure 1').get_series()
+        p2 = wanda_model.get_component('PIPE P_supply').get_property('Pressure 2').get_series()
+        dp.append(p1[0] - p2[0])
         wanda_model.close()
-    return Q_loss, dh
+
+    data_wanda = pd.DataFrame({
+                               "Inner diameter": diameters,
+                               "Q_loss": Q_loss,
+                               "Q_loss_friction": Q_loss_friction,
+                               "Q_loss_tracing": Q_loss_tracing,
+                               "dh": dh,
+                               "dp": dp,
+                               "Discharge_supply": discharge_supply}
+                              )
+    return data_wanda
 
 class ValidationPipeDiameterSizing(ESDLMixin):
     # def __init__(self):
@@ -233,31 +277,32 @@ class ValidationPipeDiameterSizing(ESDLMixin):
 
 if __name__ == "__main__":
 
-    wanda_model = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\model\validation_pipe_diameter_sizing_46.wdi'
+    wanda_model = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\model\validation_pipe_diameter_sizing_47.wdi'
     esdl_model = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\model\test_simple.esdl'
     esdl_string = 'test_simple.esdl'
     esdl_path =  r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\model\\'
-    wanda_bin = r'c:\Program Files (x86)\Deltares\Wanda 4.6\Bin\\'
+    wanda_bin = r'c:\Program Files (x86)\Deltares\Wanda 4.7\Bin\\'
     esdl2wanda_config = r'.\esdl2wanda_cfg.yml'
     val_input_file = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\src\input.yml'
     base_folder = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\\'
+    output_folder = r'C:\Users\star_kj\NWN-rtc-tools-heat-network\Validation\V_pipe_diameter_sizing\output'
 
-    # wanda_model_setup(wanda_model, wanda_bin, val_input_file)
-    esdl_model_setup(esdl_model, esdl_path, val_input_file)
+    # # wanda_model_setup(wanda_model, wanda_bin, val_input_file)
+    # esdl_model_setup(esdl_model, esdl_path, val_input_file)
+    #
+    # # sol = run_optimization_problem(ValidationPipeDiameterSizing)
+    # # run optimization routine
+    # #PipeDiameterSizingProblem
+    # sol = run_optimization_problem(PipeDiameterSizingProblem)
+    # print(sol.hot_pipes)
+    #
+    # # sol = run_optimization_problem(EndScenarioSizing, base_folder=base_folder)
 
-    # sol = run_optimization_problem(ValidationPipeDiameterSizing)
-    # run optimization routine
-    #PipeDiameterSizingProblem
-    sol = run_optimization_problem(PipeDiameterSizingProblem)
-    print(sol.hot_pipes)
-
-    # sol = run_optimization_problem(EndScenarioSizing, base_folder=base_folder)
-
-    parameters = sol.parameters(0)
-    diameters = {p: parameters[f"{p}.diameter"] for p in sol.hot_pipes}
-    print(diameters)
-    results = sol.extract_results()
-    exit(0)
+    # parameters = sol.parameters(0)
+    # diameters = {p: parameters[f"{p}.diameter"] for p in sol.hot_pipes}
+    # print(diameters)
+    # results = sol.extract_results()
+    # exit(0)
     # EndScenarioSizingHIGHS
     # sol = run_optimization_problem(
     #     EndScenarioSizingHIGHS
@@ -281,37 +326,68 @@ if __name__ == "__main__":
     #     run wanda model
     #     obtain         (results)
 
+    dn_diameters = ['DN200', 'DN300', 'DN400', 'DN500', 'D600']
     data_wanda = {}
-    inner_diameters = [0.1,0.2,0.3,0.4]
-    Q_loss, dh = wanda_model_run_stst(wanda_model, wanda_bin, inner_diameters)
+    inner_diameters = [0.2,0.3,0.4,0.5,0.6]
+    data_wanda = wanda_model_run_stst(wanda_model, wanda_bin, inner_diameters, insulation=False)
+    data_wanda["Diameter"] =  dn_diameters
+
+    # pumps
+    Power=[]
+    for i,inner_diameter in enumerate(data_wanda["Inner diameter"]):
+        eta_pump = 0.65
+        Power.append(data_wanda["dp"][i]/eta_pump * data_wanda["Discharge_supply"][i])
+    data_wanda["Power"] = Power
+
+    # Rerun, but with insulation
+    data_wanda_insulation = wanda_model_run_stst(wanda_model, wanda_bin, inner_diameters, insulation=True)
+    data_wanda_insulation["Diameter"] = dn_diameters
+
+    # pumps
+    Power = []
+    for i, inner_diameter in enumerate(data_wanda["Inner diameter"]):
+        eta_pump = 0.65
+        Power.append(data_wanda_insulation["dp"][i] / eta_pump * data_wanda_insulation["Discharge_supply"][i])
+    data_wanda_insulation["Power"] = Power
 
 
-    data_wanda = pd.DataFrame({"Diameter": ['DN100', 'DN200', 'DN300', 'DN400'],
-                               "Inner diameter": inner_diameters,
-                       "Q_loss": Q_loss,
-                        "dh": dh}
-                              )
-    print(data_wanda)
 
     #plot results
     markers = ["o", "v", "d", "s", "^", "<", ">"]
-    fig,ax = plt.subplot(1,1,figsize=(5,6))
-    plt.xlabel('Inner diameter [mm]')
-    plt.ylabel('Energy [W/m]')
-    x = np.range(len(data_wanda['Diameter']))
-    Q_loss = data_wanda['Q_loss']
+    fig, (ax0, ax1) = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True,
+                                    figsize=(12, 6))
+    ax0.set_xlabel('Inner diameter [mm]')
+    ax0.set_ylabel('Energy [W/m]')
+    x = np.arange(len(data_wanda['Diameter']))
     E_pump = data_wanda['dh']
-    tot_energy = Q_loss + E_pump
-    plt.plot(x, Q_loss, label='Q_loss')
+    tot_energy = data_wanda['Q_loss'] + data_wanda['Power']
+    ax0.plot(x, data_wanda['Power'], label='E$_{el}$')
+    ax0.plot(x, data_wanda['Q_loss'], label='Q_loss')
+    ax0.plot(x, tot_energy, label='Q_loss + E$_{el}$')
+    # plt.plot(x, data_wanda['Q_loss_friction'], label='Q_loss_friction')
+    # plt.plot(x, data_wanda['Q_loss_tracing'], label='Q_loss_tracing')
 
-    index_grow = data_wanda.loc[data_wanda['Diamter'] == diameter_grow].index[0]
-    plt.plot([index_grow, index_grow ],[-1E6,1E6],'k--',label='result grow workflow')
-    plt.legend()
+    # index_grow = data_wanda.loc[data_wanda['Diameter'] == diameter_grow].index[0]
+    # plt.plot([index_grow, index_grow ],[-1E6,1E6],'k--',label='result grow workflow')
+    ax0.legend()
+    ax0.set_title('no insulation')
+    my_xticks = data_wanda['Diameter']
+    ax0.set_xticks(x, my_xticks)
+    ax0.set_xlim([0,(len(x)+1)])
+    ax1.set_xlabel('Inner diameter [mm]')
+    ax1.set_ylabel('Energy [W/m]')
+    E_pump = data_wanda_insulation['dh']
+    tot_energy = data_wanda_insulation['Q_loss'] + data_wanda_insulation['Power']
+    ax1.plot(x, data_wanda_insulation['Power'], label='E$_{el}$')
+    ax1.plot(x, data_wanda_insulation['Q_loss'], label='Q_loss')
+    ax1.plot(x, tot_energy, label='Q_loss + E$_{el}$')
+    ax1.legend()
 
-    my_xticks = data_wanda[ 'Diameter']
-    plt.xticks(x, my_xticks)
-    ax.set_xlim([0,(len(x)+1)])
-    plt.savefig(output_folder + '\\figures\\physics_validation.png',bbox_inches='tight')
+    ax1.set_xticks(x, my_xticks)
+    ax1.set_xlim([0, (len(x) + 1)])
+
+
+    plt.savefig(output_folder + '\\physics_validation.png',bbox_inches='tight')
     plt.close()
 
 
