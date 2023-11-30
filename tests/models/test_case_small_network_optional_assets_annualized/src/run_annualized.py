@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Dict, Any
 
 from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -31,11 +32,18 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeDiscAnnualizedCostGoal(Goal):
+
+    '''This class represents an optimization goal that minimizes the
+      discounted annualized cost of a heat network model.
+
+    It takes the annualized cost calculated by the model and minimizes
+    it by changing optimization variables such as asset sizes.
+    '''
+
     order = 1
     priority = 2
 
-    def __init__(self, number_of_years=30.0):
-        self.number_of_years = number_of_years
+    def __init__(self):
         self.target_max = 0.0
         self.function_range = (0.0, 1.0e8)
         self.function_nominal = 1.0e7
@@ -54,7 +62,11 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
 
         return obj
 
-    def sum_cost(self, optimization_problem, asset_categories, cost_map_keys, divide_by_years=False):
+    def sum_cost(self, optimization_problem, asset_categories: List[str], cost_map_keys: List[str]):
+        """
+        Sums up the cost for the given optimization problem, asset categories,
+        and cost map keys.
+        """
         obj = 0.0
         for asset_category in asset_categories:
             for asset in optimization_problem.heat_network_components.get(asset_category, []):
@@ -63,17 +75,10 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
                     cost = cost_map.get(asset, 0)
                     obj += optimization_problem.extra_variable(cost)
         return obj
-
-    # def calculate_cost(self, optimization_problem, cost, divide_by_years=False):
-    #     if divide_by_years:
-    #         # TODO: use number of years of individual assets
-    #         return optimization_problem.extra_variable(cost) / self.number_of_years
-    #     else:
-    #         return optimization_problem.extra_variable(cost)
-
+    
 
 class _GoalsAndOptions:
-    def path_goals(self):
+    def path_goals(self) -> List[Goal]:
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["demand"]:
@@ -93,12 +98,12 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
+    def path_goals(self) -> List[Goal]:
         goals = super().path_goals().copy()
 
         return goals
 
-    def heat_network_options(self):
+    def heat_network_options(self) -> Dict[str, Any]:
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0
         options["neglect_pipe_heat_losses"] = True
@@ -118,13 +123,13 @@ class HeatProblem(
 
         return constraints
 
-    def solver_options(self):
+    def solver_options(self) -> Dict[str, str]:
         options = super().solver_options()
         options["solver"] = "highs"
 
         return options
 
-    def read(self):
+    def read(self) -> None:
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
         """
@@ -163,7 +168,7 @@ class HeatProblem(
 
 class HeatProblemDiscAnnualizedCost(HeatProblem):
 
-    def goals(self):
+    def goals(self) -> List[Goal]:
         goals = super().goals().copy()
 
         goals.append(MinimizeDiscAnnualizedCostGoal())
@@ -173,10 +178,7 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
 
 if __name__ == "__main__":
     from pathlib import Path
-
     base_folder = Path(__file__).resolve().parent.parent
-    
     solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
     results = solution.extract_results()
     print('\n HeatProblemAnnualized Completed \n \n')
-
