@@ -5,8 +5,6 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
-
 
 class TestEndScenarioSizingAnnualized(TestCase):
     def test_end_scenario_sizing_annualized(self):
@@ -25,9 +23,11 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # Assertion 1: Non annualized objective value with discount=0 and technical life 1
         # year matches the objective value of the discounted problem
         solution_1 = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
+            HeatProblemDiscAnnualizedCost, base_folder=base_folder
+            # HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
         )
         solution_2 = run_optimization_problem(HeatProblem, base_folder=base_folder)
+
         np.testing.assert_allclose(
             solution_1.objective_value, solution_2.objective_value
         )
@@ -91,3 +91,7 @@ if __name__ == "__main__":
         "Execution time: "
         + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
     )
+
+# TODO:
+# Include attributes discount factor and technical life in each asset
+# Include all assets in  __annualized_capex_constraints (heat_mixin)

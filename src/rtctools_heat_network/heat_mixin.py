@@ -4890,34 +4890,24 @@ class HeatMixin(
                     investment_cost_symbol + installation_cost_symbol
                 )
 
-                INTEREST_RATE = 0.00
-                NOMINAL = self.variable_nominal(symbol_name)
-
-                # discount_rate =parameters[f"{asset_name}.discount_rate"]
-                # nominal = self.variable_nominal(symbol_name)
-
-                asset_life_years = self._number_of_years
-                # parameters[f"{asset_name}.technical_life"]
-                # asset_life_years = symbol_name.technical_life
-                # parameters["HeatProducer_2.technical_life"]
-
+                nominal = self.variable_nominal(symbol_name)
+                # asset_life_years = parameters[f"{asset_name}.technical_life"]
+                # discount_rate = parameters[f"{asset_name}.discount_rate"]
+                asset_life_years = 1
+                discount_rate = 0.0
+                
                 annuity_factor = calculate_annuity_factor(
-                    INTEREST_RATE, asset_life_years
+                    discount_rate, asset_life_years
                 )
 
                 constraints.append(
                     (
                         (symbol - investment_and_installation_cost * annuity_factor)
-                        / NOMINAL,
+                        / nominal,
                         0.0,
                         0.0,
                     )
                 )
-
-                # TODO: Change these variable names:
-                # annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
-
-                # constraints.append(((symbol - investment_and_installation_cost*annuity_factor) / nominal, 0.0, 0.0))
 
         return constraints
 
