@@ -30,7 +30,7 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class CommonCostGoal(Goal):
+class MinimizeDiscAnnualizedCostGoal(Goal):
     order = 1
     priority = 2
 
@@ -42,16 +42,16 @@ class CommonCostGoal(Goal):
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
-        asset_categories = ["source", "ates"]
-        cost_map_keys = ["_asset_variable_operational_cost_map"]
-        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+        
+        assets_and_cost_keys = [
+            (["source", "ates"], ["_asset_variable_operational_cost_map"]),
+            (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
+            (["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"], ["_annualized_capex_var_map"])
+            ]
 
-        asset_categories = ["source", "ates", "buffer"]
-        cost_map_keys = ["_asset_fixed_operational_cost_map"]
-        obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
+        for asset_categories, cost_map_keys in assets_and_cost_keys:
+            obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
 
-        asset_categories = ["source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"]
-        obj += self.investment_cost(optimization_problem, asset_categories)
         return obj
 
     def sum_cost(self, optimization_problem, asset_categories, cost_map_keys, divide_by_years=False):
@@ -73,19 +73,6 @@ class CommonCostGoal(Goal):
             return optimization_problem.extra_variable(cost) / self.number_of_years
         else:
             return optimization_problem.extra_variable(cost)
-
-
-class MinimizeNoDiscountedCostGoal(CommonCostGoal):
-    def investment_cost(self, optimization_problem, asset_categories):
-        divide_by_years = False
-        cost_map_keys = ["_asset_installation_cost_map", "_asset_investment_cost_map"]
-        return self.sum_cost(optimization_problem, asset_categories, cost_map_keys, divide_by_years)
-    
-
-class MinimizeDiscAnnualizedCostGoal(CommonCostGoal):
-    def investment_cost(self, optimization_problem, asset_categories):
-        cost_map_keys = ["_annualized_capex_var_map"]
-        return self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
 
 
 class _GoalsAndOptions:
@@ -187,16 +174,6 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         return goals
 
 
-class HeatProblemNoDiscTotalCost(HeatProblem):
-
-    def goals(self):
-        goals = super().goals().copy()
-
-        goals.append(MinimizeNoDiscountedCostGoal())
-
-        return goals
-
-
 if __name__ == "__main__":
     from pathlib import Path
 
@@ -206,6 +183,3 @@ if __name__ == "__main__":
     results = solution.extract_results()
     print('\n HeatProblemAnnualized Completed \n \n')
 
-    # solution = run_optimization_problem(HeatProblemNoDiscTotalCost, base_folder=base_folder)
-    # results = solution.extract_results()
-    # print('\n HeatProblemAnnualized Completed \n \n')
