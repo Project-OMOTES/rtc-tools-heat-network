@@ -147,7 +147,7 @@ class QTHLoopMixin(QTHMixin):
         if self.__expose_all_results:
             return times[: self.__tstep + 2]
         else:
-            return times[self.__tstep : self.__tstep + 2]
+            return times[self.__tstep: self.__tstep + 2]
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)

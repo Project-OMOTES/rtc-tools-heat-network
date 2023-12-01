@@ -257,7 +257,7 @@ class ESDLMixin(
                     elif min_size_idx == max_size_idx:
                         c.append(pipe_classes[min_size_idx])
                     else:
-                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+                        c.extend(pipe_classes[min_size_idx: max_size_idx + 1])
                 elif asset.attributes["state"].name == "DISABLED":
                     c = self._override_pipe_classes[p] = []
                     c.append(no_pipe_class)

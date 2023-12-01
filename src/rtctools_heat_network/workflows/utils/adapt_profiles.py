@@ -108,7 +108,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
             if day == max_day // day_steps * day_steps:
                 if max_day > day:
                     new_date_times.append(problem.io.datetimes[day * 24])
-                new_date_times.extend(problem.io.datetimes[max_day * 24 : max_day * 24 + 24])
+                new_date_times.extend(problem.io.datetimes[max_day * 24: max_day * 24 + 24])
                 if (day + day_steps - 1) > max_day:
                     new_date_times.append(problem.io.datetimes[max_day * 24 + 24])
             else:
