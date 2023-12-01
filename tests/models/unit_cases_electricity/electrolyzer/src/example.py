@@ -43,6 +43,7 @@ class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
 
+        # TODO: these goals should incorperate the timestep
         for demand in self.heat_network_components["electricity_demand"]:
             price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
@@ -99,7 +100,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
 
         return options
 

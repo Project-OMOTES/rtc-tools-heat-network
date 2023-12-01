@@ -38,6 +38,8 @@ class GasTankStorage(GasComponent, BaseAsset):
             nominal=self._nominal_stored_gas,
         )
 
-        self.add_equation(((self.GasIn.Q - self.Gas_tank_flow) / self.Q_nominal))
+        self.add_equation(((self.GasIn.mass_flow - self.Gas_tank_flow) / (self.Q_nominal * self.density)))
 
-        self.add_equation(((self.der(self.Stored_gas_mass) - self.Gas_tank_flow * self.density) / (self._nominal_stored_gas*self.Q_nominal*self.density)**0.5))
+        self.add_equation(((self.der(self.Stored_gas_mass) - self.Gas_tank_flow) / (self._nominal_stored_gas*self.Q_nominal*self.density)**0.5))
+
+        self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))

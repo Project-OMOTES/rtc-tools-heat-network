@@ -1647,6 +1647,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             q_nominals = []
 
             for i_conn, (_pipe, orientation) in connected_pipes.items():
+                gas_conn = f"{node}.GasConn[{i_conn + 1}].mass_flow"
+                q_sum += orientation * self.state(gas_conn)
+                q_nominals.append(self.variable_nominal(gas_conn))
+
+            q_nominal = np.median(q_nominals)
+            constraints.append((q_sum / q_nominal, 0.0, 0.0))
+
+            q_sum = 0.0
+            q_nominals = []
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
                 gas_conn = f"{node}.GasConn[{i_conn + 1}].Q_shadow"
                 q_sum += orientation * self.state(gas_conn)
                 q_nominals.append(self.variable_nominal(gas_conn))
@@ -4332,8 +4343,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
             nominal = (self.variable_nominal(f"{asset}.Gas_mass_flow_out") *
-                       min(min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed"),
-                           min(linear_coef_b[linear_coef_b>0.]))) ** 0.5
+                       min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed")) ** 0.5
             constraints.extend(
                 [
                     (
