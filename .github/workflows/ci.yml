@@ -14,11 +14,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
-      - name: flake8 Lint
-        uses: TrueBrain/actions-flake8@v2
-        with:
-          plugins: Flake8-pyproject==1.2.3 flake8-docstrings==1.7.0 flake8-quotes==3.3.2
-          # only_warn: 1  #causes action to always be succesful, but still provide annotations
+      - name: Run Flake8 linting
+        run: |
+          ./ci/linux/lint.sh
 
   test:
     runs-on: ubuntu-latest

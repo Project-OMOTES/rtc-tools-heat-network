@@ -27,8 +27,11 @@ exceptiongroup==1.2.0
 flake8==6.0.0
     # via
     #   flake8-pyproject
+    #   flake8-quotes
     #   rtc-tools-heat-network (pyproject.toml)
 flake8-pyproject==1.2.3
+    # via rtc-tools-heat-network (pyproject.toml)
+flake8-quotes==3.3.2
     # via rtc-tools-heat-network (pyproject.toml)
 future-fstrings==1.2.0
     # via pyecore
