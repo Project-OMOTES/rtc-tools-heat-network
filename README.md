@@ -42,7 +42,7 @@ To make sure that everything is set-up correctly, you can run one of the example
 These do not come with the installation, and need to be downloaded separately::
 
     # 1. Clone the repository
-    git clone https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network.git
+    git clone https://github.com/Project-OMOTES/rtc-tools-heat-network.git
 
     # 2. Change directory to the example folder
     cd rtc-tools-heat-network/examples/pipe_diameter_sizing/src
@@ -78,7 +78,7 @@ Contribute
 You can contribute to this code through Pull Request on GitHub.
 Please, make sure that your code is coming with unit tests to ensure full coverage and continuous integration in the API.
 
-GitHub: https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network
+GitHub: https://github.com/Project-OMOTES/rtc-tools-heat-network
 
 
 Release
@@ -92,6 +92,6 @@ In order to release this package:
 3. Run `git pull origin master` or `git pull origin poc-release` to pull all latest changes.
 4. Run `git tag <new_version>` where `<new_version>` is the new version number.
 5. Run `git push origin <new_version>` to push the tag to Github.
-6. Check [Github](https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network/actions) to confirm the release is
+6. Check [Github](https://github.com/Project-OMOTES/rtc-tools-heat-network/actions) to confirm the release is
    processed without errors.
 7. Once the release has finished, confirm the new version is available on [pypi](https://pypi.org/project/rtc-tools-heat-network/).

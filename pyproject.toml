@@ -45,11 +45,8 @@ dev = [
 [project.urls]
 homepage = "https://www.nwn.nu"
 documentation = "https://readthedocs.org"
-repository = "https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network"
-changelog = "https://github.com/Nieuwe-Warmte-Nu/rtc-tools-heat-network/blob/main/CHANGELOG.md"
-
-[project.scripts]
-newchess = "rtctools_heat_network.infrastructure.app:cmdline_app"
+repository = "https://github.com/Project-OMOTES/rtc-tools-heat-network"
+changelog = "https://github.com/Project-OMOTES/rtc-tools-heat-network/blob/main/CHANGELOG.md"
 
 [build-system]
 build-backend = "setuptools.build_meta"
