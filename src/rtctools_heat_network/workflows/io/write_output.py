@@ -2,6 +2,7 @@ import logging
 import numbers
 import os
 import sys
+import traceback
 import uuid
 from pathlib import Path
 
@@ -925,7 +926,11 @@ class ScenarioOutput(HeatMixin):
                         sys.exit(1)
 
                     for ii in range(len(self.times())):
-                        data_row = [self.io.datetimes[ii]]
+                        if not self.io.datetimes[ii].tzinfo:
+                            data_row = [pytz.utc.localize(self.io.datetimes[ii])]
+                        else:
+                            data_row = [self.io.datetimes[ii]]
+
                         try:
                             # For all components dealing with one hydraulic system
                             if isinstance(
@@ -945,16 +950,24 @@ class ScenarioOutput(HeatMixin):
                             if ii == 0:
                                 # Set header for each column
                                 profiles.profile_header.append(variable)
-
                                 # Set profile database attributes for the esdl asset
+                                if not self.io.datetimes[0].tzinfo:
+                                    start_date_time = pytz.utc.localize(self.io.datetimes[0])
+                                else:
+                                    start_date_time = self.io.datetimes[0]
+                                if not self.io.datetimes[-1].tzinfo:
+                                    end_date_time = pytz.utc.localize(self.io.datetimes[-1])
+                                else:
+                                    end_date_time = self.io.datetimes[-1]
+
                                 profile_attributes = esdl.InfluxDBProfile(
                                     database=input_energy_system_id,
                                     measurement=asset_name,
                                     field=profiles.profile_header[-1],
                                     port=self.influxdb_port,
                                     host=self.influxdb_host,
-                                    startDate=pytz.utc.localize(self.io.datetimes[0]),
-                                    endDate=pytz.utc.localize(self.io.datetimes[-1]),
+                                    startDate=start_date_time,
+                                    endDate=end_date_time,
                                     id=str(uuid.uuid4()),
                                 )
                                 asset.port[index_outport].profile.append(profile_attributes)
@@ -965,8 +978,8 @@ class ScenarioOutput(HeatMixin):
                         profiles.profile_data_list.append(data_row)
                     # end time steps
                     profiles.num_profile_items = len(profiles.profile_data_list)
-                    profiles.start_datetime = pytz.utc.localize(profiles.profile_data_list[0][0])
-                    profiles.end_datetime = pytz.utc.localize(profiles.profile_data_list[-1][0])
+                    profiles.start_datetime = profiles.profile_data_list[0][0]
+                    profiles.end_datetime = profiles.profile_data_list[-1][0]
 
                     influxdb_profile_manager = InfluxDBProfileManager(
                         influxdb_conn_settings, profiles
@@ -1026,10 +1039,17 @@ class ScenarioOutput(HeatMixin):
                     #     tags=optim_simulation_tag,
                     # )
                     # ------------------------------------------------------------------------------
-
-                except Exception:
+                except StopIteration:
                     # If the asset has been deleted, thus also not placed
                     pass
+                except Exception:  # TODO fix other places in the where try/except end with pass
+                    logger.error(
+                        f"During the influxDB profile writing for asset: {asset_name}, the "
+                        "following error occured:"
+                    )
+                    traceback.print_exc()
+                    sys.exit(1)
+
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
             # try:
