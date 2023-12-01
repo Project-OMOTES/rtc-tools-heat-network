@@ -32,48 +32,62 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
     }
 
     def __init__(self, *args, **kwargs):
-        # Prepare dicts for additional variables
+        """
+        In this __init__ we prepare the dicts for the variables added by the HeatMixin class
+        """
+        # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
         self.__flow_direct_var = {}
         self.__flow_direct_bounds = {}
         self.__pipe_to_flow_direct_map = {}
 
+        # Boolean path-variable to determine whether flow is going through a pipe.
         self.__pipe_disconnect_var = {}
         self.__pipe_disconnect_var_bounds = {}
         self.__pipe_disconnect_map = {}
 
+        # Boolean variable to switch assets on/off or to increment their size for the entire time
+        # horizon.
         self.__asset_aggregation_count_var = {}
         self.__asset_aggregation_count_var_bounds = {}
         self._asset_aggregation_count_var_map = {}
 
+        # Boolean path-variable for the status of the check valve
         self.__check_valve_status_var = {}
         self.__check_valve_status_var_bounds = {}
         self.__check_valve_status_map = {}
 
+        # Boolean path-variable for the status of the control valve
         self.__control_valve_direction_var = {}
         self.__control_valve_direction_var_bounds = {}
         self.__control_valve_direction_map = {}
 
+        # Boolean path-variable to disable the hex for certain moments in time
         self.__disabled_hex_map = {}
         self.__disabled_hex_var = {}
         self.__disabled_hex_var_bounds = {}
 
+        # To avoid artificial energy generation at t0
         self.__buffer_t0_bounds = {}
 
+        # Variable for the maximum discharge under pipe class optimization
         self.__pipe_topo_max_discharge_var = {}
         self.__pipe_topo_max_discharge_map = {}
         self.__pipe_topo_max_discharge_nominals = {}
         self.__pipe_topo_max_discharge_var_bounds = {}
 
+        # Variable for the diameter of a pipe during pipe-class optimization
         self.__pipe_topo_diameter_var = {}
         self.__pipe_topo_diameter_var_bounds = {}
         self.__pipe_topo_diameter_map = {}
         self.__pipe_topo_diameter_nominals = {}
 
+        # Variable for the investmentcost in eur/m during pipe-class optimization
         self.__pipe_topo_cost_var = {}
         self.__pipe_topo_cost_var_bounds = {}
         self.__pipe_topo_cost_map = {}
         self.__pipe_topo_cost_nominals = {}
 
+        # Variable for the heat-loss (not specific for pipe-class optimization)
         self.__pipe_topo_heat_loss_var = {}
         self.__pipe_topo_heat_loss_path_var = {}
         self.__pipe_topo_heat_loss_var_bounds = {}
@@ -81,6 +95,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_heat_loss_nominals = {}
         self.__pipe_topo_heat_losses = {}
 
+        # Boolean variables for the various pipe class options per pipe
         self.__pipe_topo_pipe_class_var = {}
         self.__pipe_topo_pipe_class_var_bounds = {}
         self.__pipe_topo_pipe_class_map = {}
@@ -102,58 +117,70 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__pipe_topo_global_pipe_class_count_map = {}
         self.__pipe_topo_global_pipe_class_count_var_bounds = {}
 
-        # Insulation options per demand
+        # Boolean variables for the insulation options per demand.
         self.__demand_insulation_class_var = {}  # value 0/1: demand insulation - not active/active
         self.__demand_insulation_class_var_bounds = {}
         self.__demand_insulation_class_map = {}
         self.__demand_insulation_class_result = {}
 
+        # Dict to specifically update the discharge bounds under pipe-class optimization
         self.__pipe_topo_heat_discharge_bounds = {}
 
+        # list with entry per ensemble member containing dicts of pipe parameter values for
+        # diameter, area and heatloss.
         self.__pipe_topo_diameter_area_parameters = []
         self.__pipe_topo_heat_loss_parameters = []
 
+        # Variable of selected network temperature
         self.__temperature_regime_var = {}
         self.__temperature_regime_var_bounds = {}
 
+        # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
 
+        # Variable for fixed operational cost
         self._asset_fixed_operational_cost_map = {}
         self.__asset_fixed_operational_cost_var = {}
         self.__asset_fixed_operational_cost_nominals = {}
         self.__asset_fixed_operational_cost_bounds = {}
 
+        # Variable for variable operational cost
         self._asset_variable_operational_cost_map = {}
         self.__asset_variable_operational_cost_var = {}
         self.__asset_variable_operational_cost_bounds = {}
         self.__asset_variable_operational_cost_nominals = {}
 
+        # Variable for investment cost
         self._asset_investment_cost_map = {}
         self.__asset_investment_cost_var = {}
         self.__asset_investment_cost_nominals = {}
         self.__asset_investment_cost_bounds = {}
 
+        # Variable for installation cost
         self._asset_installation_cost_map = {}
         self.__asset_installation_cost_var = {}
         self.__asset_installation_cost_bounds = {}
         self.__asset_installation_cost_nominals = {}
 
+        # Variable for the cumulative investment and installation cost made per asset
         self.__cumulative_investments_made_in_eur_map = {}
         self.__cumulative_investments_made_in_eur_var = {}
         self.__cumulative_investments_made_in_eur_nominals = {}
         self.__cumulative_investments_made_in_eur_bounds = {}
 
+        # Variable for when in time an asset is realized
         self.__asset_is_realized_map = {}
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
+        # Variable for the maximum size of an asset
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
         self.__asset_max_size_bounds = {}
         self.__asset_max_size_nominals = {}
 
-        # Setpoint vars
+        # Boolean variable for determining when a asset switches from setpoint
         self._timed_setpoints = {}
         self._change_setpoint_var = {}
         self._change_setpoint_bounds = {}
@@ -164,18 +191,25 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         super().__init__(*args, **kwargs)
 
-    # @property
-    # def esdl_assets(self):
-    #     return {}
-    #
-
     def temperature_carriers(self):
+        """
+        This function should be overwritten by the problem and should give a dict with the
+        carriers as keys and a list of temperatures as values.
+        """
         return {}
 
     def temperature_regimes(self, carrier):
+        """
+        This funciton returns a list of temperatures that can be selected for a certain carrier.
+        """
         return []
 
     def pre(self):
+        """
+        In this pre method we fill the dicts initiated in the __init__. This means that we create
+        the Casadi variables and determine the bounds, nominals and create maps for easier
+        retrieving of the variables.
+        """
         super().pre()
 
         options = self.heat_network_options()
@@ -1028,13 +1062,23 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return self.__demand_insulation_class_result[demand_insulation]
 
     def pipe_diameter_symbol_name(self, pipe: str) -> str:
+        """
+        Return the symbol name for the pipe diameter
+        """
         return self.__pipe_topo_diameter_map[pipe]
 
     def pipe_cost_symbol_name(self, pipe: str) -> str:
+        """
+        Return the symbol name for the pipe investment cost per meter
+        """
         return self.__pipe_topo_cost_map[pipe]
 
     @property
     def extra_variables(self):
+        """
+        In this function we add all the variables defined in the HeatMixin to the optimization
+        problem. Note that these are only the normal variables not path variables.
+        """
         variables = super().extra_variables.copy()
         variables.extend(self.__pipe_topo_diameter_var.values())
         variables.extend(self.__pipe_topo_cost_var.values())
@@ -1055,6 +1099,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     @property
     def path_variables(self):
+        """
+        In this function we add all the path variables defined in the HeatMixin to the
+        optimization problem. Note that path_variables are variables that are created for each
+        time-step.
+        """
         variables = super().path_variables.copy()
         variables.extend(self.__flow_direct_var.values())
         variables.extend(self.__pipe_disconnect_var.values())
@@ -1071,6 +1120,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return variables
 
     def variable_is_discrete(self, variable):
+        """
+        All variables that only can take integer values should be added to this function.
+        """
         if (
             variable in self.__flow_direct_var
             or variable in self.__pipe_disconnect_var
@@ -1092,6 +1144,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
+        """
+        In this function we add all the nominals for the variables defined/added in the HeatMixin.
+        """
         if variable in self.__pipe_topo_diameter_nominals:
             return self.__pipe_topo_diameter_nominals[variable]
         elif variable in self.__pipe_topo_heat_loss_nominals:
@@ -1116,6 +1171,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             return super().variable_nominal(variable)
 
     def bounds(self):
+        """
+        In this function we add the bounds to the problem for all the variables defined/added in
+        the HeatMixin.
+        """
         bounds = super().bounds()
         bounds.update(self.__flow_direct_bounds)
         bounds.update(self.__pipe_disconnect_var_bounds)
@@ -1219,6 +1278,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return heat_loss
 
     def parameters(self, ensemble_member):
+        """
+        In this function we adapt the parameters object to avoid issues with accidentally using
+        variables as constants.
+        """
         parameters = super().parameters(ensemble_member)
 
         # To avoid mistakes by accidentally using the `diameter`, `area` and `Heat_loss`
@@ -1286,6 +1349,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __check_buffer_values_and_set_bounds_at_t0(self):
+        """
+        In this function we force the buffer at t0 to have a certain amount of set energy in it.
+        We do this via the bounds, by providing the bounds with a time-series where the first
+        element is the initial heat in the buffer.
+        """
         t = self.times()
         # We assume that t0 is always equal to self.times()[0]
         assert self.initial_time == self.times()[0]
@@ -1442,11 +1510,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_rate_heat_change_constraints(self, ensemble_member):
-        # To avoid sudden change in heat from a timestep to the next,
-        # constraints on d(Heat)/dt are introduced.
-        # Information of restrictions on dQ/dt and dT/dt are used, as d(Heat)/dt is
-        # proportional to average_temperature * dQ/dt + average_discharge * dT/dt.
-        # The average discharge is computed using the assumption that the average velocity is 1.
+        """
+        To avoid sudden change in heat from a timestep to the next,
+        constraints on d(Heat)/dt are introduced.
+        Information of restrictions on dQ/dt and dT/dt are used, as d(Heat)/dt is
+        proportional to average_temperature * dQ/dt + average_discharge * dT/dt.
+        The average discharge is computed using the assumption that the average velocity is 1 m/s.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -1497,6 +1567,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __node_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for each heat network node/joint to have as much
+        thermal power (Heat variable) going in as out. Effectively, it is setting the sum of
+        thermal powers to zero.
+        """
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
@@ -1514,6 +1589,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __gas_node_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for each gas network node/joint to have as much
+        flow going in as out. Effectively, it is setting the sum of flow to zero.
+        """
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.gas_nodes.items():
@@ -1542,6 +1621,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __node_discharge_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to ensure that the incoming volumetric flow equals the
+        outgoing volumetric flow. We assume constant density throughout a hydraulically coupled
+        system and thus these constraints are needed for mass conservation.
+        """
         constraints = []
 
         for node, connected_pipes in self.heat_network_topology.nodes.items():
@@ -1559,6 +1643,31 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __heat_loss_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints to subtract the heat losses from the thermal power that
+        propagates through the network. Note that this is done only on the thermal power, as such
+        only energy losses are accounted for, temperature losses are not considered.
+
+        There are a few cases for the heat loss constraints
+        - Heat losses are constant: This is the case when the pipe class is constant and the
+        network temperature is constant. In this case the symbol for the heat-loss is fixed by its
+        lower and upper bound to a value.
+        - Heat losses depend on pipe_class: In this case the heat loss depend on the pipe class
+        selected by the optimization. In this case the heat losses can vary due to the varying
+        radiation surface and different insulation materials applied to the pipe. Note that the
+        influences of varying pipe class are taken into account while setting the heat-loss
+        variable in topology constraints.
+        - Heat losses depend on varying network temperature: In this case the heat loss varies due
+        to the different delta temperature with ambient. Note that the heat loss symbol does not
+        account for the varying temperature. Therefore, the big_m formulation is needed in these
+        constraints.
+        - Heat losses depend both on varying network temperature and pipe classes: In this case
+        both pipe class and delta temperature with ambient vary
+        - neglect_pipe_heat_losses:
+        """
+        # TODO: Massively simplify this function by setting the heat loss symbol also for varying
+        #  temperature. All cases should then be solved with the same set of equations in this
+        #  function.
         constraints = []
         options = self.heat_network_options()
 
@@ -1627,6 +1736,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     @staticmethod
     def __get_abs_max_bounds(*bounds):
+        """
+        This function returns the absolute maximum of the bounds given. Note that bounds can also be
+        a timeseries.
+        """
         max_ = 0.0
 
         for b in bounds:
@@ -1640,6 +1753,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return max_
 
     def __flow_direction_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the direction in pipes and determine whether a pipe
+        is utilized at all (is_disconnected variable).
+
+        Whether a pipe is connected is based upon whether flow passes through that pipe.
+
+        The directions are set based upon the directions of how thermal power propegates. This is
+        done based upon the sign of the Heat variable. Where positive Heat means a positive
+        direction and negative heat means a negative direction. By default, positive is defined from
+        HeatIn to HeatOut.
+
+        Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
+        """
         constraints = []
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
@@ -1782,6 +1908,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __demand_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the demand assets.
+        We use an equality constraint on the outgoing flow for every non-pipe asset. Meaning that we
+        equate Q * rho * cp * T == Heat for outgoing flows, and inequalities for the heat carried
+        in the pipes. This means that the heat can decrease in the network to compensate losses,
+        but that the losses and thus flow will always be over-estimated with the temperature for
+        which no temperature drops are modelled.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -1838,6 +1972,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __source_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the demand assets.
+        We use an equality constraint on the outgoing flow for every non-pipe asset. Meaning that we
+        equate Q * rho * cp * T == Heat for outgoing flows, and inequalities for the heat carried
+        in the pipes. This means that the heat can decrease in the network to compensate losses,
+        but that the losses and thus flow will always be over-estimated with the temperature for
+        which no temperature drops are modelled.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -1898,6 +2040,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_hydraulic_power_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to compute the hydraulic power that is needed to realize the
+        flow, compensating the pressure drop through the pipe. Similar to the head loss constraints
+        we allow two supported methods. 1) a single linear line between 0 to max velocity. 2) A
+        multiple line inequality approach where one can use the minimize_head_losses == True option
+        to drag down the solution to the actual physical solution.
+
+        Note that the linearizations are made separately from the pressure drop constraints, this is
+        done to avoid "stacked" overestimations.
+        """
         constraints = []
         options = self.heat_network_options()
 
@@ -1991,6 +2143,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the pipe assets.
+        We use an equality constraint on the outgoing flow for every non-pipe asset. Meaning that we
+        equate Q * rho * cp * T == Heat for outgoing flows, and inequalities for the heat carried
+        in the pipes. This means that the heat can decrease in the network to compensate losses,
+        but that the losses and thus flow will always be over-estimated with the temperature for
+        which no temperature drops are modelled.
+
+        There are three cases for the constraint, namely:
+        - no heat losses: In this case a single equality constraint can be used.
+        - constant network temperature: In this case there is a single set inequality constraints
+        - varying network temperature: In this case a set of big_m constraints is used to
+        "activate" only the constraints with the selected network temperature.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -2087,6 +2253,23 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __storage_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the pipe assets.
+        We use an equality constraint on the outgoing flow for every non-pipe asset. Meaning that we
+        equate Q * rho * cp * T == Heat for outgoing flows, and inequalities for the heat carried
+        in the pipes. This means that the heat can decrease in the network to compensate losses,
+        but that the losses and thus flow will always be over-estimated with the temperature for
+        which no temperature drops are modelled.
+
+        This function adds the constraints relating the discharge to the thermal power at the
+        buffer component. This is done following the philosophy described at the heat_to_discharge
+        for sources/demands. Where a big_m formulation is used to switch between source and demand
+        logic depending on whether the buffer is discharging or charging. For this purpose the
+        direction of the connecting supply pipe is used, where a positive direction is charging
+        (demand logic) and a negative direction is discharging (source logic). This also means that
+        buffers can only be connected with the supply pipe going in positive direction to the
+        buffer.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -2369,6 +2552,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __network_temperature_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to ensure that only one temperature level is active for the
+        supply and return network within one hydraulically coupled system. Furthermore, it sets the
+        temperature variable to the temperature associated with the temperature of the integer
+        variable.
+        """
         constraints = []
 
         for _carrier, temperatures in self.temperature_carriers().items():
@@ -2394,6 +2583,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __heat_exchanger_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds the heat to discharge constraints of components that connect two
+        hydraulically decoupled networks. We assume that there is a dedicated primary side and
+        secondary side and that Thermal power can only flow from primary to secondary.
+
+        Following this assumption we use the demand logic to relate heat to discharge at the
+        primary side and the source logic for relating heat to discharge at the secondary side.
+
+        This function also adds constraints to ensure physically logical temperatures between the
+        primary and secondary side when varying temperature is applied to the optimization.
+        Assuming a counter flow heat exchanger, this means that the secondary supply temperature
+        will always be below the primary supply temperature and that the primary return temperature
+        has to be above the secondary return temperature.
+
+        Finally, an is disabled variable is set for when the heat exchanger is not used. This is
+        needed to allow disabling of the HEX temperature constraints when no heat is flowing
+        through the HEX.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -2672,12 +2879,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __state_vector_scaled(self, variable, ensemble_member):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+        """
+        This functions returns a nominal for the discharge of pipes under topology optimization.
+        """
         try:
             pipe_classes = self.__pipe_topo_pipe_class_map[pipe].keys()
             area = np.median(c.area for c in pipe_classes)
@@ -2688,6 +2902,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     @staticmethod
     def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
+        """
+        This function returns the head loss option for a pipe. Note that we assume that we can use
+        the more accurate DW linearized approximation when a pipe has a control valve.
+        """
         head_loss_option = heat_network_options["head_loss_option"]
 
         if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
@@ -2698,6 +2916,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return head_loss_option
 
     def _hn_pipe_head_loss_constraints(self, ensemble_member):
+        """
+        This function adds the head loss constraints for pipes. There are two options namely with
+        and without pipe class optimization. In both cases we assume that disconnected pipes, pipes
+        without flow have no head loss.
+
+        Under pipe-class optimization the head loss constraints per pipe class are added and
+        applied with the big_m method (is_topo_disconnected) to only activate the correct
+        constraints.
+
+        Under constant pipe class constraints for only one diameter are added.
+        """
         constraints = []
 
         options = self.heat_network_options()
@@ -2837,6 +3066,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __check_valve_head_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for the check valve functionality. Meaning that the flow can
+        only go in positive direction of the valve. Depending on the status of the valve the flow is
+        set to zero or bounded between zero and the maximum discharge.
+
+        The head loss is also bounded to only act in one direction.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
@@ -2881,6 +3117,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __control_valve_head_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for the control valve. In this case we allow the valve to
+        produce head loss for flow in both directions.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
@@ -2927,6 +3167,20 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_topology_constraints(self, ensemble_member):
+        """
+        This function adds the constraints needed for the optimization of pipe classes (referred to
+        as topology optimization). We ensure that only one pipe_class can be selected.
+        Additionally,, we set the diameter and cost variable to those associated with the optimized
+        pipe_class. Note that the cost symbol is the investment cost in EUR/meter, the actual
+        investment cost of the pipe is set in the __investment_cost variable.
+
+        Furthermore, ordering variables are set in this function. This is to give the optimization
+        insight in the ordering of all the possible boolean choices in pipe classes and as such
+        quicker find a feasible and optimal solution. The ordering are 0 or 1 depending on whether
+        the variable is larger compared to the selected pipe-class. For example is the pipe class
+        variable for DN200 is 1, then all discharge ordering variables for the pipe classes >=DN200
+        are 1.
+        """
         constraints = []
 
         # These are the constraints to count the amount of a certain pipe class
@@ -3103,6 +3357,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __heat_loss_variable_constraints(self, ensemble_member):
+        """
+        Furthermore, the __hn_heat_loss symbol is set, as the heat loss depends on the chosen pipe
+        class and the selected temperature in the network.
+
+        Parameters
+        ----------
+        ensemble_member : The ensemble of the optimizaton
+
+        Returns
+        -------
+        list of the added constraints
+        """
         constraints = []
 
         for p in self.heat_network_components.get("pipe", []):
@@ -3225,6 +3491,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __pipe_topology_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to limit the discharge that can flow through a pipe when the
+        pipe class is being optimized. This is needed as the different pipe classes have different
+        diameters and maximum velocities.
+        """
         constraints = []
 
         # Clip discharge based on pipe class
@@ -3243,12 +3514,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __electricity_node_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints for power/energy and current conservation at nodes/busses.
+        """
         constraints = []
 
         for bus, connected_cables in self.heat_network_topology.busses.items():
             power_sum = 0.0
             i_sum = 0.0
             power_nominal = []
+            i_nominal = []
 
             for i_conn, (_cable, orientation) in connected_cables.items():
                 heat_conn = f"{bus}.ElectricityConn[{i_conn + 1}].Power"
@@ -3256,13 +3531,29 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 power_sum += orientation * self.state(heat_conn)
                 i_sum += orientation * self.state(i_port)
                 power_nominal.append(self.variable_nominal(heat_conn))
+                i_nominal.append(self.variable_nominal(i_port))
 
             power_nominal = np.median(power_nominal)
             constraints.append((power_sum / power_nominal, 0.0, 0.0))
 
+            i_nominal = np.median(i_nominal)
+            constraints.append((i_sum / i_nominal, 0.0, 0.0))
+
         return constraints
 
     def __electricity_cable_heat_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints relating the electrical power to the current flowing through
+        the cable. The power through the cable is limited by the maximum voltage and the actual
+        current variable with an inequality constraint. This is done to allow power losses through
+        the network. As the current and power are related with an equality constraint at the
+        demands exactly matching the P = U*I equation, we allow the inequalities for the lines. By
+        overestimating the power losses and voltage drops, together we ensure that U*I>P.
+
+
+        Furthermore, the power loss is estimated by linearizing with the maximum current, meaning
+        that we are always overestimating the power loss in the cable.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -3286,6 +3577,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __electricity_demand_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for the electricity commodity at the demand assets. We
+        enforce that a minimum voltage is exactly met together with the power that is carried by
+        the current. By fixing the voltage at the demand we ensure that at the demands
+        P = U * I is met exactly at this point in the network and the power is conservatively
+        in the cables at all locations in the network.
+        """
         constraints = []
         parameters = self.parameters(ensemble_member)
 
@@ -3314,9 +3612,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __max_size_constraints(self, ensemble_member):
+        """
+        This function makes sure that the __max_size variable is at least as large as needed. For
+        most assets the __max_size is related to the thermal Power it can produce or consume, there
+        are a few exceptions like tank storage that sizes with volume.
+
+        Since it are inequality constraints are inequality the __max_size variable can be larger
+        than what is the actual needed size. In combination with the objectives, e.g. cost
+        minimization, we can drag down the __max_size to the minimum required.
+        """
         constraints = []
-        # This function makes sure that the __max_size variable is at least as large as needed
-        # a goal should minimize the size of this variable.
         bounds = self.bounds()
 
         for b in self.heat_network_components.get("buffer", []):
@@ -3417,6 +3722,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __investment_cost_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the investment cost variable. The investment cost
+        scales with the maximum size of the asset. This leaves two cases for the constraint. 1) The
+        asset size is fixed (state==1): in this case the investment cost is set based on the upper
+        bound of the size. 2) The asset size is optimized (state==2): in this case the investment
+        cost is set based upon the __max_size variable.
+
+        Specifically for demands we have a case where we set the investment cost based on the
+        maximum demand as often the size of the demand is not seperately specified.
+
+        For pipes the investment cost is set based on the pipe class and the length.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3522,6 +3839,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __fixed_operational_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints to set the fixed operational cost. The fixed operational
+        cost are the cost made independently of the operation of the asset. We assume that these
+        cost scale with the maximum size of the asset.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3571,6 +3893,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __variable_operational_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for setting the variable operational cost. These are the
+        cost that depend on the operation of the asset. At this moment we only support the variable
+        operational cost for sources where they scale with the thermal energy production.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3622,6 +3949,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __installation_cost_constraints(self, ensemble_member):
+        """
+        This function adds the constraints for setting the installation cost variable. The
+        installation cost is the cost element that comes with the placing of the asset
+        independently of the size of the asset. Therefore, the installation cost is set with the
+        _aggregation_count variable.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3665,6 +3998,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __optional_asset_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints that set the _aggregation_count variable. This variable is
+        used for most assets (except geo and ates) to turn on/off the asset. Which effectively mean
+        that assets cannot exchange thermal power with the network when _aggregation_count == 0.
+
+        Specifically for the geo and ATES we use the _aggregation_count for modelling the amount of
+        doublets. Where the _aggregation_count allows increments in the upper limit for the thermal
+        power that can be exchanged with the network.
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3834,6 +4176,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def path_constraints(self, ensemble_member):
+        """
+        Here we add all the path constraints to the optimization problem. Please note that the
+        path constraints are the constraints that are applied to each time-step in the problem.
+        """
+
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
@@ -3864,6 +4211,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def constraints(self, ensemble_member):
+        """
+        This function adds the normal constraints to the problem. Unlike the path constraints these
+        are not applied to every time-step in the problem. Meaning that these constraints either
+        consider global variables that are independent of time-step or that the relevant time-steps
+        are indexed within the constraint formulation.
+        """
         constraints = super().constraints(ensemble_member)
 
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
@@ -3886,6 +4239,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def history(self, ensemble_member):
+        """
+        In this history function we avoid the optimization using artificial energy for storage
+        assets as the history is not defined.
+        """
         history = super().history(ensemble_member)
 
         initial_time = np.array([self.initial_time])
@@ -3914,22 +4271,36 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return history
 
     def goal_programming_options(self):
+        """
+        Here we set the goal programming configuration. We use soft constraints for consecutive
+        goals.
+        """
         options = super().goal_programming_options()
         options["keep_soft_constraints"] = True
         return options
 
     def solver_options(self):
+        """
+        Here we define the solver options. By default we use the open-source solver cbc and casadi
+        solver qpsol.
+        """
         options = super().solver_options()
         options["casadi_solver"] = "qpsol"
         options["solver"] = "highs"
         return options
 
     def compiler_options(self):
+        """
+        In this function we set the compiler configuration.
+        """
         options = super().compiler_options()
         options["resolve_parameter_values"] = True
         return options
 
     def __pipe_class_to_results(self):
+        """
+        This functions writes all resulting pipe class results to a dict.
+        """
         for ensemble_member in range(self.ensemble_size):
             results = self.extract_results(ensemble_member)
 
@@ -3951,6 +4322,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     self.__pipe_topo_pipe_class_result[p] = pipe_class
 
     def __pipe_diameter_to_parameters(self):
+        """
+        This function is used to update the parameters object with the results of the pipe class
+        optimization
+        """
         for ensemble_member in range(self.ensemble_size):
             d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
             for pipe in self.__pipe_topo_pipe_class_map:
@@ -3961,6 +4336,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     d[f"{p}.area"] = pipe_class.area
 
     def _pipe_heat_loss_to_parameters(self):
+        """
+        This function is used to set the optimized heat losses in the parameters object.
+        """
         options = self.heat_network_options()
 
         for ensemble_member in range(self.ensemble_size):
@@ -3975,6 +4353,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
 
     def priority_completed(self, priority):
+        """
+        This function is called after a priority of goals is completed. This function is used to
+        specify operations between consecutive goals. Here we set some parameter attributes after
+        the optimization is completed.
+        """
         options = self.heat_network_options()
 
         self.__pipe_class_to_results()
@@ -3993,6 +4376,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         super().priority_completed(priority)
 
     def post(self):
+        """
+        In this post function we check the optimization results for accurately solving the
+        constraints. We do this for the head losses and check if they are consistent with the flow
+        direction. Whether, the minimum velocity is actually met. And whether, the directions of
+        heat match the directions of the flow.
+        """
         super().post()
 
         self.__pipe_class_to_results()

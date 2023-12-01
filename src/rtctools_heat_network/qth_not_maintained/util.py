@@ -7,6 +7,14 @@ from .. import __version__
 
 
 def run_heat_network_optimization(heat_class, qht_class, *args, log_level=logging.INFO, **kwargs):
+    """
+    This function is meant to run the milp heat class and qth non-linear class sequentially. Both
+    solve the same network, but the qth class is constrained with the flow direction found in the
+    heat optimization. This allows to approximate the full mixed integer non-linear optimization
+    with much faster computational times. Note that this does not guarantee optimality, however
+    given that the milp heat optimization is reasonably close and conservative it can guarantee
+    feasibility.
+    """
     logger = logging.getLogger("rtctools_heat_network")
     logger.setLevel(log_level)
     logger.info(f"Using RTC-Tools Heat Network {__version__}.")

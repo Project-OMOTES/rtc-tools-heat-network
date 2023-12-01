@@ -1,8 +1,9 @@
 import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
+from datetime import timedelta
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import esdl
 
@@ -28,6 +29,7 @@ from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 from .esdl_heat_model import ESDLHeatModel
+from .esdl_model_base import _ESDLModelBase
 from .esdl_qth_model import ESDLQTHModel
 from .esdl_parser import ESDLStringParser
 
@@ -49,6 +51,12 @@ class ESDLMixin(
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This class is used to be able to parse an ESDL file and utilize the definition of the energy
+    system in that file. Furthermore, it contains functionality to extract profiles specified like
+    for example demand profiles.
+    """
+
     esdl_run_info_path: Path = None
 
     esdl_pi_validate_timeseries: bool = False
@@ -60,7 +68,26 @@ class ESDLMixin(
 
     _profile_reader: BaseProfileReader
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
+        """
+        In this __init__ function we do the parsing of the esdl file based on either a string which
+        is provided or read it in from a provided file name.
+
+        We put the assets, profiles and carriers in attributes of the class to later instantiate
+        the PyCML objects and write the desired time-series.
+
+        We set file locations for the input files and for the diagnostic file.
+
+        We create a dict with all possible pipe classes for the optional pipes to later add them
+        to the optimization problem. This is done in this Mixin as we here use the information of
+        the EDR database which is linked to ESDL and the Mapeditor.
+
+        Parameters
+        ----------
+        args : none
+        kwargs : esdl_string or esdl_file_name must be provided
+        """
+
         esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
         molder_folder = kwargs.get("model_folder")
@@ -118,7 +145,16 @@ class ESDLMixin(
 
         super().__init__(*args, **kwargs)
 
-    def pre(self):
+    def pre(self) -> None:
+        """
+        In this pre method we create a dict with a mapping between the esdl id and the name. We
+        also check that every asset has an unique name, which is needed for us to create unique
+        variable names.
+
+        Returns
+        -------
+        None
+        """
         super().pre()
         for esdl_id, esdl_asset in self.esdl_assets.items():
             if esdl_asset.name in self.name_to_esdl_id_map:
@@ -128,7 +164,18 @@ class ESDLMixin(
                 )
             self.name_to_esdl_id_map[esdl_asset.name] = esdl_id
 
-    def override_pipe_classes(self):
+    def override_pipe_classes(self) -> None:
+        """
+        In this method we populate the _override_pipe_classes dict, which gives a list of possible
+        pipe classes for every pipe. We do this only when a pipe has the state OPTIONAL. We use the
+        EDR pipe classes. We assume that it is possible to remove a pipe PipeClass None, but also
+        that there is a minimum layed pipe size of DN150 to limit the search space. This seems
+        reasonable as we focus upon regional and primary networks.
+
+        Returns
+        -------
+        None
+        """
         maximum_velocity = self.heat_network_options()["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
@@ -178,32 +225,88 @@ class ESDLMixin(
                     c.append(no_pipe_class)
 
     @property
-    def esdl_assets(self):
+    def esdl_assets(self) -> Dict:
+        """
+        property method to retrieve the esdl assets which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict of the esdl assets with their properties
+        """
         return self.__esdl_assets
 
     @property
-    def esdl_carriers(self):
+    def esdl_carriers(self) -> Dict:
+        """
+        property method to retrieve the esdl carriers which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict with the id of the carrier and the attributes in the value
+        """
         return self.__esdl_carriers
 
     @property
-    def esdl_asset_id_to_name_map(self):
+    def esdl_asset_id_to_name_map(self) -> Dict:
+        """
+        A map between the id and the name of an asset. Very bad naming of the attribute...
+
+        Returns
+        -------
+        A dict with the id to name map.
+        """
         return self.__timeseries_id_map.copy()
 
     @property
-    def esdl_asset_name_to_id_map(self):
+    def esdl_asset_name_to_id_map(self) -> Dict:
+        """
+        A map between the name and the id of an asset. Very bad naming of the attribute...
+
+        Returns
+        -------
+        A dict with the name to id map.
+        """
         return dict(zip(self.__timeseries_id_map.values(), self.__timeseries_id_map.keys()))
 
     def get_asset_from_asset_name(self, asset_name: str) -> esdl.Asset:
+        """
+        This function returns the esdl asset with its properties based on the name you provide
+
+        Parameters
+        ----------
+        asset_name : string with the asset name of the esdl asset.
+
+        Returns
+        -------
+        The esdl asset with its attributes and global properties
+        """
+
         asset_id = self.esdl_asset_name_to_id_map[asset_name]
         return self.esdl_assets[asset_id]
 
     def esdl_heat_model_options(self) -> Dict:
+        """
+        function to spedifically return the needed HeatMixin options needed for the conversion
+        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+
+        Returns
+        -------
+        dict with estimated and maximum velocity
+        """
         heat_network_options = self.heat_network_options()
         v_nominal = heat_network_options["estimated_velocity"]
         v_max = heat_network_options["maximum_velocity"]
         return dict(v_nominal=v_nominal, v_max=v_max)
 
     def esdl_qth_model_options(self) -> Dict:
+        """
+        function to spedifically return the needed HeatMixin options needed for the conversion
+        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+
+        Returns
+        -------
+        dict with estimated and maximum velocity
+        """
         heat_network_options = self.heat_network_options()
         kwargs = {}
         kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
@@ -213,26 +316,89 @@ class ESDLMixin(
         return dict(**kwargs)
 
     def is_hot_pipe(self, pipe: str) -> bool:
-        return not self.is_cold_pipe(pipe)
+        """
+        To check if a pipe is part of the "supply" network.
+
+        Parameters
+        ----------
+        pipe : string with name of the pipe
+
+        Returns
+        -------
+        Returns true if the pipe is in the supply network thus not ends with "_ret"
+        """
+        return True if pipe not in self.cold_pipes else False
 
     def is_cold_pipe(self, pipe: str) -> bool:
+        """
+        To check if a pipe is part of the "return" network. Note we only assign to the return
+        network if it has a dedicated hot pipe.
+
+        Parameters
+        ----------
+        pipe : string with name of the pipe
+
+        Returns
+        -------
+        Returns true if the pipe is in the return network thus ends with "_ret"
+        """
         return pipe.endswith("_ret")
 
-    def hot_to_cold_pipe(self, pipe: str):
+    def hot_to_cold_pipe(self, pipe: str) -> str:
+        """
+        To get the name of the respective cold pipe. Note hot pipes do not automatically have a
+        dedicated return pipe in case of different supply and return topologies and/or temperature
+        cascading. This function should only be called if the cold pipe exists.
+
+        Parameters
+        ----------
+        pipe : string with hot pipe name.
+
+        Returns
+        -------
+        string with the associated return pipe name.
+        """
         return f"{pipe}_ret"
 
-    def cold_to_hot_pipe(self, pipe: str):
+    def cold_to_hot_pipe(self, pipe: str) -> str:
+        """
+        To get the name of the respective hot pipe. Note hot pipes do not automatically have a
+        dedicated return pipe in case of different supply and return topologies and/or temperature
+        cascading.
+
+        Parameters
+        ----------
+        pipe : string with cold pipe name.
+
+        Returns
+        -------
+        string with the associated hot pipe name.
+        """
         return pipe[:-4]
 
-    def pycml_model(self):
+    def pycml_model(self) -> _ESDLModelBase:
+        """
+        Function to get the model description.
+
+        Returns
+        -------
+        Returns the pycml model object.
+        """
         return self.__model
 
-    def read(self):
-        assets_with_profiles_to_read = None
+    def read(self) -> None:
+        """
+        In this read function we read the relevant time-series and write them to the io object for
+        later use. We read and write the demand and production profiles. These profiles can either
+        be specified in the esdl file referring to an InfluxDB profile, or be specified in a csv
+        file in this case we rely on the user to give the csv file in the runinfo.xml.
 
-        self._profile_reader.read_profiles(self.io, self.h)
+        Returns
+        -------
+        None
+        """
+        # TODO: fix this whole function and fix docstring
         super().read()
-
         if self._profiles:
             datetimes = None
             for id, profile in self._profiles.items():
@@ -326,7 +492,20 @@ class ESDLMixin(
             elif input_timeseries_file.suffix == ".csv":
                 self.read_csv(input_timeseries_file)
 
-    def read_csv(self, input_timeseries_file):
+    def read_csv(self, input_timeseries_file: str) -> None:
+        """
+        This function reads profiles from a csv and writes them to the io attribute for later use.
+        We assume that the csv file has a column with "DateTime" header name in which the datetimes
+        are specified for the demand. For most practical workflows we assume hourly resolution data.
+
+        Parameters
+        ----------
+        input_timeseries_file : str of filepath of the csv
+
+        Returns
+        -------
+        None
+        """
         csv_data = pd.read_csv(input_timeseries_file)
         try:
             timeseries_import_times = [
@@ -421,7 +600,19 @@ class ESDLMixin(
                 except KeyError:
                     pass
 
-    def read_xml(self, input_timeseries_file):
+    def read_xml(self, input_timeseries_file: str) -> None:
+        """
+        This function reads profiles from a xml and writes them to the io attribute for later use.
+        This method still works but is no longer maintained.
+
+        Parameters
+        ----------
+        input_timeseries_file : str of filepath of the xml
+
+        Returns
+        -------
+        None
+        """
         timeseries_import_basename = input_timeseries_file.stem
         input_folder = input_timeseries_file.parent
 
@@ -452,7 +643,16 @@ class ESDLMixin(
             for variable, values in self.__timeseries_import.items(ensemble_member):
                 self.io.set_timeseries(variable, timeseries_import_times, values, ensemble_member)
 
-    def write(self):
+    def write(self) -> None:
+        """
+        This function comes from legacy with CF in the WarmingUP time. It was used to write out a
+        xml file with in that the timeseries output of some specified types of assets. This method
+        works but is no longer maintained.
+
+        Returns
+        -------
+        None
+        """
         super().write()
 
         if getattr(self, "__output_timeseries_file", None) is None:
@@ -622,45 +822,113 @@ class ESDLMixin(
 #         raise NotImplementedError
 #
 #
-class _RunInfoReader:
-    def __init__(self, filepath: Union[str, Path]):
-        filepath = Path(filepath).resolve()
+class _ESDLInputDataConfig:
+    """
+    This class is used to specify naming standard for input data, specifically for demand and
+    production profiles.
+    """
 
-        root = ET.parse(filepath).getroot()
+    def __init__(self, id_map: Dict, heat_network_components: Dict) -> None:
+        # TODO: change naming source and demand to heat_source and heat_demand throughout code
+        self.__id_map = id_map
+        self._sources = set(heat_network_components.get("source", []))
+        self._demands = set(heat_network_components.get("demand", []))
+        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
+        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
+        self._gas_sources = set(heat_network_components.get("gas_source", []))
+        self._gas_demands = set(heat_network_components.get("gas_demand", []))
 
-        # If the workDir is not absolute, we take it relative to the folder in
-        # which the RunInfo file is.
-        work_dir = Path(root.findtext("pi:workDir", namespaces=ns))
-        if not work_dir.is_absolute():
-            work_dir = filepath.parent / work_dir
+    def variable(self, pi_header: Any) -> str:
+        """
+        Old function not maintained anymore from WarmingUp times. The input xml file would specify
+        the id of the asset for which a time-series was given. This function would return the name
+        we use in our framework for that same variable.
 
-        self.esdl_file = Path(root.find("pi:properties", ns)[0].attrib["value"])
-        if not self.esdl_file.is_absolute():
-            self.esdl_file = work_dir / self.esdl_file
+        Parameters
+        ----------
+        pi_header : the xml header element in which the id of the asset is specified
 
-        self.parameters_file = root.findtext("pi:inputParameterFile", namespaces=ns)
-        if self.parameters_file is not None:
-            self.parameters_file = Path(self.parameters_file)
-            if not self.parameters_file.is_absolute():
-                self.parameters_file = work_dir / self.parameters_file
-
-        try:
-            self.input_timeseries_file = Path(root.findall("pi:inputTimeSeriesFile", ns)[0].text)
-            if not self.input_timeseries_file.is_absolute():
-                self.input_timeseries_file = work_dir / self.input_timeseries_file
-        except IndexError:
-            self.input_timeseries_file = None
-
-        try:
-            self.output_timeseries_file = Path(root.findall("pi:outputTimeSeriesFile", ns)[0].text)
-            if not self.output_timeseries_file.is_absolute():
-                self.output_timeseries_file = work_dir / self.output_timeseries_file
-        except IndexError:
-            self.output_timeseries_file = None
+        Returns
+        -------
+        string with the name of the timeseries name.
+        """
+        location_id = pi_header.find("pi:locationId", ns).text
 
         try:
-            self.output_diagnostic_file = Path(root.findall("pi:outputDiagnosticFile", ns)[0].text)
-            if not self.output_diagnostic_file.is_absolute():
-                self.output_diagnostic_file = work_dir / self.output_diagnostic_file
-        except IndexError:
-            self.output_diagnostic_file = None
+            component_name = self.__id_map[location_id]
+        except KeyError:
+            parameter_id = pi_header.find("pi:parameterId", ns).text
+            qualifiers = pi_header.findall("pi:qualifierId", ns)
+            qualifier_ids = ":".join(q.text for q in qualifiers)
+            return f"{location_id}:{parameter_id}:{qualifier_ids}"
+
+        if component_name in self._demands:
+            suffix = ".target_heat_demand"
+        elif component_name in self._sources:
+            suffix = ".target_heat_source"
+        elif component_name in self._electricity_demands:
+            suffix = ".target_electricity_demand"
+        elif component_name in self._electricity_sources:
+            suffix = ".target_electricity_source"
+        elif component_name in self._gas_demands:
+            suffix = ".target_gas_demand"
+        elif component_name in self._gas_sources:
+            suffix = ".target_gas_source"
+        else:
+            logger.warning(
+                f"Could not identify '{component_name}' as either source or demand. "
+                f"Using neutral suffix '.target_heat' for its heat timeseries."
+            )
+            suffix = ".target_heat"
+
+        # Note that the qualifier id (if any specified) refers to the profile
+        # element of the respective ESDL asset->in_port. For now we just
+        # assume that only heat demand timeseries are set in the XML file.
+        return f"{component_name}{suffix}"
+
+    def pi_variable_ids(self, variable):
+        raise NotImplementedError
+
+    def parameter(self, parameter_id, location_id=None, model_id=None):
+        raise NotImplementedError
+
+    def pi_parameter_ids(self, parameter):
+        raise NotImplementedError
+
+
+class _ESDLOutputDataConfig:
+    def __init__(self, id_map):
+        self.__id_map = id_map
+
+    def variable(self, pi_header):
+        location_id = pi_header.find("pi:locationId", ns).text
+        parameter_id = pi_header.find("pi:parameterId", ns).text
+
+        component_name = self.__id_map[location_id]
+
+        return f"{component_name}.{parameter_id}"
+
+    def pi_variable_ids(self, variable):
+        raise NotImplementedError
+
+    def parameter(self, parameter_id, location_id=None, model_id=None):
+        raise NotImplementedError
+
+    def pi_parameter_ids(self, parameter):
+        raise NotImplementedError
+
+
+def _overwrite_parameters(parameters_file, assets):
+    paramroot = ET.parse(parameters_file).getroot()
+    groups = paramroot.findall("pi:group", ns)
+
+    for parameter in groups:
+        id_ = parameter.attrib["id"]
+        param_name = parameter[0].attrib["id"]
+        param_value = parameter[0][0].text
+
+        asset = assets[id_]
+        type_ = type(asset.attributes[param_name])
+        asset.attributes[param_name] = type_(param_value)
+
+    return assets

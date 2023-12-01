@@ -6,6 +6,21 @@ from ._non_storage_component import _NonStorageComponent
 
 
 class Pipe(_NonStorageComponent):
+    """
+    The pipe component is to model the pressure drop (and optionally hydraulic power) and
+    heat losses over a pipe. Three options for head loss computation are available in the HeatMixin
+    options: No_HeadLoss, Linear, DW_Linearized. The hydraulic power computation can only be done
+    reasonably if DW_linearized is selected as otherwise head_losses are significantly
+    over-estimated.
+
+    The heat to discharge constraints are set in the HeatMixin. Where we ensure that the heat must
+    be smaller than the flow can carry, as we overestimate the heat losses with the outgoing
+    temperature at the demand/source/storage assets where in reality this temperature drops
+    throughout the network. Meaning that the flow does lose energy but not temperature. In this
+    manner the energy losses will always be overestimated as in reality the
+    flow will also have a temperature drop.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

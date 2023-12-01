@@ -3,15 +3,15 @@ import logging
 import math
 import os
 from pathlib import Path
-from typing import Dict, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type, Union
 
 import esdl
 from esdl import TimeUnitEnum, UnitEnum
 
 from rtctools_heat_network.pycml import Model as _Model
 
+from ._exceptions import _RetryLaterException
 from .common import Asset
-from .esdl_model_base import _RetryLaterException, _SkipAssetException
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -70,7 +70,7 @@ class _AssetToComponentBase:
         "DN1100": "Steel-S1-DN-1100",
         "DN1200": "Steel-S1-DN-1200",
     }
-
+    # A map of the esdl assets to the asset types in pycml
     component_map = {
         "ATES": "ates",
         "ElectricityCable": "electricity_cable",
@@ -102,6 +102,9 @@ class _AssetToComponentBase:
     secondary_port_name_convention = "secondary"
 
     def __init__(self, **kwargs):
+        """
+        In this init we initialize some dicts and we load the edr pipes.
+        """
         self._port_to_q_nominal = {}
         self._port_to_esdl_component_type = {}
         self._edr_pipes = json.load(
@@ -128,11 +131,21 @@ class _AssetToComponentBase:
         dispatch_method_name = f"convert_{self.component_map[asset.asset_type]}"
         return getattr(self, dispatch_method_name)(asset)
 
-    def _pipe_get_diameter_and_insulation(self, asset: Asset):
-        # There are multiple ways to specify pipe properties like diameter and
-        # material / insulation. We assume that DN `diameter` takes precedence
-        # over `innerDiameter` and `material` (while logging warnings if both
-        # are specified)
+    def _pipe_get_diameter_and_insulation(self, asset: Asset) -> Tuple[float, list, list]:
+        """
+        There are multiple ways to specify pipe properties like inner-diameter and
+        pipe/insulation material and thickness.  The user specified nominal diameter (DN size)
+        takes precedence over potential user specified innerDiameter and material (while logging
+        warnings when either of these two variables are specified in combination with the pipe DN)
+        Parameters
+        ----------
+        asset : Asset pipe object with it's properties from ESDL
+
+        Returns
+        -------
+        pipe inner diameter, thickness and conductivity of each insulation layer
+        """
+
         full_name = f"{asset.asset_type} '{asset.name}'"
         if asset.attributes["innerDiameter"] and asset.attributes["diameter"].value > 0:
             logger.warning(
@@ -176,12 +189,12 @@ class _AssetToComponentBase:
         if edr_dn_size:
             # Get insulation and diameter properties from EDR asset with this size.
             edr_asset = self._edr_pipes[self.STEEL_S1_PIPE_EDR_ASSETS[edr_dn_size]]
-            diameter = edr_asset["inner_diameter"]
+            inner_diameter = edr_asset["inner_diameter"]
             insulation_thicknesses = edr_asset["insulation_thicknesses"]
             conductivies_insulation = edr_asset["conductivies_insulation"]
         else:
             assert asset.attributes["innerDiameter"]
-            diameter = asset.attributes["innerDiameter"]
+            inner_diameter = asset.attributes["innerDiameter"]
 
             # Insulation properties
             material = asset.attributes["material"]
@@ -196,10 +209,24 @@ class _AssetToComponentBase:
                     insulation_thicknesses = [x.layerWidth for x in components]
                     conductivies_insulation = [x.matter.thermalConductivity for x in components]
 
-        return diameter, insulation_thicknesses, conductivies_insulation
+        return inner_diameter, insulation_thicknesses, conductivies_insulation
 
-    def _is_disconnectable_pipe(self, asset):
-        # Source and buffer pipes are disconnectable by default
+    def _is_disconnectable_pipe(self, asset: Asset) -> bool:
+        """
+        This function checks if the pipe is connected to specific assets (e.g. source) and if so
+        returns true. The true here means that we will later make a is_disconnected variable
+        allowing for optionally disconnecting a pipe from the optimization meaning it will not have
+        any flow, but also avoiding the need to compensate the heat losses for that pipe.
+
+        Parameters
+        ----------
+        asset : The asset object of an pipe
+
+        Returns
+        -------
+        A bool that specifies whether we should have a disconnectable variable for this
+        pipe.
+        """
         assert asset.asset_type == "Pipe"
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             connected_type_in = self._port_to_esdl_component_type.get(
@@ -236,11 +263,39 @@ class _AssetToComponentBase:
         else:
             return False
 
-    def _set_q_nominal(self, asset, q_nominal):
+    def _set_q_nominal(self, asset: Asset, q_nominal: float) -> None:
+        """
+        This function populates a dict with the nominal volumetric flow in m3/s for the ports of all
+        pipes.
+
+        Parameters
+        ----------
+        asset :
+        q_nominal : float of the nominal flow through that pipe
+
+        Returns
+        -------
+        None
+        """
         self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
         self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
 
-    def _get_connected_q_nominal(self, asset):
+    def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
+        """
+        This function returns the nominal volumetric flow in m3/s for an asset by checking the dict
+        that has all q_nominal for the ports of all pipes. Since all ports must have at least one
+        pipe connected to them, this allows us to find all needed nominals. Assets can either be
+        connected to one or two hydraulic systems.
+
+        Parameters
+        ----------
+        asset : Asset object used to check to which ports the asset is connected
+
+        Returns
+        -------
+        Either the connected nominal flow [m3/s] if it is only connected to one hydraulic system,
+        otherwise a dict with the flow nominals of both the primary and secondary side.
+        """
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             try:
                 connected_port = asset.in_ports[0].connectedTo[0]
@@ -287,6 +342,24 @@ class _AssetToComponentBase:
             return q_nominals
 
     def _get_cost_figure_modifiers(self, asset: Asset) -> Dict:
+        """
+        This function takes in an asset and creates a dict with the relevant cost information of
+        that asset which is used in the optimization. At this moment we have a four element cost
+        structure with:
+        InvestmentCost: Scales with asset size
+        InstallationCost: Scales with the _aggregation count integer (cost for placement),
+                            independent of the size of the individual aggregation counts
+        FixedOperationalCost: Yearly operational cost that scales with asset size.
+        VariableOperationalCost: Yearly operational cost that scales with asset use.
+
+        Parameters
+        ----------
+        asset : Asset object to retrieve cost information from.
+
+        Returns
+        -------
+        Dict with the mentioned cost elements
+        """
         modifiers = {}
 
         if asset.attributes["costInformation"] is None:
@@ -322,6 +395,19 @@ class _AssetToComponentBase:
 
     @staticmethod
     def _get_supply_return_temperatures(asset: Asset) -> Tuple[float, float]:
+        """
+        This function returns the supply and return temperature for an asset that is connected to
+        one hydraulic system.
+
+        Parameters
+        ----------
+        asset : The asset object to retrieve port and carrier information from
+
+        Returns
+        -------
+        Tuple with the supply and return temperature.
+        """
+
         assert len(asset.in_ports) == 1 and len(asset.out_ports) == 1
 
         in_carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
@@ -365,6 +451,20 @@ class _AssetToComponentBase:
         return modifiers
 
     def _supply_return_temperature_modifiers(self, asset: Asset) -> MODIFIERS:
+        """
+        This function returns a dict containing all relevant temperatures associated with the asset
+        needed for the optimization. These are the temperatures of the carrier at the inport and
+        outport.
+
+        Parameters
+        ----------
+        asset : Asset object to retrieve carrier temperatures from.
+
+        Returns
+        -------
+        dict with all the temperatures.
+        """
+
         if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             modifiers = self._get_supply_return_temperatures(asset)
             return modifiers
@@ -419,7 +519,20 @@ class _AssetToComponentBase:
             return {}
 
     @staticmethod
-    def get_state(asset: Asset):
+    def get_state(asset: Asset) -> float:
+        """
+        This function returns a float value, which represents the state (Enabled/disabled/optional)
+        of an asset, so that it can be stored in the parameters.
+
+        Parameters
+        ----------
+        asset : The asset object for retrieving the state
+
+        Returns
+        -------
+        float value representing the asset's state
+        """
+
         if asset.attributes["state"].name == "DISABLED":
             value = 0.0
         elif asset.attributes["state"].name == "OPTIONAL":
@@ -428,10 +541,19 @@ class _AssetToComponentBase:
             value = 1.0
         return value
 
-    def get_variable_opex_costs(self, asset: Asset):
+    def get_variable_opex_costs(self, asset: Asset) -> float:
         """
-        Returns the variable opex costs of an asset in Euros per Wh
+        Returns the variable opex costs coefficient of an asset in Euros per Wh.
+
+        Parameters
+        ----------
+        asset : Asset object to get the cost information from
+
+        Returns
+        -------
+        float for the variable operational cost coefficient.
         """
+
         cost_infos = dict()
         cost_infos["variableOperationalAndMaintenanceCosts"] = asset.attributes[
             "costInformation"
@@ -471,9 +593,17 @@ class _AssetToComponentBase:
 
         return value
 
-    def get_fixed_opex_costs(self, asset: Asset):
+    def get_fixed_opex_costs(self, asset: Asset) -> float:
         """
-        Returns the fixed opex costs of an asset in Euros per W
+        Returns the fixed opex cost coefficient of an asset in Euros per W.
+
+        Parameters
+        ----------
+        asset : Asset object to retrieve cost information from
+
+        Returns
+        -------
+        fixed operational cost coefficient.
         """
         cost_infos = dict()
         cost_infos["fixedOperationalAndMaintenanceCosts"] = asset.attributes[
@@ -560,7 +690,19 @@ class _AssetToComponentBase:
         return value
 
     @staticmethod
-    def get_cost_value_and_unit(cost_info: esdl.SingleValue):
+    def get_cost_value_and_unit(cost_info: esdl.SingleValue) -> Tuple[float, Any, Any, Any]:
+        """
+        This function returns the cost coefficient with unit information thereof.
+
+        Parameters
+        ----------
+        cost_info : The single value object with the float and unit info.
+
+        Returns
+        -------
+        The value with the unit decomposed.
+        """
+
         cost_value = cost_info.value
         unit_info = cost_info.profileQuantityAndUnit
         unit = unit_info.unit
@@ -574,7 +716,20 @@ class _AssetToComponentBase:
 
         return cost_value, unit, per_unit, per_time_uni
 
-    def get_installation_costs(self, asset: Asset):
+    def get_installation_costs(self, asset: Asset) -> float:
+        """
+        This function return the installation cost coefficient in EUR for a single aggregation
+        count.
+
+        Parameters
+        ----------
+        asset : The asset object for retrieving the cost information from.
+
+        Returns
+        -------
+        A float with the installation cost coefficient.
+        """
+
         cost_info = asset.attributes["costInformation"].installationCosts
         if cost_info is None:
             logger.warning(f"No installation cost info provided for asset " f"{asset.name}.")
@@ -599,10 +754,21 @@ class _AssetToComponentBase:
             return 0.0
         return cost_value
 
-    def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT):
+    def get_investment_costs(self, asset: Asset, per_unit: UnitEnum = UnitEnum.WATT) -> float:
         """
-        Returns the investment costs of an asset in Euros per W.
+        Returns the investment cost coefficient of an asset in Euros per size unit (mostly W).
+
+        Parameters
+        ----------
+        asset : The asset object to retrieve the cost information from.
+        per_unit : The per unit needed in the optimization, as this may differ for some assets
+        like the buffer where it scales with volume instead of power.
+
+        Returns
+        -------
+        float for the investment cost coefficient.
         """
+
         cost_info = asset.attributes["costInformation"].investmentCosts
         if cost_info is None:
             RuntimeWarning(f"No investment costs provided for asset " f"{asset.name}.")
@@ -679,6 +845,3 @@ class _AssetToComponentBase:
                 f"Cannot provide investment costs for asset " f"{asset.name} per {per_unit}"
             )
             return 0.0
-
-    def convert_skip(self, asset: Asset):
-        raise _SkipAssetException(asset)
