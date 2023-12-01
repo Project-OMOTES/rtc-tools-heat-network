@@ -7,23 +7,28 @@ jobs:
   flake8-lint:
     runs-on: ubuntu-latest
     name: Lint
+    strategy:
+      matrix:
+        python-version: ["3.8"]
     steps:
-      - name: Check out source repository
-        uses: actions/checkout@v3
-      - name: Set up Python environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
-      - name: Run Flake8 linting
-        run: |
-          ./ci/linux/lint.sh
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - run: |
+        ./ci/linux/create_venv.sh
+        ./ci/linux/install_dependencies.sh
+    - name: Run Flake8 linting
+      run: |
+        ./ci/linux/lint.sh
 
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.8"]
-#        python-version: [3.8, 3.9, 3.10, 3.11]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -67,7 +72,6 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8"]
-#        python-version: [3.8, 3.9, 3.10, 3.11]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
