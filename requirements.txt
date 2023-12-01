@@ -6,15 +6,15 @@
 #
 antlr4-python3-runtime==4.7.2
     # via pymoca
-casadi==3.6.3
+casadi==3.6.4
     # via rtc-tools
-certifi==2023.7.22
+certifi==2023.11.17
     # via requests
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via requests
 future-fstrings==1.2.0
     # via pyecore
-idna==3.4
+idna==3.6
     # via requests
 influxdb==5.3.1
     # via rtc-tools-heat-network (pyproject.toml)
@@ -37,7 +37,7 @@ pyecore==0.12.1
     # via
     #   pyesdl
     #   rtc-tools-heat-network (pyproject.toml)
-pyesdl==23.10
+pyesdl==23.11.2
     # via rtc-tools-heat-network (pyproject.toml)
 pymoca==0.9.1
     # via
@@ -54,7 +54,7 @@ pytz==2023.3.post1
     #   pandas
 requests==2.31.0
     # via influxdb
-restrictedpython==7.0a1.dev1
+restrictedpython==7.0
     # via pyecore
 rtc-tools==2.6.0a3
     # via rtc-tools-heat-network (pyproject.toml)
@@ -66,5 +66,5 @@ six==1.16.0
     # via
     #   influxdb
     #   python-dateutil
-urllib3==2.0.7
+urllib3==2.1.0
     # via requests

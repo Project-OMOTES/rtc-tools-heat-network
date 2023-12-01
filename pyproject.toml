@@ -1,6 +1,6 @@
 [project]
 name = "rtc-tools-heat-network"
-version = "0.0.3"
+dynamic = ["version"]
 authors = [{ name = "Jim Rojer", email = "jim.rojer@tno.nl" }]
 description = "RTC Tools Heat Network is used for ESDLS containing a heat network. It can optimize and low-fidelity simulate OPEX and CAPEX costs as well as provide the optimal asset placements."
 classifiers = [
@@ -36,7 +36,8 @@ dev = [
     "pytest-cov ~=4.0.0",
     "bump2version==1.0.1",
     "mypy ~= 1.5.1",
-    "build ~= 1.0.3"
+    "build ~= 1.0.3",
+    "setuptools_git_versioning < 2"
 ]
 
 [project.urls]
@@ -50,10 +51,13 @@ newchess = "rtctools_heat_network.infrastructure.app:cmdline_app"
 
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools ~= 67.7.2", "wheel ~= 0.40.0"]
+requires = ["setuptools ~= 67.7.2", "wheel ~= 0.40.0", "setuptools-git-versioning"]
 
 [tools.setuptools]
 packages = ["src/rtctools_heat_network"]
+
+[tool.setuptools-git-versioning]
+enabled = true
 
 [tool.pytest.ini_options]
 addopts = "--cov=rtctools_heat_network --cov-report html --cov-report term-missing --cov-fail-under 95"
