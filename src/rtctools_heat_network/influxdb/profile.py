@@ -26,7 +26,12 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
     error_neighbourhoods = list()
     for profile in [x for x in es.eAllContents() if isinstance(x, esdl.InfluxDBProfile)]:
         profile_host = profile.host
-        containing_asset_id = profile.eContainer().energyasset.id
+        try:
+            # profile associated to asset
+            containing_asset_id = profile.eContainer().energyasset.id
+        except AttributeError:
+            # profile associated to carrier
+            containing_asset_id = profile.eContainer().id
 
         ssl_setting = False
         if "https" in profile_host:
@@ -114,25 +119,32 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
         # TODO add test case. Currently no test case for esdl parsing
         # Convert Power and Energy to standard unit of Watt and Joules
         for idf in range(len(df)):
+            try:
+                unit = profile.profileQuantityAndUnit.reference.physicalQuantity
+            except AttributeError:
+                unit = profile.profileQuantityAndUnit.physicalQuantity
             if (
-                profile.profileQuantityAndUnit.reference.physicalQuantity
-                == esdl.PhysicalQuantityEnum.POWER
+                unit == esdl.PhysicalQuantityEnum.POWER
             ):
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, POWER_IN_W
                 )
             elif (
-                profile.profileQuantityAndUnit.reference.physicalQuantity
-                == esdl.PhysicalQuantityEnum.ENERGY
+                unit == esdl.PhysicalQuantityEnum.ENERGY
             ):
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, ENERGY_IN_J
                 )
+            elif (
+                unit == esdl.PhysicalQuantityEnum.COST
+            ):
+                # we assume no unit change for now
+                pass
             else:
                 print(
                     f"Current the code only caters for: {esdl.PhysicalQuantityEnum.POWER} & "
                     f"{esdl.PhysicalQuantityEnum.ENERGY}, and it does not cater for "
-                    f"{profile.profileQuantityAndUnit.reference.physicalQuantity}"
+                    f"{unit}"
                 )
                 sys.exit(1)
 
