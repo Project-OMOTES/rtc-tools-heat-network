@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import Dict, Tuple, Type
+from typing import Dict, Tuple, Type, Union
 
 import esdl
 
@@ -40,6 +40,11 @@ class _ESDLInputException(Exception):
 
 
 class AssetToHeatComponent(_AssetToComponentBase):
+    """
+    This class is used for the converting logic from the esdl assets with their properties to pycml
+    objects and set their respective properties.
+    """
+
     def __init__(
         self,
         *args,
@@ -57,12 +62,44 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.rho = rho
         self.cp = cp
         self.min_fraction_tank_volume = min_fraction_tank_volume
+        if "primary_port_name_convention" in kwargs.keys():
+            self.primary_port_name_convention = kwargs["primary_port_name_convention"]
+        if "secondary_port_name_convention" in kwargs.keys():
+            self.secondary_port_name_convention = kwargs["secondary_port_name_convention"]
 
     @property
-    def _rho_cp_modifiers(self):
+    def _rho_cp_modifiers(self) -> Dict:
+        """
+        For giving the density, rho, in kg/m3 and specic heat, cp, in J/(K*kg)
+
+        Returns
+        -------
+        rho and cp
+        """
         return dict(rho=self.rho, cp=self.cp)
 
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+        """
+        This function converts the buffer object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the dimensions of the buffer needed for heat loss computation. Currently, assume
+        cylinder with height equal to radius.
+        - setting a minimum fill level and minimum asscociated heat
+        - Setting a maximum stored energy based on the size.
+        - Setting a cap on the thermal power.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Buffer class with modifiers
+        """
         assert asset.asset_type == "HeatStorage"
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
@@ -142,13 +179,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Buffer, modifiers
 
     def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
+        """
+        This function converts the demand object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting a cap on the thermal power.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Demand class with modifiers
+        """
         assert asset.asset_type in {"GenericConsumer", "HeatingDemand"}
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Heat_demand=dict(max=max_demand),
+            Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
@@ -159,6 +213,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Demand, modifiers
 
     def convert_node(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
+        """
+        This function converts the node object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the amount of connections
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Node class with modifiers
+        """
         assert asset.asset_type == "Joint"
 
         sum_in = 0
@@ -195,7 +263,28 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-    def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
+    def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[Pipe], Type[GasPipe]], MODIFIERS]:
+        """
+        This function converts the pipe object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the dimensions of the pipe needed for heat loss computation. Currently, assume
+        cylinder with height equal to radius.
+        - setting if a pipe is disconnecteable for the optimization.
+        - Setting the isolative properties of the pipe.
+        - Setting a cap on the thermal power.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Pipe class with modifiers
+        """
         assert asset.asset_type == "Pipe"
 
         length = asset.attributes["length"]
@@ -215,13 +304,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         temperature_modifiers = self._supply_return_temperature_modifiers(asset)
 
-        supply_temperature = temperature_modifiers["T_supply"]
-        return_temperature = temperature_modifiers["T_return"]
-
-        if "_ret" in asset.attributes["name"]:
-            temperature = return_temperature
-        else:
-            temperature = supply_temperature
+        temperature = temperature_modifiers["temperature"]
 
         # Compute the maximum heat flow based on an assumed maximum velocity
         area = math.pi * diameter**2 / 4.0
@@ -231,12 +314,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self._set_q_nominal(asset, q_nominal)
 
         # TODO: This might be an underestimation. We need to add the total
-        # heat losses in the system to get a proper upper bound. Maybe move
-        # calculation of Heat bounds to the HeatMixin?
-        delta_temperature = supply_temperature - return_temperature
-        # hfr_max = self.rho * self.cp * q_max * delta_temperature * 2
-        hfr_max = (
-            self.rho * self.cp * q_max * delta_temperature
+        #  heat losses in the system to get a proper upper bound. Maybe move
+        #  calculation of Heat bounds to the HeatMixin?
+        hfr_max = 2.0 * (
+            self.rho * self.cp * q_max * temperature
         )  # TODO: are there any physical implications of using this bound
 
         assert hfr_max > 0.0
@@ -245,7 +326,6 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=q_nominal,
             length=length,
             diameter=diameter,
-            temperature=temperature,
             disconnectable=self._is_disconnectable_pipe(asset),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
@@ -269,6 +349,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Pipe, modifiers
 
     def convert_pump(self, asset: Asset) -> Tuple[Type[Pump], MODIFIERS]:
+        """
+        This function converts the pump object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Pump class with modifiers
+        """
         assert asset.asset_type == "Pump"
 
         modifiers = dict(
@@ -281,6 +377,24 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return Pump, modifiers
 
     def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
+        """
+        This function converts the Heat Exchanger object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the thermal power transfer efficiency.
+        - Setting a caps on the thermal power on both the primary and secondary side.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures (also checked for making sense physically).
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        HeatExchanger class with modifiers
+        """
         assert asset.asset_type in {
             "GenericConversion",
             "HeatExchange",
@@ -318,8 +432,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         prim_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2
@@ -329,8 +443,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            Heat_in=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
-            Heat_out=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
             Q_nominal=max_power
             / (
                 2
@@ -360,6 +474,25 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return HeatExchanger, modifiers
 
     def convert_heat_pump(self, asset: Asset) -> Tuple[Type[HeatPump], MODIFIERS]:
+        """
+        This function converts the HeatPump object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the COP of the heatpump
+        - Setting the cap on the electrical power.
+        - Setting a caps on the thermal power on both the primary and secondary side.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        HeatPump class with modifiers
+        """
         assert asset.asset_type in {
             "HeatPump",
         }
@@ -387,7 +520,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
-            Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
+            Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             state=self.get_state(asset),
             **self._get_cost_figure_modifiers(asset),
             **params,
@@ -398,6 +531,27 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return HeatPumpElec, modifiers
 
     def convert_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
+        """
+        This function converts the Source object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the CO2 emission coefficient in case this is specified as an KPI
+        - Setting a caps on the thermal power.
+        - In case of a GeothermalSource object we read the _aggregation count to model the number
+        of doublets, we then assume that the power specified was also for one doublet and thus
+        increase the thermal power caps.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Source class with modifiers
+        """
         assert asset.asset_type in {
             "GasHeater",
             "GenericProducer",
@@ -460,6 +614,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return Source, modifiers
 
     def convert_ates(self, asset: Asset) -> Tuple[Type[ATES], MODIFIERS]:
+        """
+        This function converts the ATES object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting the heat loss coefficient based upon the efficiency. Here we assume that this
+        efficiency is realized in 100 days.
+        - Setting a caps on the thermal power.
+        - Similar as for the geothermal source we use the aggregation count to model the amount
+        of doublets.
+        - Setting caps on the maximum stored energy where we assume that at maximum you can charge
+        for 180 days at full power.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ATES class with modifiers
+        """
         assert asset.asset_type in {
             "ATES",
         }
@@ -468,6 +645,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         hfr_discharge_max = asset.attributes.get("maxDischargeRate", math.inf)
 
         try:
+            # TODO: this is depriciated it comes out of old integraal times. Should be removed.
             single_doublet_power = asset.attributes["single_doublet_power"]
         except KeyError:
             single_doublet_power = hfr_discharge_max
@@ -501,6 +679,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return ATES, modifiers
 
     def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
+        """
+        This function converts the ControlValve object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ControlValve class with modifiers
+        """
         assert asset.asset_type == "Valve"
 
         modifiers = dict(
@@ -513,6 +707,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return ControlValve, modifiers
 
     def convert_check_valve(self, asset: Asset) -> Tuple[Type[CheckValve], MODIFIERS]:
+        """
+        This function converts the CheckValve object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        CheckValve class with modifiers
+        """
         assert asset.asset_type == "CheckValve"
 
         modifiers = dict(
@@ -525,15 +735,50 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return CheckValve, modifiers
 
     def convert_electricity_demand(self, asset: Asset) -> Tuple[Type[ElectricityDemand], MODIFIERS]:
+        """
+        This function converts the ElectricityDemand object in esdl to a set of modifiers that can
+        be used in a pycml object. Most important:
+
+        - Setting the electrical power caps
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityDemand class with modifiers
+        """
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
+        max_current = 142.0
 
-        modifiers = dict(Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0))
+        modifiers = dict(
+            Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
+            ElectricityIn=dict(
+                Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
+                I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
+            ),
+        )
 
         return ElectricityDemand, modifiers
 
     def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
+        """
+        This function converts the ElectricitySource object in esdl to a set of modifiers that can
+        be used in a pycml object. Most important:
+
+        - Setting the electrical power caps
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricitySource class with modifiers
+        """
         assert asset.asset_type in {"ElectricityProducer"}
 
         max_supply = asset.attributes.get(
@@ -550,6 +795,20 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return ElectricitySource, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
+        """
+        This function converts the ElectricityNode object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the number of connections
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityNode class with modifiers
+        """
         assert asset.asset_type in {"Bus"}
 
         sum_in = 0
@@ -574,24 +833,74 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return ElectricityNode, modifiers
 
     def convert_electricity_cable(self, asset: Asset) -> Tuple[Type[ElectricityCable], MODIFIERS]:
+        """
+        This function converts the ElectricityCable object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - Setting the length of the cable used for power loss computation.
+        - setting the min and max current.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityCable class with modifiers
+        """
         assert asset.asset_type in {"ElectricityCable"}
 
         modifiers = dict(
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0), I=dict(min=-142.0, max=142.0), Power=dict(nominal=1e2)
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1.25e4),
+            ),
+            ElectricityIn=dict(
+                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
+                I=dict(min=-142.0, max=142.0),
+                Power=dict(nominal=142.0 * 1.25e4),
             ),
         )
         return ElectricityCable, modifiers
 
-    def convert_gas_demand(self, asset: Asset):
+    def convert_gas_demand(self, asset: Asset) -> Tuple[Type[GasDemand], MODIFIERS]:
+        """
+        This function converts the GasDemand object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - ...
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasDemand class with modifiers
+        """
         assert asset.asset_type in {"GasDemand"}
 
         modifiers = dict()
 
         return GasDemand, modifiers
 
-    def convert_gas_source(self, asset: Asset):
+    def convert_gas_source(self, asset: Asset) -> Tuple[Type[GasSource], MODIFIERS]:
+        """
+        This function converts the GasDemand object in esdl to a set of modifiers that can be
+        used in a pycml object. Most important:
+
+        - ...
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasDemand class with modifiers
+        """
         assert asset.asset_type in {"GasProducer"}
 
         modifiers = dict()
@@ -600,9 +909,23 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
 
 class ESDLHeatModel(_ESDLModelBase):
+    """
+    This class is used to convert the esdl Assets to PyCML assets this class only exists to specify
+    the specific objects used in the conversion step. Note there is no __init__ in the base class.
+    This probably could be standardized in that case this class would become obsolete.
+    """
+
     def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
         super().__init__(None)
 
-        converter = converter_class(**kwargs)
+        converter = converter_class(
+            **{
+                **kwargs,
+                **{
+                    "primary_port_name_convention": self.primary_port_name_convention,
+                    "secondary_port_name_convention": self.secondary_port_name_convention,
+                },
+            }
+        )
 
         self._esdl_convert(converter, assets, "Heat")

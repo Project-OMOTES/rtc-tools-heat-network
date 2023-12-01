@@ -105,12 +105,12 @@ class TestMinMaxPressureOptions(TestCase):
 
             results = case.extract_results()
             for p in case.heat_network_components["pipe"]:
-                min_head_in = min(results[f"{p}.H_in"])
-                min_head_out = min(results[f"{p}.H_out"])
+                min_head_in = min(results[f"{p}.HeatIn.H"])
+                min_head_out = min(results[f"{p}.HeatOut.H"])
                 min_head = min([min_head, min_head_in, min_head_out])
 
-                max_head_in = max(results[f"{p}.H_in"])
-                max_head_out = max(results[f"{p}.H_out"])
+                max_head_in = max(results[f"{p}.HeatIn.H"])
+                max_head_out = max(results[f"{p}.HeatOut.H"])
                 max_head = max([max_head, max_head_in, max_head_out])
 
             return min_head / 10.2, max_head / 10.2
@@ -170,6 +170,11 @@ class TestDisconnectablePipe(TestCase):
 
             return constraints
 
+        def heat_network_options(self):
+            options = super().heat_network_options()
+            options["heat_loss_disconnected_pipe"] = False
+            return options
+
     class ModelDisconnectedNoHeatLoss(ModelDisconnected):
         def heat_network_options(self):
             options = super().heat_network_options()
@@ -196,22 +201,6 @@ class TestDisconnectablePipe(TestCase):
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
-
-    def test_disconnected_network_pipe_no_heat_loss(self):
-        case_disconnected = run_optimization_problem(
-            self.ModelDisconnected, base_folder=self.base_folder
-        )
-        results_disconnected = case_disconnected.extract_results()
-        heat_disconnected = results_disconnected["pipe_hot.HeatIn.Heat"]
-
-        case_disconnected_no_heat_loss = run_optimization_problem(
-            self.ModelDisconnectedNoHeatLoss, base_folder=self.base_folder
-        )
-        results_disconnected_no_heat_loss = case_disconnected_no_heat_loss.extract_results()
-        heat_disconnected_no_heat_loss = results_disconnected_no_heat_loss["pipe_hot.HeatIn.Heat"]
-
-        self.assertGreater(heat_disconnected[1], 0.0)
-        self.assertEqual(heat_disconnected_no_heat_loss[1], 0.0)
 
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
         def heat_network_options(self):

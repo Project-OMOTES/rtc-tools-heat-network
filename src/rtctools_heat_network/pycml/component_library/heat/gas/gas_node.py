@@ -6,6 +6,13 @@ from .._internal.gas_component import GasComponent
 
 
 class GasNode(GasComponent, BaseAsset):
+    """
+    The gas node is a component where we model multiple flows coming together,
+    this is the only component where it is allowed that 3 or more flows come together. This means
+    that a node is always connected to gas pipes. We set constraints for equal head at all ports.
+    Furthermore, we set constraints for conservation of flow.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

@@ -1,4 +1,3 @@
-import datetime
 import json
 import locale
 import logging
@@ -12,7 +11,6 @@ from influxdb import InfluxDBClient
 import numpy as np
 
 from rtctools._internal.alias_tools import AliasDict
-from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -31,6 +29,9 @@ from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
+from rtctools_heat_network.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
 from rtctools_heat_network.workflows.utils.helpers import main_decorator
 
 
@@ -155,132 +156,12 @@ class EndScenarioSizing(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
-        new_datastore = DataStore(self)
-        new_datastore.reference_datetime = self.io.datetimes[0]
-
-        for ensemble_member in range(self.ensemble_size):
-            parameters = self.parameters(ensemble_member)
-
-            total_demand = None
-            for demand in demands:
-                try:
-                    demand_values = self.get_timeseries(
-                        f"{demand}.target_heat_demand", ensemble_member
-                    ).values
-                except KeyError:
-                    continue
-                if total_demand is None:
-                    total_demand = demand_values
-                else:
-                    total_demand += demand_values
-                max_demand = max(demand_values)
-                self.__heat_demand_nominal[f"{demand}.Heat_demand"] = max_demand
-
-            # TODO: the approach of picking one peak day was introduced for a network with a tree
-            #  layout and all big sources situated at the root of the tree. It is not guaranteed
-            #  that an optimal solution is reached in different network topologies.
-            idx_max = int(np.argmax(total_demand))
-            max_day = idx_max // 24
-            nr_of_days = len(total_demand) // 24
-            new_date_times = list()
-            day_steps = self.__day_steps
-
-            self.__indx_max_peak = max_day // day_steps
-            if max_day % day_steps > 0:
-                self.__indx_max_peak += 1.0
-
-            for day in range(0, nr_of_days, day_steps):
-                if day == max_day // day_steps * day_steps:
-                    if max_day > day:
-                        new_date_times.append(self.io.datetimes[day * 24])
-                    new_date_times.extend(self.io.datetimes[max_day * 24 : max_day * 24 + 24])
-                    if (day + day_steps - 1) > max_day:
-                        new_date_times.append(self.io.datetimes[max_day * 24 + 24])
-                else:
-                    new_date_times.append(self.io.datetimes[day * 24])
-            new_date_times.append(self.io.datetimes[-1] + datetime.timedelta(hours=1))
-
-            new_date_times = np.asarray(new_date_times)
-            parameters["times"] = [x.timestamp() for x in new_date_times]
-
-            for demand in demands:
-                var_name = f"{demand}.target_heat_demand"
-                self._set_data_with_averages_and_peak_day(
-                    datastore=new_datastore,
-                    variable_name=var_name,
-                    ensemble_member=ensemble_member,
-                    new_date_times=new_date_times,
-                )
-
-            # TODO: this has not been tested but is required if a production profile is included
-            #  in the data
-            for source in self.heat_network_components.get("source", []):
-                try:
-                    self.get_timeseries(f"{source}.target_heat_source", ensemble_member)
-                except KeyError:
-                    logger.debug(
-                        f"{source} has no production profile, skipping setting the "
-                        f"production profile"
-                    )
-                    continue
-                var_name = f"{source}.target_heat_source"
-                self._set_data_with_averages_and_peak_day(
-                    datastore=new_datastore,
-                    variable_name=var_name,
-                    ensemble_member=ensemble_member,
-                    new_date_times=new_date_times,
-                )
-
-        self.io = new_datastore
+        (
+            self.__indx_max_peak,
+            self.__heat_demand_nominal,
+        ) = adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(self, self.__day_steps)
 
         logger.info("HeatProblem read")
-
-    def _set_data_with_averages_and_peak_day(
-        self,
-        datastore: DataStore,
-        variable_name: str,
-        ensemble_member: int,
-        new_date_times: np.array,
-    ):
-        try:
-            data = self.get_timeseries(variable=variable_name, ensemble_member=ensemble_member)
-        except KeyError:
-            datastore.set_timeseries(
-                variable=variable_name,
-                datetimes=new_date_times,
-                values=np.asarray([0.0] * len(new_date_times)),
-                ensemble_member=ensemble_member,
-                check_duplicates=True,
-            )
-            return
-
-        new_data = list()
-        data_timestamps = data.times
-        data_datetimes = [
-            self.io.datetimes[0] + datetime.timedelta(seconds=s) for s in data_timestamps
-        ]
-        assert new_date_times[0] == data_datetimes[0]
-        data_values = data.values
-
-        values_for_mean = [0.0]
-        for dt, val in zip(data_datetimes, data_values):
-            if dt in new_date_times:
-                new_data.append(np.mean(values_for_mean))
-                values_for_mean = [val]
-            else:
-                values_for_mean.append(val)
-
-        # last datetime is not in input data, so we need to take the mean of the last bit
-        new_data.append(np.mean(values_for_mean))
-
-        datastore.set_timeseries(
-            variable=variable_name,
-            datetimes=new_date_times,
-            values=np.asarray(new_data),
-            ensemble_member=ensemble_member,
-            check_duplicates=True,
-        )
 
     def bounds(self):
         bounds = super().bounds()
@@ -297,10 +178,11 @@ class EndScenarioSizing(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
         options["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        options["heat_loss_disconnected_pipe"] = False
+        # options["neglect_pipe_heat_losses"] = True
+        options["heat_loss_disconnected_pipe"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
@@ -320,7 +202,8 @@ class EndScenarioSizing(
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
                 logger.warning(
-                    f"{demand} has a flow limit lower that wat is required for the maximum demand"
+                    f"{demand} has a flow limit, {bounds[f'{demand}.HeatIn.Heat'][1]}, "
+                    f"lower that wat is required for the maximum demand {max(target.values)}"
                 )
             state = f"{demand}.Heat_demand"
 
@@ -374,8 +257,9 @@ class EndScenarioSizing(
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.05
+        gurobi_options["MIPgap"] = 0.02
         gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
 
         return options
 
@@ -439,6 +323,8 @@ class EndScenarioSizing(
         results = self.extract_results()
         parameters = self.parameters(0)
         bounds = self.bounds()
+        # Optimized ESDL
+        self._write_updated_esdl()
 
         for d in self.heat_network_components.get("demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
@@ -514,9 +400,6 @@ class EndScenarioSizing(
         with open(results_path, "w") as file:
             json.dump(results_dict, fp=file)
 
-        # Optimized ESDL
-        self._write_updated_esdl()
-
 
 def connect_database():
     client = InfluxDBClient(
@@ -539,38 +422,47 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
+
+class EndScenarioSizingStaged(EndScenarioSizing):
+    _stage = 0
+
+    def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._stage = stage
+        self.__boolean_bounds = boolean_bounds
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        if self._stage == 1:
+            options["neglect_pipe_heat_losses"] = True
+            options["minimum_velocity"] = 0.0
+
+        return options
+
+    def bounds(self):
+        bounds = super().bounds()
+
+        if self._stage == 2:
+            bounds.update(self.__boolean_bounds)
+
+        return bounds
+
+
+class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -587,37 +479,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):
         super().post()
 
-        # results = self.extract_results()
-        # client = connect_database()
-        #
-        # json_body = []
-        #
-        # for asset in [*self.heat_network_components.get("source", []),
-        #               *self.heat_network_components.get("demand", []),
-        #               *self.heat_network_components.get("pipe", []),
-        #               *self.heat_network_components.get("buffer", []),
-        #               *self.heat_network_components.get("ates", []),
-        #               *self.heat_network_components.get("heat_exchanger", []),
-        #               *self.heat_network_components.get("heat_pump", [])]:
-        #     for i in range(len(self.times())):
-        #         fields = {}
-        #         try:
-        #             # For all components dealing with one hydraulic system
-        #             for variable in ["Heat_flow", "HeatIn.Q", "HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #         except Exception:
-        #             # For all components dealing with two hydraulic system
-        #             for variable in ["Heat_flow", "Primary.HeatIn.Q", "Primary.HeatIn.H",
-        #                              "Secondary.HeatIn.Q", "Secondary.HeatIn.H"]:
-        #                 fields[variable] = results[f"{asset}." + variable][i]
-        #
-        #         json_body.append({
-        #             "measurement": asset,
-        #             "time": format_datetime(self.io.datetimes[i].strftime('%Y-%m-%d %H:%M')),
-        #             "fields": fields
-        #         })
-        # client.write_points(points=json_body, database=DB_NAME, batch_size=100)
-        self._write_updated_esdl(db_profiles=False)
+        self._write_updated_esdl()
 
     def solver_options(self):
         options = super().solver_options()
@@ -633,15 +495,76 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         return options
 
 
+def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization=True):
+    """
+    This function is used to run end_scenario_sizing problem. There are a few variations of the
+    same basic class. The main functionality this function adds is the staged approach, where
+    we first solve without heat_losses, to then solve the same problem with heat losses but
+    constraining the problem to only allow for the earlier found pipe classes and one size up.
+
+    This staged approach is done to speed up the problem, as the problem without heat losses is
+    much faster as it avoids inequality big_m constraints for the heat to discharge on pipes. The
+    one size up possibility is to avoid infeasibilities in compensating for the heat losses.
+
+    Parameters
+    ----------
+    end_scenario_problem_class : The end scenario problem class.
+    staged_pipe_optimization : Boolean to toggle between the staged or non-staged approach
+
+    Returns
+    -------
+
+    """
+    import time
+
+    boolean_bounds = {}
+
+    start_time = time.time()
+    if staged_pipe_optimization:
+        solution = run_optimization_problem(end_scenario_problem_class, stage=1)
+        results = solution.extract_results()
+
+        # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
+        # stage 1 optimization.
+        pc_map = solution._HeatMixin__pipe_topo_pipe_class_map
+        for pipe_classes in pc_map.values():
+            v_prev = 0.0
+            for var_name in pipe_classes.values():
+                v = results[var_name][0]
+                boolean_bounds[var_name] = (0.0, abs(v))
+                if v_prev == 1.0:
+                    boolean_bounds[var_name] = (0.0, 1.0)
+                v_prev = v
+
+    _ = run_optimization_problem(
+        end_scenario_problem_class,
+        stage=2,
+        boolean_bounds=boolean_bounds,
+    )
+
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+
 @main_decorator
 def main(runinfo_path, log_level):
     logger.info("Run Scenario Sizing")
+
+    kwargs = {
+        "write_result_db_profiles": False,
+        "influxdb_host": "localhost",
+        "influxdb_port": 8086,
+        "influxdb_username": None,
+        "influxdb_password": None,
+        "influxdb_ssl": False,
+        "influxdb_verify_ssl": False,
+    }
+
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,
         esdl_run_info_path=runinfo_path,
         log_level=log_level,
+        **kwargs,
     )
-
     # results = solution.extract_results()
 
 

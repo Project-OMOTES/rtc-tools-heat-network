@@ -6,6 +6,21 @@ from ._non_storage_component import _NonStorageComponent
 
 
 class Pipe(_NonStorageComponent):
+    """
+    The pipe component is to model the pressure drop (and optionally hydraulic power) and
+    heat losses over a pipe. Three options for head loss computation are available in the HeatMixin
+    options: No_HeadLoss, Linear, DW_Linearized. The hydraulic power computation can only be done
+    reasonably if DW_linearized is selected as otherwise head_losses are significantly
+    over-estimated.
+
+    The heat to discharge constraints are set in the HeatMixin. Where we ensure that the heat must
+    be smaller than the flow can carry, as we overestimate the heat losses with the outgoing
+    temperature at the demand/source/storage assets where in reality this temperature drops
+    throughout the network. Meaning that the flow does lose energy but not temperature. In this
+    manner the energy losses will always be overestimated as in reality the
+    flow will also have a temperature drop.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -18,6 +33,7 @@ class Pipe(_NonStorageComponent):
         assert "area" not in modifiers, "modifying area directly is not allowed"
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
+        self.carrier_id = -1
 
         # Parameters determining the heat loss
         # All of these have default values in the library function
@@ -38,7 +54,7 @@ class Pipe(_NonStorageComponent):
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe
         velo = self.Q_nominal / self.area
         self.Hydraulic_power_nominal = (
-            self.rho * ff * self.length * pi * self.area / self.diameter / 2.0 * velo**3
+            self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
         )
         self.add_variable(
             Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal

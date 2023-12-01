@@ -8,6 +8,16 @@ from .heat_two_port import HeatTwoPort
 
 
 class ATES(HeatTwoPort, BaseAsset):
+    """
+    An Ates is a storage component that is used to model heat storage underground. Typically, this
+    is done by storing hot water in an underground aquifier. We model this with an energy storage
+    where the energy loss is modelled as a fraction of the Stored energy for each time-step.
+
+    Like all storage assets we enforce that they must be connected as a demand. The heat to
+    discharge constraints are set in the HeatMixin, where we use a big_m formulation to enforce the
+    correct constraints depending on whether the ates is charging or discharging.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
@@ -62,7 +72,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
         self.add_equation(self.Q - self.HeatOut.Q)
 
-        # Heat stored in the ates
+        # # Heat stored in the ates
         self.add_equation(
             (self.der(self.Stored_heat) - self.Heat_ates + self.Heat_loss)
             / self._heat_loss_eq_nominal_ates

@@ -1,8 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
 
-import numpy as np
-
 from rtctools.util import run_optimization_problem
 
 
@@ -30,5 +28,6 @@ class TestMultipleCarriers(TestCase):
 
         # We check for a system consisting out of 2 hydraulically decoupled networks that the energy
         # balance equations are done with the correct carrier.
-        np.testing.assert_allclose(heat_demand_3222, heat_demand_3222_q * cp * rho * 30.0)
-        np.testing.assert_allclose(heat_demand_18aa, heat_demand_18aa_q * cp * rho * 40.0)
+        test = TestCase()
+        test.assertTrue(expr=all(heat_demand_3222 <= heat_demand_3222_q * rho * cp * 30))
+        test.assertTrue(expr=all(heat_demand_18aa <= heat_demand_18aa_q * rho * cp * 40))

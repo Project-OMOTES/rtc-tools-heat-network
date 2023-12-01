@@ -6,6 +6,17 @@ from rtctools_heat_network.pycml.component_library.heat.heat_four_port import He
 
 
 class HeatPump(HeatFourPort, BaseAsset):
+    """
+    The heatpump component is used to model a water-water heatpump.
+    A constant COP is used to model the electricity use of the heatpump. A power cap is set
+    on the primary side to model physical constraints on the amount of heat transfer.
+
+    The heat to discharge constraints are set in the HeatMixin. The primary side is modelled as a
+    demand, meaning it consumes energy from the primary network and gives it to the secondary side,
+    where the secondary side acts like a source to the secondary network. This also means that heat
+    can only flow from primary to secondary.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,

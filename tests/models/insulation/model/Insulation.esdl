@@ -39,7 +39,7 @@
         <port xsi:type="esdl:InPort" connectedTo="a73c7412-9691-4eec-a3d4-d6ac0ba788cc" id="d872a56f-8827-4a7f-a36b-91a929720812" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="InSecondary"/>
         <port xsi:type="esdl:OutPort" id="05baa793-6449-4b22-88f9-ef45769e95d7" connectedTo="ee48c15a-2821-4d9d-90ff-904e04da9c28" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5" name="OutSecondary"/>
       </asset>
-      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_bce7" id="bce72b89-24a7-40c7-b63c-c34252d1e235" capacity="200000000000.0">
+      <asset xsi:type="esdl:HeatStorage" name="HeatStorage_bce7" id="bce72b89-24a7-40c7-b63c-c34252d1e235" capacity="200000000000.0" maxDischargeRate="10000000.0" maxChargeRate="10000000.0">
         <geometry xsi:type="esdl:Point" lon="4.369640350341798" lat="52.01354777871666" CRS="WGS84"/>
         <port xsi:type="esdl:InPort" connectedTo="627283aa-12b2-45de-a907-cf70f9998eac" id="108e9998-1c37-487e-84b6-0430a9678f1c" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5" name="In"/>
         <port xsi:type="esdl:OutPort" id="ff23eb9c-e982-47b3-a221-dc56b0b6c7ab" connectedTo="1083f2a4-f27c-48ae-bb63-4930e2a02a04" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="Out"/>
@@ -348,6 +348,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="aae5dbc5-862d-4e8c-9717-04b5e3554c11" id="a214b179-4871-47f2-87dc-7694e3391eed" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="4443d6f8-159a-4d61-82f7-14f49414ca04" connectedTo="fe8fd335-e544-48d0-a2bb-9029920ce799" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe22" diameter="DN400" name="Pipe2_ret" length="647.17" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe2_ret">
         <geometry xsi:type="esdl:Line">
@@ -358,6 +375,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="defaeee2-1c1c-4595-b120-a9c767269417" id="77f3ac75-be36-4d3d-b7b5-5e385b206709" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="d2b6cee9-31a5-49a1-ad51-96b9d5d7ac10" connectedTo="6a5845d7-7cc7-4152-89e3-5ab29bd8bcf3" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe3" diameter="DN400" name="Pipe3_ret" length="450.5" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe3_ret">
         <geometry xsi:type="esdl:Line">
@@ -366,6 +400,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="a3fc2a36-da66-447e-92ab-74d264bb63f8" id="6b951724-6658-4b06-aedf-30ec0c238ebc" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="a7c2cba4-0cf7-451a-b1e9-18a9b9e90311" connectedTo="6a5845d7-7cc7-4152-89e3-5ab29bd8bcf3" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe4" diameter="DN400" name="Pipe4_ret" length="449.2" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe4_ret">
         <geometry xsi:type="esdl:Line">
@@ -374,6 +425,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="defaeee2-1c1c-4595-b120-a9c767269417" id="358c2328-5849-40bb-9bd4-64a964583a82" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="c99cbcd0-ba6d-4481-9cdd-e3414a2d4bf7" connectedTo="17c2b043-f773-4bbf-9cdd-c2307c0d6c0a" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe5" diameter="DN400" name="Pipe5_ret" length="230.2" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe5_ret">
         <geometry xsi:type="esdl:Line">
@@ -382,6 +450,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="73f546ea-2f76-4f2a-8b0d-51fc209d8af3" id="28cb017e-9068-4860-bfd4-a8dad13504ae" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="2e23c42f-78f5-4d48-82d2-3c6ba3ed520f" connectedTo="38d4286c-92ce-46cb-aed1-5c5c69fff6a3" carrier="ce071f25-185e-45f0-9c31-c51bb40c104e_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe6" diameter="DN400" name="Pipe6_ret" length="250.16" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe6_ret">
         <geometry xsi:type="esdl:Line">
@@ -390,6 +475,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="dd72ecbb-60ee-4851-9c9e-19b87f1f3074" id="ade82c1f-3c99-462d-adfa-28a0a38b182d" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="9d9e468d-a896-4021-9d3a-2e6b1a6d9b58" connectedTo="05ec5b67-4852-47cf-ad1a-c26880804e1b" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe7" diameter="DN400" name="Pipe7_ret" length="209.14" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe7_ret">
         <geometry xsi:type="esdl:Line">
@@ -398,6 +500,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="abdd78ac-f0f4-4f5b-ad00-f0620c366626" id="127c440b-5c1f-4893-89fb-01bd75ce1eee" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="9fdc990f-ccc9-4646-88f2-0c7858c14ca5" connectedTo="198b3a70-7ce2-43eb-ad83-580c6225747a" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe8" diameter="DN400" name="Pipe8_ret" length="239.1" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe8_ret">
         <geometry xsi:type="esdl:Line">
@@ -406,6 +525,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="ff23eb9c-e982-47b3-a221-dc56b0b6c7ab" id="1083f2a4-f27c-48ae-bb63-4930e2a02a04" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="3447e4de-a954-4971-8104-7d55ababf365" connectedTo="198b3a70-7ce2-43eb-ad83-580c6225747a" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe21" diameter="DN400" name="Pipe21_ret" length="172.1" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe21_ret">
         <geometry xsi:type="esdl:Line">
@@ -414,6 +550,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="b08c3da0-56b1-42f5-bd4c-7b10bb095d1f" id="c1ab0541-eab5-43cd-8e2f-fec9a097d8b3" carrier="43b450c9-df27-400e-8c14-54bb49f423ca_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="7fb34ef7-446e-4646-bef2-623b377550f9" connectedTo="4f401c8a-d292-4361-8c27-1a2581b4d1c4" carrier="43b450c9-df27-400e-8c14-54bb49f423ca_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Pipe" related="Pipe22" diameter="DN400" name="Pipe22_ret" length="249.4" outerDiameter="0.56" innerDiameter="0.3938" id="Pipe22_ret">
         <geometry xsi:type="esdl:Line">
@@ -422,6 +575,23 @@
         </geometry>
         <port xsi:type="esdl:InPort" connectedTo="dd72ecbb-60ee-4851-9c9e-19b87f1f3074" id="57afe20b-0303-4bd1-a7ad-c7f6bd8b6aed" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="In_ret"/>
         <port xsi:type="esdl:OutPort" id="a73c7412-9691-4eec-a3d4-d6ac0ba788cc" connectedTo="d872a56f-8827-4a7f-a36b-91a929720812" carrier="20216d2d-11f6-4e09-af9e-84204974b8f5_ret" name="Out_ret"/>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0063">
+            <matter xsi:type="esdl:Material" thermalConductivity="52.15" name="steel" id="74d84321-1767-4cec-b6e7-b90c06020400"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0711">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.027" name="PUR" id="95012cd9-7648-4df5-8c83-74dc73bc16ba"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0057">
+            <matter xsi:type="esdl:Material" thermalConductivity="0.4" name="HDPE" id="1392ee3f-34f6-4c8e-ab0e-635b9d7ec9be"/>
+          </component>
+        </material>
+        <dataSource xsi:type="esdl:DataSource" name="Logstor Product Catalogue Version 2020.03" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf"/>
+        <costInformation xsi:type="esdl:CostInformation" id="08d88c1a-1f32-4f55-b5a8-1560dbc2ff0f">
+          <investmentCosts xsi:type="esdl:SingleValue" name="Combined investment and installation costs" value="2840.6" id="2ab2214c-8d42-4b74-877f-7fb97f6eab86">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9169bd50-197f-4d6b-aaac-b383a59c815d" description="Costs in EUR/m" perUnit="METRE" physicalQuantity="COST" unit="EURO"/>
+          </investmentCosts>
+        </costInformation>
       </asset>
     </area>
   </instance>

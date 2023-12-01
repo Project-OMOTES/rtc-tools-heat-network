@@ -70,6 +70,11 @@ class HeatBuffer(
     def post(self):
         super().post()
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
     def pycml_model(self):
         return self.__model
 

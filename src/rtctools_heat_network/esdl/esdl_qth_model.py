@@ -61,7 +61,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             return_temperature,
             supply_temperature_id,
             return_temperature_id,
-        ) = self._get_supply_return_temperatures(asset)
+        ) = self._get_supply_return_temperatures(asset).values()
 
         heat_to_discharge_fac = 1 / (self.rho * self.cp * (supply_temperature - return_temperature))
 
@@ -178,13 +178,15 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 sum_out += len(x.connectedTo)
 
         # TODO: what do we want if no carrier is specified.
-        carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
-        if carrier["__rtc_type"] == "supply":
-            temp = carrier["supplyTemperature"]
-        elif carrier["__rtc_type"] == "return":
-            temp = carrier["returnTemperature"]
-        else:
-            temp = 50.0
+        # carrier = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]
+        # if carrier["__rtc_type"] == "supply":
+        #     temp = carrier["supplyTemperature"]
+        # elif carrier["__rtc_type"] == "return":
+        #     temp = carrier["returnTemperature"]
+        # else:
+        #     temp = 50.0
+
+        temp = self._get_supply_return_temperatures(asset)["temperature"]
         modifiers = dict(
             n=sum_in + sum_out,
             temperature=temp,
@@ -195,21 +197,16 @@ class AssetToQTHComponent(_AssetToComponentBase):
     def convert_pipe(self, asset: Asset) -> Tuple[Type[Pipe], MODIFIERS]:
         assert asset.asset_type == "Pipe"
 
-        (
-            supply_temperature,
-            return_temperature,
-            supply_temperature_id,
-            return_temperature_id,
-        ) = self._get_supply_return_temperatures(asset)
+        temperature = self._get_supply_return_temperatures(asset)["temperature"]
 
         # NaN means the default values will be used
         insulation_thicknesses = math.nan
         conductivies_insulation = math.nan
 
-        if "_ret" in asset.attributes["name"]:
-            temperature = return_temperature
-        else:
-            temperature = supply_temperature
+        # if "_ret" in asset.attributes["name"]:
+        #     temperature = return_temperature
+        # else:
+        #     temperature = supply_temperature
 
         (
             diameter,
@@ -223,6 +220,21 @@ class AssetToQTHComponent(_AssetToComponentBase):
 
         self._set_q_nominal(asset, q_nominal)
 
+        if "_ret" in asset.in_ports[0].carrier.id:
+            temperature_modifiers = {
+                "T_return": temperature,
+                "T_supply": asset.global_properties["carriers"][asset.in_ports[0].carrier.id[:-4]][
+                    "temperature"
+                ],
+            }
+        else:
+            temperature_modifiers = {
+                "T_supply": temperature,
+                "T_return": asset.global_properties["carriers"][
+                    asset.in_ports[0].carrier.id + "_ret"
+                ]["temperature"],
+            }
+
         # TODO: We can do better with the temperature bounds.
         # Maybe global ones (temperature_supply_max / min, and temperature_return_max / min?)
         modifiers = dict(
@@ -235,7 +247,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             QTHOut=dict(T=dict(min=self.minimum_temperature, max=self.maximum_temperature)),
             insulation_thickness=insulation_thicknesses,
             conductivity_insulation=conductivies_insulation,
-            **self._supply_return_temperature_modifiers(asset),
+            **temperature_modifiers,
             **self._rho_cp_modifiers,
         )
 
@@ -271,7 +283,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             return_temperature,
             supply_temperature_id,
             return_temperature_id,
-        ) = self._get_supply_return_temperatures(asset)
+        ) = self._get_supply_return_temperatures(asset).values()
 
         # TODO: Why is the default zero for both, that's just weird. What if I
         # actually want a minimum of 0.0 (instead of treating it as a
