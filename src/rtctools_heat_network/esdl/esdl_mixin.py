@@ -1,19 +1,14 @@
-import base64
 import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
-from datetime import timedelta
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import esdl
-from esdl.esdl_handler import EnergySystemHandler
 
 import numpy as np
 
 import pandas as pd
-
-from pyecore.resources import ResourceSet
 
 import rtctools.data.pi as pi
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -23,8 +18,8 @@ from rtctools.optimization.io_mixin import IOMixin
 
 from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
 from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
 from rtctools_heat_network.modelica_component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
@@ -32,7 +27,6 @@ from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
-from .common import Asset
 from .esdl_heat_model import ESDLHeatModel
 from .esdl_qth_model import ESDLQTHModel
 from .esdl_parser import ESDLStringParser
@@ -57,40 +51,35 @@ class ESDLMixin(
 ):
     esdl_run_info_path: Path = None
 
-    esdl_pi_validate_timeseries = False
+    esdl_pi_validate_timeseries: bool = False
 
-    esdl_pi_input_data_config = None
-    esdl_pi_output_data_config = None
-
-    __max_supply_temperature = None
+    __max_supply_temperature: Optional[float] = None
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
-    __minimum_pipe_size_name = "DN150"
+    __minimum_pipe_size_name: str = "DN150"
+
+    _profile_reader: BaseProfileReader
 
     def __init__(self, *args, **kwargs):
         esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
-        if esdl_string is None:
-            # TODO: remove this runinfo stuff, instead a path to the the ESDL file should be
-            #  provided as esdl_string too though I'm not sure if reusing the same argument name is
-            #  nice.
-            self.esdl_run_info_path = kwargs.get(
-                "esdl_run_info_path", Path(kwargs["input_folder"]) / "RunInfo.xml"
-            )
+        molder_folder = kwargs.get("model_folder")
+        esdl_file_name = kwargs.get("esdl_file_name", None)
+        esdl_path = None
+        if esdl_file_name is not None:
+            esdl_path = Path(molder_folder) / esdl_file_name
 
-            if not self.esdl_pi_input_data_config:
-                self.esdl_pi_input_data_config = _ESDLInputDataConfig
-
-            if not self.esdl_pi_output_data_config:
-                self.esdl_pi_output_data_config = _ESDLOutputDataConfig
-
-            self.__run_info = _RunInfoReader(self.esdl_run_info_path)
-            esdl_string = self.__run_info.esdl_file
-
-        esdl_parser = esdl_parser_class(esdl_string=esdl_string)
+        # TODO: discuss if this is correctly located here and why the reading of profiles is then
+        #  in the read function?
+        esdl_parser = esdl_parser_class(esdl_string=esdl_string, esdl_path=esdl_path)
         self.__esdl_assets = esdl_parser.get_assets()
         self.__esdl_carriers = esdl_parser.get_carrier_properties()
         self.__esdl_model = esdl_parser.get_esdl_model()
+
+        profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
+        input_file_path = kwargs.get("input_timeseries_file", None)
+        self._profile_reader = profile_reader_class(
+            energy_system=self.__esdl_model, file_path=input_file_path)
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
@@ -121,30 +110,6 @@ class ESDLMixin(
             self.__max_supply_temperature = max(max_global_supply, max_attribute) + 10.0
 
             self.__model = ESDLQTHModel(assets, **self.esdl_qth_model_options())
-
-        root_logger = logging.getLogger("")
-
-        if self.__run_info is not None and self.__run_info.output_diagnostic_file:
-            # Add stream handler if it does not already exist.
-            if not logger.hasHandlers() and not any(
-                (isinstance(h, logging.StreamHandler) for h in logger.handlers)
-            ):
-                handler = logging.StreamHandler()
-                formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-                handler.setFormatter(formatter)
-                logger.addHandler(handler)
-
-            # Add pi.DiagHandler. Only add if it doesn't already exist.
-            if not any((isinstance(h, pi.DiagHandler) for h in root_logger.handlers)):
-                basename = self.__run_info.output_diagnostic_file.stem
-                folder = self.__run_info.output_diagnostic_file.parent
-
-                handler = pi.DiagHandler(folder, basename)
-                root_logger.addHandler(handler)
-
-        if self.__run_info is not None:
-            self._input_timeseries_file = self.__run_info.input_timeseries_file
-            self.__output_timeseries_file = self.__run_info.output_timeseries_file
 
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
@@ -263,6 +228,9 @@ class ESDLMixin(
         return self.__model
 
     def read(self):
+        assets_with_profiles_to_read = None
+
+        self._profile_reader.read_profiles(self.io, self.h)
         super().read()
 
         if self._profiles:
@@ -484,176 +452,176 @@ class ESDLMixin(
             for variable, values in self.__timeseries_import.items(ensemble_member):
                 self.io.set_timeseries(variable, timeseries_import_times, values, ensemble_member)
 
-    # def write(self):
-    #     super().write()
-    #
-    #     if getattr(self, "__output_timeseries_file", None) is None:
-    #         return
-    #
-    #     output_timeseries_file = Path(self.__output_timeseries_file)
-    #     assert output_timeseries_file.is_absolute()
-    #     assert output_timeseries_file.suffix == ".xml"
-    #
-    #     timeseries_export_basename = output_timeseries_file.stem
-    #     output_folder = output_timeseries_file.parent
-    #
-    #     try:
-    #         self.__timeseries_export = pi.Timeseries(
-    #             self.esdl_pi_output_data_config(self.__timeseries_id_map),
-    #             output_folder,
-    #             timeseries_export_basename,
-    #             binary=False,
-    #             pi_validate_times=self.esdl_pi_validate_timeseries,
-    #         )
-    #     except IOError:
-    #         raise Exception(
-    #             "ESDLMixin: {}.xml not found in {}.".format(
-    #                 timeseries_export_basename, output_folder
-    #             )
-    #         )
-    #
-    #     # Get time stamps
-    #     times = self.times()
-    #     if len(set(times[1:] - times[:-1])) == 1:
-    #         dt = timedelta(seconds=times[1] - times[0])
-    #     else:
-    #         dt = None
-    #
-    #     output_keys = [k for k, v in self.__timeseries_export.items()]
-    #
-    #     # Start of write output
-    #     # Write the time range for the export file.
-    #     self.__timeseries_export.times = [
-    #         self.__timeseries_import.times[self.__timeseries_import.forecast_index]
-    #         + timedelta(seconds=s)
-    #         for s in times
-    #     ]
-    #
-    #     # Write other time settings
-    #     self.__timeseries_export.forecast_datetime = self.__timeseries_import.forecast_datetime
-    #     self.__timeseries_export.dt = dt
-    #     self.__timeseries_export.timezone = self.__timeseries_import.timezone
-    #
-    #     # Write the ensemble properties for the export file.
-    #     if self.ensemble_size > 1:
-    #         self.__timeseries_export.contains_ensemble = True
-    #     self.__timeseries_export.ensemble_size = self.ensemble_size
-    #     self.__timeseries_export.contains_ensemble = self.ensemble_size > 1
-    #
-    #     # Start looping over the ensembles for extraction of the output values.
-    #     for ensemble_member in range(self.ensemble_size):
-    #         results = self.extract_results(ensemble_member)
-    #
-    #         # For all variables that are output variables the values are
-    #         # extracted from the results.
-    #         for variable in output_keys:
-    #             try:
-    #                 values = results[variable]
-    #                 if len(values) != len(times):
-    #                     values = self.interpolate(
-    #                         times,
-    #                         self.times(variable),
-    #                         values,
-    #                         self.interpolation_method(variable),
-    #                     )
-    #             except KeyError:
-    #                 try:
-    #                     ts = self.get_timeseries(variable, ensemble_member)
-    #                     if len(ts.times) != len(times):
-    #                         values = self.interpolate(times, ts.times, ts.values)
-    #                     else:
-    #                         values = ts.values
-    #                 except KeyError:
-    #                     logger.warning(
-    #                         "ESDLMixin: Output requested for non-existent variable {}. "
-    #                         "Will not be in output file.".format(variable)
-    #                     )
-    #                     continue
-    #
-    #             self.__timeseries_export.set(variable, values, ensemble_member=ensemble_member)
-    #
-    #     # Write output file to disk
-    #     self.__timeseries_export.write()
+    def write(self):
+        super().write()
 
+        if getattr(self, "__output_timeseries_file", None) is None:
+            return
 
-class _ESDLInputDataConfig:
-    def __init__(self, id_map, heat_network_components):
-        # TODO: change naming source and demand to heat_source and heat_demand throughout code
-        self.__id_map = id_map
-        self._sources = set(heat_network_components.get("source", []))
-        self._demands = set(heat_network_components.get("demand", []))
-        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
-        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
-        self._gas_sources = set(heat_network_components.get("gas_source", []))
-        self._gas_demands = set(heat_network_components.get("gas_demand", []))
+        output_timeseries_file = Path(self.__output_timeseries_file)
+        assert output_timeseries_file.is_absolute()
+        assert output_timeseries_file.suffix == ".xml"
 
-    def variable(self, pi_header):
-        location_id = pi_header.find("pi:locationId", ns).text
+        timeseries_export_basename = output_timeseries_file.stem
+        output_folder = output_timeseries_file.parent
 
         try:
-            component_name = self.__id_map[location_id]
-        except KeyError:
-            parameter_id = pi_header.find("pi:parameterId", ns).text
-            qualifiers = pi_header.findall("pi:qualifierId", ns)
-            qualifier_ids = ":".join(q.text for q in qualifiers)
-            return f"{location_id}:{parameter_id}:{qualifier_ids}"
-
-        if component_name in self._demands:
-            suffix = ".target_heat_demand"
-        elif component_name in self._sources:
-            suffix = ".target_heat_source"
-        elif component_name in self._electricity_demands:
-            suffix = ".target_electricity_demand"
-        elif component_name in self._electricity_sources:
-            suffix = ".target_electricity_source"
-        elif component_name in self._gas_demands:
-            suffix = ".target_gas_demand"
-        elif component_name in self._gas_sources:
-            suffix = ".target_gas_source"
-        else:
-            logger.warning(
-                f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its heat timeseries."
+            self.__timeseries_export = pi.Timeseries(
+                self.esdl_pi_output_data_config(self.__timeseries_id_map),
+                output_folder,
+                timeseries_export_basename,
+                binary=False,
+                pi_validate_times=self.esdl_pi_validate_timeseries,
             )
-            suffix = ".target_heat"
+        except IOError:
+            raise Exception(
+                "ESDLMixin: {}.xml not found in {}.".format(
+                    timeseries_export_basename, output_folder
+                )
+            )
 
-        # Note that the qualifier id (if any specified) refers to the profile
-        # element of the respective ESDL asset->in_port. For now we just
-        # assume that only heat demand timeseries are set in the XML file.
-        return f"{component_name}{suffix}"
+        # Get time stamps
+        times = self.times()
+        if len(set(times[1:] - times[:-1])) == 1:
+            dt = timedelta(seconds=times[1] - times[0])
+        else:
+            dt = None
 
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
+        output_keys = [k for k, v in self.__timeseries_export.items()]
 
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
+        # Start of write output
+        # Write the time range for the export file.
+        self.__timeseries_export.times = [
+            self.__timeseries_import.times[self.__timeseries_import.forecast_index]
+            + timedelta(seconds=s)
+            for s in times
+        ]
 
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
+        # Write other time settings
+        self.__timeseries_export.forecast_datetime = self.__timeseries_import.forecast_datetime
+        self.__timeseries_export.dt = dt
+        self.__timeseries_export.timezone = self.__timeseries_import.timezone
+
+        # Write the ensemble properties for the export file.
+        if self.ensemble_size > 1:
+            self.__timeseries_export.contains_ensemble = True
+        self.__timeseries_export.ensemble_size = self.ensemble_size
+        self.__timeseries_export.contains_ensemble = self.ensemble_size > 1
+
+        # Start looping over the ensembles for extraction of the output values.
+        for ensemble_member in range(self.ensemble_size):
+            results = self.extract_results(ensemble_member)
+
+            # For all variables that are output variables the values are
+            # extracted from the results.
+            for variable in output_keys:
+                try:
+                    values = results[variable]
+                    if len(values) != len(times):
+                        values = self.interpolate(
+                            times,
+                            self.times(variable),
+                            values,
+                            self.interpolation_method(variable),
+                        )
+                except KeyError:
+                    try:
+                        ts = self.get_timeseries(variable, ensemble_member)
+                        if len(ts.times) != len(times):
+                            values = self.interpolate(times, ts.times, ts.values)
+                        else:
+                            values = ts.values
+                    except KeyError:
+                        logger.warning(
+                            "ESDLMixin: Output requested for non-existent variable {}. "
+                            "Will not be in output file.".format(variable)
+                        )
+                        continue
+
+                self.__timeseries_export.set(variable, values, ensemble_member=ensemble_member)
+
+        # Write output file to disk
+        self.__timeseries_export.write()
 
 
-class _ESDLOutputDataConfig:
-    def __init__(self, id_map):
-        self.__id_map = id_map
-
-    def variable(self, pi_header):
-        location_id = pi_header.find("pi:locationId", ns).text
-        parameter_id = pi_header.find("pi:parameterId", ns).text
-
-        component_name = self.__id_map[location_id]
-
-        return f"{component_name}.{parameter_id}"
-
-    def pi_variable_ids(self, variable):
-        raise NotImplementedError
-
-    def parameter(self, parameter_id, location_id=None, model_id=None):
-        raise NotImplementedError
-
-    def pi_parameter_ids(self, parameter):
-        raise NotImplementedError
-
-
+# class _ESDLInputDataConfig:
+#     def __init__(self, id_map, heat_network_components):
+#         # TODO: change naming source and demand to heat_source and heat_demand throughout code
+#         self.__id_map = id_map
+#         self._sources = set(heat_network_components.get("source", []))
+#         self._demands = set(heat_network_components.get("demand", []))
+#         self._electricity_sources = set(heat_network_components.get("electricity_source", []))
+#         self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
+#         self._gas_sources = set(heat_network_components.get("gas_source", []))
+#         self._gas_demands = set(heat_network_components.get("gas_demand", []))
+#
+#     def variable(self, pi_header):
+#         location_id = pi_header.find("pi:locationId", ns).text
+#
+#         try:
+#             component_name = self.__id_map[location_id]
+#         except KeyError:
+#             parameter_id = pi_header.find("pi:parameterId", ns).text
+#             qualifiers = pi_header.findall("pi:qualifierId", ns)
+#             qualifier_ids = ":".join(q.text for q in qualifiers)
+#             return f"{location_id}:{parameter_id}:{qualifier_ids}"
+#
+#         if component_name in self._demands:
+#             suffix = ".target_heat_demand"
+#         elif component_name in self._sources:
+#             suffix = ".target_heat_source"
+#         elif component_name in self._electricity_demands:
+#             suffix = ".target_electricity_demand"
+#         elif component_name in self._electricity_sources:
+#             suffix = ".target_electricity_source"
+#         elif component_name in self._gas_demands:
+#             suffix = ".target_gas_demand"
+#         elif component_name in self._gas_sources:
+#             suffix = ".target_gas_source"
+#         else:
+#             logger.warning(
+#                 f"Could not identify '{component_name}' as either source or demand. "
+#                 f"Using neutral suffix '.target_heat' for its heat timeseries."
+#             )
+#             suffix = ".target_heat"
+#
+#         # Note that the qualifier id (if any specified) refers to the profile
+#         # element of the respective ESDL asset->in_port. For now we just
+#         # assume that only heat demand timeseries are set in the XML file.
+#         return f"{component_name}{suffix}"
+#
+#     def pi_variable_ids(self, variable):
+#         raise NotImplementedError
+#
+#     def parameter(self, parameter_id, location_id=None, model_id=None):
+#         raise NotImplementedError
+#
+#     def pi_parameter_ids(self, parameter):
+#         raise NotImplementedError
+#
+#
+# class _ESDLOutputDataConfig:
+#     def __init__(self, id_map):
+#         self.__id_map = id_map
+#
+#     def variable(self, pi_header):
+#         location_id = pi_header.find("pi:locationId", ns).text
+#         parameter_id = pi_header.find("pi:parameterId", ns).text
+#
+#         component_name = self.__id_map[location_id]
+#
+#         return f"{component_name}.{parameter_id}"
+#
+#     def pi_variable_ids(self, variable):
+#         raise NotImplementedError
+#
+#     def parameter(self, parameter_id, location_id=None, model_id=None):
+#         raise NotImplementedError
+#
+#     def pi_parameter_ids(self, parameter):
+#         raise NotImplementedError
+#
+#
 class _RunInfoReader:
     def __init__(self, filepath: Union[str, Path]):
         filepath = Path(filepath).resolve()

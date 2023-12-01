@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Dict
+from typing import Dict, Optional
 
 from rtctools.data.storage import DataStore
 
@@ -20,20 +20,25 @@ logger = logging.getLogger()
 influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
 
 class BaseProfileReader:
+    _energy_system: esdl.EnergySystem
+    _file_path: Optional[Path]
     _profiles: Dict[str, np.ndarray]
+    _reference_datetime_index = pd.DatetimeIndex
 
-    def __init__(self):
+    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
         self._profiles = dict()
+        self._energy_system = energy_system
+        self._file_path = file_path
 
     def read_profiles(self, io: DataStore, heat_network_components: Dict[str, str]) -> None:
         """
         This function takes a datastore and a dictionary of heat network components and loads a
         profile for each demand and source in the provided heat network components into the
-        datastore. If no profile is available the follow happens:
+        datastore. If no profile is available the following happens:
         - for sources, no target profile is set
         - for demands a default profile is loaded equal to the power of the demand asset
         Note that at least one profile must be provided to determine the start and end times of the
-        optimization horizon. Furthermore, profiles are assumed to be provided in hourly steps.
+        optimization horizon.
 
         :param io:                          Datastore in which the profiles will be saved
         :param heat_network_components:     Dictionary of the components of the network, should
@@ -46,19 +51,18 @@ class BaseProfileReader:
 
     def _load_profiles_from_source(self) -> None:
         """
-        This function should be implemented by the child. It loads the profiles the available
+        This function should be implemented by the child. It should load the profiles the available
         profiles for demands and sources from the correct source and saves them in the _profiles
-        attribute
+        attribute. It should also sets the _reference_datetime_index attribute to the correct
+        index to be used in the DataStore when loading the profiles
         """
         raise NotImplementedError
 
 
 class InfluxDBProfileReader(BaseProfileReader):
-    _energy_system: esdl.EnergySystem
 
-    def __init__(self, energy_system: esdl.EnergySystem):
-        super().__init__()
-        self._energy_system = energy_system
+    def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
+        super().__init__(energy_system=energy_system, file_path=file_path)
 
     def _load_profiles_from_source(self) -> None:
         profiles: Dict[str, pd.DataFrame] = dict()
@@ -188,9 +192,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
 
 class ProfileReaderFromFile(BaseProfileReader):
-    _file_path = Path
 
-    def __init__(self, file_path: Path):
-        super().__init__()
-        self._file_path = file_path
+    def __init__(self, energy_system: esdl.EnergySystem, file_path: Path):
+        super().__init__(energy_system=energy_system, file_path=file_path)
 

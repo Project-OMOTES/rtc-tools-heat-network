@@ -1,8 +1,8 @@
 import base64
+from pathlib import Path
 from typing import Dict, Optional
 
 import esdl.esdl_handler
-from pyecore.ecore import EString
 
 from pyecore.resources import ResourceSet
 
@@ -14,14 +14,13 @@ class _ESDLInputException(Exception):
 
 
 class BaseESDLParser:
-    _global_properties: Dict[str, Dict]
-    _assets: Dict[EString, Asset]
-    _energy_system: Optional[esdl.EnergySystem]
+    _global_properties: Dict[str, Dict] = {"carriers": dict()}
+    _assets: Dict[str, Asset] = dict()
+    _energy_system: Optional[esdl.EnergySystem] = None
+    _esdl_string: Optional[str] = None
+    _esdl_path: Optional[Path] = None
 
     def __init__(self):
-        self._global_properties = {"carriers": dict()}
-        self._assets = dict()
-        self._energy_system = None
         self._read_esdl()
 
     def _load_esdl_model(self) -> None:
@@ -150,7 +149,7 @@ class BaseESDLParser:
                     self._global_properties,
                 )
 
-    def get_assets(self) -> Dict[EString, Asset]:
+    def get_assets(self) -> Dict[str, Asset]:
         return self._assets
 
     def get_carrier_properties(self) -> Dict:
@@ -161,9 +160,13 @@ class BaseESDLParser:
 
 
 class ESDLStringParser(BaseESDLParser):
-    _esdl_string: str
 
-    def __init__(self, esdl_string: str):
+    def __init__(self, **kwargs):
+        try:
+            esdl_string = kwargs.get("esdl_string")
+        except KeyError:
+            raise _ESDLInputException(f"Expected an ESDL string when parsing the system from a "
+                                      f"string, but none provided")
         if isinstance(esdl_string, bytes):
             self._esdl_string = base64.b64decode(esdl_string).decode('utf-8')
         else:
@@ -176,10 +179,14 @@ class ESDLStringParser(BaseESDLParser):
 
 
 class ESDLFileParser(BaseESDLParser):
-    _esdl_path: str
 
-    def __init__(self, esdl_string: str):
-        self._esdl_path = esdl_string
+    def __init__(self, **kwargs):
+        try:
+            esdl_path = kwargs.get("esdl_path")
+        except KeyError:
+            raise _ESDLInputException(f"Expected an ESDL path when parsing the system from a "
+                                      f"file but none provided")
+        self._esdl_path = esdl_path
         super().__init__()
 
     def _load_esdl_model(self) -> None:
