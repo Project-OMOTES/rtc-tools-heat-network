@@ -13,7 +13,10 @@ import pandas as pd
 logger = logging.getLogger()
 
 data_set = {}
-influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
+influx_cred_map = {
+    "wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup"),
+    "omotes-poc-test.hesi.energy:8086": ("write-user", "nwn_write_test"),
+}
 time_step = td(seconds=3600)
 time_step_notation = "{}s".format(int(time_step.total_seconds()))
 
