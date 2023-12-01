@@ -23,8 +23,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # Assertion 1: Non annualized objective value with discount=0 and technical life 1
         # year matches the objective value of the discounted problem
         solution_1 = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost, base_folder=base_folder
-            # HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
+            HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
         )
         solution_2 = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
@@ -50,6 +49,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 results[f"HeatProducer_{i}__investment_cost"]
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
+            
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
             np.testing.assert_almost_equal(
@@ -72,6 +72,9 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 results[f"HeatProducer_{i}__investment_cost"]
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
+
+            years_asset_life = 25
+            discount_rate = 0.05
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
             np.testing.assert_almost_equal(

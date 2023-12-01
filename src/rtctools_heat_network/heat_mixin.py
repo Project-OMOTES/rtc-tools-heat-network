@@ -4859,8 +4859,6 @@ class HeatMixin(
     def __annualized_capex_constraints(self, ensemble_member):
         constraints = []
 
-        # REMOVE
-        self._number_of_years = 1
         # asset_categories = ["source", "demand", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
         asset_categories = ["source"]
 
@@ -4891,11 +4889,11 @@ class HeatMixin(
                 )
 
                 nominal = self.variable_nominal(symbol_name)
-                # asset_life_years = parameters[f"{asset_name}.technical_life"]
-                # discount_rate = parameters[f"{asset_name}.discount_rate"]
-                asset_life_years = 1
-                discount_rate = 0.0
-                
+                asset_life_years = parameters[f"{asset_name}.technical_life"]
+                # Input from ESLD file as annual percentage
+                discount_percentage = parameters[f"{asset_name}.discount_rate"]
+                discount_rate = discount_percentage/100
+
                 annuity_factor = calculate_annuity_factor(
                     discount_rate, asset_life_years
                 )

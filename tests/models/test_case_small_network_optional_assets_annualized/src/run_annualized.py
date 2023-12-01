@@ -193,18 +193,6 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         return goals
 
 
-# class HeatProblemDiscAnnualizedCost_Modified_Parameters(HeatProblemDiscAnnualizedCost):
-
-#     @property
-#     def esdl_assets(self):
-#         assets = super().esdl_assets
-
-#         asset = next(a for a in assets.values() if a.name == "HeatProducer_1")
-#         asset.attributes["technical_lifetime"] = 1
-
-#         return assets
-
-
 class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost):
     @property
     def esdl_assets(self):
@@ -213,7 +201,7 @@ class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost
             asset_name = f"HeatProducer_{i}"
             asset = next((a for a in assets.values() if a.name == asset_name), None)
             if asset is not None:
-                asset.attributes["technical_lifetime"] = 1
+                asset.attributes["technicalLifetime"] = 1.0
                 asset.attributes["costInformation"].discountRate.value = 0.0
         return assets
 
@@ -223,7 +211,8 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(
-        HeatProblemDiscAnnualizedCost, base_folder=base_folder
+        # HeatProblemDiscAnnualizedCost, base_folder=base_folder
+        HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
     )
     results = solution.extract_results()
     print("\n HeatProblemAnnualized Completed \n \n")
