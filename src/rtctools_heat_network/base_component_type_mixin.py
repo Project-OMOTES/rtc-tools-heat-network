@@ -15,25 +15,44 @@ class BaseComponentTypeMixin:
     @property
     @abstractmethod
     def heat_network_components(self) -> Dict[str, str]:
+        """
+        This method return a dict with the components structured by asset_type.
+        """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def heat_network_topology(self) -> Topology:
+        """
+        The method return a Topology object that contains asset with specific
+        topology and associated direction information needed for the physics in the constraints
+        """
         raise NotImplementedError
 
     def is_hot_pipe(self, pipe: str) -> bool:
+        """
+        The function return true if the pipe is a supply pipe based on a name convention
+        """
         return pipe.endswith("_hot")
 
     def is_cold_pipe(self, pipe: str) -> bool:
+        """
+        The function return true if the pipe is a return pipe based on a name convention
+        """
         return pipe.endswith("_cold")
 
     def hot_to_cold_pipe(self, pipe: str):
+        """
+        This function returns the name of the associated cold/return pipe of a supply/hot pipe.
+        """
         assert self.is_hot_pipe(pipe)
 
         return f"{pipe[:-4]}_cold"
 
     def cold_to_hot_pipe(self, pipe: str):
+        """
+        This function returns the name of the associated hot/supply pipe of a cold/return pipe.
+        """
         assert self.is_cold_pipe(pipe)
 
         return f"{pipe[:-5]}_hot"
@@ -57,8 +76,14 @@ class BaseComponentTypeMixin:
 
     @property
     def hot_pipes(self) -> List[str]:
+        """
+        This function return a list of all the supply/hot pipe names.
+        """
         return [p for p in self.heat_network_components.get("pipe", []) if self.is_hot_pipe(p)]
 
     @property
     def cold_pipes(self) -> List[str]:
+        """
+        This function return a list of all the return/cold pipe names.
+        """
         return [p for p in self.heat_network_components.get("pipe", []) if self.is_cold_pipe(p)]

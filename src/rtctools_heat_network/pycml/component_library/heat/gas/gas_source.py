@@ -6,6 +6,10 @@ from .._internal.gas_component import GasComponent
 
 
 class GasSource(GasComponent, BaseAsset):
+    """
+    A gas source generates gas flow for the network.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

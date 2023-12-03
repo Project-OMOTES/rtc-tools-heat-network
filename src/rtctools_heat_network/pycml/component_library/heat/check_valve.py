@@ -4,6 +4,11 @@ from ._non_storage_component import _NonStorageComponent
 
 
 class CheckValve(_NonStorageComponent):
+    """
+    The check valve allows the fluid to flow in only one direction. This is done with constraints
+    in the HeatMixin.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,

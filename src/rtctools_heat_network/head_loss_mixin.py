@@ -117,6 +117,9 @@ class _MinimizeHeadLosses(Goal):
         self.function_nominal = len(optimization_problem.times())
 
     def function(self, optimization_problem: "_HeadLossMixin", ensemble_member):
+        """
+        This function returns the summed head loss of all pipes and pumps.
+        """
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
@@ -159,6 +162,9 @@ class _MinimizeHydraulicPower(Goal):
         self.optimization_problem = optimization_problem
 
     def function(self, optimization_problem: "_HeadLossMixin", ensemble_member):
+        """
+        This function returns the summed hydraulic power of all pipes
+        """
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
@@ -195,6 +201,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         self.__priority = None
 
     def pre(self):
+        """
+        Some checks to avoid that different pipes have different head_loss options in case one
+        has the No_HeadLoss option.
+        """
         super().pre()
 
         self.__initialize_nominals_and_bounds()
@@ -339,13 +349,23 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     @property
     def _hn_minimization_goal_class(self) -> Type[Goal]:
+        """
+        This function returns the Minimize Head loss goal
+        """
         return _MinimizeHeadLosses
 
     @property
     def _hpwr_minimization_goal_class(self) -> Type[Goal]:
+        """
+        This function returns the minimize hydraulic power goal
+        """
         return _MinimizeHydraulicPower
 
     def __initialize_nominals_and_bounds(self):
+        """
+        This function computes and sets the bounds and nominals for the head loss of all the pipes
+        as well as the minimum and maximum pipe pressure.
+        """
         self.__pipe_head_loss_nominals = AliasDict(self.alias_relation)
 
         options = self.heat_network_options()
@@ -397,6 +417,9 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+        """
+        This function returns the nominal volumetric flow (m^3/s) through the pipe.
+        """
         return parameters[f"{pipe}.area"] * heat_network_options["estimated_velocity"]
 
     def _hn_pipe_head_loss(
@@ -886,11 +909,13 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
 
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
+        """
+        We set this constraint relating .dH to the upstream and downstream
+        heads here in the Mixin for scaling purposes (dH nominal is
+        calculated in pre()).
+        """
         constraints = []
 
-        # We set this constraint relating .dH to the upstream and downstream
-        # heads here in the Mixin for scaling purposes (dH nominal is
-        # calculated in pre()).
         for pipe in self.heat_network_components.get("pipe", []):
             dh = self.state(f"{pipe}.dH")
             h_down = self.state(f"{pipe}.HeatOut.H")
@@ -904,6 +929,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         return constraints
 
     def __demand_head_loss_path_constraints(self, _ensemble_member):
+        """
+        This function adds constraints for a minimum pressure drop at demands. This minimum
+        pressure drop is often required in practice to guarantee that it is possible to increase
+        the flow rate at that specific demand, if needed, by opening the control valve.
+        """
         constraints = []
 
         options = self.heat_network_options()
@@ -924,6 +954,9 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         return constraints
 
     def constraints(self, ensemble_member):
+        """
+        Here we add the pipe head loss constraints
+        """
         constraints = super().constraints(ensemble_member)
 
         if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
@@ -932,6 +965,9 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         return constraints
 
     def path_constraints(self, ensemble_member):
+        """
+        Here we add the path constraints for the head in pipes and minimum pressure drop at demands.
+        """
         constraints = super().path_constraints(ensemble_member).copy()
 
         options = self.heat_network_options()
@@ -944,10 +980,21 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         return constraints
 
     def priority_started(self, priority):
+        """
+        Keeping track of the priority in the optimization
+        """
         super().priority_started(priority)
         self.__priority = priority
 
     def priority_completed(self, priority):
+        """
+        In this funtion we check whether there is still artificial head loss in pipes after the
+        head loss minimization goal. This can happen when there are multiple routes without control
+        valves towards a single consumer.In this case the optimization can create non-physical
+        solutions for the inequality head loss options where it favours one route above another.
+        This favoured route would also have a head loss which would not possible in practice and
+        could not be compensated for by a control valve along the route.
+        """
         super().priority_completed(priority)
 
         options = self.heat_network_options()
@@ -1009,6 +1056,11 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                     logger.warning("Minimum head at demands is higher than target minimum.")
 
     def path_goals(self):
+        """
+        Here we add the goals for minimizing the head loss and hydraulic power depending on the
+        configuration. Please note that we only do hydraulic power for the MILP problem thus only
+        for the linearized head_loss options.
+        """
         g = super().path_goals().copy()
 
         options = self.heat_network_options()
@@ -1028,17 +1080,26 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     @property
     def path_variables(self):
+        """
+        Here we add the pipe head loss path-variables to the problem.
+        """
         variables = super().path_variables.copy()
         variables.extend(self.__pipe_head_loss_var.values())
         return variables
 
     def variable_nominal(self, variable):
+        """
+        Here we add the nominal for the head loss path-variable to the problem.
+        """
         try:
             return self.__pipe_head_loss_nominals[variable]
         except KeyError:
             return super().variable_nominal(variable)
 
     def bounds(self):
+        """
+        Here we add the bounds for the head loss variable to the problem.
+        """
         bounds = super().bounds().copy()
 
         bounds.update(self.__pipe_head_loss_bounds)

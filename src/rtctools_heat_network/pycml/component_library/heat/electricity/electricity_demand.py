@@ -6,6 +6,12 @@ from .._internal.electricity_component import ElectricityComponent
 
 
 class ElectricityDemand(ElectricityComponent, BaseAsset):
+    """
+    The electricity demand models consumption of electrical power. We set an equality constriant
+    in to enforce the minimum voltage and the associated power at the demand. This allows us to
+    overestimate the power losses in the rest of the network.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

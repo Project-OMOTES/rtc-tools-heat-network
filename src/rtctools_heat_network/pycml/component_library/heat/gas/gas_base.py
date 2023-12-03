@@ -4,6 +4,12 @@ from .._internal.gas_component import GasComponent
 
 
 class GasPort(GasComponent, Connector):
+    """
+    The gas port is used to model the variables at a port where two assets are connected. For the
+    gas network we model flow (Q [m3/s]) and head (H [m]). The Q_shadow variable is only used for
+    correctly connecting ports of assets later on.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
         # TODO: think of more elegant approach for Q_shadow, currently required to ensure that
@@ -14,6 +20,10 @@ class GasPort(GasComponent, Connector):
 
 
 class GasTwoPort(GasComponent):
+    """
+    For gas components that transport flow we have a two port component.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 

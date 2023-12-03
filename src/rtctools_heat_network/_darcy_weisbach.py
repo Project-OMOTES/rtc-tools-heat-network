@@ -39,6 +39,10 @@ def _kinematic_viscosity(temperature):
 
 
 def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
+    """
+    This function return the friction factor for turbulent conditions with the Colebrook-White
+    equation.
+    """
     for _ in range(1000):
         friction_factor_old = friction_factor
 
@@ -104,6 +108,10 @@ def head_loss(velocity, diameter, length, wall_roughness, temperature):
 def get_linear_pipe_dh_vs_q_fit(
     diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
 ):
+    """
+    This function returns a set of coefficients to approximate a head loss curve with linear
+    functions in the form of: head loss = b + (a * Q)
+    """
     area = math.pi * diameter**2 / 4
 
     v_points = np.linspace(0.0, v_max, n_lines + 1)
