@@ -43,8 +43,10 @@ class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
 
-        for demand in self.heat_network_components["electricity_demand"]:
-            price_profile = f"{demand}.electricity_price"
+        # TODO: these goals should incorperate the timestep
+        for demand in self.heat_network_components.get("electricity_demand", []):
+            carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+            price_profile = f"{carrier_name}.price_profile"
             state = f"{demand}.Electricity_demand"
             nominal = self.variable_nominal(state) * np.median(
                 self.get_timeseries(price_profile).values)
@@ -52,9 +54,12 @@ class _GoalsAndOptions:
             goals.append(RevenueGoal(state, price_profile, nominal))
 
         for demand in self.heat_network_components.get("gas_demand", []):
-            price_profile = f"{demand}.gas_price"
+            carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[
+                0].carrier.name
+            price_profile = f"{carrier_name}.price_profile"
             state = f"{demand}.Gas_demand_mass_flow"
-            nominal=self.variable_nominal(state)*np.median(self.get_timeseries(price_profile).values)
+            nominal= self.variable_nominal(state)*np.median(
+                self.get_timeseries(price_profile).values)
 
             goals.append(RevenueGoal(state, price_profile, nominal))
 
@@ -99,7 +104,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
 
         return options
 

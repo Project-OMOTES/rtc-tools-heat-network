@@ -8,8 +8,8 @@
     <lastObservationDateTime date="2019-01-01" time="00:00:00"/>
 
     <workDir>.</workDir>
-    <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>
+<!--    <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>-->
     <properties>
-        <string key="ESDL_File_Path" value="../model/h2.esdl"/>
+        <string key="ESDL_File_Path" value="../model/h2_profiles_added.esdl"/>
     </properties>
 </Run>

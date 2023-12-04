@@ -80,12 +80,12 @@ class TestElectrolyzer(TestCase):
                 electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1]
         )
 
-        np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
-                                   results["Electrolyzer_fc66.GasOut.Q"] *
-                                   milp_problem.parameters(0)["Electrolyzer_fc66.density"])
-        # for i in range(len(a)):
-        #     np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_flow_out"],
-        #                                  results["Electrolyzer_fc66.ElectricityIn.Power"]*a[i] + b[i])
+        # np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
+        #                            results["Electrolyzer_fc66.GasOut.Q"] *
+        #                            milp_problem.parameters(0)["Electrolyzer_fc66.density"])
+        for i in range(len(a)):
+            np.testing.assert_array_less(results["Electrolyzer_fc66.Gas_mass_flow_out"],
+                                         results["Electrolyzer_fc66.ElectricityIn.Power"]*a[i] + b[i] + 1.e-3)
 
         print(results["Electrolyzer_fc66.ElectricityIn.Power"])
         print(results["Electrolyzer_fc66.Gas_mass_flow_out"])

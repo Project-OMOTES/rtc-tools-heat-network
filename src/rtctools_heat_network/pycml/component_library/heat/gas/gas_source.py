@@ -19,9 +19,11 @@ class GasSource(GasComponent, BaseAsset):
 
         self.min_head = 30.0
 
+        self.density = 2.5
+
         self.Q_nominal = nan
 
         self.add_variable(GasPort, "GasOut")
-        self.add_variable(Variable, "Gas_source_flow", min=0.0)
+        self.add_variable(Variable, "Gas_source_mass_flow", min=0.0)
 
-        self.add_equation(((self.GasOut.Q - self.Gas_source_flow) / self.Q_nominal))
+        self.add_equation(((self.GasOut.mass_flow - self.Gas_source_flow) / (self.Q_nominal * self.density)))

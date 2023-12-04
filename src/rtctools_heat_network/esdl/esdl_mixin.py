@@ -440,18 +440,35 @@ class ESDLMixin(
         if self._profiles:
             datetimes = None
             for id, profile in self._profiles.items():
-                asset_name = self.esdl_asset_id_to_name_map[id]
-                asset = next(a for a in self.esdl_assets.values() if a.name == asset_name)
-                ports = []
-                ports.extend(asset.in_ports) if asset.in_ports is not None else ports
-                ports.extend(asset.out_ports) if asset.out_ports is not None else ports
-                if isinstance(ports[0].carrier, esdl.HeatCommodity):
-                    commodity = "heat"
-                elif isinstance(ports[0].carrier, esdl.ElectricityCommodity):
-                    commodity = "electricity"
-                elif isinstance(ports[0].carrier, esdl.GasCommodity):
-                    commodity = "gas"
-                variable = f"{asset_name}.target_{commodity}_demand"
+                try:
+                    asset_name = self.esdl_asset_id_to_name_map[id]
+                    asset = next(a for a in self.esdl_assets.values() if a.name == asset_name)
+                    ports = []
+                    ports.extend(asset.in_ports) if asset.in_ports is not None else ports
+                    ports.extend(asset.out_ports) if asset.out_ports is not None else ports
+                    if isinstance(ports[0].carrier, esdl.HeatCommodity):
+                        commodity = "heat"
+                    elif isinstance(ports[0].carrier, esdl.ElectricityCommodity):
+                        commodity = "electricity"
+                    elif isinstance(ports[0].carrier, esdl.GasCommodity):
+                        commodity = "gas"
+                    if (asset.asset_type == "HeatingDemand" or
+                        asset.asset_type == "GenericConsumer" or
+                        asset.asset_type == "ElectricityDemand" or
+                        asset.asset_type == "GasDemand"):
+                        variable = f"{asset_name}.target_{commodity}_demand"
+                    elif (asset.asset_type == "GenericProcuder" or
+                        asset.asset_type == "HeatProducer" or
+                        asset.asset_type == "GasProducer" or
+                        asset.asset_type == "WindPark" or
+                        asset.asset_type == "ElectricityProducer"):
+                        variable = f"{asset_name}.maximum_production"
+                    else:
+                        logger.error(f"profile on {asset_name} not allowed")
+                except KeyError:
+                    # here we have a commodity price profile
+                    self.esdl_carriers
+                    variable = f"{self.esdl_carriers[id]['name']}.price_profile"
                 values = profile.values
                 flat_list = []
                 for sublist in values:
@@ -1032,6 +1049,7 @@ def _esdl_to_assets(esdl_string: str, esdl_path: Union[Path, str]) -> Tuple[Dict
                 id=x.id,
                 id_number_mapping=id_to_idnumber_map[x.id],
                 temperature=temperature,
+                commodity_type="heat",
             )
 
     for x in esdl_model.energySystemInformation.carriers.carrier.items:
@@ -1039,6 +1057,13 @@ def _esdl_to_assets(esdl_string: str, esdl_path: Union[Path, str]) -> Tuple[Dict
             global_properties["carriers"][x.id] = dict(
                 name=x.name,
                 voltage=x.voltage,
+                commodity_type="electricity",
+            )
+    for x in esdl_model.energySystemInformation.carriers.carrier.items:
+        if isinstance(x, esdl.esdl.GasCommodity):
+            global_properties["carriers"][x.id] = dict(
+                name=x.name,
+                commodity_type="gas",
             )
 
     assets = {}
