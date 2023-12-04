@@ -154,13 +154,17 @@ if __name__ == "__main__":
     from pathlib import Path
     from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
     import time
+    from rtctools_heat_network.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
     start_time = time.time()
     base_folder = Path(__file__).resolve().parent.parent
 
-    solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
-    results = solution.extract_results()
-    print(results["Pipe_352c__hn_diameter"])
+    # solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
+    # results = solution.extract_results()
+    solution = run_end_scenario_sizing(EndScenarioSizingStaged)
+
+
+    # print(results["Pipe_352c__hn_diameter"])
     # print(results["Pipe_352c__hn_pipe_class_None"])
     a = 1
 
