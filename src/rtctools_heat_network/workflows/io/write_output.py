@@ -999,11 +999,12 @@ class ScenarioOutput(HeatMixin):
                                     "HeatIn.Q",
                                     "Primary.HeatIn.Q",
                                     "Secondary.HeatIn.Q",
-                                ]:  # TODO: use correct unit and quantity once available in pyESDL
+                                ]:
                                     profile_attributes.profileQuantityAndUnit = (
                                         esdl.esdl.QuantityAndUnitType(
                                             physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
                                             unit=esdl.UnitEnum.CUBIC_METRE,
+                                            perTimeUnit=esdl.TimeUnitEnum.SECOND,
                                             multiplier=esdl.MultiplierEnum.NONE,
                                         )
                                     )
