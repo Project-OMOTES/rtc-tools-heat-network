@@ -104,7 +104,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        # options["solver"] = "gurobi"
 
         return options
 
