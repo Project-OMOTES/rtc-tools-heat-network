@@ -453,6 +453,19 @@ class EndScenarioSizingStaged(EndScenarioSizing):
 
         return options
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        if self._stage == 1:
+            gurobi_options["MIPgap"] = 0.005
+        else:
+            gurobi_options["MIPgap"] = 0.02
+        gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
+
+        return options
+
     def bounds(self):
         bounds = super().bounds()
 
@@ -468,7 +481,10 @@ class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.02
+        if self._stage == 1:
+            highs_options["mip_rel_gap"] = 0.005
+        else:
+            highs_options["mip_rel_gap"] = 0.02
 
         options["gurobi"] = None
 
