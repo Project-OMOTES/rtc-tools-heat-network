@@ -19,6 +19,7 @@ import pandas as pd
 
 import pytz
 
+from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
@@ -871,6 +872,9 @@ class ScenarioOutput(HeatMixin):
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
+            # Note: when adding new variables to variables_one_hydraulic_system or"
+            # variables_two_hydraulic_system also add quantity and units to the ESDL for the new
+            # variables in the code lower down
             variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
             variables_two_hydraulic_system = [
                 "Primary.HeatIn.Q",
@@ -970,10 +974,60 @@ class ScenarioOutput(HeatMixin):
                                     endDate=end_date_time,
                                     id=str(uuid.uuid4()),
                                 )
+                                # Assign quantity and units variable
+                                if variable in ["Heat_flow"]:
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                            unit=esdl.UnitEnum.WATT,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                elif variable in [
+                                    "HeatIn.H",
+                                    "Primary.HeatIn.H",
+                                    "Secondary.HeatIn.H",
+                                ]:
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.PRESSURE,
+                                            unit=esdl.UnitEnum.PASCAL,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                elif variable in [
+                                    "HeatIn.Q",
+                                    "Primary.HeatIn.Q",
+                                    "Secondary.HeatIn.Q",
+                                ]:  # TODO: use correct unit and quantity once available in pyESDL
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
+                                            unit=esdl.UnitEnum.CUBIC_METRE,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"No profile units will be written to the ESDL for: "
+                                        f"{asset_name}. + {variable}"
+                                    )
+
                                 asset.port[index_outport].profile.append(profile_attributes)
 
                             # Add variable values in new column
-                            data_row.append(results[f"{asset_name}." + variable][ii])
+                            conversion_factor = 0.0
+                            if variable in [
+                                "HeatIn.H",
+                                "Primary.HeatIn.H",
+                                "Secondary.HeatIn.H",
+                            ]:
+                                conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
+                            else:
+                                conversion_factor = 1.0
+                            data_row.append(
+                                results[f"{asset_name}." + variable][ii] * conversion_factor
+                            )
 
                         profiles.profile_data_list.append(data_row)
                     # end time steps
