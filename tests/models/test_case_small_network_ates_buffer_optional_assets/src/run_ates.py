@@ -151,6 +151,7 @@ class HeatProblem(
 
 if __name__ == "__main__":
     from pathlib import Path
+
     # from rtctools.util import run_optimization_problem
     # from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
     import time
