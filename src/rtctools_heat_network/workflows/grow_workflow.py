@@ -565,9 +565,10 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
             *solution.heat_network_components.get("buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
-            r = results[var_name][0]
-            if round(r) >= 1:
-                boolean_bounds[var_name] = (r, r)
+            lb = results[var_name][0]
+            ub = solution.bounds()[var_name][1]
+            if round(lb) >= 1:
+                boolean_bounds[var_name] = (lb, ub)
 
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
