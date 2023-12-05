@@ -579,6 +579,7 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
                 ub = []
                 for i in range(len(t)):
                     r = results[f"{p}__flow_direct_var"][i]
+                    # bound to roughly represent 4km of heat losses in pipes
                     lb.append(
                         r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 0
                     )
