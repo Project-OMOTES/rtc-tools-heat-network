@@ -322,7 +322,7 @@ class EndScenarioSizing(
         super().post()
         results = self.extract_results()
         parameters = self.parameters(0)
-        bounds = self.bounds()
+        # bounds = self.bounds()
         # Optimized ESDL
         self._write_updated_esdl()
 
@@ -361,8 +361,8 @@ class EndScenarioSizing(
         with open(parameter_path, "w") as file:
             json.dump(parameters_dict, fp=file)
 
-        root = self._get_runinfo_path_root()
-        bounds_dict = dict()
+        # root = self._get_runinfo_path_root()
+        # bounds_dict = dict()
         # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
         # bounds_path = os.path.join(workdir, "bounds.json")
         # for key, value in bounds.items():
@@ -436,7 +436,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
         return options
 
 
-class EndScenarioSizingStaged(EndScenarioSizingHIGHS):
+class EndScenarioSizingStaged(EndScenarioSizing):
     _stage = 0
 
     def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
@@ -544,35 +544,37 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
                 v_prev = v
                 first_pipe_class = False
 
-        for asset in [*solution.heat_network_components.get("source", []),
-                      *solution.heat_network_components.get("buffer", [])]:
+        for asset in [
+            *solution.heat_network_components.get("source", []),
+            *solution.heat_network_components.get("buffer", []),
+        ]:
             var_name = f"{asset}_aggregation_count"
             r = results[var_name][0]
-            boolean_bounds[var_name] = (r, r)
+            if round(r) >= 1:
+                boolean_bounds[var_name] = (r, r)
 
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
-        for p in solution.heat_network_components.get("pipe", []):
-                if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.:
-                    lb = []
-                    ub = []
-                    for i in range(len(t)):
-                        r = results[f"{p}__flow_direct_var"][i]
-                        lb.append(r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.e-2 else 0)
-                        ub.append(r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.e-2 else 1)
 
-                    boolean_bounds[f"{p}__flow_direct_var"] = (
-                        Timeseries(t, lb),
-                        Timeseries(t, ub)
+        for p in solution.heat_network_components.get("pipe", []):
+            if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
+                lb = []
+                ub = []
+                for i in range(len(t)):
+                    r = results[f"{p}__flow_direct_var"][i]
+                    lb.append(
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.0e-2 else 0
                     )
-                    try:
-                        r = results[f"{p}__is_disconnected"]
-                        boolean_bounds[f"{p}__is_disconnected"] = (
-                            Timeseries(t, r),
-                            Timeseries(t, r)
-                        )
-                    except KeyError:
-                        pass
+                    ub.append(
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.0e-2 else 1
+                    )
+
+                boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
+                try:
+                    r = results[f"{p}__is_disconnected"]
+                    boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
+                except KeyError:
+                    pass
 
     _ = run_optimization_problem(
         end_scenario_problem_class,

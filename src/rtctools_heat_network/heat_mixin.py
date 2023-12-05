@@ -3282,15 +3282,19 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                     cold_name = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)]
                     heat_loss_sym += self.extra_variable(cold_name, ensemble_member)
-                    heat_losses = [h1 + h2 for h1, h2 in zip(self.__pipe_topo_heat_losses[pipe],
-                                                             self.__pipe_topo_heat_losses[
-                                                                 self.hot_to_cold_pipe(pipe)])]
+                    heat_losses = [
+                        h1 + h2
+                        for h1, h2 in zip(
+                            self.__pipe_topo_heat_losses[pipe],
+                            self.__pipe_topo_heat_losses[self.hot_to_cold_pipe(pipe)],
+                        )
+                    ]
                 elif pipe in self.hot_pipes and not self.has_related_pipe(pipe):
                     heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
                     heat_losses = self.__pipe_topo_heat_losses[pipe]
-                else: #cold pipe
+                else:  # cold pipe
                     continue
 
                 big_m = 2.0 * max(heat_losses)
