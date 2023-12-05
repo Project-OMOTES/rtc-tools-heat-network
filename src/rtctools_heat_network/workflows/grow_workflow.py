@@ -580,10 +580,10 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
                 for i in range(len(t)):
                     r = results[f"{p}__flow_direct_var"][i]
                     lb.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.0e-2 else 0
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 0
                     )
                     ub.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 1.0e-2 else 1
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 1
                     )
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
@@ -593,13 +593,15 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
                 except KeyError:
                     pass
 
-    _ = run_optimization_problem(
+    solution = run_optimization_problem(
         end_scenario_problem_class,
         stage=2,
         boolean_bounds=boolean_bounds,
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+
+    return solution
 
 
 @main_decorator
