@@ -5,10 +5,13 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.goal_programming_mixin import (
     Goal,
-    GoalProgrammingMixin,
 )
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
+)
+from rtctools.optimization.single_pass_goal_programming_mixin import (
+    CachingQPSol,
+    SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
 
@@ -58,33 +61,38 @@ class MinimizeLDGoal(Goal):
 class PipeDiameterSizingProblem(
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.001
+        options["heat_loss_disconnected_pipe"] = True
+        options["maximum_temperature_der"] = np.inf
+        # options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # options["neglect_pipe_heat_losses"] = True
+        options["minimize_head_losses"] = True
         return options
 
     def pipe_classes(self, pipe):
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
             PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
-            PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 1.0),
-            PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 1.0),
-            PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 1.0),
-            PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 1.0),
-            PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 1.0),
-            PipeClass("DN150", 0.1603, 2.8, (0.328592, 0.011567), 1.0),
-            PipeClass("DN200", 0.2101, 3.0, (0.346285, 0.011215), 1.0),
-            PipeClass("DN250", 0.263, 3.0, (0.334606, 0.009037), 1.0),
-            PipeClass("DN300", 0.3127, 3.0, (0.384640, 0.011141), 1.0),
-            PipeClass("DN350", 0.3444, 3.0, (0.368061, 0.009447), 1.0),
-            PipeClass("DN400", 0.3938, 3.0, (0.381603, 0.009349), 1.0),
-            PipeClass("DN450", 0.4444, 3.0, (0.380070, 0.008506), 1.0),
-            PipeClass("DN500", 0.4954, 3.0, (0.369282, 0.007349), 1.0),
-            PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 1.0),
+            PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
+            PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
+            PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 4.0),
+            PipeClass("DN100", 0.1071, 2.4, (0.247804, 0.007386), 5.0),
+            PipeClass("DN125", 0.1325, 2.6, (0.287779, 0.009431), 6.0),
+            PipeClass("DN150", 0.1603, 2.8, (0.328592, 0.011567), 7.0),
+            PipeClass("DN200", 0.2101, 3.0, (0.346285, 0.011215), 8.0),
+            PipeClass("DN250", 0.263, 3.0, (0.334606, 0.009037), 9.0),
+            PipeClass("DN300", 0.3127, 3.0, (0.384640, 0.011141), 10.0),
+            PipeClass("DN350", 0.3444, 3.0, (0.368061, 0.009447), 11.0),
+            PipeClass("DN400", 0.3938, 3.0, (0.381603, 0.009349), 12.0),
+            PipeClass("DN450", 0.4444, 3.0, (0.380070, 0.008506), 13.0),
+            PipeClass("DN500", 0.4954, 3.0, (0.369282, 0.007349), 14.0),
+            PipeClass("DN600", 0.5954, 3.0, (0.431023, 0.009155), 15.0),
         ]
 
     def path_goals(self):
@@ -105,14 +113,12 @@ class PipeDiameterSizingProblem(
 
     def priority_completed(self, priority):
         super().priority_completed(priority)
-        self._hot_start = True
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
-        options["hot_start"] = getattr(self, "_hot_start", False)
-        cbc_options = options["cbc"] = {}
-        cbc_options["seconds"] = 500.0
+        self._qpsol = CachingQPSol()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
         return options
 
 
@@ -169,5 +175,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
+    results = heat_problem.extract_results()
+    print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
+    print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

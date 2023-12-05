@@ -6,13 +6,24 @@ from ._non_storage_component import _NonStorageComponent
 
 
 class Source(_NonStorageComponent):
+    """
+    The source component is there to insert thermal power (Heat) into the network.
+
+    The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
+    temperature of the source matches the absolute thermal power, Q * cp * rho * T_sup == Heat,
+    similar as with the demands. This allows us to guarantee that the flow can always carry, as
+    the heat losses further downstream in the network are over-estimated with T_ret where in
+    reality this temperature drops. It also implicitly assumes that the temperature drops in the
+    network are small and thus satisfy minimum temperature requirements.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,
             **self.merge_modifiers(
                 dict(
-                    Heat_in=dict(min=0.0, max=0.0),
-                    Heat_out=dict(min=0.0),
+                    HeatIn=dict(Heat=dict(min=0.0)),  # ensures it is not cooled down to below 0C
+                    HeatOut=dict(Heat=dict(min=0.0)),
                 ),
                 modifiers,
             ),

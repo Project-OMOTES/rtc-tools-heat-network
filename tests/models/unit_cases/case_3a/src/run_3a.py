@@ -3,15 +3,16 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.qth_mixin import QTHMixin
+from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 
 class TargetDemandGoal(Goal):
@@ -93,7 +94,6 @@ class MinimizeSourcesQTHGoal(Goal):
 class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
-        parameters = self.parameters(0)
 
         for demand in self.heat_network_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
@@ -101,21 +101,37 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components["source"]:
-            try:
-                target_flow_rate = parameters[f"{s}.target_flow_rate"]
-                goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
-            except KeyError:
-                pass
+        # for s in self.heat_network_components["source"]:
+        #     try:
+        #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
+        #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
+        #     except KeyError:
+        #         pass
 
         return goals
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options["mip_rel_gap"] = 0.0025
+        # options["gurobi"] = gurobi_options = {}
+        # gurobi_options["MIPgap"] = 0.001
+        return options
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0001
+        # options["heat_loss_disconnected_pipe"] = False
+        # options["neglect_pipe_heat_losses"] = False
+        return options
 
 
 class HeatProblem(
     _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -126,44 +142,55 @@ class HeatProblem(
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.0025
+        # options["gurobi"] = gurobi_options = {}
+        # gurobi_options["MIPgap"] = 0.0001
+        return options
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["minimum_velocity"] = 0.0001
+        # options["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = True
+        return options
 
 
 class HeatProblemSetPointConstraints(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
-
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        return options
+
 
 class HeatProblemTvarsup(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
@@ -188,20 +215,13 @@ class HeatProblemTvarsup(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
-        for carrier, temperatures in self.temperature_carriers().items():
-            number_list = [int(s) for s in carrier if s.isdigit()]
-            number = ""
-            for nr in number_list:
-                number = number + str(nr)
-            carrier_type = temperatures["__rtc_type"]
-            if carrier_type == "return":
-                number = number + "000"
-            carrier_id_number_mapping = number
+        for _carrier, temperatures in self.temperature_carriers().items():
+            carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
+                        f"{int(carrier_id_number_mapping)}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(
@@ -212,20 +232,15 @@ class HeatProblemTvarsup(
 
 
 class HeatProblemTvarret(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesFlowGoal(s))
@@ -251,19 +266,22 @@ class HeatProblemTvarret(
         constraints = super().constraints(ensemble_member)
         # These constraints are added to allow for a quicker solve
         for carrier, temperatures in self.temperature_carriers().items():
-            number_list = [int(s) for s in carrier if s.isdigit()]
-            number = ""
-            for nr in number_list:
-                number = number + str(nr)
-            carrier_type = temperatures["__rtc_type"]
-            if carrier_type == "return":
-                number = number + "000"
-            carrier_id_number_mapping = number
+            if "id_number_mapping" in temperatures.keys():
+                carrier_id_number_mapping = str(temperatures["id_number_mapping"])
+            else:
+                number_list = [int(s) for s in carrier if s.isdigit()]
+                number = ""
+                for nr in number_list:
+                    number = number + str(nr)
+                carrier_type = temperatures["__rtc_type"]
+                if carrier_type == "return":
+                    number = number + "000"
+                carrier_id_number_mapping = number
             temperature_regimes = self.temperature_regimes(int(carrier_id_number_mapping))
             if len(temperature_regimes) > 0:
                 for temperature in temperature_regimes:
                     selected_temp_vec = self.state_vector(
-                        f"{int(carrier_id_number_mapping)}__{carrier_type}_{temperature}"
+                        f"{int(carrier_id_number_mapping)}_{temperature}"
                     )
                     for i in range(1, len(self.times())):
                         constraints.append(
@@ -274,9 +292,10 @@ class HeatProblemTvarret(
 
 
 class HeatProblemProdProfile(
+    _GoalsAndOptions,
     HeatMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -287,8 +306,14 @@ class HeatProblemProdProfile(
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.05
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
             self.set_timeseries(f"{s}.target_heat_source", new_timeseries)
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["heat_loss_disconnected_pipe"] = True
+
+        return options
 
     def path_goals(self):
         goals = super().path_goals().copy()
@@ -306,15 +331,20 @@ class HeatProblemProdProfile(
 
 
 class QTHProblem(
-    _GoalsAndOptions,
     QTHMixin,
     HomotopyMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
     def path_goals(self):
         goals = super().path_goals().copy()
+
+        for demand in self.heat_network_components["demand"]:
+            target = self.get_timeseries(f"{demand}.target_heat_demand")
+            state = f"{demand}.Heat_demand"
+
+            goals.append(TargetDemandGoal(state, target))
 
         for s in self.heat_network_components["source"]:
             goals.append(MinimizeSourcesQTHGoal(s))
@@ -332,7 +362,16 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblemTvarsup)
+    sol = run_optimization_problem(
+        HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
+    )
     results = sol.extract_results()
-    a = 1
+    # import matplotlib.pyplot as plt
+    #
+    # plt.figure()
+    # plt.plot(results["HeatStorage_4b0c.Heat_buffer"])
+    # plt.figure()
+    # plt.plot(results["HeatStorage_4b0c.Stored_heat"])
+    # plt.show()
+    # a = 1
     # run_heat_network_optimization(HeatProblem, QTHProblem)

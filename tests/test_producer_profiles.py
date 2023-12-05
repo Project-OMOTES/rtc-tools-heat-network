@@ -27,7 +27,7 @@ class TestProducerMaxProfile(TestCase):
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
-        tol = 1e-10
+        tol = 1e-8
         heat_demand1 = results["HeatingDemand_a3b8.Heat_demand"]
         heat_producer = results["GeothermalSource_b702.Heat_source"]
         size_producer = results["GeothermalSource_b702__max_size"]

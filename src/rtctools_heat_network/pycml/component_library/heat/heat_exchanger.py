@@ -6,6 +6,22 @@ from rtctools_heat_network.pycml.component_library.heat.heat_four_port import He
 
 
 class HeatExchanger(HeatFourPort, BaseAsset):
+    """
+    The heat exchanger component is used to model the exchange of thermal power between two
+    hydraulically decoupled systems. A constant efficiency is used to model heat losses and a
+    maximum power is set on the primary side to model physical constraints on the amount of heat
+    transfer.
+
+    The heat to discharge constraints are set in the HeatMixin. The primary side is modelled as a
+    demand, meaning it consumes energy from the primary network and gives it to the secondary side,
+    where the secondary side acts like a source to the secondary network. This also means that heat
+    can only flow from primary to secondary.
+
+    To avoid unphysical heat transfer the HeatMixin sets constraints on the temperatures on both
+    sides in the case of varying temperature. We also allow a heat_exchanger to be disabled on
+    certain time-steps to then allow these temperature constraints to be also disabled.
+    """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,

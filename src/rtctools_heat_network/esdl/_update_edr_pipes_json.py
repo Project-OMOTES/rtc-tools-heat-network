@@ -1,5 +1,6 @@
 import json
 import xml.etree.ElementTree as ET  # noqa: N817
+from typing import Tuple
 
 import requests
 
@@ -7,6 +8,14 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 
 
 def main():
+    """
+    This script is meant to create a local update of the json file that has the standard pipe
+    properties. These pipe classes are then used to select the most desireble pipe class
+
+    Returns
+    -------
+    Nothing, it writes json file.
+    """
     logstore = requests.get("https://edr.hesi.energy/api/edr_list?category=Assets/Logstore").json()
     asset_id_map = {x["title"].rsplit(".", maxsplit=1)[0]: x["key"] for x in logstore}
 
@@ -51,7 +60,17 @@ def main():
         }
 
     # Sort the list based on prefix and diameter
-    def _sort_series_dn(name):
+    def _sort_series_dn(name: str) -> Tuple[str, int]:
+        """
+        This function sorts the list based on prefix and diameter
+        Parameters
+        ----------
+        name : string with name of the pipe
+
+        Returns
+        -------
+        Prefix of the name and the DN size in at int
+        """
         a, b = name.rsplit("-", maxsplit=1)
         return a, int(b)
 
