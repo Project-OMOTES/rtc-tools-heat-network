@@ -511,7 +511,9 @@ class EndScenarioSizingCBC(EndScenarioSizing):
         return options
 
 
-def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization=True):
+def run_end_scenario_sizing(
+    end_scenario_problem_class, esdl_string=None, staged_pipe_optimization=True
+):
     """
     This function is used to run end_scenario_sizing problem. There are a few variations of the
     same basic class. The main functionality this function adds is the staged approach, where
@@ -537,7 +539,9 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
 
     start_time = time.time()
     if staged_pipe_optimization:
-        solution = run_optimization_problem(end_scenario_problem_class, stage=1)
+        solution = run_optimization_problem(
+            end_scenario_problem_class, esdl_string=esdl_string, stage=1
+        )
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
@@ -596,6 +600,7 @@ def run_end_scenario_sizing(end_scenario_problem_class, staged_pipe_optimization
 
     solution = run_optimization_problem(
         end_scenario_problem_class,
+        esdl_string=esdl_string,
         stage=2,
         boolean_bounds=boolean_bounds,
     )
