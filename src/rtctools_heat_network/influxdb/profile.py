@@ -41,7 +41,7 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             password = None
 
         conn_settings = ConnectionSettings(
-            host=profile.host,
+            host=profile_host,
             port=profile.port,
             username=username,
             password=password,
