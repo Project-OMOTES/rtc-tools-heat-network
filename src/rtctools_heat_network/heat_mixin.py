@@ -926,9 +926,11 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 0.0,
                 np.inf,
             )  # (lb, ub)
+            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+            investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
             self.__annualized_capex_var_nominals[
                 annualized_capex_var_name
-            ] = 1.0e6  # TODO: set as the investment_nominal + installation_nominal = = self.variable_nominal(installation_cost_symbol_name) + self.variable_nominal(investment_cost_symbol_name)
+            ] = self.variable_nominal(installation_cost_symbol_name) + self.variable_nominal(investment_cost_symbol_name)
 
         if options["include_asset_is_realized"]:
             for asset in [
