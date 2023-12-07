@@ -85,9 +85,7 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
         """
         obj = 0.0
         for asset_category in asset_categories:
-            for asset in optimization_problem.heat_network_components.get(
-                asset_category, []
-            ):
+            for asset in optimization_problem.heat_network_components.get(asset_category, []):
                 for cost_map_key in cost_map_keys:
                     cost_map = getattr(optimization_problem, cost_map_key)
                     cost = cost_map.get(asset, 0)

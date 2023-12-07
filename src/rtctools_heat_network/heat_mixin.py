@@ -929,7 +929,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__annualized_capex_var_nominals[
                 annualized_capex_var_name
             ] = 1.0e6  # TODO: set as the investment_nominal + installation_nominal = = self.variable_nominal(installation_cost_symbol_name) + self.variable_nominal(investment_cost_symbol_name)
-  
+
         if options["include_asset_is_realized"]:
             for asset in [
                 *self.heat_network_components.get("source", []),
@@ -4240,37 +4240,28 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 ]  # gives the name of the casadi symbol
                 symbol = self.extra_variable(symbol_name)  # casadi symbol
 
-                investment_cost_symbol_name = self._asset_investment_cost_map[
-                    asset_name
-                ]
+                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
                 investment_cost_symbol = self.extra_variable(
                     investment_cost_symbol_name, ensemble_member
                 )
-                installation_cost_symbol_name = self._asset_installation_cost_map[
-                    asset_name
-                ]
+                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
                 installation_cost_symbol = self.extra_variable(
                     installation_cost_symbol_name, ensemble_member
                 )
 
-                investment_and_installation_cost = (
-                    investment_cost_symbol + installation_cost_symbol
-                )
+                investment_and_installation_cost = (investment_cost_symbol + installation_cost_symbol)
 
                 nominal = self.variable_nominal(symbol_name)
                 asset_life_years = parameters[f"{asset_name}.technical_life"]
                 # Input from ESLD file as annual percentage
                 discount_percentage = parameters[f"{asset_name}.discount_rate"]
-                discount_rate = discount_percentage/100
+                discount_rate = discount_percentage / 100
 
-                annuity_factor = calculate_annuity_factor(
-                    discount_rate, asset_life_years
-                )
+                annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
 
                 constraints.append(
                     (
-                        (symbol - investment_and_installation_cost * annuity_factor)
-                        / nominal,
+                        (symbol - investment_and_installation_cost * annuity_factor) / nominal,
                         0.0,
                         0.0,
                     )
@@ -4582,8 +4573,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
                         break
 
-def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
 
+def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
     """
     Calculate the annuity factor, given an annual discount_rate over
     a specified number years_asset_life.
@@ -4607,7 +4598,5 @@ def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> f
     if discount_rate == 0:
         annuity_factor = 1 / years_asset_life
     else:
-        annuity_factor = discount_rate / (
-            1 - (1 + discount_rate) ** (-years_asset_life)
-        )
+        annuity_factor = discount_rate / (1 - (1 + discount_rate) ** (-years_asset_life))
     return annuity_factor

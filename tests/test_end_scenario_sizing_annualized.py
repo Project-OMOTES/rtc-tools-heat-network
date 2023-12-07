@@ -27,9 +27,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         )
         solution_2 = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
-        np.testing.assert_allclose(
-            solution_1.objective_value, solution_2.objective_value
-        )
+        np.testing.assert_allclose(solution_1.objective_value, solution_2.objective_value)
 
         # To minimize investment cost, max heat supply from HeatProducer
         # matches the installed capacity (max size).
@@ -49,7 +47,6 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 results[f"HeatProducer_{i}__investment_cost"]
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
-            
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
             np.testing.assert_almost_equal(
@@ -60,9 +57,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         # Here we check that the discounted solution cheaper than the non-discounted one
         # check the values of the total investment.
-        solution = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost, base_folder=base_folder
-        )
+        solution = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
         results = solution.extract_results()
         for i in heat_producers:
             capacity = np.max(results[f"HeatProducer_{i}.Heat_source"])
@@ -90,10 +85,7 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizingAnnualized()
     a.test_end_scenario_sizing_annualized()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
 # TODO:
 # Include attributes discount factor and technical life in each asset
