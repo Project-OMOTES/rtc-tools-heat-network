@@ -76,14 +76,14 @@ class _GoalsAndOptions:
             gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((gas_flow_t0, 0., 0.))
 
-        for elec in self.heat_network_components.get("electrolyzer", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{elec}.Power_consumed")
-            power = sign * self.state_vector(canonical, ensemble_member)[0]
-            nominal = self.variable_nominal(f"{elec}.Power_consumed")
-            constraints.append(((power * nominal - 1.e8) / nominal, 0., 0.))
-            power = sign * self.state_vector(canonical, ensemble_member)[1]
-            nominal = self.variable_nominal(f"{elec}.Power_consumed")
-            constraints.append(((power * nominal) / nominal, 0., 0.))
+        # for elec in self.heat_network_components.get("electrolyzer", []):
+        #     canonical, sign = self.alias_relation.canonical_signed(f"{elec}.Power_consumed")
+        #     power = sign * self.state_vector(canonical, ensemble_member)[0]
+        #     nominal = self.variable_nominal(f"{elec}.Power_consumed")
+        #     constraints.append(((power * nominal - 1.e8) / nominal, 0., 0.))
+        #     power = sign * self.state_vector(canonical, ensemble_member)[1]
+        #     nominal = self.variable_nominal(f"{elec}.Power_consumed")
+        #     constraints.append(((power * nominal) / nominal, 0., 0.))
 
         return constraints
 
@@ -120,3 +120,36 @@ if __name__ == "__main__":
     r = elect.extract_results()
     print(r["Electrolyzer_fc66.ElectricityIn.Power"])
     print(r["Electrolyzer_fc66.Gas_mass_flow_out"])
+
+    # KvR
+    print(r["ElectricityCable_09d1.ElectricityOut.Power"])  # Elect being sold
+    print(r["GasStorage_e492.Stored_gas_mass"])
+    print(r["Pipe_6ba6.GasOut.mass_flow"])  # gas being sold, kg/s
+
+    carrier_name = "gas"
+    price_profile = f"{carrier_name}.price_profile"
+    gas_rate = elect.get_timeseries(price_profile).values  # currently euro/kg
+    # h2_energy_content_per_mass = 118.8 * 1e6  # J/kg
+    # energy_per_second = r["Pipe_6ba6.GasOut.mass_flow"] * h2_energy_content_per_mass  # J/s
+    # hydrogen_income = energy_per_second[1:] * (
+    #     elect.get_timeseries(price_profile).times[1:]
+    #     - elect.get_timeseries(price_profile).times[0:-1]
+    # ) * gas_rate[1:]
+    hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"] * gas_rate
+    print("Hydrogen income MEuro: %0.1f" % (sum(hydrogen_income) / 1.0e6))
+
+    carrier_name = "elec"
+    price_profile = f"{carrier_name}.price_profile"
+    elect_rate = elect.get_timeseries(price_profile).values  # euro/Wh
+    elect_energy = (
+        r["ElectricityCable_09d1.ElectricityOut.Power"][1:]
+        * (
+            elect.get_timeseries(price_profile).times[1:]
+            - elect.get_timeseries(price_profile).times[0:-1]
+        ) / 3600.0
+    )  # Wh
+    elect_income = elect_energy * elect_rate[1:]
+    print("Electricity income MEuro: %0.1f" % (sum(elect_income) / 1.0e6))
+
+    print("Total income MEuro: %0.1f" % ((sum(elect_income) + sum(hydrogen_income)) / 1.0e6))
+    temp = 0.0

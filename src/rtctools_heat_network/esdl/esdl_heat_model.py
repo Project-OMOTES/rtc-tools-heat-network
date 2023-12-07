@@ -1022,8 +1022,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            volume=asset.attributes["volume"],
-            Gas_tank_flow=dict(min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+            volume=asset.attributes["workingVolume"],
+            # Gas_tank_flow=dict(min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
         )
 
         return GasTankStorage, modifiers
