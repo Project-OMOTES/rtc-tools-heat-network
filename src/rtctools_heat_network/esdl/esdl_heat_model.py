@@ -615,7 +615,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 30.0,
             discount_rate=(
                 asset.attributes["costInformation"].discountRate.value
-                if asset.attributes["costInformation"].discountRate
+                if asset.attributes["costInformation"]
+                and asset.attributes["costInformation"].discountRate
                 and asset.attributes["costInformation"].discountRate.value is not None
                 else 0.0
             ),

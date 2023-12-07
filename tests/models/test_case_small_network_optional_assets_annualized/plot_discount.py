@@ -2,9 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def calculate_annuity_factor(
-    discount_rate: np.ndarray, years_asset_life: float
-) -> np.ndarray:
+def calculate_annuity_factor(discount_rate: np.ndarray, years_asset_life: float) -> np.ndarray:
     """
     Calculate the annuity factor, given an annual discount_rate over a specified number years_asset_life.
 

@@ -4249,7 +4249,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     installation_cost_symbol_name, ensemble_member
                 )
 
-                investment_and_installation_cost = (investment_cost_symbol + installation_cost_symbol)
+                investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
                 nominal = self.variable_nominal(symbol_name)
                 asset_life_years = parameters[f"{asset_name}.technical_life"]
