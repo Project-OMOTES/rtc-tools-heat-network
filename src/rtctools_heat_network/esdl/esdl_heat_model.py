@@ -616,7 +616,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=(
                 asset.attributes["costInformation"].discountRate.value
                 if asset.attributes["costInformation"].discountRate
-                and asset.attributes["costInformation"].discountRate.value
+                and asset.attributes["costInformation"].discountRate.value is not None
                 else 0.0
             ),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
