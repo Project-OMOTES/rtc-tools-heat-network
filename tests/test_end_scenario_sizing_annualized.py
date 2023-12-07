@@ -49,7 +49,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 results[f"HeatProducer_{i}__investment_cost"]
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
-            
+
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
             np.testing.assert_almost_equal(

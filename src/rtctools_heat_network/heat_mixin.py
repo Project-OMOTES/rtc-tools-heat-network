@@ -4892,7 +4892,7 @@ class HeatMixin(
                 asset_life_years = parameters[f"{asset_name}.technical_life"]
                 # Input from ESLD file as annual percentage
                 discount_percentage = parameters[f"{asset_name}.discount_rate"]
-                discount_rate = discount_percentage/100
+                discount_rate = discount_percentage / 100
 
                 annuity_factor = calculate_annuity_factor(
                     discount_rate, asset_life_years
@@ -5258,7 +5258,6 @@ class HeatMixin(
 
 
 def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
-
     """
     Calculate the annuity factor, given an annual discount_rate over
     a specified number years_asset_life.

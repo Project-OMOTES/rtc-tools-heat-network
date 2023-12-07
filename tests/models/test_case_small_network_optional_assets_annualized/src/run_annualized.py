@@ -212,7 +212,8 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(
         # HeatProblemDiscAnnualizedCost, base_folder=base_folder
-        HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
+        HeatProblemDiscAnnualizedCost_Modified_Param,
+        base_folder=base_folder,
     )
     results = solution.extract_results()
     print("\n HeatProblemAnnualized Completed \n \n")

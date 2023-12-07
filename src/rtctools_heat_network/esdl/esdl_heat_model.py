@@ -132,7 +132,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
-            Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
+            Heat_flow=dict(
+                min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max
+            ),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -144,7 +146,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
     def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
         assert asset.asset_type in {"GenericConsumer", "HeatingDemand"}
 
-        max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
+        max_demand = (
+            asset.attributes["power"] if asset.attributes["power"] else math.inf
+        )
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
@@ -280,7 +284,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Pump, modifiers
 
-    def convert_heat_exchanger(self, asset: Asset) -> Tuple[Type[HeatExchanger], MODIFIERS]:
+    def convert_heat_exchanger(
+        self, asset: Asset
+    ) -> Tuple[Type[HeatExchanger], MODIFIERS]:
         assert asset.asset_type in {
             "GenericConversion",
             "HeatExchange",
@@ -307,7 +313,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
 
         if asset.asset_type == "GenericConversion":
-            max_power = asset.attributes["power"] if asset.attributes["power"] else math.inf
+            max_power = (
+                asset.attributes["power"] if asset.attributes["power"] else math.inf
+            )
         else:
             # TODO: Current max_power estimation is not very accurate, a more physics based
             # estimation should be implemented, maybe using other ESDL attributs.
@@ -336,11 +344,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 2
                 * self.cp
                 * self.rho
-                * (params_t["Secondary"]["T_supply"] - params_t["Secondary"]["T_return"])
+                * (
+                    params_t["Secondary"]["T_supply"]
+                    - params_t["Secondary"]["T_return"]
+                )
             ),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
+        params["Secondary"] = {
+            **params_t["Secondary"],
+            **params_q["Secondary"],
+            **sec_heat,
+        }
 
         if not asset.attributes["efficiency"]:
             efficiency = 1.0
@@ -380,11 +395,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         params = {}
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
         params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
-        max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
+        max_power = power_electrical * (
+            1.0 + cop
+        )  # TODO: dit kan zijn power_electrical*cop
 
         modifiers = dict(
             COP=cop,
-            Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
+            Power_elec=dict(
+                min=0.0, max=power_electrical, nominal=power_electrical / 2.0
+            ),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Heat_flow=dict(min=0.0, max=max_power, nominal=1.0e6 / 2.0),
@@ -409,7 +428,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_supply = asset.attributes["power"]
 
         if not max_supply:
-            logger.error(f"{asset.asset_type} '{asset.name}' has no max power specified. ")
+            logger.error(
+                f"{asset.asset_type} '{asset.name}' has no max power specified. "
+            )
         assert max_supply > 0.0
 
         # get price per unit of energy,
@@ -423,13 +444,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
-            technical_life=asset.attributes["technicalLifetime"] if asset.attributes["technicalLifetime"] else 30.,
+            technical_life=asset.attributes["technicalLifetime"]
+            if asset.attributes["technicalLifetime"]
+            else 30.0,
             # discount_rate=(asset.attributes["costInformation"].discountRate.value
             #                if asset.attributes["costInformation"].discountRate and asset.attributes["costInformation"].discountRate.value
             #                else 0.
             #                )
             discount_rate=getattr(
-            getattr(asset.attributes["costInformation"], "discountRate", {"value": 0.}), "value"
+                getattr(
+                    asset.attributes["costInformation"], "discountRate", {"value": 0.0}
+                ),
+                "value",
             ),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
@@ -451,7 +477,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 nominal=max_supply / 2.0,
             )
             try:
-                modifiers["single_doublet_power"] = asset.attributes["single_doublet_power"]
+                modifiers["single_doublet_power"] = asset.attributes[
+                    "single_doublet_power"
+                ]
             except KeyError:
                 modifiers["single_doublet_power"] = max_supply
             # Note that the ESDL target flow rate is in kg/s, but we want m3/s
@@ -498,8 +526,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
             Stored_heat=dict(
                 min=0.0,
-                max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
-                nominal=hfr_charge_max * asset.attributes["aggregationCount"] * 30.0 * 24 * 3600.0,
+                max=hfr_charge_max
+                * asset.attributes["aggregationCount"]
+                * 180.0
+                * 24
+                * 3600.0,
+                nominal=hfr_charge_max
+                * asset.attributes["aggregationCount"]
+                * 30.0
+                * 24
+                * 3600.0,
             ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -508,7 +544,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return ATES, modifiers
 
-    def convert_control_valve(self, asset: Asset) -> Tuple[Type[ControlValve], MODIFIERS]:
+    def convert_control_valve(
+        self, asset: Asset
+    ) -> Tuple[Type[ControlValve], MODIFIERS]:
         assert asset.asset_type == "Valve"
 
         modifiers = dict(
@@ -532,16 +570,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return CheckValve, modifiers
 
-    def convert_electricity_demand(self, asset: Asset) -> Tuple[Type[ElectricityDemand], MODIFIERS]:
+    def convert_electricity_demand(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricityDemand], MODIFIERS]:
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
 
-        modifiers = dict(Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0))
+        modifiers = dict(
+            Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0)
+        )
 
         return ElectricityDemand, modifiers
 
-    def convert_electricity_source(self, asset: Asset) -> Tuple[Type[ElectricitySource], MODIFIERS]:
+    def convert_electricity_source(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricitySource], MODIFIERS]:
         assert asset.asset_type in {"ElectricityProducer"}
 
         max_supply = asset.attributes.get(
@@ -557,7 +601,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return ElectricitySource, modifiers
 
-    def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
+    def convert_electricity_node(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         assert asset.asset_type in {"Bus"}
 
         sum_in = 0
@@ -581,7 +627,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return ElectricityNode, modifiers
 
-    def convert_electricity_cable(self, asset: Asset) -> Tuple[Type[ElectricityCable], MODIFIERS]:
+    def convert_electricity_cable(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricityCable], MODIFIERS]:
         assert asset.asset_type in {"ElectricityCable"}
 
         modifiers = dict(
@@ -608,7 +656,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
 
 class ESDLHeatModel(_ESDLModelBase):
-    def __init__(self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs):
+    def __init__(
+        self, assets: Dict[str, Asset], converter_class=AssetToHeatComponent, **kwargs
+    ):
         super().__init__(None)
 
         converter = converter_class(**kwargs)
