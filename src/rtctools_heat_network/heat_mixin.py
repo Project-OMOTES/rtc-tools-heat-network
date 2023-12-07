@@ -4581,3 +4581,33 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
 
                         break
+
+def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
+
+    """
+    Calculate the annuity factor, given an annual discount_rate over
+    a specified number years_asset_life.
+
+    Parameters:
+        discount_rate (float): Annual discount rate (expressed
+        as a decimal, e.g., 0.05 for 5%).
+        years_asset_life (flor): Asset technical life (years).
+
+    Returns:
+        float: annuity_factor.
+
+    """
+
+    if discount_rate < 0 or discount_rate > 1:
+        raise ValueError("Discount rate must be between 0-1")
+
+    if years_asset_life <= 0:
+        raise ValueError("Asset technical life must be greather than 0")
+
+    if discount_rate == 0:
+        annuity_factor = 1 / years_asset_life
+    else:
+        annuity_factor = discount_rate / (
+            1 - (1 + discount_rate) ** (-years_asset_life)
+        )
+    return annuity_factor
