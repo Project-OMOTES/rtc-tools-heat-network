@@ -23,6 +23,8 @@ class Buffer(HeatTwoPort, BaseAsset):
         super().__init__(name, **modifiers)
 
         self.component_type = "buffer"
+        self.technical_life = nan
+        self.discount_rate = nan
 
         self.Q_nominal = 1.0
         self.T_supply = nan
