@@ -4228,6 +4228,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return constraints
 
     def __annualized_capex_constraints(self, ensemble_member):
+        """
+        Calculate the annualized capital expenditure constraints for different categories of assets in a heat network.
+
+        Args:
+            ensemble_member: The ensemble member used to get parameters for the calculation.
+
+        Returns:
+            A list of constraints for each asset.
+        """
         constraints = []
 
         asset_categories = ["source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
@@ -4236,26 +4245,29 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for category in asset_categories:
             for asset_name in self.heat_network_components.get(category, []):
-                symbol_name = self._annualized_capex_var_map[
-                    asset_name
-                ]  # gives the name of the casadi symbol
-                symbol = self.extra_variable(symbol_name)  # casadi symbol
+                asset_life_years = parameters[f"{asset_name}.technical_life"]
+                # Input from ESLD file as annual percentage
+                discount_percentage = parameters[f"{asset_name}.discount_rate"]
+                # If asset_life_years == nan or discount_percentage == nan, skip the loop
+                if np.isnan(asset_life_years) or np.isnan(discount_percentage):
+                    continue
 
-                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-                investment_cost_symbol = self.extra_variable(
-                    investment_cost_symbol_name, ensemble_member
-                )
-                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-                installation_cost_symbol = self.extra_variable(
-                    installation_cost_symbol_name, ensemble_member
-                )
+                try:
+                    symbol_name = self._annualized_capex_var_map[asset_name]
+                    symbol = self.extra_variable(symbol_name)
+
+                    investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                    investment_cost_symbol = self.extra_variable(investment_cost_symbol_name, ensemble_member)
+
+                    installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                    installation_cost_symbol = self.extra_variable(installation_cost_symbol_name, ensemble_member)
+                except KeyError as e:
+                    print(f"KeyError: {e} is not a valid key.")
+                    continue
 
                 investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
                 nominal = self.variable_nominal(symbol_name)
-                asset_life_years = parameters[f"{asset_name}.technical_life"]
-                # Input from ESLD file as annual percentage
-                discount_percentage = parameters[f"{asset_name}.discount_rate"]
                 discount_rate = discount_percentage / 100
 
                 annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
