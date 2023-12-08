@@ -45,7 +45,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # due to cost of capital not considered in undiscounted problem
         np.testing.assert_array_less(
             solution__annualized_modified_discount.objective_value,
-            solution_annualized_cost.objective_value
+            solution_annualized_cost.objective_value,
         )
 
         results = solution_annualized_cost.extract_results()
