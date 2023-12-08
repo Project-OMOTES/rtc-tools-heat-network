@@ -40,23 +40,36 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             username = None
             password = None
 
-        conn_settings = ConnectionSettings(
-            host=profile_host,
-            port=profile.port,
-            username=username,
-            password=password,
-            database=profile.database,
-            ssl=ssl_setting,
-            verify_ssl=ssl_setting,
-        )
-        time_series_data = InfluxDBProfileManager(conn_settings)
+        # conn_settings = ConnectionSettings(
+        #     host=profile_host,
+        #     port=profile.port,
+        #     username=username,
+        #     password=password,
+        #     database=profile.database,
+        #     ssl=ssl_setting,
+        #     verify_ssl=ssl_setting,
+        # )
+        # time_series_data = InfluxDBProfileManager(conn_settings)
 
-        time_series_data.load_influxdb(
-            '"' + profile.measurement + '"',
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
+        # temp fix due to pyESDL bug
+        if profile.filters == "":
+            profile.filters = None
+        profile.measurement = '"' + profile.measurement + '"'
+
+        time_series_data = InfluxDBProfileManager.create_esdl_influxdb_profile_manager(
+            profile,
+            username,
+            password,
+            False,
+            False,
         )
+
+        # time_series_data.load_influxdb(
+        #     '"' + profile.measurement + '"',
+        #     [profile.field],
+        #     profile.startDate,
+        #     profile.endDate,
+        # )
 
         # Error check start and end dates of profiles
         if time_series_data.end_datetime != profile.endDate:
