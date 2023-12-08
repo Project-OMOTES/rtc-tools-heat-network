@@ -19,7 +19,7 @@ class GeothermalSource(Source):
         self.component_subtype = "geothermal"
         self.technical_life = nan
         self.discount_rate = nan
-        
+
         self.target_flow_rate = nan
         self.single_doublet_power = nan
         self.nr_of_doublets = 1.0

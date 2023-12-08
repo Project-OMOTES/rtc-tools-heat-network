@@ -4240,7 +4240,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
 
         asset_categories = ["source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
-        
+
         parameters = super().parameters(ensemble_member)
 
         for category in asset_categories:
@@ -4257,10 +4257,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     symbol = self.extra_variable(symbol_name)
 
                     investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-                    investment_cost_symbol = self.extra_variable(investment_cost_symbol_name, ensemble_member)
+                    investment_cost_symbol = self.extra_variable(
+                        investment_cost_symbol_name, ensemble_member
+                    )
 
                     installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-                    installation_cost_symbol = self.extra_variable(installation_cost_symbol_name, ensemble_member)
+                    installation_cost_symbol = self.extra_variable(
+                        installation_cost_symbol_name, ensemble_member
+                    )
                 except KeyError as e:
                     print(f"KeyError: {e} is not a valid key.")
                     continue
@@ -4281,7 +4285,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
 
         return constraints
-
 
     def path_constraints(self, ensemble_member):
         """
