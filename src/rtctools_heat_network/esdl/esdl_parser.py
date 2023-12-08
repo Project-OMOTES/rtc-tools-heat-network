@@ -36,63 +36,31 @@ class BaseESDLParser:
 
         for x in self._energy_system.energySystemInformation.carriers.carrier.items:
             if isinstance(x, esdl.esdl.HeatCommodity):
-                if x.supplyTemperature != 0.0 and x.returnTemperature == 0.0:
-                    type_ = "supply"
-                elif x.returnTemperature != 0.0 and x.supplyTemperature == 0.0:
-                    type_ = "return"
-                else:
-                    type_ = "none"
                 if x.id not in id_to_idnumber_map:
                     number_list = [int(s) for s in x.id if s.isdigit()]
                     number = ""
                     for nr in number_list:
                         number = number + str(nr)
-                    if type_ == "return":
+                    # note this fix is to create a unique number for the map for when the pipe
+                    # duplicator service is used and an additional _ret is added to the id.
+                    if "_ret" in x.id:
                         number = number + "000"
                     id_to_idnumber_map[x.id] = int(number)
 
+                temperature = x.supplyTemperature if x.supplyTemperature else x.returnTemperature
+                assert temperature > 0.0
+
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name.replace("_ret", ""),
+                    name=x.name,
                     id=x.id,
                     id_number_mapping=id_to_idnumber_map[x.id],
-                    supplyTemperature=x.supplyTemperature,
-                    returnTemperature=x.returnTemperature,
-                    __rtc_type=type_,
+                    temperature=temperature,
                 )
-
-        # For now, we only support networks with two carries; one hot, one cold.
-        # When this no longer holds, carriers either have to specify both the
-        # supply and return temperature (instead of one being 0.0), or we have to
-        # pair them up.
-        if (len(self._global_properties["carriers"]) % 2) != 0:
-            _ESDLInputException(
-                "Odd number of carriers specified, please use model with dedicated supply and return "
-                "carriers. Every hydraulically coupled system should have one carrier for the supply "
-                "side and one for the return side"
-            )
-
-        for c in self._global_properties["carriers"].values():
-            supply_temperature = next(
-                x["supplyTemperature"]
-                for x in self._global_properties["carriers"].values()
-                if x["supplyTemperature"] != 0.0 and x["name"] == c["name"]
-            )
-            return_temperature = next(
-                x["returnTemperature"]
-                for x in self._global_properties["carriers"].values()
-                if x["returnTemperature"] != 0.0 and x["name"] == c["name"]
-            )
-            c["supplyTemperature"] = supply_temperature
-            c["returnTemperature"] = return_temperature
-
-        for x in self._energy_system.energySystemInformation.carriers.carrier.items:
-            if isinstance(x, esdl.esdl.ElectricityCommodity):
+            elif isinstance(x, esdl.esdl.ElectricityCommodity):
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     voltage=x.voltage,
                 )
-
-        assets = {}
 
         # Component ids are unique, but we require component names to be unique as well.
         component_names = set()
@@ -139,7 +107,7 @@ class BaseESDLParser:
                 # Note that e.g. el.__dict__['length'] does not work to get the length of a pipe.
                 # We therefore built this dict ourselves using 'dir' and 'getattr'
                 attributes = {k: getattr(el, k) for k in dir(el)}
-                assets[el.id] = Asset(
+                self._assets[el.id] = Asset(
                     asset_type,
                     el.id,
                     el_name,
@@ -148,7 +116,6 @@ class BaseESDLParser:
                     attributes,
                     self._global_properties,
                 )
-        self._assets = assets
 
     def get_assets(self) -> Dict[str, Asset]:
         return self._assets

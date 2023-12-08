@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, Set
 
 from pymoca.backends.casadi.alias_relation import AliasRelation
 
@@ -304,7 +304,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         super().pre()
 
     @property
-    def heat_network_components(self) -> Dict[str, str]:
+    def heat_network_components(self) -> Dict[str, Set[str]]:
         """
         This method return a dict with the heat network assets ordered per asset type.
         """
