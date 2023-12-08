@@ -204,6 +204,18 @@ class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost
         return assets
 
 
+class HeatProblemDiscAnnualizedCost_Modified_discountRate(HeatProblemDiscAnnualizedCost):
+    @property
+    def esdl_assets(self):
+        assets = super().esdl_assets
+        for i in range(1, 3):  # HeatProducers
+            asset_name = f"HeatProducer_{i}"
+            asset = next((a for a in assets.values() if a.name == asset_name), None)
+            if asset is not None:
+                asset.attributes["costInformation"].discountRate.value = 0.0
+        return assets
+
+
 if __name__ == "__main__":
     from pathlib import Path
 
