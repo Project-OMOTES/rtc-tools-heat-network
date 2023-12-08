@@ -23,7 +23,9 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         solution_run_ates = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
-        solution_annualized_cost = run_optimization_problem(HeatProblemDiscAnnualizedCost, base_folder=base_folder)
+        solution_annualized_cost = run_optimization_problem(
+            HeatProblemDiscAnnualizedCost, base_folder=base_folder
+        )
 
         solution__annualized_modified_param = run_optimization_problem(
             HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
@@ -35,12 +37,16 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         # Assertion 1: Non annualized objective value with discount=0 and
         # technical life 1 year matches the objective value of the discounted problem
-        np.testing.assert_allclose(solution__annualized_modified_param.objective_value,
-                                   solution_run_ates.objective_value)
+        np.testing.assert_allclose(
+            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
+        )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
-        np.testing.assert_array_less(solution__annualized_modified_discount.objective_value,
-                                     solution_annualized_cost.objective_value)
+        # due to cost of capital not considered in undiscounted problem
+        np.testing.assert_array_less(
+            solution__annualized_modified_discount.objective_value,
+            solution_annualized_cost.objective_value
+        )
 
         results = solution_annualized_cost.extract_results()
         heat_producers = [1, 2]
