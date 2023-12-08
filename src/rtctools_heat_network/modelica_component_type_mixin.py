@@ -18,7 +18,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     the connections with directions are saved for later use in the constraints.
     """
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super().__init__()
         self.__hn_component_types = None
 
