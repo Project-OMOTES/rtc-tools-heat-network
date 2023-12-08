@@ -10,6 +10,8 @@
     <workDir>.</workDir>
 <!--    <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>-->
     <properties>
-        <string key="ESDL_File_Path" value="../model/h2_profiles_added.esdl"/>
+        <!-- <string key="ESDL_File_Path" value="../model/h2_profiles_added_dummy_values.esdl"/> -->
+        <!-- <string key="ESDL_File_Path" value="../model/h2_profiles2030.esdl"/> -->
+        <string key="ESDL_File_Path" value="../model/h2_profiles2030_costs_included.esdl"/>
     </properties>
 </Run>
