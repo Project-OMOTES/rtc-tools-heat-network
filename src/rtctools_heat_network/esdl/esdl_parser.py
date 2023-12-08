@@ -148,6 +148,7 @@ class BaseESDLParser:
                     attributes,
                     self._global_properties,
                 )
+        self._assets = assets
 
     def get_assets(self) -> Dict[str, Asset]:
         return self._assets
