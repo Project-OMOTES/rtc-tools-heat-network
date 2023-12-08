@@ -2,6 +2,7 @@ import logging
 import numbers
 import os
 import sys
+import traceback
 import uuid
 from pathlib import Path
 
@@ -18,6 +19,7 @@ import pandas as pd
 
 import pytz
 
+from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
@@ -870,6 +872,9 @@ class ScenarioOutput(HeatMixin):
         if self.write_result_db_profiles:
             logger.info("Writing asset result profile data to influxDB")
             results = self.extract_results()
+            # Note: when adding new variables to variables_one_hydraulic_system or"
+            # variables_two_hydraulic_system also add quantity and units to the ESDL for the new
+            # variables in the code lower down
             variables_one_hydraulic_system = ["HeatIn.Q", "HeatIn.H", "Heat_flow"]
             variables_two_hydraulic_system = [
                 "Primary.HeatIn.Q",
@@ -934,7 +939,11 @@ class ScenarioOutput(HeatMixin):
                         sys.exit(1)
 
                     for ii in range(len(self.times())):
-                        data_row = [self.io.datetimes[ii]]
+                        if not self.io.datetimes[ii].tzinfo:
+                            data_row = [pytz.utc.localize(self.io.datetimes[ii])]
+                        else:
+                            data_row = [self.io.datetimes[ii]]
+
                         try:
                             # For all components dealing with one hydraulic system
                             if isinstance(
@@ -954,28 +963,87 @@ class ScenarioOutput(HeatMixin):
                             if ii == 0:
                                 # Set header for each column
                                 profiles.profile_header.append(variable)
-
                                 # Set profile database attributes for the esdl asset
+                                if not self.io.datetimes[0].tzinfo:
+                                    start_date_time = pytz.utc.localize(self.io.datetimes[0])
+                                else:
+                                    start_date_time = self.io.datetimes[0]
+                                if not self.io.datetimes[-1].tzinfo:
+                                    end_date_time = pytz.utc.localize(self.io.datetimes[-1])
+                                else:
+                                    end_date_time = self.io.datetimes[-1]
+
                                 profile_attributes = esdl.InfluxDBProfile(
                                     database=input_energy_system_id,
                                     measurement=asset_name,
                                     field=profiles.profile_header[-1],
                                     port=self.influxdb_port,
                                     host=self.influxdb_host,
-                                    startDate=pytz.utc.localize(self.io.datetimes[0]),
-                                    endDate=pytz.utc.localize(self.io.datetimes[-1]),
+                                    startDate=start_date_time,
+                                    endDate=end_date_time,
                                     id=str(uuid.uuid4()),
                                 )
+                                # Assign quantity and units variable
+                                if variable in ["Heat_flow"]:
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.POWER,
+                                            unit=esdl.UnitEnum.WATT,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                elif variable in [
+                                    "HeatIn.H",
+                                    "Primary.HeatIn.H",
+                                    "Secondary.HeatIn.H",
+                                ]:
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.PRESSURE,
+                                            unit=esdl.UnitEnum.PASCAL,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                elif variable in [
+                                    "HeatIn.Q",
+                                    "Primary.HeatIn.Q",
+                                    "Secondary.HeatIn.Q",
+                                ]:
+                                    profile_attributes.profileQuantityAndUnit = (
+                                        esdl.esdl.QuantityAndUnitType(
+                                            physicalQuantity=esdl.PhysicalQuantityEnum.FLOW,
+                                            unit=esdl.UnitEnum.CUBIC_METRE,
+                                            perTimeUnit=esdl.TimeUnitEnum.SECOND,
+                                            multiplier=esdl.MultiplierEnum.NONE,
+                                        )
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"No profile units will be written to the ESDL for: "
+                                        f"{asset_name}. + {variable}"
+                                    )
+
                                 asset.port[index_outport].profile.append(profile_attributes)
 
                             # Add variable values in new column
-                            data_row.append(results[f"{asset_name}." + variable][ii])
+                            conversion_factor = 0.0
+                            if variable in [
+                                "HeatIn.H",
+                                "Primary.HeatIn.H",
+                                "Secondary.HeatIn.H",
+                            ]:
+                                conversion_factor = GRAVITATIONAL_CONSTANT * 988.0
+                            else:
+                                conversion_factor = 1.0
+                            data_row.append(
+                                results[f"{asset_name}." + variable][ii] * conversion_factor
+                            )
 
                         profiles.profile_data_list.append(data_row)
                     # end time steps
                     profiles.num_profile_items = len(profiles.profile_data_list)
-                    profiles.start_datetime = pytz.utc.localize(profiles.profile_data_list[0][0])
-                    profiles.end_datetime = pytz.utc.localize(profiles.profile_data_list[-1][0])
+                    profiles.start_datetime = profiles.profile_data_list[0][0]
+                    profiles.end_datetime = profiles.profile_data_list[-1][0]
 
                     influxdb_profile_manager = InfluxDBProfileManager(
                         influxdb_conn_settings, profiles
@@ -1035,13 +1103,17 @@ class ScenarioOutput(HeatMixin):
                     #     tags=optim_simulation_tag,
                     # )
                     # ------------------------------------------------------------------------------
-
-                except Exception as e:
+                except StopIteration:
                     # If the asset has been deleted, thus also not placed
-                    # TODO: resolve except (all): pass code
-                    import traceback
-                    traceback.print_exc()
                     pass
+                except Exception:  # TODO fix other places in the where try/except end with pass
+                    logger.error(
+                        f"During the influxDB profile writing for asset: {asset_name}, the "
+                        "following error occured:"
+                    )
+                    traceback.print_exc()
+                    sys.exit(1)
+
             # TODO: create test case
             # Code that can be used to remove a specific measurment from the database
             # try:
