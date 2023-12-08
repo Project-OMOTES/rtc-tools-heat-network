@@ -1777,10 +1777,10 @@
         <port xsi:type="esdl:InPort" connectedTo="eb32f4c3-c492-439d-89e8-142ea6882c67" id="6f024397-cf6a-4232-bdb3-e9e4285fed59" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="In"/>
         <port xsi:type="esdl:OutPort" id="5c089df4-9cb1-4249-8e2b-b46994220f62" connectedTo="95416ff8-70ce-48d9-ae41-cdf234f4408f" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="Out"/>
         <costInformation xsi:type="esdl:CostInformation" id="f6ab2a6d-41d5-4e10-b917-e9c443151624">
-          <investmentCosts xsi:type="esdl:SingleValue" value="690.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
+          <investmentCosts xsi:type="esdl:SingleValue" value="69000.0" id="47fd41e1-9017-466e-b6a1-5ea7f776dfa5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="ff0a7278-91de-4ca4-82a7-25ae9d63e8e1" description="Cost in EUR/m3" perUnit="CUBIC_METRE" physicalQuantity="COST" unit="EURO"/>
           </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" value="300.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
+          <installationCosts xsi:type="esdl:SingleValue" value="600000.0" id="cc47852c-c7cc-44b3-abd5-5e14378489e8">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="164720ce-b344-482b-8fb2-9fe2938cfde1" description="Cost in EUR" unit="EURO"/>
           </installationCosts>
         </costInformation>
