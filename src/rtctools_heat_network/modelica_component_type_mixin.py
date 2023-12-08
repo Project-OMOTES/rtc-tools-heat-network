@@ -18,6 +18,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     the connections with directions are saved for later use in the constraints.
     """
 
+    def __init__(self):
+        super().__init__()
+        self.__hn_component_types = None
+
     def pre(self):
         """
         In this function the topology object of the heat network is constructed. Meaning that for
@@ -304,10 +308,8 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         """
         This method return a dict with the heat network assets ordered per asset type.
         """
-        try:
-            return self.__hn_component_types
-        except AttributeError:
-            # Create the dictionary once after that it will always succeed in try statement.
+        if self.__hn_component_types is None:
+            # Create the dictionary once after that it will be available
             string_parameters = self.string_parameters(0)
 
             # Find the components in model, detection by string
@@ -322,7 +324,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             self.__hn_component_types = components
 
-            return components
+        return self.__hn_component_types
 
     @property
     def heat_network_topology(self) -> Topology:
