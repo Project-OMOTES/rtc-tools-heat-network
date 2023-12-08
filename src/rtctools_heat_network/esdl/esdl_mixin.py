@@ -1,3 +1,4 @@
+import copy
 import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
@@ -5,7 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
-import esdl
+import esdl.esdl_handler
 
 import numpy as np
 
@@ -67,7 +68,11 @@ class ESDLMixin(
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
 
-    _profile_reader: BaseProfileReader
+    __profile_reader: BaseProfileReader
+
+    _esdl_assets: Dict[str, Asset]
+    _esdl_carriers: Dict[str, Dict[str, Any]]
+    __energy_system_handler: esdl.esdl_handler.EnergySystemHandler
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -100,9 +105,9 @@ class ESDLMixin(
         # TODO: discuss if this is correctly located here and why the reading of profiles is then
         #  in the read function?
         esdl_parser = esdl_parser_class(esdl_string=esdl_string, esdl_path=esdl_path)
-        self.__esdl_assets = esdl_parser.get_assets()
-        self.__esdl_carriers = esdl_parser.get_carrier_properties()
-        self.__esdl_model = esdl_parser.get_esdl_model()
+        self._esdl_assets = esdl_parser.get_assets()
+        self._esdl_carriers = esdl_parser.get_carrier_properties()
+        self.__energy_system_handler = esdl_parser.get_esh()
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -110,8 +115,8 @@ class ESDLMixin(
         input_file_path = None
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
-        self._profile_reader = profile_reader_class(
-            energy_system=self.__esdl_model, file_path=input_file_path)
+        self.__profile_reader = profile_reader_class(
+            energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path)
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
@@ -238,10 +243,10 @@ class ESDLMixin(
         -------
         A dict of the esdl assets with their properties
         """
-        return self.__esdl_assets
+        return self._esdl_assets
 
     @property
-    def esdl_carriers(self) -> Dict:
+    def esdl_carriers(self) -> Dict[str, Dict[str, Any]]:
         """
         property method to retrieve the esdl carriers which are a private attribute of the class.
 
@@ -249,7 +254,18 @@ class ESDLMixin(
         -------
         A dict with the id of the carrier and the attributes in the value
         """
-        return self.__esdl_carriers
+        return self._esdl_carriers
+
+    def get_energy_system_copy(self) -> esdl.esdl.EnergySystem:
+        """
+        Method to get a copy of the energy system loaded that can be edited without touching the
+        original
+
+        Returns
+        -------
+        A copy of the energy system loaded
+        """
+        return copy.deepcopy(self.__energy_system_handler.energy_system)
 
     @property
     def esdl_asset_id_to_name_map(self) -> Dict:
@@ -406,7 +422,7 @@ class ESDLMixin(
         super().read()
         heat_network_components = self.heat_network_components
         io = self.io
-        self._profile_reader.read_profiles(
+        self.__profile_reader.read_profiles(
             heat_network_components=heat_network_components, io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             ensemble_size=self.ensemble_size,

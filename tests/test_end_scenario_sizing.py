@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 
 
@@ -24,7 +26,13 @@ class TestEndScenarioSizing(TestCase):
 
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
-        solution = run_optimization_problem(TestEndScenarioSizingHIGHS, base_folder=base_folder)
+        solution = run_optimization_problem(
+            TestEndScenarioSizingHIGHS, base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv"
+        )
 
         results = solution.extract_results()
         # In the future we want to check the following

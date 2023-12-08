@@ -324,7 +324,7 @@ class EndScenarioSizing(
         parameters = self.parameters(0)
         bounds = self.bounds()
         # Optimized ESDL
-        self._write_updated_esdl()
+        self._write_updated_esdl(self.get_energy_system_copy())
 
         for d in self.heat_network_components.get("demand", []):
             realized_demand = results[f"{d}.Heat_demand"]

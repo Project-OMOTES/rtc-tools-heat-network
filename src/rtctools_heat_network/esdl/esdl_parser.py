@@ -16,6 +16,8 @@ class _ESDLInputException(Exception):
 class BaseESDLParser:
     _global_properties: Dict[str, Dict] = {"carriers": dict()}
     _assets: Dict[str, Asset] = dict()
+    _energy_system_handler: esdl.esdl_handler.EnergySystemHandler = \
+        esdl.esdl_handler.EnergySystemHandler()
     _energy_system: Optional[esdl.EnergySystem] = None
     _esdl_string: Optional[str] = None
     _esdl_path: Optional[Path] = None
@@ -123,8 +125,8 @@ class BaseESDLParser:
     def get_carrier_properties(self) -> Dict:
         return self._global_properties["carriers"]
 
-    def get_esdl_model(self) -> esdl.EnergySystem:
-        return self._energy_system
+    def get_esh(self) -> esdl.esdl_handler.EnergySystemHandler:
+        return self._energy_system_handler
 
 
 class ESDLStringParser(BaseESDLParser):
@@ -142,8 +144,7 @@ class ESDLStringParser(BaseESDLParser):
         super().__init__()
 
     def _load_esdl_model(self) -> None:
-        esh = esdl.esdl_handler.EnergySystemHandler()
-        self._energy_system = esh.load_from_string(self._esdl_string)
+        self._energy_system = self._energy_system_handler.load_from_string(self._esdl_string)
 
 
 class ESDLFileParser(BaseESDLParser):
@@ -158,17 +159,4 @@ class ESDLFileParser(BaseESDLParser):
         super().__init__()
 
     def _load_esdl_model(self) -> None:
-        # correct profile attribute
-        esdl.ProfileElement.from_.name = "from"
-        setattr(esdl.ProfileElement, "from", esdl.ProfileElement.from_)
-
-        # using esdl as resourceset
-        rset_existing = ResourceSet()
-
-        # read esdl energy system
-        resource_existing = rset_existing.get_resource(str(self._esdl_path))
-        created_energy_system = resource_existing.contents[0]
-
-        self._energy_system = created_energy_system
-
-
+        self._energy_system = self._energy_system_handler.load_file(str(self._esdl_path))
