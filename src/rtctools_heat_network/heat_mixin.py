@@ -4185,7 +4185,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def __annualized_capex_constraints(self, ensemble_member):
         """
-        Calculate the annualized capital expenditure constraints for different categories of assets in a heat network.
+        Calculate the annualized capital expenditure constraints for different categories
+        of assets in a heat network.
 
         Args:
             ensemble_member: The ensemble member used to get parameters for the calculation.
