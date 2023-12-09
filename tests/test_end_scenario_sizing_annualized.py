@@ -16,12 +16,16 @@ class TestEndScenarioSizingAnnualized(TestCase):
         from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
             HeatProblem,
         )
-        import models.test_case_small_network_optional_assets_annualized.src.run_annualized as run_annualized
+        from models.test_case_small_network_optional_assets_annualized.src import (
+            run_annualized,
+        )
         from rtctools_heat_network.heat_mixin import calculate_annuity_factor
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
-        solution_run_ates = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        solution_run_ates = run_optimization_problem(
+            HeatProblem, base_folder=base_folder
+        )
 
         solution_annualized_cost = run_optimization_problem(
             HeatProblemDiscAnnualizedCost, base_folder=base_folder
@@ -38,7 +42,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # Assertion 1: Non annualized objective value with discount=0 and
         # technical life 1 year matches the objective value of the discounted problem
         np.testing.assert_allclose(
-            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
+            solution__annualized_modified_param.objective_value,
+            solution_run_ates.objective_value,
         )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
@@ -86,7 +91,10 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizingAnnualized()
     a.test_end_scenario_sizing_annualized()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
+    print(
+        "Execution time: "
+        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
+    )
 
 # TODO:
 # Include attributes discount factor and technical life in each asset
