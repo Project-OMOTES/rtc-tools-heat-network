@@ -19,7 +19,9 @@ import pandas as pd
 
 import pytz
 
+import rtctools_heat_network.esdl.esdl_parser
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
 
@@ -27,11 +29,13 @@ from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class ScenarioOutput(HeatMixin):
+class ScenarioOutput(HeatMixin, ESDLMixin):
     __optimized_energy_system_handler = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.model_folder = kwargs.get("model_folder")
+        self.esdl_file_name = kwargs.get("esdl_file_name", "ESDL_file.esdl")
         # Settings for influxdb when writing out result profile data to it
         # Default settings
         self.write_result_db_profiles = False
@@ -1084,17 +1088,22 @@ class ScenarioOutput(HeatMixin):
         # ------------------------------------------------------------------------------------------
         # Save esdl file
 
-        # TODO: HIER VERDER!!!
-        self.__optimized_energy_system_handler = esh
-        self.optimized_esdl_string = esh.to_string()
-
-        if self.esdl_string is None:
-            if optimizer_sim:
-                filename = run_info.esdl_file.with_name(
-                    f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
-                )
-            else:
-                filename = run_info.esdl_file.with_name(
-                    f"{run_info.esdl_file.stem}_Simulation.esdl"
-                )
-            esh.save(str(filename))
+        if self.esdl_parser_class == rtctools_heat_network.esdl.esdl_parser.ESDLFileParser:
+            extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
+            file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
+            self.save_energy_system_to_file(energy_system, file_path=file_path)
+        self.optimized_esdl_string = \
+            self.convert_energy_system_to_string(energy_system=energy_system)
+        # self.__optimized_energy_system_handler = esh
+        # self.optimized_esdl_string = esh.to_string()
+        #
+        # if self.esdl_string is None:
+        #     if optimizer_sim:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_Simulation.esdl"
+        #         )
+        #     else:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
+        #         )
+        #     esh.save(str(filename))

@@ -21,6 +21,10 @@ from rtctools.optimization.io_mixin import IOMixin
 from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 from rtctools_heat_network.esdl.common import Asset
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.esdl.esdl_heat_model import ESDLHeatModel
+from rtctools_heat_network.esdl.esdl_model_base import _ESDLModelBase
+from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
+from rtctools_heat_network.esdl.esdl_qth_model import ESDLQTHModel
 from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.modelica_component_type_mixin import (
@@ -30,10 +34,6 @@ from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
-from .esdl_heat_model import ESDLHeatModel
-from .esdl_model_base import _ESDLModelBase
-from .esdl_qth_model import ESDLQTHModel
-from .esdl_parser import ESDLStringParser
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -70,6 +70,7 @@ class ESDLMixin(
 
     __profile_reader: BaseProfileReader
 
+    esdl_parser_class: type
     _esdl_assets: Dict[str, Asset]
     _esdl_carriers: Dict[str, Dict[str, Any]]
     __energy_system_handler: esdl.esdl_handler.EnergySystemHandler
@@ -94,7 +95,7 @@ class ESDLMixin(
         kwargs : esdl_string or esdl_file_name must be provided
         """
 
-        esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
+        self.esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
         molder_folder = kwargs.get("model_folder")
         esdl_file_name = kwargs.get("esdl_file_name", None)
@@ -104,7 +105,7 @@ class ESDLMixin(
 
         # TODO: discuss if this is correctly located here and why the reading of profiles is then
         #  in the read function?
-        esdl_parser = esdl_parser_class(esdl_string=esdl_string, esdl_path=esdl_path)
+        esdl_parser = self.esdl_parser_class(esdl_string=esdl_string, esdl_path=esdl_path)
         self._esdl_assets = esdl_parser.get_assets()
         self._esdl_carriers = esdl_parser.get_carrier_properties()
         self.__energy_system_handler = esdl_parser.get_esh()
@@ -266,6 +267,19 @@ class ESDLMixin(
         A copy of the energy system loaded
         """
         return copy.deepcopy(self.__energy_system_handler.energy_system)
+
+    @staticmethod
+    def convert_energy_system_to_string(energy_system: esdl.esdl.EnergySystem) -> str:
+        esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
+        from pyecore.resources import ResourceSet
+        esh.resource = ResourceSet()
+        return esh.to_string()
+
+    @staticmethod
+    def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem,
+                                   file_path: Path) -> None:
+        esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
+        esh.save(filename=str(file_path))
 
     @property
     def esdl_asset_id_to_name_map(self) -> Dict:

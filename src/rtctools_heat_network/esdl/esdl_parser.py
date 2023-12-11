@@ -4,8 +4,6 @@ from typing import Dict, Optional
 
 import esdl.esdl_handler
 
-from pyecore.resources import ResourceSet
-
 from .common import Asset
 
 

@@ -422,7 +422,7 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     def post(self):
         super().post()
 
-        self._write_updated_esdl()
+        self._write_updated_esdl(self.get_energy_system_copy())
 
     def solver_options(self):
         options = super().solver_options()
@@ -479,7 +479,7 @@ class EndScenarioSizingCBC(EndScenarioSizing):
     def post(self):
         super().post()
 
-        self._write_updated_esdl()
+        self._write_updated_esdl(self.get_energy_system_copy())
 
     def solver_options(self):
         options = super().solver_options()
