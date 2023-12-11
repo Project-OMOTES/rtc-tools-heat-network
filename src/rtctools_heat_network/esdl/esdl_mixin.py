@@ -271,7 +271,14 @@ class ESDLMixin(
 
     @staticmethod
     def convert_energy_system_to_string(energy_system: esdl.esdl.EnergySystem) -> str:
+        """
+        Method to convert a given energy system into a string using a copy of the energy system
+        handler that is available within this class
 
+        Returns
+        -------
+        An XML string representing the energy system
+        """
         esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
         esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI('to_string.esdl'))
         return esh.to_string()
@@ -279,6 +286,14 @@ class ESDLMixin(
     @staticmethod
     def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem,
                                    file_path: Path) -> None:
+        """
+        Method to save a given energy system to file (using the standard ESDL XML schema, using the
+        energy system handler available within this class
+
+        Returns
+        -------
+        None
+        """
         esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
         esh.save(filename=str(file_path))
 
