@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="10" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="11" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="268b080c-6ee2-4498-9e7e-2c0105376c39">
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="89100761-b52c-4cc9-b8aa-f72e76c789db">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" unit="WATT" physicalQuantity="POWER" description="Power in W"/>
@@ -50,15 +50,16 @@
       <asset xsi:type="esdl:ElectricityDemand" id="9d15a76b-cfc3-4abf-a166-6edc19b1264e" power="1000000000.0" name="ElectricityDemand_9d15">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="487db503-69b4-4604-9896-563634352699" id="8ed762e6-b62d-4dd0-b84d-d3759af40b3d"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.92463517826793" lon="4.727210998535157"/>
-        <costInformation xsi:type="esdl:CostInformation" id="20f9151a-b94c-4024-ba62-8339425be4c4">
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="13ea3a5c-f2d1-4dc3-8314-a37a1a46fddd" value="0.15">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f529abf-9d1a-452b-8b97-08099b4fa4ba" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
-          </fixedOperationalCosts>
-        </costInformation>
+        <costInformation xsi:type="esdl:CostInformation" id="20f9151a-b94c-4024-ba62-8339425be4c4"/>
       </asset>
       <asset xsi:type="esdl:GasDemand" id="0cf3a097-01ea-4fea-a6af-f141a6885445" power="1000000000.0" name="GasDemand_0cf3">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="a75218ac-9a5b-4ee4-b0ad-ae1262329442" id="119be8fa-50a9-463b-ba1e-6b97cea86f0e"/>
         <geometry xsi:type="esdl:Point" lat="52.9214269116914" lon="4.734935760498048"/>
+        <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.16">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
+          </variableOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:Joint" id="c15601d5-a9ce-41b4-84eb-1a7658d65c72" name="Joint_c156">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="8e1dbe29-588b-41e0-8fd5-c76bff01b1b0" id="f1e5ab4c-7d5f-4a8d-9bd9-e5131b34dd7d"/>
@@ -85,7 +86,7 @@
           </exterior>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" length="16094.5" id="9c2688f7-e530-4ea4-b650-5c3a6a5998a5" name="ElectricityCable_9c26">
+      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" id="9c2688f7-e530-4ea4-b650-5c3a6a5998a5" length="16094.5" name="ElectricityCable_9c26">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="40593cd4-e512-4ec4-b702-47f1cc7d1836" id="2e47d054-4ea8-4ca0-a5a2-0cb60d8dd338"/>
         <port xsi:type="esdl:OutPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="Out" id="9050262b-fbbe-416f-9082-4988bd5787cf" connectedTo="d3860fc6-eb6c-4508-b77a-0c5327d9bb62"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -93,7 +94,7 @@
           <point xsi:type="esdl:Point" lat="52.92429883889503" lon="4.718542098999024"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" length="582.3" id="09d101cd-1ead-4c9e-b732-992299af350c" name="ElectricityCable_09d1">
+      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" id="09d101cd-1ead-4c9e-b732-992299af350c" length="582.3" name="ElectricityCable_09d1">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="aa560077-d0ec-4391-9a48-97650436a326" id="50d85125-418b-48a8-a7e9-86f9de3106ae"/>
         <port xsi:type="esdl:OutPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="Out" id="487db503-69b4-4604-9896-563634352699" connectedTo="8ed762e6-b62d-4dd0-b84d-d3759af40b3d"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -101,7 +102,7 @@
           <point xsi:type="esdl:Point" lat="52.92463517826793" lon="4.727210998535157"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" length="1136.5" id="591d5c32-d7ff-401c-a4f1-a618d77870e2" name="ElectricityCable_591d">
+      <asset xsi:type="esdl:ElectricityCable" capacity="1000000000.0" id="591d5c32-d7ff-401c-a4f1-a618d77870e2" length="1136.5" name="ElectricityCable_591d">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="aa560077-d0ec-4391-9a48-97650436a326" id="0ad5e2e3-ab3d-4afb-8a34-8fc7ddc5f93b"/>
         <port xsi:type="esdl:OutPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="Out" id="ce1699b8-34d4-43b9-a77a-1bfb08a9c36c" connectedTo="b3233805-b82b-406c-98fb-fc7bac66bb78"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
