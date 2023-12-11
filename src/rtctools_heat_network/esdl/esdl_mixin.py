@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
 import esdl.esdl_handler
+from esdl.resources.xmlresource import XMLResource
 
 import numpy as np
 
@@ -268,11 +269,9 @@ class ESDLMixin(
         """
         return copy.deepcopy(self.__energy_system_handler.energy_system)
 
-    @staticmethod
-    def convert_energy_system_to_string(energy_system: esdl.esdl.EnergySystem) -> str:
+    def convert_energy_system_to_string(self, energy_system: esdl.esdl.EnergySystem) -> str:
         esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
-        from pyecore.resources import ResourceSet
-        esh.resource = ResourceSet()
+        esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI('to_string.esdl'))
         return esh.to_string()
 
     @staticmethod
