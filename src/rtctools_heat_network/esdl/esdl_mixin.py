@@ -269,7 +269,9 @@ class ESDLMixin(
         """
         return copy.deepcopy(self.__energy_system_handler.energy_system)
 
-    def convert_energy_system_to_string(self, energy_system: esdl.esdl.EnergySystem) -> str:
+    @staticmethod
+    def convert_energy_system_to_string(energy_system: esdl.esdl.EnergySystem) -> str:
+
         esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
         esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI('to_string.esdl'))
         return esh.to_string()
