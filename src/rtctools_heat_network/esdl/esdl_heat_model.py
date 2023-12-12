@@ -920,8 +920,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            GasIn=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)))
-         )
+            GasIn=dict(
+                Q=dict(
+                    min=0.,
+                    max=self._get_connected_q_max(asset),
+                    nominal=self._get_connected_q_nominal(asset),
+                ),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
 
         return GasDemand, modifiers
 
@@ -1024,6 +1031,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             volume=asset.attributes["workingVolume"],
             # Gas_tank_flow=dict(min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+            **self._get_cost_figure_modifiers(asset),
         )
 
         return GasTankStorage, modifiers

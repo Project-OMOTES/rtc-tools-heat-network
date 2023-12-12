@@ -690,6 +690,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size
+        temp = 0.0
 
         def _make_max_size_var(name, lb, ub, nominal):
             asset_max_size_var = f"{name}__max_size"
@@ -700,6 +701,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for asset_name in self.heat_network_components.get("source", []):
             ub = bounds[f"{asset_name}.Heat_source"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("gas_demand", []):
+            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
+            # creates a error devide by zero
+            ub = 1.0
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -776,7 +784,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_source", []),
-                *self.heat_network_components.get("gas_demand", []),
+                # *self.heat_network_components.get("gas_demand", []),  # kvr-test
                 *self.heat_network_components.get("electrolyzer", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
                 *self.heat_network_components.get("wind_park", []),
@@ -794,6 +802,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("gas_demand", [])]:
+                nominal_fixed_operational = (
+                    bounds[f"{asset_name}.Gas_demand_mass_flow"][1]
+                    if not np.isinf(bounds[f"{asset_name}.Gas_demand_mass_flow"][1])
+                    else parameters[f"{asset_name}.Q_nominal"] * parameters[f"{asset_name}.density"]
+                )
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+
             elif asset_name in [*self.heat_network_components.get("source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
                 nominal_variable_operational = nominal_fixed_operational
@@ -845,6 +862,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             )
 
             # variable operational cost
+            # temp = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]].attributes['costInformation'].variableOperationalCosts.value  # why is parameters empy with cost?
+
             variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
             self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
             self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
@@ -3949,8 +3968,36 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
         for _ in self.heat_network_components.get("buffer", []):
-            pass
+            pass  
+        
+        # Assume cost in euro/(kgs)
+        for demand in self.heat_network_components.get("gas_demand", []):
+            # carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[
+            #     0].carrier.name
+            # price_profile = f"{carrier_name}.price_profile"
+            gas_mass_flow = self.__state_vector_scaled(
+                f"{demand}.Gas_demand_mass_flow", ensemble_member
+            )
 
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[demand]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var) * 3600.0  # stil lto fix 
+            variable_operational_cost_coefficient = parameters[
+                f"{demand}.variable_operational_cost_coefficient"
+            ]
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient
+                    * gas_mass_flow[i]
+                    * (self.times()[i] - self.times()[i - 1])
+                )
+
+            constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+            
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal

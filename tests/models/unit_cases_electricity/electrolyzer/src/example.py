@@ -130,12 +130,11 @@ if __name__ == "__main__":
     price_profile = f"{carrier_name}.price_profile"
     gas_rate = elect.get_timeseries(price_profile).values  # currently euro/kg
     # h2_energy_content_per_mass = 118.8 * 1e6  # J/kg
-    # energy_per_second = r["Pipe_6ba6.GasOut.mass_flow"] * h2_energy_content_per_mass  # J/s
-    # hydrogen_income = energy_per_second[1:] * (
-    #     elect.get_timeseries(price_profile).times[1:]
-    #     - elect.get_timeseries(price_profile).times[0:-1]
-    # ) * gas_rate[1:]
-    hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"] * gas_rate
+    hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"][1:] * (
+        elect.get_timeseries(price_profile).times[1:]
+        - elect.get_timeseries(price_profile).times[0:-1]
+    ) * gas_rate[1:]
+    # hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"] * gas_rate
     print("Hydrogen income MEuro: %0.1f" % (sum(hydrogen_income) / 1.0e6))
 
     carrier_name = "elec"
@@ -152,4 +151,15 @@ if __name__ == "__main__":
     print("Electricity income MEuro: %0.1f" % (sum(elect_income) / 1.0e6))
 
     print("Total income MEuro: %0.1f" % ((sum(elect_income) + sum(hydrogen_income)) / 1.0e6))
+
+    print(
+        sum(
+            (
+                elect.get_timeseries(price_profile).times[1:]
+                - elect.get_timeseries(price_profile).times[0:-1]
+            )
+            * r["Pipe_6ba6.GasOut.mass_flow"][1:] * 0.16
+        )
+    )
+    print(r['GasDemand_0cf3__variable_operational_cost'][0])
     temp = 0.0
