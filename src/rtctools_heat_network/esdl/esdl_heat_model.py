@@ -775,6 +775,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
                 V=dict(min=min_voltage, nominal=min_voltage)
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
 
         return ElectricityDemand, modifiers
@@ -810,6 +811,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
                 Power=dict(nominal=max_supply / 2.0)
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
 
         if asset.asset_type == "ElectricityProducer":
@@ -898,6 +900,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 I=dict(min=-max_current, max=max_current, nominal=max_current / 2.),
                 Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.),
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
         return ElectricityCable, modifiers
 
@@ -952,6 +955,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             Gas_source_flow=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)),
+            **self._get_cost_figure_modifiers(asset),
         )
 
         return GasSource, modifiers
@@ -1007,7 +1011,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 Power=dict(min=0., max=max_power, nominal=max_power/2.),
                 I=dict(min=0., max=i_max, nominal=i_nom),
                 V=dict(min=v_min, nominal=v_min)
-            )
+            ),
+            **self._get_cost_figure_modifiers(asset),
         )
 
         return Electrolyzer, modifiers

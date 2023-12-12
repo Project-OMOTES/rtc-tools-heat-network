@@ -706,8 +706,35 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for asset_name in self.heat_network_components.get("gas_demand", []):
             # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
-            # creates a error devide by zero
-            ub = 1.0
+            # Note that we set the nominal to one to avoid division by zero
+            ub = 0.0
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+
+        for asset_name in self.heat_network_components.get("gas_source", []):
+            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
+            # Note that we set the nominal to one to avoid division by zero
+            ub = 0.0
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+
+        for asset_name in self.heat_network_components.get("gas_tank_storage", []):
+            ub = bounds[f"{asset_name}.Stored_gas_mass"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electrolyzer", []):
+            ub = bounds[f"{asset_name}.Power_consumed"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electricity_demand", []):
+            ub = bounds[f"{asset_name}.Electricity_demand"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electricity_source", []):
+            ub = bounds[f"{asset_name}.Electricity_source"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -778,16 +805,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("control_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
-                *self.heat_network_components.get("electricity_source", []),
-                *self.heat_network_components.get("electricity_demand", []),
+                # *self.heat_network_components.get("electricity_source", []),
+                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_pipe", []),
-                *self.heat_network_components.get("gas_source", []),
+                # *self.heat_network_components.get("gas_source", []),
                 # *self.heat_network_components.get("gas_demand", []),  # kvr-test
-                *self.heat_network_components.get("electrolyzer", []),
-                *self.heat_network_components.get("gas_tank_storage", []),
-                *self.heat_network_components.get("wind_park", []),
+                # *self.heat_network_components.get("electrolyzer", []),
+                # *self.heat_network_components.get("gas_tank_storage", []),
+                # *self.heat_network_components.get("wind_park", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
@@ -3793,6 +3820,62 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
             )
 
+        for d in self.heat_network_components.get("electricity_demand", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_demand = self.__state_vector_scaled(f"{d}.Electricity_demand", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{d}.Electricity_demand")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_demand) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("electricity_source", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_source = self.__state_vector_scaled(f"{d}.Electricity_source", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_source) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("electrolyzer", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_electrolyzer = self.__state_vector_scaled(f"{d}.Power_consumed", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{d}.Power_consumed")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_electrolyzer) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("gas_tank_storage", []):
+            max_var = self._asset_max_size_map[d]
+            max_size = self.extra_variable(max_var, ensemble_member)
+            gas_mass = self.__state_vector_scaled(f"{d}.Stored_gas_mass", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{d}.Stored_gas_mass")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_size - gas_mass) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
         for a in self.heat_network_components.get("ates", []):
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
@@ -3844,15 +3927,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                *self.heat_network_components.get("electricity_source", []),
-                *self.heat_network_components.get("electricity_demand", []),
+                # *self.heat_network_components.get("electricity_source", []),
+                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
-                *self.heat_network_components.get("gas_source", []),
-                *self.heat_network_components.get("gas_demand", []),
-                *self.heat_network_components.get("gas_tank_storage", []),
-                *self.heat_network_components.get("electrolyzer", []),
-                *self.heat_network_components.get("wind_park", []),
+                # *self.heat_network_components.get("gas_source", []),
+                # *self.heat_network_components.get("gas_demand", []),
+                # *self.heat_network_components.get("gas_tank_storage", []),
+                # *self.heat_network_components.get("electrolyzer", []),
+                # *self.heat_network_components.get("wind_park", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -3903,17 +3986,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("pipe", []),
                 *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                *self.heat_network_components.get("electricity_demand", []),
-                *self.heat_network_components.get("electricity_source", []),
+                # *self.heat_network_components.get("electricity_demand", []),
+                # *self.heat_network_components.get("electricity_source", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
-                *self.heat_network_components.get("gas_demand", []),
-                *self.heat_network_components.get("gas_source", []),
+                # *self.heat_network_components.get("gas_demand", []),
+                # *self.heat_network_components.get("gas_source", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
-                *self.heat_network_components.get("electrolyzer", []),
-                *self.heat_network_components.get("gas_tank_storage", []),
-                *self.heat_network_components.get("wind_park", []),
+                # *self.heat_network_components.get("electrolyzer", []),
+                # *self.heat_network_components.get("gas_tank_storage", []),
+                # *self.heat_network_components.get("wind_park", []),
             ]:
                 # currently no support for joints
                 continue
@@ -4046,15 +4129,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                *self.heat_network_components.get("electricity_source", []),
-                *self.heat_network_components.get("electricity_demand", []),
+                # *self.heat_network_components.get("electricity_source", []),
+                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
-                *self.heat_network_components.get("gas_source", []),
-                *self.heat_network_components.get("gas_demand", []),
-                *self.heat_network_components.get("gas_tank_storage", []),
-                *self.heat_network_components.get("electrolyzer", []),
-                *self.heat_network_components.get("wind_park", []),
+                # *self.heat_network_components.get("gas_source", []),
+                # *self.heat_network_components.get("gas_demand", []),
+                # *self.heat_network_components.get("gas_tank_storage", []),
+                # *self.heat_network_components.get("electrolyzer", []),
+                # *self.heat_network_components.get("wind_park", []),
             ]:
                 # no support for joints right now
                 continue
@@ -4357,7 +4440,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 parameters[f"{asset}.b_eff_coefficient"],
                 parameters[f"{asset}.c_eff_coefficient"],
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=0.,
+                electrical_power_min=1.,
                 electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1]
             )
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
