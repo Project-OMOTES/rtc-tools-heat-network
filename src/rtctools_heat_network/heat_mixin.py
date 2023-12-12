@@ -4052,21 +4052,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for _ in self.heat_network_components.get("buffer", []):
             pass  
-        
-        # Assume cost in euro/(kgs)
+
         for demand in self.heat_network_components.get("gas_demand", []):
-            # carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[
-            #     0].carrier.name
-            # price_profile = f"{carrier_name}.price_profile"
             gas_mass_flow = self.__state_vector_scaled(
-                f"{demand}.Gas_demand_mass_flow", ensemble_member
+                f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
             )
 
             variable_operational_cost_var = self._asset_variable_operational_cost_map[demand]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
-            nominal = self.variable_nominal(variable_operational_cost_var) * 3600.0  # stil lto fix 
+            nominal = self.variable_nominal(variable_operational_cost_var)
             variable_operational_cost_coefficient = parameters[
                 f"{demand}.variable_operational_cost_coefficient"
             ]
@@ -4076,10 +4072,35 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 sum += (
                     variable_operational_cost_coefficient
                     * gas_mass_flow[i]
-                    * (self.times()[i] - self.times()[i - 1])
+                    * (self.times()[i] - self.times()[i - 1]) / 3600.
                 )
 
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+
+        for electrolyzer in self.heat_network_components.get("electrolyzer", []):
+            power_consumer = self.__state_vector_scaled(
+                f"{electrolyzer}.Gas_mass_flow_out", ensemble_member
+            )
+
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[electrolyzer]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(
+                variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{electrolyzer}.variable_operational_cost_coefficient"
+            ]
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                        variable_operational_cost_coefficient
+                        * power_consumer[i]
+                        * (self.times()[i] - self.times()[i - 1]) / 3600. # gas_mass_flow unit is kg/hr
+                )
+
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
             
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,

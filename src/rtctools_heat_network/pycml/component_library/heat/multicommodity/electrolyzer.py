@@ -55,7 +55,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.add_variable(GasPort, "GasOut")
         self.add_variable(
             Variable, "Gas_mass_flow_out", min=0.0, nominal=self.nominal_gass_mass_out
-        )  # [kg/s]
+        )  # [kg/hr]
         self.add_equation(
             (self.GasOut.mass_flow - self.Gas_mass_flow_out) / self.nominal_gass_mass_out
         )

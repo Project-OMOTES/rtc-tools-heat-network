@@ -511,6 +511,8 @@ class _AssetToComponentBase:
             modifiers["installation_cost"] = self.get_installation_costs(asset)
         elif asset.asset_type == "GasDemand":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+        elif asset.asset_type == "Electrolyzer":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "GasStorage":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
             modifiers["investment_cost_coefficient"] = self.get_investment_costs(asset)
@@ -714,7 +716,7 @@ class _AssetToComponentBase:
                 )
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
-                "GasDemand", "GasStorage"
+                "GasDemand", "GasStorage", "Electrolyzer"
             ]:
                 logger.warning(
                     f"Expected the specified OPEX for asset "
@@ -722,7 +724,7 @@ class _AssetToComponentBase:
                     f"in {per_unit} instead."
                 )
                 continue
-            if asset.asset_type in ["GasDemand", "GasStorage"] and per_unit != UnitEnum.GRAM:
+            if asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"] and per_unit != UnitEnum.GRAM:
                 logger.warning(
                     f"Expected the specified OPEX for asset "
                     f"{asset.name} to be per g/s, but they are provided "
