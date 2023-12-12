@@ -36,6 +36,13 @@ class RevenueGoal(Goal):
         for i in range(len(price_profile)):
             sum += symbols[i] * price_profile[i]
 
+        # TODO: subtract the costs
+        # for asset in []:
+        #     sum -= optimization_problem.extra_variable(f"{asset}__investment_cost", ensemble_member)
+        #     sum -= optimization_problem.extra_variable(f"{asset}__installation_cost", ensemble_member)
+        #     sum -= optimization_problem.extra_variable(f"{asset}__variable_operational_cost", ensemble_member)
+        #     sum -= optimization_problem.extra_variable(f"{asset}__fixed_operational_cost", ensemble_member)
+
         return -sum
 
 
@@ -113,6 +120,9 @@ class MILPProblem(
         options["include_asset_is_switched_on"] = True
 
         return options
+
+    # def times(self, variable=None) -> np.ndarray:
+    #     return super().times(variable)[:5]
 
 
 if __name__ == "__main__":
