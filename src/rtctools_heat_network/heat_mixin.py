@@ -837,6 +837,17 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            # elif asset_name in [*self.heat_network_components.get("gas_tank_storage", [])]:
+            #     nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
+            #     nominal_variable_operational = nominal_fixed_operational
+            #     nominal_investment = nominal_fixed_operational
+
+            # elif asset_name in [*self.heat_network_components.get("electricity_demand", [])]:
+            
+            # elif asset_name in [*self.heat_network_components.get("electrolyzer", [])]:
+                
+            # elif asset_name in [*self.heat_network_components.get("wind_park", [])]:
+
 
             elif asset_name in [*self.heat_network_components.get("source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
@@ -3933,7 +3944,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("gas_node", []),
                 # *self.heat_network_components.get("gas_source", []),
                 # *self.heat_network_components.get("gas_demand", []),
-                # *self.heat_network_components.get("gas_tank_storage", []),
+                *self.heat_network_components.get("gas_tank_storage", []),
                 # *self.heat_network_components.get("electrolyzer", []),
                 # *self.heat_network_components.get("wind_park", []),
             ]:
@@ -4076,6 +4087,32 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
 
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+
+        # TODO add gas storage
+        # do the same as the ATES below?
+        # for storage in self.heat_network_components.get("gas_tank_storage", []):
+        #     gas_mass_flow_in = self.__state_vector_scaled(
+        #         f"{storage}.Gas_tank_flow", ensemble_member  # kg/hr
+        #     )
+        #     variable_operational_cost_var = self._asset_variable_operational_cost_map[storage]
+        #     variable_operational_cost = self.extra_variable(
+        #         variable_operational_cost_var, ensemble_member
+        #     )
+        #     nominal = self.variable_nominal(variable_operational_cost_var)
+        #     variable_operational_cost_coefficient = parameters[
+        #         f"{storage}.variable_operational_cost_coefficient"
+        #     ]
+        #     timesteps = np.diff(self.times()) / 3600.0
+
+        #     sum = 0.0
+        #     for i in range(1, len(self.times())):
+        #         varOPEX_dt = (variable_operational_cost_coefficient * heat_ates[i]
+        #         * timesteps[i - 1])
+        #         constraints.append(((varOPEX-varOPEX_dt)/nominal,0.0, np,inf))
+        #         #varOPEX would be a variable>0 for everyt timestep
+        #         sum += varOPEX
+        #     constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+            
 
         for electrolyzer in self.heat_network_components.get("electrolyzer", []):
             power_consumer = self.__state_vector_scaled(

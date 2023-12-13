@@ -27,11 +27,11 @@
           <investmentCosts xsi:type="esdl:SingleValue" id="5ee09361-d48b-4775-b5b1-182be6373d97" value="2000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="abbe4b85-715a-4715-a81c-4b8dc53dbeac" unit="EURO" description="Cost in EUR/kW" perMultiplier="KILO" physicalQuantity="COST"/>
           </investmentCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="77d091eb-265c-423c-98eb-c64d47bb8b4e" value="0.05">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="a91f0cc1-4253-4638-a458-8fc6288b32ef" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="77d091eb-265c-423c-98eb-c64d47bb8b4e" value="0.00005">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="a91f0cc1-4253-4638-a458-8fc6288b32ef" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
           </variableOperationalCosts>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="336d392b-dae9-4073-859d-bbb818de1537" value="15.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="65892160-442b-4615-a675-ec1b53f984e1" unit="EURO" description="Cost in EUR/kW/yr" perMultiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="336d392b-dae9-4073-859d-bbb818de1537" value="0.015">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="65892160-442b-4615-a675-ec1b53f984e1" unit="EURO" description="Cost in EUR/W/yr" physicalQuantity="COST" perTimeUnit="YEAR"/>
           </fixedOperationalCosts>
         </costInformation>
       </asset>
@@ -39,9 +39,9 @@
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="ce57d55a-9b99-4ea4-b717-0a5ae1297966" id="207d34d5-a289-40b9-b94a-0c584aaa8753"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.91532019913456" lon="4.7289276123046875"/>
         <costInformation xsi:type="esdl:CostInformation" id="6f57c644-a1de-4c79-a707-76a6741c02b9">
-          <investmentCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="0.005">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6ae2e528-2275-47b0-81a9-97517e478150" unit="EURO" description="Cost in EUR/kg/yr" multiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
-          </investmentCosts>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="5.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="CUBIC_METRE" id="6ae2e528-2275-47b0-81a9-97517e478150" unit="EURO" description="Cost in EUR/m3" physicalQuantity="COST"/>
+          </fixedOperationalCosts>
           <variableOperationalCosts xsi:type="esdl:SingleValue" id="6d5fb87d-f399-4813-9d20-061ec28572d7" value="0.000052">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f6578a3-6a81-41ea-9b71-3ad3db909f4a" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
           </variableOperationalCosts>

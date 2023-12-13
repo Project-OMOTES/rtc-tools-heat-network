@@ -513,9 +513,11 @@ class _AssetToComponentBase:
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
         elif asset.asset_type == "Electrolyzer":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(asset)
         elif asset.asset_type == "GasStorage":
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
-            modifiers["investment_cost_coefficient"] = self.get_investment_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
         else:
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
             modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
@@ -773,7 +775,7 @@ class _AssetToComponentBase:
                         f"Expected cost information {cost_info} to " f"provide a cost in euros."
                     )
                     continue
-                if per_unit == UnitEnum.CUBIC_METRE:
+                if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                     # index is 0 because buffers only have one in out port
                     supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
                         "temperature"
@@ -822,13 +824,35 @@ class _AssetToComponentBase:
                         except KeyError:
                             return 0.0
                     cost_value = cost_value / size
-                elif per_unit != UnitEnum.WATT:
+                elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
                     RuntimeWarning(
                         f"Expected the specified OPEX for asset "
                         f"{asset.name} to be per W or m3, but they are provided "
                         f"in {per_unit} instead."
                     )
                     continue
+                # still to decide if the cost is per kg or per m3
+                # elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
+                #     RuntimeWarning(
+                #         f"Expected the specified OPEX for asset "
+                #         f"{asset.name} to be per GRAM, but they are provided "
+                #         f"in {per_unit} instead."
+                #     )
+                #     continue
+                # elif per_time != TimeUnitEnum.YEAR and asset.asset_type == "GasStorage": ?? why is per year etc not checked for others?
+                #     RuntimeWarning(
+                #         f"Specified investment costs for asset {asset.name}"
+                #         f"include a component per time, which we "
+                #         f"cannot handle."
+                #     )
+                if per_unit != UnitEnum.CUBIC_METRE and asset.asset_type == "GasStorage":
+                    RuntimeWarning(
+                        f"Expected the specified OPEX for asset "
+                        f"{asset.name} to be per m3, but they are provided "
+                        f"in {per_unit} instead."
+                    )
+                    continue
+
                 value += cost_value
         return value
 
@@ -925,10 +949,7 @@ class _AssetToComponentBase:
         if unit_provided != UnitEnum.EURO:
             logger.warning(f"Expect cost information {cost_info} to " f"provide a cost in euros")
             return 0.0
-        if (
-            (not per_time_provided == TimeUnitEnum.NONE and asset.asset_type != "GasStorage")
-            or (not per_time_provided == TimeUnitEnum.YEAR and asset.asset_type == "GasStorage")
-        ):
+        if not per_time_provided == TimeUnitEnum.NONE:
             logger.warning(
                 f"Specified investment costs for asset {asset.name}"
                 f" include a component per time, which we "
@@ -936,17 +957,10 @@ class _AssetToComponentBase:
             )
             return 0.0
         if per_unit == UnitEnum.WATT:
-            if not per_unit_provided == UnitEnum.WATT and asset.asset_type != "GasStorage":
+            if not per_unit_provided == UnitEnum.WATT:
                 logger.warning(
                     f"Expected the specified investment costs "
                     f"of asset {asset.name} to be per W, but they "
-                    f"are provided in {per_unit_provided} "
-                    f"instead."
-                )
-            elif not per_unit_provided != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                logger.warning(
-                    f"Expected the specified investment costs "
-                    f"of asset {asset.name} to be per GRAM, but they "
                     f"are provided in {per_unit_provided} "
                     f"instead."
                 )
