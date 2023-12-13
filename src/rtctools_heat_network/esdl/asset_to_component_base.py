@@ -832,26 +832,19 @@ class _AssetToComponentBase:
                     )
                     continue
                 # still to decide if the cost is per kg or per m3
-                # elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
-                #     RuntimeWarning(
-                #         f"Expected the specified OPEX for asset "
-                #         f"{asset.name} to be per GRAM, but they are provided "
-                #         f"in {per_unit} instead."
-                #     )
-                #     continue
+                elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
+                    RuntimeWarning(
+                        f"Expected the specified OPEX for asset "
+                        f"{asset.name} to be per GRAM, but they are provided "
+                        f"in {per_unit} instead."
+                    )
+                    continue
                 # elif per_time != TimeUnitEnum.YEAR and asset.asset_type == "GasStorage": ?? why is per year etc not checked for others?
                 #     RuntimeWarning(
                 #         f"Specified investment costs for asset {asset.name}"
                 #         f"include a component per time, which we "
                 #         f"cannot handle."
                 #     )
-                if per_unit != UnitEnum.CUBIC_METRE and asset.asset_type == "GasStorage":
-                    RuntimeWarning(
-                        f"Expected the specified OPEX for asset "
-                        f"{asset.name} to be per m3, but they are provided "
-                        f"in {per_unit} instead."
-                    )
-                    continue
 
                 value += cost_value
         return value

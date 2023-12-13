@@ -4088,8 +4088,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
-        # TODO add gas storage
-        # do the same as the ATES below?
+        # TODO add gas storage big_m and flow direction usage
         # for storage in self.heat_network_components.get("gas_tank_storage", []):
         #     gas_mass_flow_in = self.__state_vector_scaled(
         #         f"{storage}.Gas_tank_flow", ensemble_member  # kg/hr

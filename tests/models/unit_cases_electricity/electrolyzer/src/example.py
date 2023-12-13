@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -36,26 +37,21 @@ class RevenueGoal(Goal):
         for i in range(len(price_profile)):
             sum += symbols[i] * price_profile[i]
 
-        # TODO: subtract the costs
-        # for asset in [
-        #         *optimization_problem.heat_network_components.get("gas_demand", []),
-        #         *optimization_problem.heat_network_components.get("gas_source", []),
-        #         *optimization_problem.heat_network_components.get("electrolyzer", []),
-        #         *optimization_problem.heat_network_components.get("gas_tank_storage", []),
-        #         *optimization_problem.heat_network_components.get("wind_park", []),
-        #         *optimization_problem.heat_network_components.get("electricity_demand", []),
-        #         *optimization_problem.heat_network_components.get("electricity_source", []),
-        # ]:
-        #     sum -= optimization_problem.extra_variable(f"{asset}__investment_cost", ensemble_member)
-        #     sum -= optimization_problem.extra_variable(
-        #         f"{asset}__installation_cost", ensemble_member
-        #     )
-        #     sum -= optimization_problem.extra_variable(
-        #         f"{asset}__variable_operational_cost", ensemble_member
-        #     )
-        #     sum -= optimization_problem.extra_variable(
-        #         f"{asset}__fixed_operational_cost", ensemble_member
-        #     )
+        for asset in [
+                *optimization_problem.heat_network_components.get("gas_demand", []),
+                *optimization_problem.heat_network_components.get("gas_source", []),
+                *optimization_problem.heat_network_components.get("electrolyzer", []),
+                *optimization_problem.heat_network_components.get("gas_tank_storage", []),
+                *optimization_problem.heat_network_components.get("wind_park", []),
+                *optimization_problem.heat_network_components.get("electricity_demand", []),
+                *optimization_problem.heat_network_components.get("electricity_source", []),
+        ]:
+            sum -= optimization_problem.extra_variable(
+                f"{asset}__variable_operational_cost", ensemble_member
+            )
+            sum -= optimization_problem.extra_variable(
+                f"{asset}__fixed_operational_cost", ensemble_member
+            )
 
         return -sum
 
@@ -175,6 +171,8 @@ if __name__ == "__main__":
     print("Electricity income MEuro: %0.1f" % (sum(elect_income) / 1.0e6))
     print("Total income MEuro: %0.1f" % ((sum(elect_income) + sum(hydrogen_income)) / 1.0e6))
 
+    # ----------------------------------------------------------------------------------------------
+    # Manual checks
     # Check transport cost 0.16 euro/kg H2
     print("\nTranport cost variable opex")
     print(
@@ -196,6 +194,7 @@ if __name__ == "__main__":
     print(r['GasStorage_e492__fixed_operational_cost'][0])
     print(temp_calc)
 
+    # Still to add this functionality to MILP
     # Check storage costs variable opex 1MWh/tonH2 =
     # 52 euro/MWh (median price) / 1000kgH2 = 0.052 euro/kgH2
     # print(
@@ -209,17 +208,18 @@ if __name__ == "__main__":
     # print(r['GasStorage_e492__variable_operational_cost'][0])
 
     # Check electolyzer variable OPEX 0.05 euro / kg H2 -> should have left this one out
-    print("Electrolyzer variable opex")
-    print(
-        sum(
-            (
-                elect.get_timeseries(price_profile).times[1:]
-                - elect.get_timeseries(price_profile).times[0:-1]
-            ) / 3600.0
-            * r["Electrolyzer_fc66.Gas_mass_flow_out"][1:] * 0.05
-        )
-    )
-    print(r['Electrolyzer_fc66__variable_operational_cost'][0])
+    # Left out as suggested by Javier
+    # print("Electrolyzer variable opex")
+    # print(
+    #     sum(
+    #         (
+    #             elect.get_timeseries(price_profile).times[1:]
+    #             - elect.get_timeseries(price_profile).times[0:-1]
+    #         ) / 3600.0
+    #         * r["Electrolyzer_fc66.Gas_mass_flow_out"][1:] * 0.05
+    #     )
+    # )
+    # print(r['Electrolyzer_fc66__variable_operational_cost'][0])
 
     # Check electrolyzer fixed opex, based on installed size of 500MW
     print("Electrolyzer fixed opex")
@@ -229,5 +229,42 @@ if __name__ == "__main__":
     print("Electrolyzer investment cost")
     print(2000.0 / 1.e3 * 500.0e6)
     print(r['Electrolyzer_fc66__investment_cost'][0])
+
+    # ----------------------------------------------------------------------------------------------
+    # Create some plots
+    # Maybe chnage time step to days in the plots?
+    f1 = plt.figure()
+    ax1 = f1.add_subplot(111)
+    ax1.plot(elect.get_timeseries(price_profile).times, r["GasStorage_e492.Stored_gas_mass"])
+    plt.xlabel('Time steps [s]')
+    plt.ylabel('Gas stored mass [kg]')
+    plt.show()
+    # plt.close()
+    
+    f2 = plt.figure()
+    ax2 = f2.add_subplot(111)
+    ax2.plot(elect.get_timeseries(price_profile).times, gas_rate)
+    plt.xlabel('Time steps [s]')
+    plt.ylabel('Gas price [euro/kg]')
+    plt.show()
+    # plt.close()
+
+    f3 = plt.figure()
+    ax3 = f3.add_subplot(111)
+    ax3.plot(elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Gas_mass_flow_out"])
+    plt.xlabel('Time steps [s]')
+    plt.ylabel('Electrolyzer gas mass flow out [kg/hr]')
+    plt.show()
+    # plt.close()
+
+    f4 = plt.figure()
+    ax4 = f4.add_subplot(111)
+    ax4.plot(
+        elect.get_timeseries(price_profile).times, r["ElectricityCable_09d1.ElectricityOut.Power"]
+    )
+    plt.xlabel('Time steps [s]')
+    plt.ylabel('Electrolyzer power usage [W]')
+    plt.show()
+    # plt.close()
 
     temp = 0.0
