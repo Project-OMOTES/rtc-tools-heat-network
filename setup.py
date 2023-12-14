@@ -60,7 +60,7 @@ setup(
         "rtc-tools == 2.6.0a3",
         "pyesdl >= 23.11.1",
         "pandas >= 1.3.1, < 2.0",
-        "casadi == 3.6.3",
+        "casadi == 3.6.4",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
