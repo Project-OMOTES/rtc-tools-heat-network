@@ -1,78 +1,112 @@
-name: PyPi release
-run-name: CI pipeline
-on:
-  push:
-    branches:
-      - '*'
+name: Build-Test-Lint-etc (linux)
+
+on: [push]
 
 jobs:
-  style:
-    name: Check style
+
+  flake8-lint:
     runs-on: ubuntu-latest
-    env:
-      TOXENV: flake8,black
+    name: Lint
+    strategy:
+      matrix:
+        python-version: ["3.8"]
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
-
-      - name: deps
-        run: python -m pip install -U tox
-
-      - name: Check style
-        run: tox -vv
-
-  build:
-    name: Check build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
-
-      - name: deps
-        run: python -m pip install -U wheel setuptools build
-
-      - name: Check build
-        run: python setup.py sdist bdist_wheel
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - run: |
+        ./ci/linux/create_venv.sh
+        ./ci/linux/install_dependencies.sh
+    - name: Run Flake8 linting
+      run: |
+        ./ci/linux/lint.sh
 
   test:
-    name: Check test
     runs-on: ubuntu-latest
-    env:
-      TOXENV: py38
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - run: |
+        ./ci/linux/create_venv.sh
+        ./ci/linux/install_dependencies.sh
+
+    - name: run unit tests
+      run: |
+        ./ci/linux/test_unit.sh
+
+    - name: Surface failing tests
+      if: always()
+      uses: pmeier/pytest-results-action@main
+      with:
+        # A list of JUnit XML files, directories containing the former, and wildcard
+        # patterns to process.
+        # See @actions/glob for supported patterns.
+        path: test-results.xml
+
+        # Add a summary of the results at the top of the report
+        # Default: true
+        summary: true
+
+        # Select which results should be included in the report.
+        # Follows the same syntax as
+        # `pytest -r`
+        # Default: fEX
+        display-options: fEX
+
+        # Fail the workflow if no JUnit XML was found.
+        # Default: true
+        fail-on-empty: true
+
+  typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - run: |
+        ./ci/linux/create_venv.sh
+        ./ci/linux/install_dependencies.sh
+
+    - name: Add mypy annotator
+      uses: pr-annotators/mypy-pr-annotator@v1.0.0
+
+    - name: run typechecker
+      run: |
+        ./ci/linux/typecheck.sh
+
+  build:
+    name: Build the python package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.8" ]
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - run: |
+          ./ci/linux/create_venv.sh
+          ./ci/linux/install_dependencies.sh
 
-      - name: deps
-        run: python -m pip install -U tox
-
-      - name: Check test
-        run: tox -vv
-
-  documentation:
-    name: Generate documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
-
-      - name: Generate documentation
+      - name: build
         run: |
-          pip install -e .
-          cd docs
-          pip install -r requirements.txt
-          make html
-          mv _build/html ../public
-          cd ..
+          ./ci/linux/build_python_package.sh
