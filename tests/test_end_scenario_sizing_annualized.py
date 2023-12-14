@@ -23,9 +23,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
-        solution_run_ates = run_optimization_problem(
-            HeatProblem, base_folder=base_folder
-        )
+        solution_run_ates = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
         solution_annualized_cost = run_optimization_problem(
             HeatProblemDiscAnnualizedCost, base_folder=base_folder
@@ -91,10 +89,7 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizingAnnualized()
     a.test_end_scenario_sizing_annualized()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
 # TODO:
 # Include attributes discount factor and technical life in each asset
