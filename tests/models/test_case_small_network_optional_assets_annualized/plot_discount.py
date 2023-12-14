@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+
+import numpy as np
 
 
 def calculate_annuity_factor(discount_rate: np.ndarray, years_asset_life: float) -> np.ndarray:

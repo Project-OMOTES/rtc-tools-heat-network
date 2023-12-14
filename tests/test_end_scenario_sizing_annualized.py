@@ -10,8 +10,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
     def test_end_scenario_sizing_annualized(self):
         from models.test_case_small_network_optional_assets_annualized.src.run_annualized import (
             HeatProblemDiscAnnualizedCost,
-            HeatProblemDiscAnnualizedCost_Modified_Param,
-            HeatProblemDiscAnnualizedCost_Modified_discountRate,
+            HeatProblemDiscAnnualizedCostModifiedParam,
+            HeatProblemDiscAnnualizedCostModifiedDiscountRate,
         )
         from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
             HeatProblem,
@@ -30,11 +30,11 @@ class TestEndScenarioSizingAnnualized(TestCase):
         )
 
         solution__annualized_modified_param = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost_Modified_Param, base_folder=base_folder
+            HeatProblemDiscAnnualizedCostModifiedParam, base_folder=base_folder
         )
 
         solution__annualized_modified_discount = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost_Modified_discountRate, base_folder=base_folder
+            HeatProblemDiscAnnualizedCostModifiedDiscountRate, base_folder=base_folder
         )
 
         # Assertion 1: Non annualized objective value with discount=0 and

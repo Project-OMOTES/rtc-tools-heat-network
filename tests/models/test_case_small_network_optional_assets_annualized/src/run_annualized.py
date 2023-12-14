@@ -1,5 +1,7 @@
+from typing import Any, Dict, List
+
 import numpy as np
-from typing import List, Dict, Any
+
 
 from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -191,7 +193,7 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         return goals
 
 
-class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost):
+class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
@@ -204,7 +206,7 @@ class HeatProblemDiscAnnualizedCost_Modified_Param(HeatProblemDiscAnnualizedCost
         return assets
 
 
-class HeatProblemDiscAnnualizedCost_Modified_discountRate(HeatProblemDiscAnnualizedCost):
+class HeatProblemDiscAnnualizedCostModifiedDiscountRate(HeatProblemDiscAnnualizedCost):
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
@@ -222,7 +224,7 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(
         # HeatProblemDiscAnnualizedCost, base_folder=base_folder
-        HeatProblemDiscAnnualizedCost_Modified_Param,
+        HeatProblemDiscAnnualizedCostModifiedParam,
         base_folder=base_folder,
     )
     results = solution.extract_results()
