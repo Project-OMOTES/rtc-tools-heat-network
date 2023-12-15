@@ -24,5 +24,7 @@ class GasDemand(GasComponent, BaseAsset):
 
         self.add_variable(GasPort, "GasIn")
         self.add_variable(Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal * self.density)
+        # self.add_variable(Variable, "Gas_demand_mass_flow", min=0.0, max = 7.0*3600.0, nominal=self.Q_nominal * self.density)
+        # self.add_variable(Variable, "Gas_demand_mass_flow", min=0.0, max = 3.5*3600.0, nominal=self.Q_nominal * self.density)
 
         self.add_equation(((self.GasIn.mass_flow - self.Gas_demand_mass_flow) / (self.Q_nominal * self.density)))

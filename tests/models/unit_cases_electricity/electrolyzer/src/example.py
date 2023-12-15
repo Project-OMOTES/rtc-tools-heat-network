@@ -153,9 +153,9 @@ if __name__ == "__main__":
     hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"][1:] * (
         elect.get_timeseries(price_profile).times[1:]
         - elect.get_timeseries(price_profile).times[0:-1]
-    ) * gas_rate[1:]
+    ) / 3600.0 * gas_rate[1:]
     # hydrogen_income = r["Pipe_6ba6.GasOut.mass_flow"] * gas_rate
-    print("Hydrogen income MEuro: %0.1f" % (sum(hydrogen_income) / 1.0e6))
+    print("Hydrogen income MEuro: %0.6f" % (sum(hydrogen_income) / 1.0e6))
 
     carrier_name = "elec"
     price_profile = f"{carrier_name}.price_profile"
@@ -168,11 +168,12 @@ if __name__ == "__main__":
         ) / 3600.0
     )  # Wh
     elect_income = elect_energy * elect_rate[1:]
-    print("Electricity income MEuro: %0.1f" % (sum(elect_income) / 1.0e6))
-    print("Total income MEuro: %0.1f" % ((sum(elect_income) + sum(hydrogen_income)) / 1.0e6))
+    print("Electricity income MEuro: %0.6f" % (sum(elect_income) / 1.0e6))
+    print("Total income MEuro: %0.6f" % ((sum(elect_income) + sum(hydrogen_income)) / 1.0e6))
 
     # ----------------------------------------------------------------------------------------------
     # Manual checks
+    tot_expense = 0.0
     # Check transport cost 0.16 euro/kg H2
     print("\nTranport cost variable opex")
     print(
@@ -185,6 +186,8 @@ if __name__ == "__main__":
         )
     )
     print(r['GasDemand_0cf3__variable_operational_cost'][0])
+    
+    tot_expense += sum(r['GasDemand_0cf3__variable_operational_cost'])
 
     # Check storage costs fix opex 5 euro/kgH2/year -> 118.575euro/m3
     # Storage resreved size = 500ton -> 500e3 kg / 23.715 (@350bar) kg/m3 = 21083 m3
@@ -193,6 +196,8 @@ if __name__ == "__main__":
     temp_calc = 118.575 * 21083.0
     print(r['GasStorage_e492__fixed_operational_cost'][0])
     print(temp_calc)
+
+    tot_expense += sum(r['GasStorage_e492__fixed_operational_cost'])
 
     # Still to add this functionality to MILP
     # Check storage costs variable opex 1MWh/tonH2 =
@@ -225,10 +230,15 @@ if __name__ == "__main__":
     print("Electrolyzer fixed opex")
     print(15.0 * 500.0e6/1.0e3)
     print(r['Electrolyzer_fc66__fixed_operational_cost'][0])
+
+    tot_expense += sum(r['Electrolyzer_fc66__fixed_operational_cost'])
+
     # Check electrolyzer investment cost, based on installed size of 500MW
     print("Electrolyzer investment cost")
     print(2000.0 / 1.e3 * 500.0e6)
     print(r['Electrolyzer_fc66__investment_cost'][0])
+
+    tot_expense += sum(r['Electrolyzer_fc66__investment_cost'])
 
     # ----------------------------------------------------------------------------------------------
     # Create some plots
@@ -237,9 +247,8 @@ if __name__ == "__main__":
     ax1 = f1.add_subplot(111)
     ax1.plot(elect.get_timeseries(price_profile).times, r["GasStorage_e492.Stored_gas_mass"])
     plt.xlabel('Time steps [s]')
-    plt.ylabel('Gas stored mass [kg]')
+    plt.ylabel('Gas storage [kg]')
     plt.show()
-    # plt.close()
     
     f2 = plt.figure()
     ax2 = f2.add_subplot(111)
@@ -247,7 +256,6 @@ if __name__ == "__main__":
     plt.xlabel('Time steps [s]')
     plt.ylabel('Gas price [euro/kg]')
     plt.show()
-    # plt.close()
 
     f3 = plt.figure()
     ax3 = f3.add_subplot(111)
@@ -255,16 +263,44 @@ if __name__ == "__main__":
     plt.xlabel('Time steps [s]')
     plt.ylabel('Electrolyzer gas mass flow out [kg/hr]')
     plt.show()
-    # plt.close()
 
     f4 = plt.figure()
     ax4 = f4.add_subplot(111)
     ax4.plot(
-        elect.get_timeseries(price_profile).times, r["ElectricityCable_09d1.ElectricityOut.Power"]
+        elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Power_consumed"]
     )
     plt.xlabel('Time steps [s]')
     plt.ylabel('Electrolyzer power usage [W]')
     plt.show()
-    # plt.close()
+
+    f5 = plt.figure()
+    ax5 = f5.add_subplot(111)
+    ax5.plot(
+        elect.get_timeseries(price_profile).times, r["Pipe_6ba6.GasOut.mass_flow"] / 3600.0
+    )
+    plt.xlabel('Time steps [s]')
+    plt.ylabel('Gass sold [kg/s]')
+    plt.show()
+
+    # import pickle
+    import pandas as pd
+    
+    storage="storage_included"
+    data_name = "Pipe_6ba6.GasOut.mass_flow"
+    test = {data_name: r[data_name]/3600.0}
+    df_data = pd.DataFrame(test)
+    df_data.to_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+    df_read_1 = pd.read_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+
+    storage="storage_excluded"
+    data_name = "Pipe_6ba6.GasOut.mass_flow"
+    # test = {data_name: r[data_name]/3600.0}
+    # df_data = pd.DataFrame(test)
+    # df_data.to_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+    df_read_2 = pd.read_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+
+    plt.xlabel('Number of time steps')
+    plt.ylabel('Gass sold [kg/s]')
+    plt.show()
 
     temp = 0.0

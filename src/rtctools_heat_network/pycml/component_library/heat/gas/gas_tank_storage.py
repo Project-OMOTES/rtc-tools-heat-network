@@ -27,6 +27,7 @@ class GasTankStorage(GasComponent, BaseAsset):
 
         self.add_variable(GasPort, "GasIn")
         self.add_variable(Variable, "Gas_tank_flow")
+        # self.add_variable(Variable, "Gas_tank_flow", max=0.0)
 
         self._typical_fill_time = 3600.0
         self._nominal_stored_gas = self.Q_nominal * self.density_max_storage * self._typical_fill_time
@@ -40,6 +41,6 @@ class GasTankStorage(GasComponent, BaseAsset):
 
         self.add_equation(((self.GasIn.mass_flow - self.Gas_tank_flow) / (self.Q_nominal * self.density)))
 
-        self.add_equation(((self.der(self.Stored_gas_mass) - self.Gas_tank_flow) / (self._nominal_stored_gas*self.Q_nominal*self.density)**0.5))
+        self.add_equation(((self.der(self.Stored_gas_mass) - (self.Gas_tank_flow/3600.0)) / (self._nominal_stored_gas*self.Q_nominal*self.density)**0.5))
 
         self.add_initial_equation((self.Stored_gas_mass / self._nominal_stored_gas))
