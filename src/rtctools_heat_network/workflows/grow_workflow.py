@@ -512,7 +512,9 @@ class EndScenarioSizingCBC(EndScenarioSizing):
 
 
 def run_end_scenario_sizing(
-    end_scenario_problem_class, esdl_string=None, staged_pipe_optimization=True
+    end_scenario_problem_class,
+    staged_pipe_optimization=True,
+    **kwargs,
 ):
     """
     This function is used to run end_scenario_sizing problem. There are a few variations of the
@@ -540,7 +542,9 @@ def run_end_scenario_sizing(
     start_time = time.time()
     if staged_pipe_optimization:
         solution = run_optimization_problem(
-            end_scenario_problem_class, esdl_string=esdl_string, stage=1
+            end_scenario_problem_class,
+            stage=1,
+            **kwargs,
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
@@ -600,9 +604,9 @@ def run_end_scenario_sizing(
 
     solution = run_optimization_problem(
         end_scenario_problem_class,
-        esdl_string=esdl_string,
         stage=2,
         boolean_bounds=boolean_bounds,
+        **kwargs,
     )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
