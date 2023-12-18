@@ -3703,7 +3703,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
 
             # Power loss constraint
-            # constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0))
+            # constraints.append(
+            #    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
+            # )
             constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
 
         return constraints
@@ -3834,12 +3836,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for d in self.heat_network_components.get("electricity_demand", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
-            electricity_demand = self.__state_vector_scaled(f"{d}.Electricity_demand", ensemble_member)
+            electricity_demand = self.__state_vector_scaled(
+                f"{d}.Electricity_demand", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_demand")
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_demand) / constraint_nominal,
+                    (
+                        np.ones(len(self.times())) * max_power - electricity_demand
+                    ) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -3848,12 +3854,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for d in self.heat_network_components.get("electricity_source", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
-            electricity_source = self.__state_vector_scaled(f"{d}.Electricity_source", ensemble_member)
+            electricity_source = self.__state_vector_scaled(
+                f"{d}.Electricity_source", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_source) / constraint_nominal,
+                    (
+                        np.ones(len(self.times())) * max_power - electricity_source
+                    ) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -3862,12 +3872,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for d in self.heat_network_components.get("electrolyzer", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
-            electricity_electrolyzer = self.__state_vector_scaled(f"{d}.Power_consumed", ensemble_member)
+            electricity_electrolyzer = self.__state_vector_scaled(
+                f"{d}.Power_consumed", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{d}.Power_consumed")
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_power - electricity_electrolyzer) / constraint_nominal,
+                    (
+                        np.ones(len(self.times())) * max_power - electricity_electrolyzer
+                    ) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -4062,7 +4076,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
         for _ in self.heat_network_components.get("buffer", []):
-            pass  
+            pass
 
         for demand in self.heat_network_components.get("gas_demand", []):
             gas_mass_flow = self.__state_vector_scaled(
@@ -4111,7 +4125,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         #         #varOPEX would be a variable>0 for everyt timestep
         #         sum += varOPEX
         #     constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
-            
 
         for electrolyzer in self.heat_network_components.get("electrolyzer", []):
             power_consumer = self.__state_vector_scaled(
@@ -4131,13 +4144,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
-                        variable_operational_cost_coefficient
-                        * power_consumer[i]
-                        * (self.times()[i] - self.times()[i - 1]) / 3600. # gas_mass_flow unit is kg/hr
+                    variable_operational_cost_coefficient
+                    * power_consumer[i]
+                    * (self.times()[i] - self.times()[i - 1]) / 3600.  # gas_mass_flow unit is kg/hr
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
-            
+
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal
@@ -4473,23 +4486,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")
 
-            # # Temp: 1 line hard coded
-            # Linearized gass mass out based on the following curve:
-            # gass mass out = (1/efficiency) * electrical power input * time duration [kg/hr]
-            # eff = (coef_a / max_power_in) + (coef_b * max_power_in) + coef_c
-            # max_gas_mass_flow_out = (1.0 / eff) * max_power_in 
-            # gass_mass_out_linearized = max_gas_mass_flow_out * power_consumed / max_power_in
-            # constraint_nominal = max_gas_mass_flow_out
-            # # symbolic error check??:
-            # constraints.append(
-            #     (
-            #         (gas_mass_flow_out - gass_mass_out_linearized) / constraint_nominal,
-            #         -np.inf,
-            #         0.0,
-            #     )
-            # )
-            # # end Temp: 1 line hard coded
-
             # Multiple linear lines
             curve_fit_number_of_lines = 3
             linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
@@ -4503,13 +4499,15 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
-            nominal = (self.variable_nominal(f"{asset}.Gas_mass_flow_out") *
-                       min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed")) ** 0.5
+            nominal = (
+                self.variable_nominal(f"{asset}.Gas_mass_flow_out")
+                * min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed")
+            ) ** 0.5
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) /
-                        nominal,
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect)
+                        / nominal,
                         -np.inf,
                         0.0,
                     ),
@@ -4557,7 +4555,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 f"{wp}.Electricity_source", ensemble_member
             )
             max = self.bounds()[f"{wp}.Electricity_source"][1].values
-            nominal = (self.variable_nominal(f"{wp}.Electricity_source")*np.median(max))**0.5
+            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max))**0.5
 
             constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 

@@ -6,12 +6,12 @@
     </quantityAndUnits>
     <carriers xsi:type="esdl:Carriers" id="3ef72f2f-98da-4818-a63b-ac13b04c897c">
       <carrier xsi:type="esdl:ElectricityCommodity" voltage="50000.0" name="elec" id="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d">
-        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="electricity_price" measurement="ElectricityDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65187">
+        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-01-02T00:00:00.000000+0000" field="electricity_price" measurement="ElectricityDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65187">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="c78634b5-3876-4b8d-8ee8-d145b37b8215" unit="EURO" description="Cost in EUR/Wh" physicalQuantity="COST"/>
         </cost>
       </carrier>
       <carrier xsi:type="esdl:GasCommodity" name="gas" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372">
-        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="gas_price" measurement="GasDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65186">
+        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-01-02T00:00:00.000000+0000" field="gas_price" measurement="GasDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65186">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="CUBIC_METRE" id="ede3b53e-7d9f-45f6-9c69-9d8ef3647561" unit="EURO" description="Cost in EUR/m3" physicalQuantity="COST"/>
         </cost>
       </carrier>
@@ -70,7 +70,7 @@
       </asset>
       <asset xsi:type="esdl:WindPark" id="7f140121-76d6-4abe-aa6f-4c611664280a" power="1000000000.0" name="WindPark_7f14" surfaceArea="69301306">
         <port xsi:type="esdl:OutPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="Out" id="40593cd4-e512-4ec4-b702-47f1cc7d1836" connectedTo="2e47d054-4ea8-4ca0-a5a2-0cb60d8dd338">
-          <profile xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="maximum_production" measurement="Windpark2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65188">
+          <profile xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-01-02T00:00:00.000000+0000" field="maximum_production" measurement="Windpark2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65188">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>

@@ -1,6 +1,6 @@
-from rtctools_heat_network.pycml import Variable
-
 from numpy import nan
+
+from rtctools_heat_network.pycml import Variable
 
 from .electricity_base import ElectricityTwoPort
 from .._internal import BaseAsset

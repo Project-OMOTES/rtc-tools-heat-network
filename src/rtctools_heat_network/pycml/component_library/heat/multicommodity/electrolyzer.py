@@ -1,7 +1,6 @@
-from rtctools_heat_network.pycml import Variable
-
 from numpy import nan
 
+from rtctools_heat_network.pycml import Variable
 from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
 from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import \
     ElectricityComponent
@@ -13,11 +12,9 @@ from rtctools_heat_network.pycml.component_library.heat.gas.gas_base import (
 )
 
 
-# TODO: for now in the electricity folder, but maybe we can make a multicommodity folder,
-# where this is then placed.
 class Electrolyzer(ElectricityComponent, BaseAsset):
     """
-    ????
+    An electrolyzer consumes electricity and produces hydrogen
     """
     def __init__(self, name, **modifiers):
         super().__init__(
@@ -28,7 +25,6 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
             ),
         )
 
-        # ...
         self.component_type = "electrolyzer"
 
         self.a_eff_coefficient = nan
@@ -39,7 +35,6 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
 
-        # ...
         self.Q_nominal = nan
         self.min_voltage = nan
 

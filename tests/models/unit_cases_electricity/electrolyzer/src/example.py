@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -62,7 +61,9 @@ class _GoalsAndOptions:
 
         # TODO: these goals should incorperate the timestep
         for demand in self.heat_network_components.get("electricity_demand", []):
-            carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+            carrier_name = self.esdl_assets[
+                self.esdl_asset_name_to_id_map[demand]
+            ].in_ports[0].carrier.name
             price_profile = f"{carrier_name}.price_profile"
             state = f"{demand}.Electricity_demand"
             nominal = self.variable_nominal(state) * np.median(
@@ -71,12 +72,14 @@ class _GoalsAndOptions:
             goals.append(RevenueGoal(state, price_profile, nominal))
 
         for demand in self.heat_network_components.get("gas_demand", []):
-            carrier_name = self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[
-                0].carrier.name
+            carrier_name = self.esdl_assets[
+                self.esdl_asset_name_to_id_map[demand]
+            ].in_ports[0].carrier.name
             price_profile = f"{carrier_name}.price_profile"
             state = f"{demand}.Gas_demand_mass_flow"
-            nominal= self.variable_nominal(state)*np.median(
-                self.get_timeseries(price_profile).values)
+            nominal = self.variable_nominal(state) * np.median(
+                self.get_timeseries(price_profile).values
+            )
 
             goals.append(RevenueGoal(state, price_profile, nominal))
 
@@ -103,7 +106,6 @@ class _GoalsAndOptions:
         #     constraints.append(((power * nominal) / nominal, 0., 0.))
 
         return constraints
-
 
 
 class MILPProblem(
@@ -186,7 +188,7 @@ if __name__ == "__main__":
         )
     )
     print(r['GasDemand_0cf3__variable_operational_cost'][0])
-    
+
     tot_expense += sum(r['GasDemand_0cf3__variable_operational_cost'])
 
     # Check storage costs fix opex 5 euro/kgH2/year -> 118.575euro/m3
@@ -228,7 +230,7 @@ if __name__ == "__main__":
 
     # Check electrolyzer fixed opex, based on installed size of 500MW
     print("Electrolyzer fixed opex")
-    print(15.0 * 500.0e6/1.0e3)
+    print(15.0 * 500.0e6 / 1.0e3)
     print(r['Electrolyzer_fc66__fixed_operational_cost'][0])
 
     tot_expense += sum(r['Electrolyzer_fc66__fixed_operational_cost'])
@@ -241,66 +243,83 @@ if __name__ == "__main__":
     tot_expense += sum(r['Electrolyzer_fc66__investment_cost'])
 
     # ----------------------------------------------------------------------------------------------
+    # Do not delete the temp code below for now: main purpose was to create comparison plots
     # Create some plots
-    # Maybe chnage time step to days in the plots?
-    f1 = plt.figure()
-    ax1 = f1.add_subplot(111)
-    ax1.plot(elect.get_timeseries(price_profile).times, r["GasStorage_e492.Stored_gas_mass"])
-    plt.xlabel('Time steps [s]')
-    plt.ylabel('Gas storage [kg]')
-    plt.show()
-    
-    f2 = plt.figure()
-    ax2 = f2.add_subplot(111)
-    ax2.plot(elect.get_timeseries(price_profile).times, gas_rate)
-    plt.xlabel('Time steps [s]')
-    plt.ylabel('Gas price [euro/kg]')
-    plt.show()
 
-    f3 = plt.figure()
-    ax3 = f3.add_subplot(111)
-    ax3.plot(elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Gas_mass_flow_out"])
-    plt.xlabel('Time steps [s]')
-    plt.ylabel('Electrolyzer gas mass flow out [kg/hr]')
-    plt.show()
+    # import matplotlib.pyplot as plt
 
-    f4 = plt.figure()
-    ax4 = f4.add_subplot(111)
-    ax4.plot(
-        elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Power_consumed"]
-    )
-    plt.xlabel('Time steps [s]')
-    plt.ylabel('Electrolyzer power usage [W]')
-    plt.show()
+    # f1 = plt.figure()
+    # ax1 = f1.add_subplot(111)
+    # ax1.plot(elect.get_timeseries(price_profile).times, r["GasStorage_e492.Stored_gas_mass"])
+    # plt.xlabel('Time steps [s]')
+    # plt.ylabel('Gas storage [kg]')
+    # plt.show()
 
-    f5 = plt.figure()
-    ax5 = f5.add_subplot(111)
-    ax5.plot(
-        elect.get_timeseries(price_profile).times, r["Pipe_6ba6.GasOut.mass_flow"] / 3600.0
-    )
-    plt.xlabel('Time steps [s]')
-    plt.ylabel('Gass sold [kg/s]')
-    plt.show()
+    # f2 = plt.figure()
+    # ax2 = f2.add_subplot(111)
+    # ax2.plot(elect.get_timeseries(price_profile).times, gas_rate)
+    # plt.xlabel('Time steps [s]')
+    # plt.ylabel('Gas price [euro/kg]')
+    # plt.show()
 
-    # import pickle
-    import pandas as pd
-    
-    storage="storage_included"
-    data_name = "Pipe_6ba6.GasOut.mass_flow"
-    test = {data_name: r[data_name]/3600.0}
-    df_data = pd.DataFrame(test)
-    df_data.to_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
-    df_read_1 = pd.read_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+    # f3 = plt.figure()
+    # ax3 = f3.add_subplot(111)
+    # ax3.plot(elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Gas_mass_flow_out"])
+    # plt.xlabel('Time steps [s]')
+    # plt.ylabel('Electrolyzer gas mass flow out [kg/hr]')
+    # plt.show()
 
-    storage="storage_excluded"
-    data_name = "Pipe_6ba6.GasOut.mass_flow"
-    # test = {data_name: r[data_name]/3600.0}
+    # f4 = plt.figure()
+    # ax4 = f4.add_subplot(111)
+    # ax4.plot(
+    #     elect.get_timeseries(price_profile).times, r["Electrolyzer_fc66.Power_consumed"]
+    # )
+    # plt.xlabel('Time steps [s]')
+    # plt.ylabel('Electrolyzer power usage [W]')
+    # plt.show()
+
+    # f5 = plt.figure()
+    # ax5 = f5.add_subplot(111)
+    # ax5.plot(
+    #     elect.get_timeseries(price_profile).times, r["Pipe_6ba6.GasOut.mass_flow"] / 3600.0
+    # )
+    # plt.xlabel('Time steps [s]')
+    # plt.ylabel('Gass sold [kg/s]')
+    # plt.show()
+
+    # The code below was used for storing data of multiple runs (different settings like with
+    # without mass storage)
+
+    # import pandas as pd
+
+    # storage = "storage_included"
+    # data_name = "Pipe_6ba6.GasOut.mass_flow"
+    # test = {data_name: r[data_name] / 3600.0}
     # df_data = pd.DataFrame(test)
-    # df_data.to_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
-    df_read_2 = pd.read_pickle(f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl")
+    # df_data.to_pickle(
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
+    # )
+    # df_read_1 = pd.read_pickle(
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
+    # )
 
-    plt.xlabel('Number of time steps')
-    plt.ylabel('Gass sold [kg/s]')
-    plt.show()
+    # storage = "storage_excluded"
+    # data_name = "Pipe_6ba6.GasOut.mass_flow"
+    # test = {data_name: r[data_name] / 3600.0}
+    # df_data = pd.DataFrame(test)
+    # df_data.to_pickle(
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
+    # )
+    # df_read_2 = pd.read_pickle(
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
+    # )
 
-    temp = 0.0
+    # plt.xlabel('Number of time steps')
+    # plt.ylabel('Gass sold [kg/s]')
+    # plt.show()
+    # temp = 0.0
+    # ----------------------------------------------------------------------------------------------
