@@ -130,6 +130,7 @@ class MILPProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["include_asset_is_switched_on"] = True
+        options["include_electric_cable_power_loss"] = False
 
         return options
 

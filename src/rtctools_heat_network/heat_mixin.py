@@ -1027,32 +1027,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         r"""
         Returns a dictionary of heat network specific options.
 
-        +--------------------------------------+-----------+-----------------------------+
-        | Option                               | Type      | Default value               |
-        +======================================+===========+=============================+
-        | ``minimum_pressure_far_point``       | ``float`` | ``1.0`` bar                 |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``maximum_temperature_der``          | ``float`` | ``2.0`` °C/hour             |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``maximum_flow_der``                 | ``float`` | ``np.inf`` m3/s/hour        |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``include_asset_is_realized ``       | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        +--------------------------------------+-----------+-----------------------------+
-        | ``include_asset_is_switched_on ``    | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
+        +---------------------------------------+-----------+-----------------------------+
+        | ``include_asset_is_realized ``        | ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
+        +---------------------------------------+-----------+-----------------------------+
+        | ``include_asset_is_switched_on ``     | ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``include_electric_cable_power_loss ``| ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
         per hour. Similarly, the ``maximum_flow_der`` parameter gives the
@@ -1087,6 +1069,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+
+        The ``include_electric_cable_power_loss`` option is used to enable or disable the inclusion
+        of cable electrical power losses.
         """
 
         options = super().heat_network_options()
@@ -1102,6 +1087,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["include_demand_insulation_options"] = False
         options["include_asset_is_realized"] = False
         options["include_asset_is_switched_on"] = False
+        options["include_electric_cable_power_loss"] = False
 
         return options
 
@@ -3701,12 +3687,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # Ensure that the current is sufficient to transport the power
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
-
             # Power loss constraint
-            # constraints.append(
-            #    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
-            # )
-            constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
+            options = self.heat_network_options()
+            if options["include_electric_cable_power_loss"]:
+                constraints.append(
+                    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
+                )
+            else:
+                constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
 
         return constraints
 
