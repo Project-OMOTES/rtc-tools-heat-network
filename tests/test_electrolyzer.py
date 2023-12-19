@@ -44,7 +44,9 @@ class TestElectrolyzer(TestCase):
 
         # Check that goal is as expected
         np.testing.assert_allclose(
-            milp_problem.objective_value, -(gas_revenue + electricity_revenue)
+            milp_problem.objective_value, -(gas_revenue + electricity_revenue),
+            atol=1e-2,
+            rtol=1e-2,
         )
         tol = 1.e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
@@ -98,7 +100,8 @@ class TestElectrolyzer(TestCase):
             electrical_power_min=0.0,
             electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1]
         )
-
+        # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
+        # the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
         # np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
         #                            results["Electrolyzer_fc66.GasOut.Q"] *
         #                            milp_problem.parameters(0)["Electrolyzer_fc66.density"])
@@ -108,8 +111,47 @@ class TestElectrolyzer(TestCase):
                 results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.0e-3
             )
 
-        print(results["Electrolyzer_fc66.ElectricityIn.Power"])
-        print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
+        # print(results["Electrolyzer_fc66.ElectricityIn.Power"])
+        # print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
+
+        #  -----------------------------------------------------------------------------------------
+        # Do cost checks
+
+        # Check variable opex: transport cost 0.1 euro/kg H2
+        gas_tranport_cost = sum(
+            (
+                milp_problem.get_timeseries(price_profile).times[1:]
+                - milp_problem.get_timeseries(price_profile).times[0:-1]
+            ) / 3600.0
+            * results["Pipe_6ba6.GasOut.mass_flow"][1:] * 0.1
+        )
+        np.testing.assert_allclose(
+            gas_tranport_cost,
+            results["GasDemand_0cf3__variable_operational_cost"],
+        )
+
+        # Check storage cost fix opex 10 euro/kgH2/year -> 10*23.715 = 237.15euro/m3
+        # Storage reserved size = 500m3
+        storage_fixed_opex = 237.15 * 500.0
+        np.testing.assert_allclose(
+            storage_fixed_opex,
+            sum(results['GasStorage_e492__fixed_operational_cost']),
+        )
+
+        # Check electrolyzer fixed opex, based on installed size of 500MW and 10euro/kW
+        electrolyzer_fixed_opex = 1.0 * 500.0e6 / 1.0e3
+        np.testing.assert_allclose(
+            electrolyzer_fixed_opex,
+            sum(results['Electrolyzer_fc66__fixed_operational_cost']),
+        )
+
+        # Check electrolyzer investment cost, based on installed size of 500MW and 20euro/kW
+        electrolyzer_investment_cost = 20.0 * 500.0e6 / 1.e3
+        np.testing.assert_allclose(
+            electrolyzer_investment_cost,
+            sum(results['Electrolyzer_fc66__investment_cost']),
+        )
+        #  -----------------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":

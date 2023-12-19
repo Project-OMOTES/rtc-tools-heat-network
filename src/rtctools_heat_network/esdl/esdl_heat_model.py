@@ -1046,7 +1046,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             volume=asset.attributes["workingVolume"],
-            # TODOD: Fix -> Gas network is currenlty non-limiting, mass flow is decpoupled from the
+            # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
             # Gas_tank_flow=dict(
             #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
