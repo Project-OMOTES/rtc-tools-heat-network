@@ -27,28 +27,34 @@ class TestElectrolyzer(TestCase):
         nominal = milp_problem.variable_nominal(state) * np.median(
             milp_problem.get_timeseries(price_profile).values
         )
-        gas_revenue = np.sum(
-            milp_problem.get_timeseries("GasDemand_0cf3.gas_price").values
-            * results["GasDemand_0cf3.Gas_demand_mass_flow"]
-        ) / nominal
+        gas_revenue = (
+            np.sum(
+                milp_problem.get_timeseries("GasDemand_0cf3.gas_price").values
+                * results["GasDemand_0cf3.Gas_demand_mass_flow"]
+            )
+            / nominal
+        )
 
         price_profile = "ElectricityDemand_9d15.electricity_price"
         state = "ElectricityDemand_9d15.ElectricityIn.Power"
         nominal = milp_problem.variable_nominal(state) * np.median(
             milp_problem.get_timeseries(price_profile).values
         )
-        electricity_revenue = np.sum(
-            milp_problem.get_timeseries("ElectricityDemand_9d15.electricity_price").values
-            * results["ElectricityDemand_9d15.ElectricityIn.Power"]
-        ) / nominal
-
+        electricity_revenue = (
+            np.sum(
+                milp_problem.get_timeseries("ElectricityDemand_9d15.electricity_price").values
+                * results["ElectricityDemand_9d15.ElectricityIn.Power"]
+            )
+            / nominal
+        )
         # Check that goal is as expected
         np.testing.assert_allclose(
-            milp_problem.objective_value, -(gas_revenue + electricity_revenue),
+            milp_problem.objective_value,
+            -(gas_revenue + electricity_revenue),
             atol=1e-2,
             rtol=1e-2,
         )
-        tol = 1.e-6
+        tol = 1.0e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
         np.testing.assert_array_less(-results["Electrolyzer_fc66.ElectricityIn.Power"], tol)
 
@@ -58,8 +64,7 @@ class TestElectrolyzer(TestCase):
 
         # Check that the wind farm setpoint matches with the production
         np.testing.assert_allclose(
-            results["WindPark_7f14.ElectricityOut.Power"],
-            ub * results["WindPark_7f14.Set_point"]
+            results["WindPark_7f14.ElectricityOut.Power"], ub * results["WindPark_7f14.Set_point"]
         )
 
         # Checks on the storage
@@ -67,7 +72,7 @@ class TestElectrolyzer(TestCase):
         rho = milp_problem.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
-            results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep
+            results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep,
         )
         np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.0)
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
@@ -77,15 +82,16 @@ class TestElectrolyzer(TestCase):
                 milp_problem.esdl_asset_name_to_id_map[f"{cable}"]
             ].attributes["capacity"]
             np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"], ub + tol)
-            lb = \
-                milp_problem.esdl_assets[
-                    milp_problem.esdl_asset_name_to_id_map[f"{cable}"]
-                ].in_ports[0].carrier.voltage
-            tol = 1.e-2
+            lb = (
+                milp_problem.esdl_assets[milp_problem.esdl_asset_name_to_id_map[f"{cable}"]]
+                .in_ports[0]
+                .carrier.voltage
+            )
+            tol = 1.0e-2
             np.testing.assert_array_less(lb - tol, results[f"{cable}.ElectricityOut.V"])
             np.testing.assert_array_less(
                 results[f"{cable}.ElectricityOut.Power"],
-                results[f"{cable}.ElectricityOut.V"] * results[f"{cable}.ElectricityOut.I"] + tol
+                results[f"{cable}.ElectricityOut.V"] * results[f"{cable}.ElectricityOut.I"] + tol,
             )
 
         # Electrolyser
@@ -98,7 +104,7 @@ class TestElectrolyzer(TestCase):
             coef_c,
             n_lines=3,
             electrical_power_min=0.0,
-            electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1]
+            electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
         # the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
@@ -108,7 +114,7 @@ class TestElectrolyzer(TestCase):
         for i in range(len(a)):
             np.testing.assert_array_less(
                 results["Electrolyzer_fc66.Gas_mass_flow_out"],
-                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.0e-3
+                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.0e-3,
             )
 
         # print(results["Electrolyzer_fc66.ElectricityIn.Power"])
@@ -122,8 +128,10 @@ class TestElectrolyzer(TestCase):
             (
                 milp_problem.get_timeseries(price_profile).times[1:]
                 - milp_problem.get_timeseries(price_profile).times[0:-1]
-            ) / 3600.0
-            * results["Pipe_6ba6.GasOut.mass_flow"][1:] * 0.1
+            )
+            / 3600.0
+            * results["Pipe_6ba6.GasOut.mass_flow"][1:]
+            * 0.1,
         )
         np.testing.assert_allclose(
             gas_tranport_cost,
@@ -135,21 +143,21 @@ class TestElectrolyzer(TestCase):
         storage_fixed_opex = 237.15 * 500.0
         np.testing.assert_allclose(
             storage_fixed_opex,
-            sum(results['GasStorage_e492__fixed_operational_cost']),
+            sum(results["GasStorage_e492__fixed_operational_cost"]),
         )
 
         # Check electrolyzer fixed opex, based on installed size of 500MW and 10euro/kW
         electrolyzer_fixed_opex = 1.0 * 500.0e6 / 1.0e3
         np.testing.assert_allclose(
             electrolyzer_fixed_opex,
-            sum(results['Electrolyzer_fc66__fixed_operational_cost']),
+            sum(results["Electrolyzer_fc66__fixed_operational_cost"]),
         )
 
         # Check electrolyzer investment cost, based on installed size of 500MW and 20euro/kW
-        electrolyzer_investment_cost = 20.0 * 500.0e6 / 1.e3
+        electrolyzer_investment_cost = 20.0 * 500.0e6 / 1.0e3
         np.testing.assert_allclose(
             electrolyzer_investment_cost,
-            sum(results['Electrolyzer_fc66__investment_cost']),
+            sum(results["Electrolyzer_fc66__investment_cost"]),
         )
         #  -----------------------------------------------------------------------------------------
 

@@ -18,11 +18,11 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.component_type = "gas_pipe"
         self.disconnectable = False
 
-        self.v_max = 15.
+        self.v_max = 15.0
         self.density = 2.5
         self.diameter = nan
-        self.area = pi * self.diameter ** 2
-        self.Q_nominal = self.v_max / 2. * self.area
+        self.area = pi * self.diameter**2
+        self.Q_nominal = self.v_max / 2.0 * self.area
 
         self.nominal_head = 30.0
         self.length = nan
@@ -43,6 +43,4 @@ class GasPipe(GasTwoPort, BaseAsset):
             ((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density))
         )
         # # shadow Q for aliases
-        self.add_equation(
-            ((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3)))
-        )
+        self.add_equation(((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3))))

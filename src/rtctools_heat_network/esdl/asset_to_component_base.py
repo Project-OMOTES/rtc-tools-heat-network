@@ -316,7 +316,7 @@ class _AssetToComponentBase:
             pass
 
     def _set_electricity_current_nominal_and_max(
-            self, asset: Asset, i_nominal: float, i_max: float
+        self, asset: Asset, i_nominal: float, i_max: float
     ) -> None:
         """
         This function populates a dict with the electricity current nominals [A] for the ports of
@@ -722,7 +722,9 @@ class _AssetToComponentBase:
                 )
                 continue
             if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
-                "GasDemand", "GasStorage", "Electrolyzer"
+                "GasDemand",
+                "GasStorage",
+                "Electrolyzer",
             ]:
                 logger.warning(
                     f"Expected the specified OPEX for asset "

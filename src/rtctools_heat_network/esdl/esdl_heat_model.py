@@ -307,7 +307,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
             q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
-            q_max = math.pi * diameter ** 2 / 4.0 * self.v_max_gas
+            q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             modifiers = dict(length=length, diameter=diameter)
 
@@ -773,7 +773,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
-                V=dict(min=min_voltage, nominal=min_voltage)
+                V=dict(min=min_voltage, nominal=min_voltage),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -809,7 +809,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ElectricityOut=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
-                Power=dict(nominal=max_supply / 2.0)
+                Power=dict(nominal=max_supply / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -854,10 +854,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(
-            voltage_nominal=nominal_voltage,
-            n=sum_in + sum_out
-        )
+        modifiers = dict(voltage_nominal=nominal_voltage, n=sum_in + sum_out)
 
         return ElectricityNode, modifiers
 
@@ -882,23 +879,23 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes["capacity"]
         min_voltage = asset.in_ports[0].carrier.voltage
         max_current = max_power / min_voltage
-        self._set_electricity_current_nominal_and_max(asset, max_current / 2., max_current)
+        self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
 
         modifiers = dict(
             max_current=max_current,
             min_voltage=min_voltage,
-            nominal_current=max_current / 2.,
+            nominal_current=max_current / 2.0,
             nominal_voltage=min_voltage,
             length=asset.attributes["length"],
             ElectricityOut=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
-                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
             ),
             ElectricityIn=dict(
                 V=dict(min=min_voltage, nominal=min_voltage),
-                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.),
-                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -925,7 +922,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             GasIn=dict(
                 Q=dict(
-                    min=0.,
+                    min=0.0,
                     max=self._get_connected_q_max(asset),
                     nominal=self._get_connected_q_nominal(asset),
                 ),
@@ -955,7 +952,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             Gas_source_flow=dict(
-                min=0.,
+                min=0.0,
                 max=self._get_connected_q_max(asset),
                 nominal=self._get_connected_q_nominal(asset),
             ),
@@ -981,14 +978,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
         v_min = asset.in_ports[0].carrier.voltage
-        max_power = asset.attributes.get(
-            "power", math.inf
-        )
+        max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
-        eff_min_load = asset.attributes["effMinLoad"] * 1.e3
-        eff_max_load = asset.attributes["effMaxLoad"] * 1.e3
-        eff_max = asset.attributes["efficiency"] * 1.e3
+        eff_min_load = asset.attributes["effMinLoad"] * 1.0e3
+        eff_max_load = asset.attributes["effMaxLoad"] * 1.0e3
+        eff_max = asset.attributes["efficiency"] * 1.0e3
 
         def equations(x):
             a, b, c = x
@@ -1009,19 +1004,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
             b_eff_coefficient=b,
             c_eff_coefficient=c,
             minimum_load=min_load,
-            nominal_power_consumed=max_power / 2.,
+            nominal_power_consumed=max_power / 2.0,
             Q_nominal=self._get_connected_q_nominal(asset),
             GasOut=dict(
                 Q=dict(
-                    min=0.,
+                    min=0.0,
                     max=self._get_connected_q_max(asset),
                     nominal=self._get_connected_q_nominal(asset),
                 )
             ),
             ElectricityIn=dict(
-                Power=dict(min=0., max=max_power, nominal=max_power / 2.),
-                I=dict(min=0., max=i_max, nominal=i_nom),
-                V=dict(min=v_min, nominal=v_min)
+                Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=v_min, nominal=v_min),
             ),
             **self._get_cost_figure_modifiers(asset),
         )

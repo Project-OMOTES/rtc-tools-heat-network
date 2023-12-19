@@ -27,10 +27,10 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         # from: https://pandapower.readthedocs.io/en/v2.6.0/std_types/basic.html
         self.max_current = nan
         self.min_voltage = nan
-        self.max_voltage = self.min_voltage * 2.
+        self.max_voltage = self.min_voltage * 2.0
         self.nominal_current = nan
         self.nominal_voltage = nan
-        self.r = 1.e-6 * self.length  # TODO: temporary value
+        self.r = 1.0e-6 * self.length  # TODO: temporary value
         self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.r * self.max_current**2)
 
         self.add_equation(

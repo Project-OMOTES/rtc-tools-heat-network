@@ -2,8 +2,9 @@ from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
 from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
-from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import \
-    ElectricityComponent
+from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import (
+    ElectricityComponent,
+)
 from rtctools_heat_network.pycml.component_library.heat.electricity.electricity_base import (
     ElectricityPort,
 )
@@ -16,6 +17,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
     """
     An electrolyzer consumes electricity and produces hydrogen
     """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,

@@ -33,7 +33,7 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.add_variable(
             Variable,
             "Stored_gas_mass",
-            min=0.,
+            min=0.0,
             max=self.density_max_storage * self.volume,
             nominal=self._nominal_stored_gas,
         )
@@ -45,7 +45,7 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.add_equation(
             (
                 (self.der(self.Stored_gas_mass) - (self.Gas_tank_flow / 3600.0))
-                / (self._nominal_stored_gas * self.Q_nominal * self.density)**0.5
+                / (self._nominal_stored_gas * self.Q_nominal * self.density) ** 0.5
             )
         )
 
