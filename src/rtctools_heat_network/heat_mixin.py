@@ -690,8 +690,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size
-        temp = 0.0
-
         def _make_max_size_var(name, lb, ub, nominal):
             asset_max_size_var = f"{name}__max_size"
             self._asset_max_size_map[name] = asset_max_size_var
@@ -837,18 +835,23 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
+            # TODO: set the nominal values below
             # elif asset_name in [*self.heat_network_components.get("gas_tank_storage", [])]:
             #     nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
             #     nominal_variable_operational = nominal_fixed_operational
             #     nominal_investment = nominal_fixed_operational
-
             # elif asset_name in [*self.heat_network_components.get("electricity_demand", [])]:
-            
+            #     nominal_fixed_operational = bounds[f"{asset_name}.Electricity_demand"][1]
+            #     nominal_variable_operational = nominal_fixed_operational
+            #     nominal_investment = nominal_fixed_operational
             # elif asset_name in [*self.heat_network_components.get("electrolyzer", [])]:
-                
+            #     nominal_fixed_operational = bounds[f"{asset_name}.Gas_mass_flow_out"][1]
+            #     nominal_variable_operational = nominal_fixed_operational
+            #     nominal_investment = nominal_fixed_operational
             # elif asset_name in [*self.heat_network_components.get("wind_park", [])]:
-
-
+            #     nominal_fixed_operational = bounds[f"{asset_name}.Set_point"][1]
+            #     nominal_variable_operational = nominal_fixed_operational
+            #     nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
                 nominal_variable_operational = nominal_fixed_operational
@@ -898,9 +901,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 if nominal_fixed_operational is not None
                 else 1.0e2
             )
-
-            # variable operational cost
-            # temp = self.esdl_assets[self.esdl_asset_name_to_id_map[asset_name]].attributes['costInformation'].variableOperationalCosts.value  # why is parameters empy with cost?
 
             variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
             self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
