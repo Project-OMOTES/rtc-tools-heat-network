@@ -372,7 +372,8 @@ class _AssetToComponentBase:
                 return i_max, i_nom
             else:
                 raise _RetryLaterException(
-                    f"Could not determine max and nominal current for {asset.asset_type} '{asset.name}'"
+                    f"Could not determine max and nominal current for {asset.asset_type}"
+                    " '{asset.name}'"
                 )
         elif asset.out_ports is None or asset.asset_type == "Electrolyzer":
             connected_port = asset.in_ports[0].connectedTo[0]
@@ -383,7 +384,8 @@ class _AssetToComponentBase:
                 return i_max, i_nom
             else:
                 raise _RetryLaterException(
-                    f"Could not determine max and nominal current for {asset.asset_type} '{asset.name}'"
+                    f"Could not determine max and nominal current for {asset.asset_type}"
+                    f" '{asset.name}'"
                 )
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
@@ -726,7 +728,10 @@ class _AssetToComponentBase:
                     f"in {per_unit} instead."
                 )
                 continue
-            if asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"] and per_unit != UnitEnum.GRAM:
+            if (
+                asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"]
+                and per_unit != UnitEnum.GRAM
+            ):
                 logger.warning(
                     f"Expected the specified OPEX for asset "
                     f"{asset.name} to be per g/s, but they are provided "
@@ -839,12 +844,6 @@ class _AssetToComponentBase:
                         f"in {per_unit} instead."
                     )
                     continue
-                # elif per_time != TimeUnitEnum.YEAR and asset.asset_type == "GasStorage": ?? why is per year etc not checked for others?
-                #     RuntimeWarning(
-                #         f"Specified investment costs for asset {asset.name}"
-                #         f"include a component per time, which we "
-                #         f"cannot handle."
-                #     )
 
                 value += cost_value
         return value

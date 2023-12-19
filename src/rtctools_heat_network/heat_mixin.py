@@ -803,16 +803,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("control_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
-                # *self.heat_network_components.get("electricity_source", []),
-                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_pipe", []),
-                # *self.heat_network_components.get("gas_source", []),
-                # *self.heat_network_components.get("gas_demand", []),  # kvr-test
-                # *self.heat_network_components.get("electrolyzer", []),
-                # *self.heat_network_components.get("gas_tank_storage", []),
-                # *self.heat_network_components.get("wind_park", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
@@ -1028,6 +1021,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         Returns a dictionary of heat network specific options.
 
         +---------------------------------------+-----------+-----------------------------+
+        | Option                                | Type      | Default value               |
+        +=======================================+===========+=============================+
+        | ``minimum_pressure_far_point``        | ``float`` | ``1.0`` bar                 |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``maximum_temperature_der``           | ``float`` | ``2.0`` °C/hour             |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``maximum_flow_der``                  | ``float`` | ``np.inf`` m3/s/hour        |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``neglect_pipe_heat_losses``          | ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``heat_loss_disconnected_pipe``       | ``bool``  | ``True``                    |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``minimum_velocity``                  | ``float`` | ``0.005`` m/s               |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``head_loss_option`` (inherited)      | ``enum``  | ``HeadLossOption.LINEAR``   |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``minimize_head_losses`` (inherited)  | ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
+        | ``include_demand_insulation_options`` | ``bool``  | ``False``                   |
+        +---------------------------------------+-----------+-----------------------------+
         | ``include_asset_is_realized ``        | ``bool``  | ``False``                   |
         +---------------------------------------+-----------+-----------------------------+
         +---------------------------------------+-----------+-----------------------------+
@@ -1069,6 +1082,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+
+        The ``include_asset_is_switched_on`` option is used to add variable which allows an
+        electroylzer to have different states (on / off) for every time step.
 
         The ``include_electric_cable_power_loss`` option is used to enable or disable the inclusion
         of cable electrical power losses.
@@ -1431,7 +1447,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         return min(max_sum_dh_pipes, max_dh_network_options)
 
     def __update_windpark_upper_bounds(self):
-
         t = self.times()
         for wp in self.heat_network_components.get("wind_park", []):
             lb = Timeseries(t, np.zeros(len(self.times())))
@@ -3831,9 +3846,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraints.append(
                 (
-                    (
-                        np.ones(len(self.times())) * max_power - electricity_demand
-                    ) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_power - electricity_demand)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -3849,9 +3863,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraints.append(
                 (
-                    (
-                        np.ones(len(self.times())) * max_power - electricity_source
-                    ) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_power - electricity_source)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -3867,9 +3880,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             constraints.append(
                 (
-                    (
-                        np.ones(len(self.times())) * max_power - electricity_electrolyzer
-                    ) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_power - electricity_electrolyzer)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -3940,15 +3952,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                # *self.heat_network_components.get("electricity_source", []),
-                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
-                # *self.heat_network_components.get("gas_source", []),
-                # *self.heat_network_components.get("gas_demand", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
-                # *self.heat_network_components.get("electrolyzer", []),
-                # *self.heat_network_components.get("wind_park", []),
             ]:
                 # TODO: add support for joints?
                 continue
@@ -4085,7 +4091,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 sum += (
                     variable_operational_cost_coefficient
                     * gas_mass_flow[i]
-                    * (self.times()[i] - self.times()[i - 1]) / 3600.
+                    * (self.times()[i] - self.times()[i - 1])
+                    / 3600.0
                 )
 
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
@@ -4123,8 +4130,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
-            nominal = self.variable_nominal(
-                variable_operational_cost_var)
+            nominal = self.variable_nominal(variable_operational_cost_var)
             variable_operational_cost_coefficient = parameters[
                 f"{electrolyzer}.variable_operational_cost_coefficient"
             ]
@@ -4134,7 +4140,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 sum += (
                     variable_operational_cost_coefficient
                     * power_consumer[i]
-                    * (self.times()[i] - self.times()[i - 1]) / 3600.  # gas_mass_flow unit is kg/hr
+                    * (self.times()[i] - self.times()[i - 1])
+                    / 3600.0  # gas_mass_flow unit is kg/hr
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
@@ -4187,15 +4194,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                # *self.heat_network_components.get("electricity_source", []),
-                # *self.heat_network_components.get("electricity_demand", []),
                 *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
-                # *self.heat_network_components.get("gas_source", []),
-                # *self.heat_network_components.get("gas_demand", []),
-                # *self.heat_network_components.get("gas_tank_storage", []),
-                # *self.heat_network_components.get("electrolyzer", []),
-                # *self.heat_network_components.get("wind_park", []),
             ]:
                 # no support for joints right now
                 continue
@@ -4416,9 +4416,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         gas mass flow rate produced by the electrolyzer [kg/s]
         """
 
-        eff = (
-            (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
-        )
+        eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
         gas_mass_flow_out = (1.0 / eff) * electrical_power_input
 
         return gas_mass_flow_out
@@ -4450,9 +4448,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         gas_mass_flow_points = np.array(
             [
-                self.__get_electrolyzer_gas_mass_flow_out(
-                    coef_a, coef_b, coef_c, ep
-                ) for ep in electrical_power_points
+                self.__get_electrolyzer_gas_mass_flow_out(coef_a, coef_b, coef_c, ep)
+                for ep in electrical_power_points
             ]
         )
 
@@ -4470,7 +4467,6 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints = []
         parameters = self.parameters(ensemble_member)
         for asset in self.heat_network_components.get("electrolyzer", []):
-
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")
 
@@ -4481,21 +4477,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 parameters[f"{asset}.b_eff_coefficient"],
                 parameters[f"{asset}.c_eff_coefficient"],
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=1.,
-                electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1]
+                electrical_power_min=1.0,
+                electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
             )
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
             nominal = (
                 self.variable_nominal(f"{asset}.Gas_mass_flow_out")
-                * min(linear_coef_a) * self.variable_nominal(f"{asset}.Power_consumed")
+                * min(linear_coef_a)
+                * self.variable_nominal(f"{asset}.Power_consumed")
             ) ** 0.5
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect)
-                        / nominal,
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) / nominal,
                         -np.inf,
                         0.0,
                     ),
@@ -4543,7 +4539,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 f"{wp}.Electricity_source", ensemble_member
             )
             max = self.bounds()[f"{wp}.Electricity_source"][1].values
-            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max))**0.5
+            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
 
             constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
 

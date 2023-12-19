@@ -192,7 +192,7 @@ class _ESDLModelBase(_Model):
                     raise Exception(
                         f"{asset.name} has does not have 2 or 3 in_ports and 2 " f"out_ports "
                     )
-            elif(asset.asset_type == "Electrolyzer"):
+            elif (asset.asset_type == "Electrolyzer"):
                 if (len(asset.out_ports) == 1 and len(asset.in_ports) == 1):
                     if isinstance(asset.out_ports[0].carrier, esdl.GasCommodity):
                         port_map[asset.out_ports[0].id] = getattr(component, gas_out_suf)

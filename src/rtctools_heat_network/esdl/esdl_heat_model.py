@@ -4,8 +4,6 @@ from typing import Dict, Tuple, Type, Union
 
 import esdl
 
-from scipy.optimize import fsolve
-
 from rtctools_heat_network.pycml.component_library.heat import (
     ATES,
     Buffer,
@@ -30,8 +28,10 @@ from rtctools_heat_network.pycml.component_library.heat import (
     Pipe,
     Pump,
     Source,
-    WindPark
+    WindPark,
 )
+
+from scipy.optimize import fsolve
 
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
@@ -58,7 +58,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho=988.0,
         cp=4200.0,
         min_fraction_tank_volume=0.05,
-        v_max_gas = 15.0,
+        v_max_gas=15.0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -954,7 +954,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Gas_source_flow=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset)),
+            Gas_source_flow=dict(
+                min=0.,
+                max=self._get_connected_q_max(asset),
+                nominal=self._get_connected_q_nominal(asset),
+            ),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -985,11 +989,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         eff_min_load = asset.attributes["effMinLoad"] * 1.e3
         eff_max_load = asset.attributes["effMaxLoad"] * 1.e3
         eff_max = asset.attributes["efficiency"] * 1.e3
+
         def equations(x):
             a, b, c = x
-            eq1 = a/min_load + b*min_load + c - eff_min_load
-            eq2 = a/max_load + b*max_load + c - eff_max_load
-            eq3 = a/(min_load*2.5) + b*(min_load*2.5) + c - eff_max
+            eq1 = a / min_load + b * min_load + c - eff_min_load
+            eq2 = a / max_load + b * max_load + c - eff_max_load
+            eq3 = a / (min_load * 2.5) + b * (min_load * 2.5) + c - eff_max
             return [eq1, eq2, eq3]
 
         # Here we approximate the efficiency curve of the electrolyzer with the function:
@@ -1004,11 +1009,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
             b_eff_coefficient=b,
             c_eff_coefficient=c,
             minimum_load=min_load,
-            nominal_power_consumed=max_power/2.,
+            nominal_power_consumed=max_power / 2.,
             Q_nominal=self._get_connected_q_nominal(asset),
-            GasOut=dict(Q=dict(min=0., max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))),
+            GasOut=dict(
+                Q=dict(
+                    min=0.,
+                    max=self._get_connected_q_max(asset),
+                    nominal=self._get_connected_q_nominal(asset),
+                )
+            ),
             ElectricityIn=dict(
-                Power=dict(min=0., max=max_power, nominal=max_power/2.),
+                Power=dict(min=0., max=max_power, nominal=max_power / 2.),
                 I=dict(min=0., max=i_max, nominal=i_nom),
                 V=dict(min=v_min, nominal=v_min)
             ),
@@ -1035,7 +1046,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             volume=asset.attributes["workingVolume"],
-            # Gas_tank_flow=dict(min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset), nominal=self._get_connected_q_nominal(asset))
+            # TODOD: Fix -> Gas network is currenlty non-limiting, mass flow is decpoupled from the
+            # volumetric flow
+            # Gas_tank_flow=dict(
+            #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
+            #     nominal=self._get_connected_q_nominal(asset),
+            # )
             **self._get_cost_figure_modifiers(asset),
         )
 

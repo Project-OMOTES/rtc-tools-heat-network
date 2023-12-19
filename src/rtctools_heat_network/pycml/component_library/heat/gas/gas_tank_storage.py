@@ -25,8 +25,6 @@ class GasTankStorage(GasComponent, BaseAsset):
 
         self.add_variable(GasPort, "GasIn")
         self.add_variable(Variable, "Gas_tank_flow")
-        # temp code below used forcing no storage in the tank
-        # self.add_variable(Variable, "Gas_tank_flow", max=0.0)
 
         self._typical_fill_time = 3600.0
         self._nominal_stored_gas = (

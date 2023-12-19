@@ -452,16 +452,20 @@ class ESDLMixin(
                         commodity = "electricity"
                     elif isinstance(ports[0].carrier, esdl.GasCommodity):
                         commodity = "gas"
-                    if (asset.asset_type == "HeatingDemand" or
-                        asset.asset_type == "GenericConsumer" or
-                        asset.asset_type == "ElectricityDemand" or
-                        asset.asset_type == "GasDemand"):
+                    if (
+                        asset.asset_type == "HeatingDemand"
+                        or asset.asset_type == "GenericConsumer"
+                        or asset.asset_type == "ElectricityDemand"
+                        or asset.asset_type == "GasDemand"
+                    ):
                         variable = f"{asset_name}.target_{commodity}_demand"
-                    elif (asset.asset_type == "GenericProcuder" or
-                        asset.asset_type == "HeatProducer" or
-                        asset.asset_type == "GasProducer" or
-                        asset.asset_type == "WindPark" or
-                        asset.asset_type == "ElectricityProducer"):
+                    elif (
+                        asset.asset_type == "GenericProcuder"
+                        or asset.asset_type == "HeatProducer"
+                        or asset.asset_type == "GasProducer"
+                        or asset.asset_type == "WindPark"
+                        or asset.asset_type == "ElectricityProducer"
+                    ):
                         variable = f"{asset_name}.maximum_production"
                     else:
                         logger.error(f"profile on {asset_name} not allowed")
