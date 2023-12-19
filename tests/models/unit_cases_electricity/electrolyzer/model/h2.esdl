@@ -12,10 +12,26 @@
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="ce1699b8-34d4-43b9-a77a-1bfb08a9c36c" id="b3233805-b82b-406c-98fb-fc7bac66bb78"/>
         <port xsi:type="esdl:OutPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="Out" id="5079eeaa-5083-49ce-94d3-07e55348e747" connectedTo="175baa37-443c-4b4f-8e07-ce9707f27bac"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.91407805051185" lon="4.718627929687501"/>
+        <costInformation xsi:type="esdl:CostInformation" id="7428c1cc-3b5f-47c9-aa8e-ab8e7ded85a2">
+          <investmentCosts xsi:type="esdl:SingleValue" id="5ee09361-d48b-4775-b5b1-182be6373d97" value="20.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="abbe4b85-715a-4715-a81c-4b8dc53dbeac" unit="EURO" description="Cost in EUR/kW" perMultiplier="KILO" physicalQuantity="COST"/>
+          </investmentCosts>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="336d392b-dae9-4073-859d-bbb818de1537" value="0.001">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="65892160-442b-4615-a675-ec1b53f984e1" unit="EURO" description="Cost in EUR/W/yr" physicalQuantity="COST" perTimeUnit="YEAR"/>
+          </fixedOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:GasStorage" id="e492d0f3-9d00-4631-8798-023ad62787ac" workingVolume="500.0" maxDischargeRate="1000000000.0" maxChargeRate="1000000000.0" name="GasStorage_e492">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="ce57d55a-9b99-4ea4-b717-0a5ae1297966" id="207d34d5-a289-40b9-b94a-0c584aaa8753"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.91532019913456" lon="4.7289276123046875"/>
+        <costInformation xsi:type="esdl:CostInformation" id="6f57c644-a1de-4c79-a707-76a6741c02b9">
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="0.01">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6ae2e528-2275-47b0-81a9-97517e478150" unit="EURO" description="Cost in EUR/kg/yr" multiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
+          </fixedOperationalCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6d5fb87d-f399-4813-9d20-061ec28572d7" value="0.00001">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f6578a3-6a81-41ea-9b71-3ad3db909f4a" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
+          </variableOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:ElectricityDemand" id="9d15a76b-cfc3-4abf-a166-6edc19b1264e" power="1000000000.0" name="ElectricityDemand_9d15">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="487db503-69b4-4604-9896-563634352699" id="8ed762e6-b62d-4dd0-b84d-d3759af40b3d"/>
@@ -24,6 +40,11 @@
       <asset xsi:type="esdl:GasDemand" id="0cf3a097-01ea-4fea-a6af-f141a6885445" power="1000000000.0" name="GasDemand_0cf3">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="a75218ac-9a5b-4ee4-b0ad-ae1262329442" id="119be8fa-50a9-463b-ba1e-6b97cea86f0e"/>
         <geometry xsi:type="esdl:Point" lat="52.91987443929076" lon="4.728240966796876"/>
+        <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.0001">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
+          </variableOperationalCosts>
+        </costInformation>      
       </asset>
       <asset xsi:type="esdl:Joint" id="c15601d5-a9ce-41b4-84eb-1a7658d65c72" name="Joint_c156">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="8e1dbe29-588b-41e0-8fd5-c76bff01b1b0" id="f1e5ab4c-7d5f-4a8d-9bd9-e5131b34dd7d"/>
