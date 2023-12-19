@@ -285,11 +285,11 @@ class _AssetToComponentBase:
         """
         try:
             self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
-        except:
+        except TypeError:
             pass
         try:
             self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
-        except:
+        except TypeError:
             pass
 
     def _set_q_max(self, asset: Asset, q_max: float) -> None:
@@ -308,14 +308,16 @@ class _AssetToComponentBase:
         """
         try:
             self._port_to_q_max[asset.in_ports[0]] = q_max
-        except:
+        except TypeError:
             pass
         try:
             self._port_to_q_max[asset.out_ports[0]] = q_max
-        except:
+        except TypeError:
             pass
 
-    def _set_electricity_current_nominal_and_max(self, asset: Asset, i_nominal: float, i_max: float) -> None:
+    def _set_electricity_current_nominal_and_max(
+            self, asset: Asset, i_nominal: float, i_max: float
+    ) -> None:
         """
         This function populates a dict with the electricity current nominals [A] for the ports of
         all electricity cables.
@@ -332,12 +334,12 @@ class _AssetToComponentBase:
         try:
             self._port_to_i_nominal[asset.in_ports[0]] = i_nominal
             self._port_to_i_max[asset.in_ports[0]] = i_max
-        except:
+        except TypeError:
             pass
         try:
             self._port_to_i_nominal[asset.out_ports[0]] = i_nominal
             self._port_to_i_max[asset.out_ports[0]] = i_max
-        except:
+        except TypeError:
             pass
 
     def _get_connected_q_max(self, asset: Asset) -> float:
