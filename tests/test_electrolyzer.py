@@ -61,14 +61,14 @@ class TestElectrolyzer(TestCase):
         )
 
         # Checks on the storage
-        timestep = 3600.
+        timestep = 3600.0
         rho = milp_problem.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
             results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep
         )
-        np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.)
-        np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.)
+        np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.0)
+        np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
 
         for cable in milp_problem.heat_network_components.get("electricity_cable", []):
             ub = milp_problem.esdl_assets[
@@ -95,7 +95,7 @@ class TestElectrolyzer(TestCase):
             coef_b,
             coef_c,
             n_lines=3,
-            electrical_power_min=0.,
+            electrical_power_min=0.0,
             electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1]
         )
 
@@ -105,25 +105,11 @@ class TestElectrolyzer(TestCase):
         for i in range(len(a)):
             np.testing.assert_array_less(
                 results["Electrolyzer_fc66.Gas_mass_flow_out"],
-                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.e-3
+                results["Electrolyzer_fc66.ElectricityIn.Power"] * a[i] + b[i] + 1.0e-3
             )
 
         print(results["Electrolyzer_fc66.ElectricityIn.Power"])
         print(results["Electrolyzer_fc66.Gas_mass_flow_out"])
-
-        # import matplotlib.pyplot as plt
-        # x = np.linspace(50e6, 500e6)
-        # plt.figure()
-        # plt.plot(x, coef_a/x + coef_b * x + coef_c)  # eff curve
-        # plt.show()
-        #
-        # plt.figure()
-        # plt.plot(x, x / (coef_a / x + coef_b * x + coef_c))  # mass flow out curve
-        # for i in range(3):
-        #
-        #     plt.plot(x, a[i]*x+b[i])
-        # plt.show()
-        # a=1
 
 
 if __name__ == "__main__":
