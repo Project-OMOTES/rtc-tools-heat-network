@@ -4185,14 +4185,21 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def __annualized_capex_constraints(self, ensemble_member):
         """
-        Calculate the annualized capital expenditure constraints for different categories
-        of assets in a heat network.
+        Calculate the annualized capital expenditure (CAPEX) constraints for different categories
+        of assets in a heat network, taking into account the initial investment cost, the technical
+        life of the asset, and the discount rate.
+        The discount rate is used to calculate the periodic annual equivalent cost of the asset's
+        capital investment over its technical life using the annuity formula.
+        The discount rate reflects the time value of money and the risk associated with the
+        investment. A higher discount rate will result in a lower present value of the annuity and
+        a higher periodic payment, while a lower discount rate will result in a higher present
+        value of the annuity and a lower periodic payment.
 
-        Args:
-            ensemble_member: The ensemble member used to get parameters for the calculation.
+                Args:
+                    ensemble_member: The ensemble member used to get parameters for the calculation.
 
-        Returns:
-            A list of constraints for each asset.
+                Returns:
+                    A list of constraints for each asset.
         """
         constraints = []
 
