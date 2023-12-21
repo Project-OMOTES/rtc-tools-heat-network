@@ -119,7 +119,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.validate_attribute_input(attribute_value, min_value, max_value)
         return attribute_value
 
-    def validate_attribute_input(input_value: float, min_value: float, max_value: float) -> None:
+    def validate_attribute_input(
+        self, input_value: float, min_value: float, max_value: float
+    ) -> None:
         """
         Validates if the input value is within the specified range.
 
@@ -224,7 +226,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             min_fraction_tank_volume=min_fraction_tank_volume,
             technical_life=self.get_asset_attribute_value(
-                asset, "technicalLifetime", default_value=30.0, min_value=0.0, max_value=50.0
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=0.0,
+                max_value=50.0,
             ),
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
@@ -516,7 +522,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
+        params["Secondary"] = {
+            **params_t["Secondary"],
+            **params_q["Secondary"],
+            **sec_heat,
+        }
 
         if not asset.attributes["efficiency"]:
             efficiency = 1.0
@@ -640,7 +650,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
             technical_life=self.get_asset_attribute_value(
-                asset, "technicalLifetime", default_value=30.0, min_value=0.0, max_value=50.0
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=0.0,
+                max_value=50.0,
             ),
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
