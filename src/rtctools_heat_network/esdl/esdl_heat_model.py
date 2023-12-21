@@ -78,6 +78,62 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         return dict(rho=self.rho, cp=self.cp)
 
+    def get_asset_attribute_value(
+        self,
+        asset: Asset,
+        attribute_name: str,
+        default_value: float,
+        min_value: float,
+        max_value: float,
+    ) -> float:
+        """
+        Get the value of the specified attribute for the given asset.
+
+        Args:
+            asset: The asset to retrieve the attribute value for.
+            attribute_name: The name of the attribute to retrieve.
+            default_value: The default value to use if the attribute is not present.
+            min_value: The minimum value for the attribute.
+            max_value: The maximum value for the attribute.
+
+        Returns:
+            The value of the specified attribute for the given asset.
+
+        Raises:
+            ValueError: If the attribute value is not within the specified range.
+        """
+        if attribute_name == "discountRate":
+            attribute_value = (
+                asset.attributes["costInformation"].discountRate.value
+                if asset.attributes["costInformation"]
+                and asset.attributes["costInformation"].discountRate
+                and asset.attributes["costInformation"].discountRate.value is not None
+                else default_value
+            )
+        else:
+            attribute_value = (
+                asset.attributes[attribute_name]
+                if asset.attributes[attribute_name] is not None
+                else default_value
+            )
+        self.validate_attribute_input(attribute_value, min_value, max_value)
+        return attribute_value
+
+    def validate_attribute_input(input_value: float, min_value: float, max_value: float) -> None:
+        """
+        Validates if the input value is within the specified range.
+
+        Args:
+            input_value (float): The value to be validated.
+            min_value (float): The minimum value of the range.
+            max_value (float): The maximum value of the range.
+
+        Raises:
+            ValueError: If the input value is not within the specified range.
+        """
+        if input_value < min_value or input_value > max_value:
+            raise ValueError("Input value is not within range")
+
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
@@ -167,6 +223,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             heat_transfer_coeff=1.0,
             state=self.get_state(asset),
             min_fraction_tank_volume=min_fraction_tank_volume,
+            technical_life=self.get_asset_attribute_value(
+                asset, "technicalLifetime", default_value=30.0, min_value=0.0, max_value=50.0
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
@@ -577,15 +639,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
-            technical_life=asset.attributes["technicalLifetime"]
-            if asset.attributes["technicalLifetime"]
-            else 30.0,
-            discount_rate=(
-                asset.attributes["costInformation"].discountRate.value
-                if asset.attributes["costInformation"]
-                and asset.attributes["costInformation"].discountRate
-                and asset.attributes["costInformation"].discountRate.value is not None
-                else 0.0
+            technical_life=self.get_asset_attribute_value(
+                asset, "technicalLifetime", default_value=30.0, min_value=0.0, max_value=50.0
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
