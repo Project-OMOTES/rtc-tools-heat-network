@@ -113,19 +113,35 @@ class AssetToHeatComponent(_AssetToComponentBase):
         else:
             attribute_value = (
                 asset.attributes[attribute_name]
-                if asset.attributes[attribute_name]
+                if asset.attributes[attribute_name] and asset.attributes[attribute_name] != 0
                 else default_value
             )
-        self.validate_attribute_input(attribute_value, min_value, max_value)
+        self.validate_attribute_input(
+            # NOTE: this validation happens after assigning default values
+            # discountRate and technicalLife need to be included in input files of tests
+            # before this input validation can be relocated earlier in this function
+            asset.name,
+            attribute_name,
+            attribute_value,
+            min_value,
+            max_value,
+        )
         return attribute_value
 
     def validate_attribute_input(
-        self, input_value: float, min_value: float, max_value: float
+        self,
+        asset_name: str,
+        attribute_name: str,
+        input_value: float,
+        min_value: float,
+        max_value: float,
     ) -> None:
         """
         Validates if the input value is within the specified range.
 
         Args:
+            asset_name (str): The name of the asset.
+            attribute_name (str): The name of the attribute.
             input_value (float): The value to be validated.
             min_value (float): The minimum value of the range.
             max_value (float): The maximum value of the range.
@@ -134,7 +150,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ValueError: If the input value is not within the specified range.
         """
         if input_value < min_value or input_value > max_value:
-            raise ValueError("Input value is not within range")
+            logger.warning(
+                f"Input value {input_value} of attribute {attribute_name} is not within range ({min_value}, {max_value}) for asset {asset_name}."
+            )
 
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         """
