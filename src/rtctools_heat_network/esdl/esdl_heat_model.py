@@ -106,14 +106,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             attribute_value = (
                 asset.attributes["costInformation"].discountRate.value
                 if asset.attributes["costInformation"]
-                and asset.attributes["costInformation"].discountRate
+                and asset.attributes["costInformation"].discountRate is not None
                 and asset.attributes["costInformation"].discountRate.value is not None
                 else default_value
             )
         else:
             attribute_value = (
                 asset.attributes[attribute_name]
-                if asset.attributes[attribute_name] is not None
+                if asset.attributes[attribute_name]
                 else default_value
             )
         self.validate_attribute_input(attribute_value, min_value, max_value)
@@ -229,7 +229,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset,
                 "technicalLifetime",
                 default_value=30.0,
-                min_value=0.0,
+                min_value=1.0,
                 max_value=50.0,
             ),
             discount_rate=self.get_asset_attribute_value(
@@ -395,6 +395,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             length=length,
             diameter=diameter,
             disconnectable=self._is_disconnectable_pipe(asset),
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
@@ -438,6 +448,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -536,6 +556,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             efficiency=efficiency,
             nominal=max_power / 2.0,
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -589,6 +619,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             COP=cop,
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -653,7 +693,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 asset,
                 "technicalLifetime",
                 default_value=30.0,
-                min_value=0.0,
+                min_value=1.0,
                 max_value=50.0,
             ),
             discount_rate=self.get_asset_attribute_value(
@@ -743,6 +783,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
             nr_of_doublets=asset.attributes["aggregationCount"],
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Heat_ates=dict(
                 min=-hfr_charge_max * asset.attributes["aggregationCount"],
                 max=hfr_discharge_max * asset.attributes["aggregationCount"],
@@ -782,6 +832,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
