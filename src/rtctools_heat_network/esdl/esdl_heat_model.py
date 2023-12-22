@@ -413,16 +413,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             length=length,
             diameter=diameter,
             disconnectable=self._is_disconnectable_pipe(asset),
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
