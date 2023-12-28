@@ -45,7 +45,7 @@ class _GoalsAndOptions:
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["include_electric_cable_power_loss"]=True
+        options["include_electric_cable_power_loss"] = True
 
         return options
 
@@ -71,7 +71,6 @@ class ElectricityProblemMaxCurr(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-
     def read(self):
         super().read()
 

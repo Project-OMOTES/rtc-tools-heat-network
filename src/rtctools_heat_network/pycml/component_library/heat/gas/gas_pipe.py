@@ -37,7 +37,7 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.add_equation(((self.dH - self.GasIn.Q * self.r) / (self.Q_nominal * self.r)))
         # Flow should be preserved
         self.add_equation(((self.GasIn.Q - self.GasOut.Q) / self.Q_nominal))
-        self.add_equation(((self.GasIn.Q) / self.Q_nominal))
+        self.add_equation(((self.GasIn.Q - self.GasIn.mass_flow / self.density) / self.Q_nominal))
         # Flow should be preserved
         self.add_equation(
             ((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density))
