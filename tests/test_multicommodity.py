@@ -25,7 +25,6 @@ class TestMultiCommodityHeatPump(TestCase):
         solution = run_optimization_problem(HeatProblem2, base_folder=base_folder)
         results = solution.extract_results()
 
-        v_min_cable = solution.parameters(0)['ElectricityCable_9d3b.min_voltage']
         v_min_hp = solution.parameters(0)['GenericConversion_3d3f.min_voltage']
         i_max = solution.parameters(0)['ElectricityCable_9d3b.max_current']
         cop = solution.parameters(0)['GenericConversion_3d3f.COP']
@@ -86,7 +85,6 @@ class TestMultiCommodityHeatPump(TestCase):
         solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
         results = solution.extract_results()
 
-        v_min_cable = solution.parameters(0)['ElectricityCable_9d3b.min_voltage']
         v_min_hp = solution.parameters(0)['GenericConversion_3d3f.min_voltage']
         i_max = solution.parameters(0)['ElectricityCable_9d3b.max_current']
         cop = solution.parameters(0)['GenericConversion_3d3f.COP']

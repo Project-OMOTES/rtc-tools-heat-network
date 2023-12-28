@@ -156,7 +156,6 @@ class HeatProblem(
         bound_prod_out = bounds["ElectricityProducer_ac2e.ElectricityOut.V"]
         bounds["ElectricityProducer_ac2e.ElectricityOut.V"] = (230.0, bound_prod_out[1])
 
-
         return bounds
 
     def pipe_classes(self, p):
