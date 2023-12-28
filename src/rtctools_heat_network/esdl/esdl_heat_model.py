@@ -951,7 +951,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            Gas_source_flow=dict(
+            Gas_source_mass_flow=dict(
                 min=0.0,
                 max=self._get_connected_q_max(asset),
                 nominal=self._get_connected_q_nominal(asset),

@@ -4434,8 +4434,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         coef_b: electrolyzer efficience curve coefficent
         coef_c: electrolyzer efficience curve coefficent
         n_lines: numebr of linear lines used to approximate the non-linear curve
-        electrical_power_min: minimum electrical powe consumed [W]
-        electrical_power_max: maximum electrical powe consumed [W]
+        electrical_power_min: minimum electrical power consumed [W]
+        electrical_power_max: maximum electrical power consumed [W]
 
         Returns
         -------
