@@ -50,6 +50,7 @@ class _GoalsAndOptions:
         options = super().heat_network_options()
         # options["heat_loss_disconnected_pipe"] = False
         options["minimum_velocity"] = 0.0001
+        options["include_electric_cable_power_loss"] = True
 
         return options
 
@@ -134,9 +135,29 @@ class HeatProblem(
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
+        # all assets on same electricity grid should have same minimum voltage set by carrier,
+        # these values also continue in the bounds, thus preferably this should be changed in ESDL
         parameters["GenericConversion_3d3f.min_voltage"] = 230.0
+        parameters["ElectricityCable_9d3b.min_voltage"] = 230.0
+        parameters["ElectricityProducer_ac2e.min_voltage"] = 230.0
 
         return parameters
+
+    def bounds(self):
+        bounds = super().bounds()
+        # all assets on same electricity grid should have same minimum voltage set by carrier,
+        # these values also continue in the bounds, thus preferably this should be changed in ESDL
+        bound_conv = bounds["GenericConversion_3d3f.ElectricityIn.V"]
+        bounds["GenericConversion_3d3f.ElectricityIn.V"] = (230.0, bound_conv[1])
+        bound_cable_in = bounds["ElectricityCable_9d3b.ElectricityIn.V"]
+        bounds["ElectricityCable_9d3b.ElectricityIn.V"] = (230.0, bound_cable_in[1])
+        bound_cable_out = bounds["ElectricityCable_9d3b.ElectricityOut.V"]
+        bounds["ElectricityCable_9d3b.ElectricityOut.V"] = (230.0, bound_cable_out[1])
+        bound_prod_out = bounds["ElectricityProducer_ac2e.ElectricityOut.V"]
+        bounds["ElectricityProducer_ac2e.ElectricityOut.V"] = (230.0, bound_prod_out[1])
+
+
+        return bounds
 
     def pipe_classes(self, p):
         return self._override_pipe_classes.get(p, [])

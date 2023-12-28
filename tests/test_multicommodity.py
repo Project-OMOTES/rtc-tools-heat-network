@@ -20,14 +20,15 @@ class TestMultiCommodityHeatPump(TestCase):
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
         from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem2
 
-        v_min = 1.0e4
-        i_max = 142
-        cop = 4
-
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(HeatProblem2, base_folder=base_folder)
         results = solution.extract_results()
+
+        v_min_cable = solution.parameters(0)['ElectricityCable_9d3b.min_voltage']
+        v_min_hp = solution.parameters(0)['GenericConversion_3d3f.min_voltage']
+        i_max = solution.parameters(0)['ElectricityCable_9d3b.max_current']
+        cop = solution.parameters(0)['GenericConversion_3d3f.COP']
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -70,7 +71,7 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
         np.testing.assert_array_less(heatpump_current, i_max * np.ones(len(heatpump_current)))
-        np.testing.assert_allclose(v_min * np.ones(len(heatpump_voltage)), heatpump_voltage)
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
 
     def test_heat_pump_elec_min_heat_curr_limit(self):
         """Test to verify the optimisation of minimisation of the heat_source used, however due to
@@ -82,12 +83,13 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        v_min = 230
-        i_max = 142
-        cop = 4
-
         solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
         results = solution.extract_results()
+
+        v_min_cable = solution.parameters(0)['ElectricityCable_9d3b.min_voltage']
+        v_min_hp = solution.parameters(0)['GenericConversion_3d3f.min_voltage']
+        i_max = solution.parameters(0)['ElectricityCable_9d3b.max_current']
+        cop = solution.parameters(0)['GenericConversion_3d3f.COP']
 
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
         heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
@@ -119,7 +121,7 @@ class TestMultiCommodityHeatPump(TestCase):
             heatdemand_sec - (heatpump_heat_sec + heatsource_sec), np.zeros(len(heatdemand_sec))
         )
         # check that heatpump is limited by electric transport power limitations:
-        np.testing.assert_allclose(heatpump_power, i_max * v_min * np.ones(len(heatpump_power)))
+        np.testing.assert_allclose(heatpump_power, i_max * v_min_hp * np.ones(len(heatpump_power)))
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
         # check that heatpumppower*COP==secondaryheat heatpump
@@ -129,7 +131,7 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
         np.testing.assert_allclose(heatpump_current, i_max * np.ones(len(heatpump_current)))
-        np.testing.assert_allclose(v_min * np.ones(len(heatpump_voltage)), heatpump_voltage)
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
         # TODO: currently connecting pipes at HPs can not be disabled, these don't have the
         # functionality as this causes other problems with HP tests, have to adjust this later.
         # This option would be added/changed in asset_to_component_base
