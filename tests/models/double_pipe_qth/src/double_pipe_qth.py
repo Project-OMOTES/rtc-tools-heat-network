@@ -10,7 +10,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.bounds_to_pipe_flow_directions_mixin import (
     BoundsToPipeFlowDirectionsMixin,
 )
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.qth_mixin import QTHMixin
 
 

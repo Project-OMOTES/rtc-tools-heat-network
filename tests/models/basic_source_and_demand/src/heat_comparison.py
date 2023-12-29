@@ -8,7 +8,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 
 if __name__ == "__main__":

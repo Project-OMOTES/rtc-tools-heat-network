@@ -25,7 +25,7 @@ from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponent
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
-from rtctools_heat_network.modelica_component_type_mixin import (
+from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
 from rtctools_heat_network.pipe_class import PipeClass
