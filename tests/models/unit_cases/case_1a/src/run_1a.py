@@ -14,6 +14,8 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
+from rtctools_heat_network.physics_mixin import PhysicsMixin
+
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -47,7 +49,7 @@ class _GoalsAndOptions:
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -123,6 +125,6 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemTvar)
+    sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
     a = 1

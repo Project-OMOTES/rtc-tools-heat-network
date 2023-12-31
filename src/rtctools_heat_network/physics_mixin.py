@@ -22,11 +22,6 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-    __allowed_head_loss_options = {
-        HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
-    }
 
     def __init__(self, *args, **kwargs):
         """

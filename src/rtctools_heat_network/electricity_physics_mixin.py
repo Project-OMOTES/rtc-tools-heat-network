@@ -48,16 +48,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return options
 
-    def demand_insulation_classes(self, demand_insulation: str) -> List[DemandInsulationClass]:
-        """
-        If the returned List is:
-        - empty: use the demand insualtion properties from the model
-        - len() == 1: use these demand insualtion properties to overrule that of the model
-        - len() > 1: decide between the demand insualtion class options.
-
-        """
-        return []
-
     @property
     def extra_variables(self):
         """

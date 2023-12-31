@@ -13,7 +13,7 @@ from .head_loss_mixin import HeadLossOption, _HeadLossMixin
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class GasPhysicsMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEAR,
@@ -179,19 +179,5 @@ class GasPhysicsMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegrat
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
-
-        self.__pipe_class_to_results()
-
-        # The head loss mixin wants to do some check for the head loss
-        # minimization priority that involves the diameter/area. We assume
-        # that we're sort of done minimizing/choosing the pipe diameter, and
-        # that we can set the parameters to the optimized values.
-        if (
-            options["minimize_head_losses"]
-            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
-            and priority == self._hn_minimization_goal_class.priority
-        ):
-            self.__pipe_diameter_to_parameters()
 
         super().priority_completed(priority)

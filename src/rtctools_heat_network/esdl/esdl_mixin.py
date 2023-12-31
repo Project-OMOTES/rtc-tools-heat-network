@@ -36,6 +36,7 @@ from .common import Asset
 from .esdl_heat_model import ESDLHeatModel
 from .esdl_model_base import _ESDLModelBase
 from .esdl_qth_model import ESDLQTHModel
+from ..physics_mixin import PhysicsMixin
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -128,7 +129,7 @@ class ESDLMixin(
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
 
-        if isinstance(self, HeatMixin):
+        if isinstance(self, PhysicsMixin):
             self.__model = ESDLHeatModel(assets, **self.esdl_heat_model_options())
         else:
             assert isinstance(self, QTHMixin)
