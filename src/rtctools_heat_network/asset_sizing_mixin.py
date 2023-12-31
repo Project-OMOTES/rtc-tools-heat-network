@@ -17,12 +17,13 @@ from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
 from .demand_insulation_class import DemandInsulationClass
 from .head_loss_mixin import HeadLossOption, _HeadLossMixin
+from .physics_mixin import PhysicsMixin
 from .pipe_class import PipeClass
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEAR,
@@ -42,34 +43,34 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         # Variable for the maximum discharge under pipe class optimization
         self.__pipe_topo_max_discharge_var = {}
-        self.__pipe_topo_max_discharge_map = {}
+        self._pipe_topo_max_discharge_map = {}
         self.__pipe_topo_max_discharge_nominals = {}
         self.__pipe_topo_max_discharge_var_bounds = {}
 
         # Variable for the diameter of a pipe during pipe-class optimization
         self.__pipe_topo_diameter_var = {}
         self.__pipe_topo_diameter_var_bounds = {}
-        self.__pipe_topo_diameter_map = {}
+        self._pipe_topo_diameter_map = {}
         self.__pipe_topo_diameter_nominals = {}
 
         # Variable for the investmentcost in eur/m during pipe-class optimization
         self.__pipe_topo_cost_var = {}
         self.__pipe_topo_cost_var_bounds = {}
-        self.__pipe_topo_cost_map = {}
+        self._pipe_topo_cost_map = {}
         self.__pipe_topo_cost_nominals = {}
 
         # Variable for the heat-loss (not specific for pipe-class optimization)
-        self.__pipe_topo_heat_loss_var = {}
-        self.__pipe_topo_heat_loss_path_var = {}
-        self.__pipe_topo_heat_loss_var_bounds = {}
-        self.__pipe_topo_heat_loss_map = {}
-        self.__pipe_topo_heat_loss_nominals = {}
-        self.__pipe_topo_heat_losses = {}
+        self.__pipe_heat_loss_var = {}
+        self.__pipe_heat_loss_path_var = {}
+        self.__pipe_heat_loss_var_bounds = {}
+        self._pipe_heat_loss_map = {}
+        self.__pipe_heat_loss_nominals = {}
+        self.__pipe_heat_losses = {}
 
         # Boolean variables for the various pipe class options per pipe
         self.__pipe_topo_pipe_class_var = {}
         self.__pipe_topo_pipe_class_var_bounds = {}
-        self.__pipe_topo_pipe_class_map = {}
+        self._pipe_topo_pipe_class_map = {}
         self.__pipe_topo_pipe_class_result = {}
 
         self.__pipe_topo_pipe_class_discharge_ordering_var = {}
@@ -158,18 +159,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # much an internal affair.
             diam_var_name = f"{pipe}__hn_diameter"
             self.__pipe_topo_diameter_var[diam_var_name] = ca.MX.sym(diam_var_name)
-            self.__pipe_topo_diameter_map[pipe] = diam_var_name
+            self._pipe_topo_diameter_map[pipe] = diam_var_name
 
             cost_var_name = f"{pipe}__hn_cost"
             self.__pipe_topo_cost_var[cost_var_name] = ca.MX.sym(cost_var_name)
-            self.__pipe_topo_cost_map[pipe] = cost_var_name
+            self._pipe_topo_cost_map[pipe] = cost_var_name
 
             max_discharge_var_name = f"{pipe}__hn_max_discharge"
             max_discharges = [c.maximum_discharge for c in pipe_classes]
             self.__pipe_topo_max_discharge_var[max_discharge_var_name] = ca.MX.sym(
                 max_discharge_var_name
             )
-            self.__pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
+            self._pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
 
             if len(pipe_classes) > 0:
                 self.__pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
@@ -243,24 +244,24 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             heat_loss_var_name = f"{pipe}__hn_heat_loss"
             carrier_id = parameters[f"{pipe}.carrier_id"]
             if len(self.temperature_regimes(carrier_id)) == 0:
-                self.__pipe_topo_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
+                self.__pipe_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
             else:
-                self.__pipe_topo_heat_loss_path_var[heat_loss_var_name] = ca.MX.sym(
+                self.__pipe_heat_loss_path_var[heat_loss_var_name] = ca.MX.sym(
                     heat_loss_var_name
                 )
-            self.__pipe_topo_heat_loss_map[pipe] = heat_loss_var_name
+            self._pipe_heat_loss_map[pipe] = heat_loss_var_name
 
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
                 # No pipe class decision to make for this pipe w.r.t. heat loss
                 heat_loss = self._pipe_heat_loss(options, parameters, pipe)
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                self.__pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     0.0,
                     2.0 * heat_loss,
                 )
                 if heat_loss > 0:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
+                    self.__pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = max(
+                    self.__pipe_heat_loss_nominals[heat_loss_var_name] = max(
                         self._pipe_heat_loss({"neglect_pipe_heat_losses": False}, parameters, pipe),
                         1.0,
                     )
@@ -274,14 +275,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 u_values = pipe_classes[0].u_values
                 heat_loss = self._pipe_heat_loss(options, parameters, pipe, u_values)
 
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                self.__pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     0.0,
                     2.0 * heat_loss,
                 )
                 if heat_loss > 0:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = heat_loss
+                    self.__pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
-                    self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = max(
+                    self.__pipe_heat_loss_nominals[heat_loss_var_name] = max(
                         self._pipe_heat_loss({"neglect_pipe_heat_losses": False}, parameters, pipe),
                         1.0,
                     )
@@ -295,12 +296,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     for c in pipe_classes
                 ]
 
-                self.__pipe_topo_heat_losses[pipe] = heat_losses
-                self.__pipe_topo_heat_loss_var_bounds[heat_loss_var_name] = (
+                self.__pipe_heat_losses[pipe] = heat_losses
+                self.__pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     min(heat_losses),
                     max(heat_losses),
                 )
-                self.__pipe_topo_heat_loss_nominals[heat_loss_var_name] = np.median(
+                self.__pipe_heat_loss_nominals[heat_loss_var_name] = np.median(
                     [x for x in heat_losses if x > 0]
                 )
 
@@ -315,7 +316,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 # No pipe class decision to make for this pipe
                 pass
             else:
-                self.__pipe_topo_pipe_class_map[pipe] = {}
+                self._pipe_topo_pipe_class_map[pipe] = {}
                 self.__pipe_topo_pipe_class_discharge_ordering_map[pipe] = {}
                 self.__pipe_topo_pipe_class_cost_ordering_map[pipe] = {}
                 self.__pipe_topo_pipe_class_heat_loss_ordering_map[pipe] = {}
@@ -346,7 +347,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                             f"{pipe}__hn_pipe_class_{c.name}_heat_loss_ordering"
                         )
 
-                    self.__pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
+                    self._pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
                     self.__pipe_topo_pipe_class_var[pipe_class_var_name] = ca.MX.sym(
                         pipe_class_var_name
                     )
@@ -386,8 +387,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         # optimized. Note that the flow direction may have already been fixed
         # based on the original bounds, if that was desired. We can therefore
         # naively override the bounds without taking this into account.
-        for pipe in self.__pipe_topo_pipe_class_map:
-            pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
+        for pipe in self._pipe_topo_pipe_class_map:
+            pipe_classes = self._pipe_topo_pipe_class_map[pipe]
             max_discharge = max([c.maximum_discharge for c in pipe_classes])
 
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (-max_discharge, max_discharge)
@@ -404,7 +405,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatOut.Heat"] = (-max_heat, max_heat)
 
         # When optimizing for pipe size, we do not yet support all options
-        if self.__pipe_topo_pipe_class_map:
+        if self._pipe_topo_pipe_class_map:
             if np.isfinite(options["maximum_temperature_der"]) and np.isfinite(
                 options["maximum_flow_der"]
             ):
@@ -556,6 +557,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["minimum_velocity"] = 0.005
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
+        options["asset_sizing_option"] = True
 
         return options
 
@@ -602,13 +604,13 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         Return the symbol name for the pipe diameter
         """
-        return self.__pipe_topo_diameter_map[pipe]
+        return self._pipe_topo_diameter_map[pipe]
 
     def pipe_cost_symbol_name(self, pipe: str) -> str:
         """
         Return the symbol name for the pipe investment cost per meter
         """
-        return self.__pipe_topo_cost_map[pipe]
+        return self._pipe_topo_cost_map[pipe]
 
     @property
     def extra_variables(self):
@@ -627,7 +629,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self.__pipe_topo_pipe_class_discharge_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_cost_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_heat_loss_ordering_var.values())
-        variables.extend(self.__pipe_topo_heat_loss_var.values())
+        variables.extend(self.__pipe_heat_loss_var.values())
         return variables
 
     @property
@@ -638,7 +640,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         time-step.
         """
         variables = super().path_variables.copy()
-        variables.extend(self.__pipe_topo_heat_loss_path_var.values())
+        variables.extend(self.__pipe_heat_loss_path_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -662,8 +664,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         if variable in self.__pipe_topo_diameter_nominals:
             return self.__pipe_topo_diameter_nominals[variable]
-        elif variable in self.__pipe_topo_heat_loss_nominals:
-            return self.__pipe_topo_heat_loss_nominals[variable]
+        elif variable in self.__pipe_heat_loss_nominals:
+            return self.__pipe_heat_loss_nominals[variable]
         elif variable in self.__pipe_topo_cost_nominals:
             return self.__pipe_topo_cost_nominals[variable]
         elif variable in self.__asset_max_size_nominals:
@@ -682,7 +684,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self.__pipe_topo_pipe_class_var_bounds)
         bounds.update(self.__pipe_topo_diameter_var_bounds)
         bounds.update(self.__pipe_topo_cost_var_bounds)
-        bounds.update(self.__pipe_topo_heat_loss_var_bounds)
+        bounds.update(self.__pipe_heat_loss_var_bounds)
         bounds.update(self.__pipe_topo_heat_discharge_bounds)
         bounds.update(self.__asset_max_size_bounds)
         bounds.update(self.__asset_aggregation_count_var_bounds)
@@ -810,9 +812,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
             for pipe in components.get("pipe", []):
                 try:
-                    pipe_classes = self.__pipe_topo_pipe_class_map[pipe].keys()
+                    pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
-                        self._hn_pipe_head_loss(
+                        self._head_loss_class._hn_pipe_head_loss(
                             pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
                         )
                         for pc in pipe_classes
@@ -821,7 +823,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
                     max_discharge = options["maximum_velocity"] * area
-                    head_loss += self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+                    head_loss += self._head_loss_class._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
 
@@ -889,18 +891,18 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 rho = parameters[f"{pipe}.rho"]
 
                 # 0: pipe is connected, 1: pipe is disconnected
-                is_disconnected_var = self.__pipe_disconnect_map.get(pipe)
+                is_disconnected_var = self._pipe_disconnect_map.get(pipe)
                 if is_disconnected_var is None:
                     is_disconnected = 0.0
                 else:
                     is_disconnected = self.state(is_disconnected_var)
 
-                flow_dir_var = self.__pipe_to_flow_direct_map[pipe]
+                flow_dir_var = self._pipe_to_flow_direct_map[pipe]
                 flow_dir = self.state(flow_dir_var)  # 0/1: negative/positive flow direction
 
-                if pipe in self.__pipe_topo_pipe_class_map:
+                if pipe in self._pipe_topo_pipe_class_map:
                     # Multiple diameter options for this pipe
-                    pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
+                    pipe_classes = self._pipe_topo_pipe_class_map[pipe]
                     max_discharge = max(c.maximum_discharge for c in pipe_classes)
                     for pc, pc_var_name in pipe_classes.items():
                         if pc.inner_diameter == 0.0:
@@ -971,7 +973,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         This functions returns a nominal for the discharge of pipes under topology optimization.
         """
         try:
-            pipe_classes = self.__pipe_topo_pipe_class_map[pipe].keys()
+            pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
             area = np.median(c.area for c in pipe_classes)
         except KeyError:
             area = parameters[f"{pipe}.area"]
@@ -1035,7 +1037,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             # We need to make sure the dH is decoupled from the discharge when
             # the pipe is disconnected. Simply put, this means making the
             # below constraints trivial.
-            is_disconnected_var = self.__pipe_disconnect_map.get(pipe)
+            is_disconnected_var = self._pipe_disconnect_map.get(pipe)
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
@@ -1045,16 +1047,16 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             max_discharge = None
             max_head_loss = -np.inf
 
-            if pipe in self.__pipe_topo_pipe_class_map:
+            if pipe in self._pipe_topo_pipe_class_map:
                 # Multiple diameter options for this pipe
-                pipe_classes = self.__pipe_topo_pipe_class_map[pipe]
+                pipe_classes = self._pipe_topo_pipe_class_map[pipe]
                 max_discharge = max(c.maximum_discharge for c in pipe_classes)
 
                 for pc, pc_var_name in pipe_classes.items():
                     if pc.inner_diameter == 0.0:
                         continue
 
-                    head_loss_max_discharge = self._hn_pipe_head_loss(
+                    head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
                         pipe, options, parameters, max_discharge, pipe_class=pc
                     )
 
@@ -1070,7 +1072,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     # booleans) is either 0 when the pipe is connected, or >= 1 when it
                     # is disconnected.
                     constraints.extend(
-                        self._hn_pipe_head_loss(
+                        self._head_loss_class._hn_pipe_head_loss(
                             pipe,
                             options,
                             parameters,
@@ -1089,7 +1091,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     # we pass the current pipe class's maximum discharge.
                     max_head_loss = max(
                         max_head_loss,
-                        self._hn_pipe_head_loss(
+                        self._head_loss_class._hn_pipe_head_loss(
                             pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
                         ),
                     )
@@ -1103,7 +1105,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 
                 constraints.extend(
-                    self._hn_pipe_head_loss(
+                    self._head_loss_class._hn_pipe_head_loss(
                         pipe,
                         options,
                         parameters,
@@ -1115,14 +1117,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                     )
                 )
 
-                max_head_loss = self._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+                max_head_loss = self._head_loss_class._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
 
             # Relate the head loss symbol to the pipe's dH symbol.
 
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
             # their own integers as well.
             flow_dir = self.__state_vector_scaled(
-                self.__pipe_to_flow_direct_map[pipe], ensemble_member
+                self._pipe_to_flow_direct_map[pipe], ensemble_member
             )
 
             # Note that the Big-M should _at least_ cover the maximum
@@ -1166,7 +1168,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for p in self.heat_network_components.get("pipe", []):
             try:
-                pipe_classes = self.__pipe_topo_pipe_class_map[p]
+                pipe_classes = self._pipe_topo_pipe_class_map[p]
             except KeyError:
                 pass
             else:
@@ -1186,9 +1188,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         # These are the constraints to order the discharge capabilities of the pipe classes
         for p, pipe_classes in self.__pipe_topo_pipe_class_discharge_ordering_map.items():
-            max_discharge = self.extra_variable(self.__pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(self._pipe_topo_max_discharge_map[p])
             max_discharges = {
-                pc.name: pc.maximum_discharge for pc in self.__pipe_topo_pipe_class_map[p]
+                pc.name: pc.maximum_discharge for pc in self._pipe_topo_pipe_class_map[p]
             }
             median_discharge = np.median(list(max_discharges.values()))
 
@@ -1223,9 +1225,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         # These are the constraints to order the costs of the pipe classes
         for p, pipe_classes in self.__pipe_topo_pipe_class_cost_ordering_map.items():
-            cost_sym_name = self.__pipe_topo_cost_map[p]
+            cost_sym_name = self._pipe_topo_cost_map[p]
             cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
-            costs = {pc.name: pc.investment_costs for pc in self.__pipe_topo_pipe_class_map[p]}
+            costs = {pc.name: pc.investment_costs for pc in self._pipe_topo_pipe_class_map[p]}
 
             big_m = 2.0 * max(costs.values())
             for pc, var_name in pipe_classes.items():
@@ -1253,22 +1255,22 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         if not self.heat_network_options()["neglect_pipe_heat_losses"]:
             for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
                 if pipe in self.hot_pipes and self.has_related_pipe(pipe):
-                    heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
+                    heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
-                    cold_name = self.__pipe_topo_heat_loss_map[self.hot_to_cold_pipe(pipe)]
+                    cold_name = self._pipe_heat_loss_map[self.hot_to_cold_pipe(pipe)]
                     heat_loss_sym += self.extra_variable(cold_name, ensemble_member)
                     heat_losses = [
                         h1 + h2
                         for h1, h2 in zip(
-                            self.__pipe_topo_heat_losses[pipe],
-                            self.__pipe_topo_heat_losses[self.hot_to_cold_pipe(pipe)],
+                            self.__pipe_heat_losses[pipe],
+                            self.__pipe_heat_losses[self.hot_to_cold_pipe(pipe)],
                         )
                     ]
                 elif pipe in self.hot_pipes and not self.has_related_pipe(pipe):
-                    heat_loss_sym_name = self.__pipe_topo_heat_loss_map[pipe]
+                    heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
                     heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
 
-                    heat_losses = self.__pipe_topo_heat_losses[pipe]
+                    heat_losses = self.__pipe_heat_losses[pipe]
                 else:  # cold pipe
                     continue
 
@@ -1298,7 +1300,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                         )
                     )
 
-        for p, pipe_classes in self.__pipe_topo_pipe_class_map.items():
+        for p, pipe_classes in self._pipe_topo_pipe_class_map.items():
             variables = {
                 pc.name: self.extra_variable(var_name, ensemble_member)
                 for pc, var_name in pipe_classes.items()
@@ -1308,7 +1310,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append((sum(variables.values()), 1.0, 1.0))
 
             # set the max discharge
-            max_discharge = self.extra_variable(self.__pipe_topo_max_discharge_map[p])
+            max_discharge = self.extra_variable(self._pipe_topo_max_discharge_map[p])
             max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
             max_discharge_expr = sum(
                 variables[pc_name] * max_discharges[pc_name] for pc_name in variables
@@ -1317,14 +1319,14 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(
                 (
                     (max_discharge - max_discharge_expr)
-                    / self.variable_nominal(self.__pipe_topo_max_discharge_map[p]),
+                    / self.variable_nominal(self._pipe_topo_max_discharge_map[p]),
                     0.0,
                     0.0,
                 )
             )
 
             # Match the indicators to the diameter symbol
-            diam_sym_name = self.__pipe_topo_diameter_map[p]
+            diam_sym_name = self._pipe_topo_diameter_map[p]
             diam_sym = self.extra_variable(diam_sym_name, ensemble_member)
 
             diameters = {pc.name: pc.inner_diameter for pc in pipe_classes}
@@ -1335,7 +1337,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             constraints.append(((diam_sym - diam_expr) / constraint_nominal, 0.0, 0.0))
 
             # match the indicators to the cost symbol
-            cost_sym_name = self.__pipe_topo_cost_map[p]
+            cost_sym_name = self._pipe_topo_cost_map[p]
             cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
 
             investment_costs = {pc.name: pc.investment_costs for pc in pipe_classes}
@@ -1367,7 +1369,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for p in self.heat_network_components.get("pipe", []):
             pipe_classes = []
 
-            heat_loss_sym_name = self.__pipe_topo_heat_loss_map[p]
+            heat_loss_sym_name = self._pipe_heat_loss_map[p]
 
             constraint_nominal = self.variable_nominal(heat_loss_sym_name)
 
@@ -1377,8 +1379,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             if len(temperatures) == 0:
                 heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
                 try:
-                    heat_losses = self.__pipe_topo_heat_losses[p]
-                    pipe_classes = self.__pipe_topo_pipe_class_map[p]
+                    heat_losses = self.__pipe_heat_losses[p]
+                    pipe_classes = self._pipe_topo_pipe_class_map[p]
                     variables = [
                         self.extra_variable(var_name, ensemble_member)
                         for pc, var_name in pipe_classes.items()
@@ -1498,7 +1500,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             nominal = self.variable_nominal(f"{p}.Q")
 
             max_discharge = self.__pipe_topo_max_discharge_var[
-                self.__pipe_topo_max_discharge_map[p]
+                self._pipe_topo_max_discharge_map[p]
             ]
 
             constraints.append(((max_discharge - discharge_sym_hot) / nominal, 0.0, np.inf))
@@ -1712,6 +1714,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         constraints = super().constraints(ensemble_member)
 
+        if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            constraints.extend(self._hn_pipe_head_loss_constraints(ensemble_member))
+
+
         constraints.extend(self.__heat_loss_variable_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
         constraints.extend(self.__max_size_constraints(ensemble_member))
@@ -1794,7 +1800,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                 else:
                     pipe_class = next(
                         c
-                        for c, s in self.__pipe_topo_pipe_class_map[pipe].items()
+                        for c, s in self._pipe_topo_pipe_class_map[pipe].items()
                         if round(results[s][0]) == 1.0
                     )
 
@@ -1808,7 +1814,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         """
         for ensemble_member in range(self.ensemble_size):
             d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
-            for pipe in self.__pipe_topo_pipe_class_map:
+            for pipe in self._pipe_topo_pipe_class_map:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
                 for p in [pipe, self.hot_to_cold_pipe(pipe)]:
@@ -1825,7 +1831,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             parameters = self.parameters(ensemble_member)
 
             h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-            for pipe in self.__pipe_topo_heat_losses:
+            for pipe in self.__pipe_heat_losses:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
                 h[f"{pipe}.Heat_loss"] = self._pipe_heat_loss(

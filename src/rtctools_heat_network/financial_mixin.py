@@ -191,7 +191,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 aggr_count_max = parameters[f"{asset_name}.nr_of_doublets"]
             except KeyError:
                 aggr_count_max = 1.0
-            if parameters[f"{asset}.state"] == 0:
+            if parameters[f"{asset_name}.state"] == 0:
                 aggr_count_max = 0.0
             self.__asset_installation_cost_bounds[asset_installation_cost_var] = (
                 0.0,
@@ -211,8 +211,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
 
             if asset_name in self.heat_network_components.get("pipe", []):
-                if asset_name in self.__pipe_topo_pipe_class_map:
-                    pipe_classes = self.__pipe_topo_pipe_class_map[asset_name]
+                if asset_name in self._pipe_topo_pipe_class_map:
+                    pipe_classes = self._pipe_topo_pipe_class_map[asset_name]
                     max_cost = (
                         2.0
                         * parameters[f"{asset_name}.length"]
@@ -226,9 +226,11 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     )
             else:
                 max_cost = (
-                    self.__asset_max_size_bounds[f"{asset_name}__max_size"][1]
+                    max(bounds[f"{asset_name}__max_size"][1].values)
                     * parameters[f"{asset_name}.investment_cost_coefficient"]
-                )
+                    if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries) else
+                    bounds[f"{asset_name}__max_size"][1]
+                    * parameters[f"{asset_name}.investment_cost_coefficient"])
             self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
             self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
                 max(
@@ -426,10 +428,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             if asset_name in [*self.heat_network_components.get("pipe", [])]:
                 # We do the pipe seperately as their coefficients are specified per meter.
                 investment_cost_coefficient = self.extra_variable(
-                    self.__pipe_topo_cost_map[asset_name], ensemble_member
+                    self._pipe_topo_cost_map[asset_name], ensemble_member
                 )
                 asset_size = parameters[f"{asset_name}.length"]
-                nominal = self.variable_nominal(self.__pipe_topo_cost_map[asset_name])
+                nominal = self.variable_nominal(self._pipe_topo_cost_map[asset_name])
             else:
                 max_var = self._asset_max_size_map[asset_name]
                 asset_size = self.extra_variable(max_var, ensemble_member)

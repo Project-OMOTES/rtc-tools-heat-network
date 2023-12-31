@@ -4,6 +4,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
+from .asset_sizing_mixin import AssetSizingMixin
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .financial_mixin import FinancialMixin
 
@@ -12,7 +13,7 @@ from .physics_mixin import PhysicsMixin
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class TechnoEconomicMixin(PhysicsMixin, FinancialMixin, BaseComponentTypeMixin,
+class TechnoEconomicMixin(FinancialMixin, AssetSizingMixin, BaseComponentTypeMixin,
                 CollocatedIntegratedOptimizationProblem):
 
     def __init__(self, *args, **kwargs):
