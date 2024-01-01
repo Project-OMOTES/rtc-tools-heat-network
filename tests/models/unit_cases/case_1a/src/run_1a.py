@@ -125,6 +125,6 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblemTvar)
     results = sol.extract_results()
     a = 1

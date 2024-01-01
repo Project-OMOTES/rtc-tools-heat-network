@@ -96,7 +96,7 @@ class HeatProblem(
 
 class HeatProblemTvarSecondary(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -117,7 +117,7 @@ class HeatProblemTvarSecondary(
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
 
@@ -153,7 +153,7 @@ class HeatProblemTvarSecondary(
 
 class HeatProblemTvar(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -205,7 +205,7 @@ class HeatProblemTvar(
 
 class HeatProblemTvarDisableHEX(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

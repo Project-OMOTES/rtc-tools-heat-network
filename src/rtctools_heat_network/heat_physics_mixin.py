@@ -271,8 +271,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 heat_loss = self._pipe_heat_loss(options, parameters, pipe)
                 self.__pipe_heat_loss_var_bounds[heat_loss_var_name] = (
-                    heat_loss,
-                    heat_loss,
+                    0.,
+                    2. * heat_loss,
                 )
                 self.__pipe_heat_loss_nominals[heat_loss_var_name] = max(
                     heat_loss,
@@ -2251,7 +2251,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         p,
                         temp=temperature,
                     )
-                    big_m = 2.0 * heat_loss
+                    big_m = 2.0 * self.bounds()[f"{p}__hn_heat_loss"][1]
                     constraints.append(
                         (
                             (
@@ -2326,7 +2326,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         options = self.heat_network_options()
 
-        if not options["asset_sizing_option"]:
+        if not options["asset_sizing_option"] and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(self._hn_pipe_head_loss_constraints(ensemble_member))
 
         if not options["asset_sizing_option"]:

@@ -188,7 +188,7 @@ class HeatProblemSetPointConstraints(
 
 class HeatProblemTvarsup(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -237,7 +237,7 @@ class HeatProblemTvarsup(
 
 class HeatProblemTvarret(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
