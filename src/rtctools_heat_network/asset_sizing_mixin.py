@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import List, Optional, Set, Tuple
 
 import casadi as ca
@@ -815,7 +816,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
                         )
                         for pc in pipe_classes
                         if pc.maximum_discharge > 0.0
@@ -823,7 +824,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
                     max_discharge = options["maximum_velocity"] * area
-                    head_loss += self._head_loss_class._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+                    head_loss += self._head_loss_class._hn_pipe_head_loss(pipe, self, options, parameters, max_discharge)
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
 
@@ -1057,7 +1058,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                         continue
 
                     head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, options, parameters, max_discharge, pipe_class=pc
+                        pipe, self, options, parameters, max_discharge, pipe_class=pc
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -1074,6 +1075,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                     constraints.extend(
                         self._head_loss_class._hn_pipe_head_loss(
                             pipe,
+                            self,
                             options,
                             parameters,
                             discharge,
@@ -1092,7 +1094,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                     max_head_loss = max(
                         max_head_loss,
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
                         ),
                     )
             else:
@@ -1107,6 +1109,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                 constraints.extend(
                     self._head_loss_class._hn_pipe_head_loss(
                         pipe,
+                        self,
                         options,
                         parameters,
                         discharge,
@@ -1117,7 +1120,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                     )
                 )
 
-                max_head_loss = self._head_loss_class._hn_pipe_head_loss(pipe, options, parameters, max_discharge)
+                max_head_loss = self._head_loss_class._hn_pipe_head_loss(pipe, self, options, parameters, max_discharge)
 
             # Relate the head loss symbol to the pipe's dH symbol.
 
@@ -1142,6 +1145,161 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                 )
             )
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
+
+        return constraints
+
+    def __flow_direction_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the direction in pipes and determine whether a pipe
+        is utilized at all (is_disconnected variable).
+
+        Whether a pipe is connected is based upon whether flow passes through that pipe.
+
+        The directions are set based upon the directions of how thermal power propegates. This is
+        done based upon the sign of the Heat variable. Where positive Heat means a positive
+        direction and negative heat means a negative direction. By default, positive is defined from
+        HeatIn to HeatOut.
+
+        Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
+        """
+        constraints = []
+        options = self.heat_network_options()
+        parameters = self.parameters(ensemble_member)
+
+        minimum_velocity = options["minimum_velocity"]
+        maximum_velocity = options["maximum_velocity"]
+
+        # Also ensure that the discharge has the same sign as the heat.
+        for p in self.heat_network_components.get("pipe", []):
+            flow_dir_var = self._pipe_to_flow_direct_map[p]
+            flow_dir = self.state(flow_dir_var)
+
+            is_disconnected_var = self._pipe_disconnect_map.get(p)
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
+            q_pipe = self.state(f"{p}.Q")
+            heat_in = self.state(f"{p}.HeatIn.Heat")
+            heat_out = self.state(f"{p}.HeatOut.Heat")
+
+            try:
+                pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
+                maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
+                var_names = self._pipe_topo_pipe_class_map[p].values()
+                dn_none = self.__pipe_topo_pipe_class_var[list(var_names)[0]]
+                minimum_discharge = min(
+                    [c.area * minimum_velocity for c in pipe_classes if c.area > 0.0]
+                )
+            except KeyError:
+                maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
+
+                if math.isfinite(minimum_velocity) and minimum_velocity > 0.0:
+                    minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
+                else:
+                    minimum_discharge = 0.0
+                dn_none = 0.0
+
+            if maximum_discharge == 0.0:
+                maximum_discharge = 1.0
+            big_m = 2.0 * (maximum_discharge + minimum_discharge)
+
+            if minimum_discharge > 0.0:
+                constraint_nominal = (minimum_discharge * big_m) ** 0.5
+            else:
+                constraint_nominal = big_m
+
+            # when DN=0 the flow_dir variable can be 0 or 1, thus these constraints then need to be
+            # disabled
+            constraints.append(
+                (
+                    (
+                        q_pipe
+                        - big_m * (flow_dir + dn_none)
+                        + (1 - is_disconnected) * minimum_discharge
+                    )
+                    / constraint_nominal,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(
+                (
+                    (
+                        q_pipe
+                        + big_m * (1 - flow_dir + dn_none)
+                        - (1 - is_disconnected) * minimum_discharge
+                    )
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+            big_m = 2.0 * np.max(
+                np.abs(
+                    (
+                        *self.bounds()[f"{p}.HeatIn.Heat"],
+                        *self.bounds()[f"{p}.HeatOut.Heat"],
+                    )
+                )
+            )
+            # Note we only need one on the heat as the desired behaviour is propegated by the
+            # constraints heat_in - heat_out - heat_loss == 0.
+            constraints.append(
+                (
+                    (heat_in - big_m * flow_dir) / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(
+                (
+                    (heat_in + big_m * (1 - flow_dir)) / big_m,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+            # If a pipe is disconnected, the discharge should be zero
+            if is_disconnected_var is not None:
+                big_m = 2.0 * (maximum_discharge + minimum_discharge)
+                constraints.append(((q_pipe - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0))
+                constraints.append(((q_pipe + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf))
+                big_m = 2.0 * np.max(
+                    np.abs(
+                        (
+                            *self.bounds()[f"{p}.HeatIn.Heat"],
+                            *self.bounds()[f"{p}.HeatOut.Heat"],
+                        )
+                    )
+                )
+                constraints.append(
+                    ((heat_in - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0)
+                )
+                constraints.append(((heat_in + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf))
+                constraints.append(
+                    ((heat_out - (1 - is_disconnected) * big_m) / big_m, -np.inf, 0.0)
+                )
+                constraints.append(
+                    ((heat_out + (1 - is_disconnected) * big_m) / big_m, 0.0, np.inf)
+                )
+
+        # Pipes that are connected in series should have the same heat direction.
+        for pipes in self.heat_network_topology.pipe_series:
+            if len(pipes) <= 1:
+                continue
+
+            assert (
+                len({p for p in pipes if self.is_cold_pipe(p)}) == 0
+            ), "Pipe series for Heat models should only contain hot pipes"
+
+            base_flow_dir_var = self.state(self._pipe_to_flow_direct_map[pipes[0]])
+
+            for p in pipes[1:]:
+                flow_dir_var = self.state(self._pipe_to_flow_direct_map[p])
+                constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
 
         return constraints
 
@@ -1699,6 +1857,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
 
         constraints = super().path_constraints(ensemble_member)
 
+        constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
 
@@ -1837,3 +1996,33 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                 h[f"{pipe}.Heat_loss"] = self._pipe_heat_loss(
                     options, parameters, pipe, pipe_class.u_values
                 )
+
+    def priority_completed(self, priority):
+        """
+        This function is called after a priority of goals is completed. This function is used to
+        specify operations between consecutive goals. Here we set some parameter attributes after
+        the optimization is completed.
+        """
+        options = self.heat_network_options()
+
+        self.__pipe_class_to_results()
+
+        # The head loss mixin wants to do some check for the head loss
+        # minimization priority that involves the diameter/area. We assume
+        # that we're sort of done minimizing/choosing the pipe diameter, and
+        # that we can set the parameters to the optimized values.
+        if (
+            options["minimize_head_losses"]
+            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            and priority == self._head_loss_class._hn_minimization_goal_class.priority
+        ):
+            self.__pipe_diameter_to_parameters()
+
+        super().priority_completed(priority)
+    def post(self):
+        super().post()
+
+        self.__pipe_class_to_results()
+        self.__pipe_diameter_to_parameters()
+        self._pipe_heat_loss_to_parameters()
+

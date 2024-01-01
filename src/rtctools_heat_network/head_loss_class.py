@@ -397,7 +397,7 @@ class HeadLossClass():
                 self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
             else:
                 q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
-                head_loss_nominal = self._hn_pipe_head_loss(p, options, parameters, q_nominal)
+                head_loss_nominal = self._hn_pipe_head_loss(p, optimization_problem, options, parameters, q_nominal)
 
                 self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
 
@@ -427,6 +427,7 @@ class HeadLossClass():
     def _hn_pipe_head_loss(
         self,
         pipe: str,
+        optimization_problem,
         heat_network_options,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
@@ -626,8 +627,8 @@ class HeadLossClass():
 
             # Vectorize constraint for speed
             if symbolic:
-                q_nominal = self.variable_nominal(f"{pipe}.Q")
-                head_loss_nominal = self.variable_nominal(f"{pipe}.dH")
+                q_nominal = optimization_problem.variable_nominal(f"{pipe}.Q")
+                head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 head_loss_vec = ca.repmat(head_loss, len(a))
                 discharge_vec = ca.repmat(discharge, len(a))
                 if isinstance(is_disconnected, ca.MX):

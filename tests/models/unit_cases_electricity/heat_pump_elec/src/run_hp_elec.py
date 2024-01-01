@@ -13,6 +13,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 # TODO: check if this run script is still valid as test case for electric heatpump and update with
@@ -100,7 +101,7 @@ class MinimizeElectricityGoal(Goal):
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -144,7 +145,7 @@ class HeatProblem(
 
 class HeatProblem2(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -189,7 +190,7 @@ class HeatProblem2(
 
 class ElectricityProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
