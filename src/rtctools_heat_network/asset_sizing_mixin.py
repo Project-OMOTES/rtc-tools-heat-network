@@ -448,7 +448,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("buffer", []):
-            ub = bounds[f"{asset_name}.Stored_heat"][1]
+            ub = max(bounds[f"{asset_name}.Stored_heat"][1].values) if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries) else bounds[f"{asset_name}.Stored_heat"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(
                 name=asset_name,
@@ -924,8 +924,9 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                         is_topo_disconnected = 1 - self.__pipe_topo_pipe_class_var[pc_var_name]
 
                         constraints.extend(
-                            self._hydraulic_power(
+                            self._head_loss_class._hydraulic_power(
                                 pipe,
+                                self,
                                 options,
                                 parameters,
                                 discharge,
@@ -946,8 +947,9 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                         * options["maximum_velocity"]
                     )
                     constraints.extend(
-                        self._hydraulic_power(
+                        self._head_loss_class._hydraulic_power(
                             pipe,
+                            self,
                             options,
                             parameters,
                             discharge,
@@ -1860,6 +1862,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
+        constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
 
 
         return constraints
