@@ -17,20 +17,29 @@ from rtctools.util import run_optimization_problem
 
 
 class TestMILPbus(TestCase):
-    """MILP problem test and NLP problem test. In same test to not duplicate code"""
-
     def test_voltages_and_power_network1(self):
-        """Test the voltage levels relative to each other. The absolute value
-        (230V for instance) is determined by other components than the bus"""
+        """
+        This test checks the behaviour of electricity networks with an bus asset. A bus asset is the
+        only asset that is allowed to have more than one electricity port.
+
+        Checks:
+        - Voltage is equal for the bus ports
+        - Checks energy conservation in the bus
+        - Checks current conservation in the bus
+        - Checks that minimum voltage is met
+        - Checks that power meets the current * voltage at the demands
+
+        """
         import models.unit_cases_electricity.bus_networks.src.example as example
         from models.unit_cases_electricity.bus_networks.src.example import ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # Run the problem
-        results = run_optimization_problem(
+        solution = run_optimization_problem(
             ElectricityProblem, base_folder=base_folder
-        ).extract_results()
+        )
+        results= solution.extract_results()
         v1 = results["Bus_f262.ElectricityConn[1].V"]
         v2 = results["Bus_f262.ElectricityConn[2].V"]
         v_outgoing_cable = results["ElectricityCable_de9a.ElectricityIn.V"]
@@ -58,6 +67,6 @@ class TestMILPbus(TestCase):
         # Current in == current out = no dissipation of power
         np.testing.assert_allclose(i1 + i2 - i3 - i4, 0.0, rtol=1.0e-6, atol=1.0e-6)
         # check if minimum voltage is reached
-        np.testing.assert_array_less(230.0 - 1.0e-3, v_demand)
+        np.testing.assert_array_less(solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand)
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)

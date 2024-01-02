@@ -8,6 +8,7 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
@@ -19,7 +20,7 @@ class TargetDemandGoal(Goal):
 
     order = 2
 
-    def __init__(self, state, target):
+    def __init__(self, state: str, target: Timeseries):
         self.state = state
 
         self.target_min = target
@@ -27,12 +28,19 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem, ensemble_member):
+    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int):
         return optimization_problem.state(self.state)
 
 
 class _GoalsAndOptions:
     def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
@@ -52,10 +60,10 @@ class ElectricityProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
-        goals = super().path_goals().copy()
-
-        return goals
+    """
+    Problem to check the behaviour of a simple source, cable, demand network.
+    """
+    pass
 
 
 class ElectricityProblemMaxCurr(
@@ -65,7 +73,18 @@ class ElectricityProblemMaxCurr(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    Problem to check the behaviour of a simple source, cable, demand network with increased demand
+    to push current to max.
+    """
     def path_goals(self):
+        """
+        Modified targets for the demand matching goal to push up the current in the system.
+
+        Returns
+        -------
+        list with goals.
+        """
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
@@ -82,6 +101,13 @@ class ElectricityProblemMaxCurr(
         return goals
 
     def bounds(self):
+        """
+        Setting bounds to get things to its max, this might be incorrect here.
+
+        Returns
+        -------
+        Dict with the bounds.
+        """
         bounds = super().bounds()
         bounds["ElectricityProducer_b95d.Electricity_source"] = (0.0, 100000.0)
         bounds["ElectricityCable_238f.ElectricityIn.Power"] = (0.0, 100000.0)

@@ -12,11 +12,21 @@ from rtctools.util import run_optimization_problem
 
 
 class TestMILPElectricSourceSink(TestCase):
-    """Unit tests for the MILP test case of a source, a cable, a sink"""
-
     def test_source_sink(self):
-        """Test to verify if when a target it set that is more or less than
-        then max or min of the respective component it is capped. 1000"""
+        """
+        Tests for the MILP test case of a source, a cable, a sink.
+
+        Checks:
+        - Check that the caps set in the esdl work as intended
+        - Check that the consumed power is always>= 0.
+        - Check for energy conservation with consumed power, lost power and produced power.
+        - Check that the voltage drops over the line.
+
+        Missing:
+        The hardcoded stuff should be replaced.
+
+        """
+
         import models.unit_cases_electricity.source_sink_cable.src.example as example
         from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
 
@@ -56,8 +66,21 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(biggerthen)
 
     def test_source_sink_max_curr(self):
-        """Test to verify if when a target it set that is more or less than
-        then max or min of the respective component it is capped. 1000"""
+        """
+        Test to check bounds on the current.
+
+        Checks:
+        - Check that the caps set in the esdl work as intended
+        - Check that the consumed power is always>= 0.
+        - Check for energy conservation with consumed power, lost power and produced power.
+        - Check that the voltage drops over the line.
+        - Check that the current limit is not exceeded
+
+        Missing:
+        This test seems to be formulated wrong, as the only additional thing we test is the
+        current cap, however the current is not pushed to it's max. This should be changed
+        """
+
         import models.unit_cases_electricity.source_sink_cable.src.example as example
         from models.unit_cases_electricity.source_sink_cable.src.example import (
             ElectricityProblemMaxCurr,
