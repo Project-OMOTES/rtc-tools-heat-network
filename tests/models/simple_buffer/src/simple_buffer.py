@@ -26,13 +26,13 @@ class TargetDemandGoal(Goal):
 
     order = 1
 
-    def __init__(self, optimization_problem):
+    def __init__(self, optimization_problem: CollocatedIntegratedOptimizationProblem):
         self.target_min = optimization_problem.get_timeseries("Heat_demand")
         self.target_max = optimization_problem.get_timeseries("Heat_demand")
         self.function_range = (0.0, 2e6)
         self.function_nominal = 1e6
 
-    def function(self, optimization_problem, ensemble_member):
+    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int):
         return optimization_problem.state("demand.Heat_demand")
 
 
@@ -60,22 +60,35 @@ class HeatBuffer(
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This problem is used to test the buffer asset logic.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        This is only here to instantiate the model, this comes out of the old days, should be
+        replaced with an ESDL file.
+        """
         self.__model = Model()
         super().__init__(*args, **kwargs)
 
     def path_goals(self):
+        """
+        Basic goals to meet demad and minimize use of sources.
+
+        Returns
+        -------
+        list of goals.
+        """
         return [TargetDemandGoal(self), MinimizeSourceGoal(self)]
 
-    def post(self):
-        super().post()
-
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        return options
-
     def pycml_model(self):
+        """
+        Should become obsolete when we have an esdl file.
+
+        Returns
+        -------
+        The pycml model definition
+        """
         return self.__model
 
 
@@ -84,7 +97,22 @@ class HeatBufferNoHistory(HeatBuffer):
 
 
 class HeatBufferHistory(HeatBuffer):
-    def history(self, ensemble_member):
+    """
+    Problem in which we force a certain amount of artificial heat from the buffer to check correct
+    optimization logic functioning.
+    """
+    def history(self, ensemble_member: int):
+        """
+        Forcing an amount of "artificial" heat to be extracted from the buffer at t=0.
+
+        Parameters
+        ----------
+        ensemble_member : int with the ensemble member
+
+        Returns
+        -------
+        The history dict
+        """
         history = {}
 
         initial_time = np.array([self.initial_time])
@@ -94,7 +122,22 @@ class HeatBufferHistory(HeatBuffer):
 
 
 class HeatBufferHistoryStoredHeat(HeatBuffer):
-    def history(self, ensemble_member):
+    """
+    Problem where we allow a certian amount of artificial energy to be used and check whether this
+    is indeed being done. The amount should equal that of the HeatBufferHistory class.
+    """
+    def history(self, ensemble_member: int):
+        """
+        Here we create an amount of artificial energy to be stored at t=0.
+
+        Parameters
+        ----------
+        ensemble_member : int with the ensemble member
+
+        Returns
+        -------
+        The history dict
+        """
         history = {}
 
         initial_time = self.initial_time
