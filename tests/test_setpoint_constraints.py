@@ -8,6 +8,16 @@ from rtctools.util import run_optimization_problem
 
 class TestSetpointConstraints(TestCase):
     def test_setpoint_constraints(self):
+        """
+        This function checks the working of the setpoint constraints it does so for a few cases to
+        ensure the behaviour is as expected. The setpoint constraints are used to enforce assets to
+        at maximum change a X times over a desired window length.
+
+        Checks:
+        - That setpoint does not change over windowlength if 0 is specified
+        - That setpoint indeed changes once if 1 is specified.
+
+        """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblemSetPointConstraints
 
@@ -51,6 +61,10 @@ class TestSetpointConstraints(TestCase):
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         2 changes/year.
+
+        Checks:
+        - That setpoint does change twice over window length if 2 is specified
+
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
@@ -77,7 +91,10 @@ class TestSetpointConstraints(TestCase):
         specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-        2 changes/year.
+        0 changes/year.
+
+        Checks:
+        - That setpoint does not change over window length if 0 is specified
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
@@ -102,7 +119,12 @@ class TestSetpointConstraints(TestCase):
         specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-        2 changes/year.
+        1 changes over multiple window sizes.
+
+        Checks:
+        - That setpoint does change once over window length if 1 is specified for multiple
+        window sizes
+
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints

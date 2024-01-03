@@ -16,6 +16,20 @@ def demand_matching_test(solution, results):
 
 
 def _get_component_temperatures(solution, results, component, side=None):
+    """
+    To get the temperatures for an asset
+
+    Parameters
+    ----------
+    solution : the solution object from an optimization
+    results : the results dict from the optimization
+    component : the component name
+    side :
+
+    Returns
+    -------
+    supply, return and delta T
+    """
     if side:
         return_id = solution.parameters(0)[f"{component}.{side}.T_return_id"]
     else:
