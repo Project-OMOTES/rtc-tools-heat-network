@@ -7,6 +7,10 @@ from rtctools_heat_network.pycml import Model, Variable
 
 class TestPyCML(TestCase):
     def test_merge_modifiers_function(self):
+        """
+        Test to check that the modifiers are merged correctly by the merge modifiers method, meaning
+        that the limiting bounds are selected out of the two dicts that are merged.
+        """
         x = dict(V=10.0, OutPort=dict(Q=dict(min=0, nominal=1.0)))
         y = dict(OutPort=dict(Q=dict(min=0.5)))
 
@@ -18,6 +22,11 @@ class TestPyCML(TestCase):
         self.assertEqual(recursive_merge, dict(V=10.0, OutPort=dict(Q=dict(min=0.5, nominal=1.0))))
 
     def test_merge_modifiers_models(self):
+        """
+        Check then when models are constructed the correct limiting modifiers are imposed as the
+        bounds for the problem. This is done by creating a model where the connected assets both
+        have modifiers on a variable, for example on Q.
+        """
         class Port(Model):
             def __init__(self, name, **modifiers):
                 super().__init__(name, **modifiers)

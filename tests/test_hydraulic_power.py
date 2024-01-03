@@ -12,6 +12,26 @@ from rtctools_heat_network.head_loss_mixin import HeadLossOption
 
 class TestHydraulicPower(TestCase):
     def test_hydraulic_power(self):
+        """
+        This test is to check the workings for the hydraulic power variable.
+
+        Checks:
+        - That Hydraulic power is over-estimated compared to post process computation:
+            - Hydraulic power for DW_linearized but with only one line segement
+            - Hydraulic power for Linearized
+            - Hydrualic power for DW_linearized with default number of line segments
+        - That DW_linearized with one line segment equals the Linearized.
+
+
+        Missing:
+        - The way the problems are ran and adapted is different compared to the other tests, where
+        a global variable is adapted between different runs. I would suggest that we make separate
+        problems like we do in the other tests.
+        - Also I would prefer using the results directly in this test instead of calling the
+        df_MILP.
+        - See if the hard coded values can be avoided.
+
+        """
         import models.pipe_test.src.run_hydraulic_power as run_hydraulic_power
         from models.pipe_test.src.run_hydraulic_power import (
             HeatProblem,
