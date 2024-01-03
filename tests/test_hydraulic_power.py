@@ -15,13 +15,24 @@ class TestHydraulicPower(TestCase):
         """
         This test is to check the workings for the hydraulic power variable.
 
-        Checks:
-        - That Hydraulic power is over-estimated compared to post process computation:
-            - Hydraulic power for DW_linearized but with only one line segement
-            - Hydraulic power for Linearized
-            - Hydrualic power for DW_linearized with default number of line segments
-        - That DW_linearized with one line segment equals the Linearized.
+        Scenario 1. LINEARIZED_DW (1 line segment)
+        Scenario 2. LINEAR
+        Scenario 3. LINEARIZED_DW (default line segments = 5)
 
+        Checks:
+        - For all scenarios (unless stated otherwise):
+            - check that the hydraulic power variable (based on linearized setting) is larger than
+            the numerically calculated (post processed)
+            - Scenario 1&3: check that the hydraulic power variable = known/verified value for the
+            specific case
+            - Scenario 1: check that the hydraulic power for the supply and return pipe is the same
+            - Scenario 1&2: check that the hydraulic power for these two scenarios are the same
+            - Scenario 2: check that the post processed hydraulic power based on flow results
+            (voluemtric flow rate * pressure loss) of scenario 1 & 2 are the same.
+            - Scenario 3: check that the hydraulic power variable of scenatio 1 > scenario 3, which
+            would be expected because scenario 3 has more linear line segments, theerefore the
+            approximation would be closer to the theoretical non-linear curve when compared to 1
+            linear line approximation of the theoretical non-linear curve.
 
         Missing:
         - The way the problems are ran and adapted is different compared to the other tests, where
