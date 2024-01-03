@@ -36,10 +36,8 @@ class TestMILPbus(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # Run the problem
-        solution = run_optimization_problem(
-            ElectricityProblem, base_folder=base_folder
-        )
-        results= solution.extract_results()
+        solution = run_optimization_problem(ElectricityProblem, base_folder=base_folder)
+        results = solution.extract_results()
         v1 = results["Bus_f262.ElectricityConn[1].V"]
         v2 = results["Bus_f262.ElectricityConn[2].V"]
         v_outgoing_cable = results["ElectricityCable_de9a.ElectricityIn.V"]
@@ -67,6 +65,8 @@ class TestMILPbus(TestCase):
         # Current in == current out = no dissipation of power
         np.testing.assert_allclose(i1 + i2 - i3 - i4, 0.0, rtol=1.0e-6, atol=1.0e-6)
         # check if minimum voltage is reached
-        np.testing.assert_array_less(solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand)
+        np.testing.assert_array_less(
+            solution.parameters(0)["ElectricityDemand_e527.min_voltage"] - 1.0e-3, v_demand
+        )
         # Check that current is high enough to carry the power
         np.testing.assert_array_less(p_demand - 1e-12, v_demand * i_demand)

@@ -63,6 +63,7 @@ class HeatPython(
     """
     Problem using simple python model for source, pump, pipe and demand.
     """
+
     def __init__(self, *args, **kwargs):
         self.__model = Model()
         super().__init__(*args, **kwargs)

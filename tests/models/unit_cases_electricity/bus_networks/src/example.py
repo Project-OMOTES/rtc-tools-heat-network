@@ -28,7 +28,9 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int):
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ):
         return optimization_problem.state(self.state)
 
 
@@ -63,6 +65,7 @@ class ElectricityProblem(
     """
     Problem to check optimization behoviour of electricity networks with a bus.
     """
+
     pass
 
 

@@ -6,6 +6,7 @@ class Model(_Model):
     """
     Very simple model consisting of a source, pump, pipe and demand for testing head loss.
     """
+
     def __init__(self):
         super().__init__(None)
 

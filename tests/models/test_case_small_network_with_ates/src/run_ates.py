@@ -86,6 +86,7 @@ class HeatProblem(
     """
     This problem is used to test the logic of networks including an ATES.
     """
+
     def __init__(self, *args, **kwargs):
         """
         We instantiate some attributes.
@@ -195,6 +196,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
     This problem is defined to test the asset_is_realized variable with constraints. This is
     achieved by having a limit on the investment speed that can be achieved.
     """
+
     def heat_network_options(self):
         """
         In this problem we are optimizing the placement of assets over time hence we set the

@@ -28,7 +28,9 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int):
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ):
         return optimization_problem.state(self.state)
 
 
@@ -63,6 +65,7 @@ class ElectricityProblem(
     """
     Problem to check the behaviour of a simple source, cable, demand network.
     """
+
     pass
 
 
@@ -77,6 +80,7 @@ class ElectricityProblemMaxCurr(
     Problem to check the behaviour of a simple source, cable, demand network with increased demand
     to push current to max.
     """
+
     def path_goals(self):
         """
         Modified targets for the demand matching goal to push up the current in the system.

@@ -20,6 +20,7 @@ class TestPipeDiameterSizingExample(TestCase):
         - That expected pipes are removed
 
         Missing:
+        - Check that the Q is under the max.
         - Check that head losses are as expected for the selected diameter
         - Check that head loss equals zero for removed pipes
         - Same for hydraulic power, no idea why it is outcommented

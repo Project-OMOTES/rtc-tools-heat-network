@@ -27,6 +27,7 @@ class TestPyCML(TestCase):
         bounds for the problem. This is done by creating a model where the connected assets both
         have modifiers on a variable, for example on Q.
         """
+
         class Port(Model):
             def __init__(self, name, **modifiers):
                 super().__init__(name, **modifiers)

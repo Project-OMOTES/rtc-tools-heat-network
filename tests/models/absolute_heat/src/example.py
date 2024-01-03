@@ -10,8 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.util import run_optimization_problem
 from rtctools.optimization.timeseries import Timeseries
+from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
@@ -23,6 +23,7 @@ class TargetDemandGoal(Goal):
     profile. We use order 2 to match the profile at every time-step. We set the target in the
     constructor and function() method will return the state which should match the target.
     """
+
     priority = 1
 
     order = 2
@@ -44,7 +45,9 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int) -> ca.MX:
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
         """
         This function returns the state to which will be tried to match to the target.
 
@@ -65,6 +68,7 @@ class MinimizeSourcesHeatGoal(Goal):
     A minimization goal for source heat production. We use order 1 here as we want to minimize heat
     over the full horizon and not per time-step.
     """
+
     priority = 3
 
     order = 1
@@ -82,7 +86,9 @@ class MinimizeSourcesHeatGoal(Goal):
         self.source = source
         self.function_nominal = 1e6
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int) -> ca.MX:
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
         """
         This function returns the state to which should to be matched.
 
@@ -102,6 +108,7 @@ class _GoalsAndOptions:
     """
     A goals class that we often use if we specify multiple problem classes.
     """
+
     def path_goals(self):
         """
         In this method we add the goals for matching the demand.
@@ -135,6 +142,7 @@ class HeatProblem(
     we just match demand (_GoalsAndOptions) and minimize the energy production to have a
     representative result.
     """
+
     def path_goals(self):
         """
         This function adds the minimization goal for minimizing the heat production.

@@ -32,7 +32,9 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2e6)
         self.function_nominal = 1e6
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int):
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ):
         return optimization_problem.state("demand.Heat_demand")
 
 
@@ -63,6 +65,7 @@ class HeatBuffer(
     """
     This problem is used to test the buffer asset logic.
     """
+
     def __init__(self, *args, **kwargs):
         """
         This is only here to instantiate the model, this comes out of the old days, should be
@@ -101,6 +104,7 @@ class HeatBufferHistory(HeatBuffer):
     Problem in which we force a certain amount of artificial heat from the buffer to check correct
     optimization logic functioning.
     """
+
     def history(self, ensemble_member: int):
         """
         Forcing an amount of "artificial" heat to be extracted from the buffer at t=0.
@@ -126,6 +130,7 @@ class HeatBufferHistoryStoredHeat(HeatBuffer):
     Problem where we allow a certian amount of artificial energy to be used and check whether this
     is indeed being done. The amount should equal that of the HeatBufferHistory class.
     """
+
     def history(self, ensemble_member: int):
         """
         Here we create an amount of artificial energy to be stored at t=0.
