@@ -8,11 +8,18 @@ from rtctools.util import run_optimization_problem
 
 
 class TestMILPGasMultiDemandSourceNode(TestCase):
-    """Unit tests for the MILP test case of 2 demands, 2 sources and a node"""
-
     def test_multi_demand_source_node(self):
-        """Test to verify that head is equal for all ports at a node. And throughout the network
-        the flow (mass) balance is maintained"""
+        """Test for case with 2 demands, 2 sources and a node. Verify that head is equal for all
+        ports at a node. And throughout the network the flow (mass) balance is maintained
+
+        Checks:
+        - Head is equal for all ports on the node
+        - Consumed flow equals produced flow
+
+        Missing:
+        - Check for flow balance at the gas node
+
+        """
         import models.unit_cases_gas.multi_demand_source_node.src.run_test as example
         from models.unit_cases_gas.multi_demand_source_node.src.run_test import GasProblem
 

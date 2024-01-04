@@ -8,6 +8,21 @@ from rtctools.util import run_optimization_problem
 
 class TestBufferHistory(TestCase):
     def test_buffer_history(self):
+        """
+        This test is to check the buffer asset and its interaction with the network.
+
+        Checks:
+        - The logic of how the history is set for the buffer. This is to avoid artificial energy
+        at t=0.
+        - Checks that when this is overwritten this artificial energy is indeed exploited.
+
+
+        Missing Checks;
+        - heat to discharge
+        - heat loss computation in the buffer
+        - ...
+
+        """
         import models.simple_buffer.src.simple_buffer as simple_buffer
         from models.simple_buffer.src.simple_buffer import (
             HeatBufferNoHistory,

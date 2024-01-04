@@ -6,6 +6,18 @@ from rtctools.util import run_optimization_problem
 
 class TestMultipleCarriers(TestCase):
     def test_multiple_carriers(self):
+        """
+        Test to check optimzation is functioning as expected for a problem where two hydraulically
+        decoupled networks are present which have no interaction.
+
+        Checks:
+        - Heat to discharge relation for both networks are not interferring with each other
+
+        Missing:
+        - This check is based upon the old relative heat formulation should be updated
+        - energy conservation check.
+
+        """
         import models.multiple_carriers.src.run_multiple_carriers as run_multiple_carriers
         from models.multiple_carriers.src.run_multiple_carriers import (
             HeatProblem,

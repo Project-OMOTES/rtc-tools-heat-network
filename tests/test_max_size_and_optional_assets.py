@@ -10,6 +10,31 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestMaxSizeAggregationCount(TestCase):
     def test_max_size_and_aggr_count(self):
+        """
+        This test is to check the behaviour of the asset sizing, asset placing and the cost
+        components associated to those variables. We want the asset size to be at least as large
+        as its maximum utilization, we want the asset to be placed when it is utilized, and we
+        want the cost components to be there if the asset is there and used. For this we have a
+        problem with two optional sources and pipes to the sources, one source can supply the
+        network by itself thus we expect only one source to be placed as we minimize the cost
+        and installation cost should enforce only one source to be placed. The placement behaviour
+        of the ates en buffer is tested by running a second case where these assets are also
+        optional, and they should not be placed.
+
+        Checks:
+        - Check that source 1 is utilized and also not placed
+        - Check that source 2 is utilized and placed
+        - Check that max_size source 1 is zero
+        - Check that max_size source 2 is > utilization
+        - Check cost components for source 1 and 2
+        - Check max size and placement of ates
+
+        Missing:
+        - Fixed operational cost for sources
+        - Remove hard coded values for cost checks
+
+
+        """
         import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
         from models.test_case_small_network_with_ates_with_buffer.src.run_ates import (
             HeatProblem,

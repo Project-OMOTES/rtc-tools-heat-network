@@ -45,12 +45,15 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def test_pipe_class_var(self):
         """
+        This test is to check whether all variables associated to pipe class optimization are set
+        as expected.
+
         Tests the variables stored in:
-        - pipe_topo_pipe_class_var
-        - pipe_topo_max_discharge_var
-        - pipe_topo_cost_var
-        - pipe_diameter_var
-        - pipe_heat_loss_var
+        - pipe_topo_pipe_class_var check that only one is selected
+        - pipe_topo_max_discharge_var is that of the selected pipe class
+        - pipe_topo_cost_var is that of the selected pipe class
+        - pipe_diameter_var is that of the selected pipe class
+        - pipe_heat_loss_var is that of the selected pipe class
         """
         for p in self.problem.heat_network_components.get("pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made
@@ -95,6 +98,10 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def test_pipe_class_ordering_vars(self):
         """
+        This test is to check if the pipe class ordering variables are set as expected. The pipe
+        class ordering variables are there to help the optimizer in seeing the relation between
+        mulitple integer variables.
+
         Tests the variables stored in:
         - pipe_topo_global_pipe_clas_count_var
         - pipe_topo_pipe_class_discharge_ordering_var
@@ -185,6 +192,17 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         )
 
     def get_pipe_class_vars(self, pipe: str) -> Dict[str, np.ndarray]:
+        """
+        This function allows to give the pipe class results.
+
+        Parameters
+        ----------
+        pipe : str with pipe name
+
+        Returns
+        -------
+        Dict with variable name as key and result as value.
+        """
         given_pipe_classes = self.problem.pipe_classes(pipe)
         if pipe in self.problem.cold_pipes:
             expected_class_vars = [
@@ -201,6 +219,18 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         return class_vars
 
     def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]) -> PipeClass:
+        """
+        To retrieve the selected pipe class optimization result for a pipe.
+
+        Parameters
+        ----------
+        pipe : string with pipe name
+        pipe_class_vars : dict from get_pipe_class_vars() method
+
+        Returns
+        -------
+        The selected pipe class
+        """
         chosen_var = None
         given_pipe_classes = self.problem.pipe_classes(pipe)
         for var_name, value in pipe_class_vars.items():
@@ -213,6 +243,18 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         return chosen_pc[0]
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
+        """
+        To compute the expected heat loss for a pipe class.
+
+        Parameters
+        ----------
+        pipe : string with pipe name
+        pipe_class : the selected pipe class optimized result for that pie
+
+        Returns
+        -------
+        The value for the heat loss for that pipe.
+        """
         return self.problem._pipe_heat_loss(
             options=self.problem.heat_network_options(),
             parameters=self.problem.parameters(0),

@@ -40,6 +40,20 @@ class TestInsulation(TestCase):
 
     # test1
     def test_insulation_heatdemand(self):
+        """
+        Test to check that the best insulation class is selected when we optimize for minimal
+        heat production.
+
+        Checks:
+        - That the correct insulation class is selected
+        - Check that the other insulation classes are not selected
+        - Check that there is sufficient heat.
+        - Check that the profile that is matched is as expected
+
+        Missing:
+        - Energy conservation and heat to discharge (replace current check of sufficient heat)
+
+        """
         import models.insulation.src.run_insulation as run_insulation
         from models.insulation.src.run_insulation import HeatProblem
 
@@ -105,6 +119,14 @@ class TestInsulation(TestCase):
 
     # test1_B
     def test_insulation_heatdemand_b(self):
+        """
+        Similar to test one, only now one of the demands only has one insulation class available.
+
+        Checks:
+        - That the correct insulation class is selected
+        - Check that the other insulation classes are not selected
+
+        """
         import models.insulation.src.run_insulation as run_insulation
         from models.insulation.src.run_insulation import HeatProblemB
 
