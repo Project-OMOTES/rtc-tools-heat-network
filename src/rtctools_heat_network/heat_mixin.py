@@ -4423,7 +4423,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
     def _get_linear_coef_electrolyzer_mass_vs_epower_fit(
         self, coef_a, coef_b, coef_c, n_lines, electrical_power_min, electrical_power_max
-    ) -> tuple[np.array, np.array]:
+    ) -> Tuple[np.array, np.array]:
         """
         This function returns a set of coefficients to approximate a gas mass flow rate curve with
         linear functions in the form of: gass mass flow rate [kg/s] = b + (a * electrical_power)
