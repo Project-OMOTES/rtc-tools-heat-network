@@ -13,9 +13,12 @@ from .physics_mixin import PhysicsMixin
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class TechnoEconomicMixin(FinancialMixin, AssetSizingMixin, BaseComponentTypeMixin,
-                CollocatedIntegratedOptimizationProblem):
-
+class TechnoEconomicMixin(
+    FinancialMixin,
+    AssetSizingMixin,
+    BaseComponentTypeMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
@@ -30,7 +33,6 @@ class TechnoEconomicMixin(FinancialMixin, AssetSizingMixin, BaseComponentTypeMix
         retrieving of the variables.
         """
         super().pre()
-
 
     def heat_network_options(self):
         r"""

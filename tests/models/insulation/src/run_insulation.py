@@ -138,7 +138,7 @@ class HeatProblem(
 
 # test 1b. ensure that the heat problem works when specifying only 1 insulation level for 1 demand
 class HeatProblemB(
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

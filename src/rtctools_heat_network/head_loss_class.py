@@ -180,13 +180,12 @@ class _MinimizeHydraulicPower(Goal):
         return sum_
 
 
-class HeadLossClass():
+class HeadLossClass:
     """
     Adds handling of discharge - head (loss) relationship to the model.
     """
 
     def __init__(self, *args, **kwargs):
-
         self.__pipe_head_bounds = {}
 
         self.__pipe_head_loss_var = {}
@@ -397,7 +396,9 @@ class HeadLossClass():
                 self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
             else:
                 q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
-                head_loss_nominal = self._hn_pipe_head_loss(p, optimization_problem, options, parameters, q_nominal)
+                head_loss_nominal = self._hn_pipe_head_loss(
+                    p, optimization_problem, options, parameters, q_nominal
+                )
 
                 self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
 
@@ -411,12 +412,14 @@ class HeadLossClass():
                 self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
                 self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
-        return (self.__pipe_head_bounds,
-                self.__pipe_head_loss_zero_bounds,
-                self._hn_pipe_to_head_loss_map,
-                self.__pipe_head_loss_var,
-                self.__pipe_head_loss_nominals,
-                self.__pipe_head_loss_bounds)
+        return (
+            self.__pipe_head_bounds,
+            self.__pipe_head_loss_zero_bounds,
+            self._hn_pipe_to_head_loss_map,
+            self.__pipe_head_loss_var,
+            self.__pipe_head_loss_nominals,
+            self.__pipe_head_loss_bounds,
+        )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
         """
@@ -922,7 +925,8 @@ class HeadLossClass():
             h_up = optimization_problem.state(f"{pipe}.HeatIn.H")
 
             constraint_nominal = (
-                optimization_problem.variable_nominal(f"{pipe}.dH") * optimization_problem.variable_nominal(f"{pipe}.HeatIn.H")
+                optimization_problem.variable_nominal(f"{pipe}.dH")
+                * optimization_problem.variable_nominal(f"{pipe}.HeatIn.H")
             ) ** 0.5
             constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 
@@ -945,7 +949,8 @@ class HeadLossClass():
         for d in components.get("demand", []):
             constraints.append(
                 (
-                    optimization_problem.state(f"{d}.HeatIn.H") - optimization_problem.state(f"{d}.HeatOut.H"),
+                    optimization_problem.state(f"{d}.HeatIn.H")
+                    - optimization_problem.state(f"{d}.HeatOut.H"),
                     min_head_loss,
                     np.inf,
                 )

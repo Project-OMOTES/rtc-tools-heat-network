@@ -11,7 +11,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from rtctools.optimization.timeseries import Timeseries
 
 
-
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .demand_insulation_class import DemandInsulationClass
 
@@ -20,14 +19,12 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
         """
 
         super().__init__(*args, **kwargs)
-
 
     def pre(self):
         """
@@ -36,8 +33,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         retrieving of the variables.
         """
         super().pre()
-
-
 
     def heat_network_options(self):
         r"""
@@ -269,4 +264,3 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         options = super().compiler_options()
         options["resolve_parameter_values"] = True
         return options
-

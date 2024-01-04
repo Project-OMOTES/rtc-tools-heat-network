@@ -26,6 +26,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
+
 # from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO

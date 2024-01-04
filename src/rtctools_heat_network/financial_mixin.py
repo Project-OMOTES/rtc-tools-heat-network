@@ -228,9 +228,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 max_cost = (
                     max(bounds[f"{asset_name}__max_size"][1].values)
                     * parameters[f"{asset_name}.investment_cost_coefficient"]
-                    if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries) else
-                    bounds[f"{asset_name}__max_size"][1]
-                    * parameters[f"{asset_name}.investment_cost_coefficient"])
+                    if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries)
+                    else bounds[f"{asset_name}__max_size"][1]
+                    * parameters[f"{asset_name}.investment_cost_coefficient"]
+                )
             self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
             self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
                 max(
@@ -286,7 +287,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return options
 
-
     @property
     def extra_variables(self):
         """
@@ -316,9 +316,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         All variables that only can take integer values should be added to this function.
         """
-        if (
-            variable in self.__asset_is_realized_var
-        ):
+        if variable in self.__asset_is_realized_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -737,7 +735,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
-
 
         return constraints
 

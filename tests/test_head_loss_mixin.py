@@ -37,14 +37,18 @@ class TestHeadLossCalculation(TestCase):
             options = m.heat_network_options()
             parameters = m.parameters(0)
 
-            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", options, parameters, 0.1)
+            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", m, options, parameters, 0.1)
             self.assertIsInstance(ret, float)
 
-            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", options, parameters, np.array([0.1]))
+            ret = m._head_loss_class._hn_pipe_head_loss(
+                "pipe_hot", m, options, parameters, np.array([0.1])
+            )
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 1)
 
-            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", options, parameters, np.array([0.05, 0.1, 0.2]))
+            ret = m._head_loss_class._hn_pipe_head_loss(
+                "pipe_hot", m, options, parameters, np.array([0.05, 0.1, 0.2])
+            )
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 3)
 
@@ -70,24 +74,24 @@ class TestHeadLossCalculation(TestCase):
 #         ):
 #             run_optimization_problem(Model, base_folder=base_folder)
 
-    # def test_no_head_loss(self):
-    #     # Test if a model with NO_HEADLOSS set runs without issues
-    #     from models.basic_buffer.src.compare import (
-    #         HeatProblemPyCML,
-    #         QTHProblemPyCML,
-    #         base_folder,
-    #     )
-    #
-    #     class ModelHeat(HeatProblemPyCML):
-    #         def heat_network_options(self):
-    #             options = super().heat_network_options()
-    #             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-    #             return options
-    #
-    #     class ModelQTH(QTHProblemPyCML):
-    #         def heat_network_options(self):
-    #             options = super().heat_network_options()
-    #             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-    #             return options
-    #
-    #     run_heat_network_optimization(ModelHeat, ModelQTH, base_folder=base_folder)
+# def test_no_head_loss(self):
+#     # Test if a model with NO_HEADLOSS set runs without issues
+#     from models.basic_buffer.src.compare import (
+#         HeatProblemPyCML,
+#         QTHProblemPyCML,
+#         base_folder,
+#     )
+#
+#     class ModelHeat(HeatProblemPyCML):
+#         def heat_network_options(self):
+#             options = super().heat_network_options()
+#             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+#             return options
+#
+#     class ModelQTH(QTHProblemPyCML):
+#         def heat_network_options(self):
+#             options = super().heat_network_options()
+#             options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+#             return options
+#
+#     run_heat_network_optimization(ModelHeat, ModelQTH, base_folder=base_folder)

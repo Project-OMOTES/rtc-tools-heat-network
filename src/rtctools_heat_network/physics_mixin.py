@@ -21,8 +21,13 @@ from .heat_physics_mixin import HeatPhysicsMixin
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-
+class PhysicsMixin(
+    HeatPhysicsMixin,
+    ElectricityPhysicsMixin,
+    GasPhysicsMixin,
+    BaseComponentTypeMixin,
+    CollocatedIntegratedOptimizationProblem,
+):
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
@@ -38,8 +43,6 @@ class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, B
             self._timed_setpoints = kwargs["timed_setpoints"]
 
         super().__init__(*args, **kwargs)
-
-
 
     def pre(self):
         """
@@ -59,14 +62,12 @@ class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, B
             self._change_setpoint_var[change_setpoint_var] = ca.MX.sym(change_setpoint_var)
             self._change_setpoint_bounds[change_setpoint_var] = (0, 1.0)
 
-
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
         """
 
         options = super().heat_network_options()
-
 
         return options
 
@@ -96,9 +97,7 @@ class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, B
         """
         All variables that only can take integer values should be added to this function.
         """
-        if (
-            variable in self._change_setpoint_var
-        ):
+        if variable in self._change_setpoint_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -276,9 +275,7 @@ class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, B
                 self.__setpoint_constraint(ensemble_member, component_name, params[0], params[1])
             )
 
-
         return constraints
-
 
     def goal_programming_options(self):
         """
@@ -316,4 +313,3 @@ class PhysicsMixin(HeatPhysicsMixin, ElectricityPhysicsMixin, GasPhysicsMixin, B
         return (
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
-

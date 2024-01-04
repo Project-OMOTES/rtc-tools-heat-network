@@ -212,7 +212,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
 class HeatProblemSetPoints(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

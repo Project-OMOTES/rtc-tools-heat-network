@@ -61,7 +61,7 @@ class ElectricityProblem(
 
 
 class ElectricityProblemMaxCurr(
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

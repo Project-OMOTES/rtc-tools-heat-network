@@ -24,7 +24,9 @@ from .pipe_class import PipeClass
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+class AssetSizingMixin(
+    PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem
+):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
         HeadLossOption.LINEAR,
@@ -247,9 +249,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
             if len(self.temperature_regimes(carrier_id)) == 0:
                 self.__pipe_heat_loss_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
             else:
-                self.__pipe_heat_loss_path_var[heat_loss_var_name] = ca.MX.sym(
-                    heat_loss_var_name
-                )
+                self.__pipe_heat_loss_path_var[heat_loss_var_name] = ca.MX.sym(heat_loss_var_name)
             self._pipe_heat_loss_map[pipe] = heat_loss_var_name
 
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
@@ -448,7 +448,11 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("buffer", []):
-            ub = max(bounds[f"{asset_name}.Stored_heat"][1].values) if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries) else bounds[f"{asset_name}.Stored_heat"][1]
+            ub = (
+                max(bounds[f"{asset_name}.Stored_heat"][1].values)
+                if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries)
+                else bounds[f"{asset_name}.Stored_heat"][1]
+            )
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(
                 name=asset_name,
@@ -824,7 +828,9 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
                     max_discharge = options["maximum_velocity"] * area
-                    head_loss += self._head_loss_class._hn_pipe_head_loss(pipe, self, options, parameters, max_discharge)
+                    head_loss += self._head_loss_class._hn_pipe_head_loss(
+                        pipe, self, options, parameters, max_discharge
+                    )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
 
@@ -1122,7 +1128,9 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
                     )
                 )
 
-                max_head_loss = self._head_loss_class._hn_pipe_head_loss(pipe, self, options, parameters, max_discharge)
+                max_head_loss = self._head_loss_class._hn_pipe_head_loss(
+                    pipe, self, options, parameters, max_discharge
+                )
 
             # Relate the head loss symbol to the pipe's dH symbol.
 
@@ -1659,9 +1667,7 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
             discharge_sym_hot = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
 
-            max_discharge = self.__pipe_topo_max_discharge_var[
-                self._pipe_topo_max_discharge_map[p]
-            ]
+            max_discharge = self.__pipe_topo_max_discharge_var[self._pipe_topo_max_discharge_map[p]]
 
             constraints.append(((max_discharge - discharge_sym_hot) / nominal, 0.0, np.inf))
             constraints.append(((-max_discharge - discharge_sym_hot) / nominal, -np.inf, 0.0))
@@ -1864,7 +1870,6 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
 
-
         return constraints
 
     def constraints(self, ensemble_member):
@@ -1878,7 +1883,6 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
 
         if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(self._hn_pipe_head_loss_constraints(ensemble_member))
-
 
         constraints.extend(self.__heat_loss_variable_constraints(ensemble_member))
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
@@ -2022,10 +2026,10 @@ class AssetSizingMixin(PhysicsMixin, BaseComponentTypeMixin, CollocatedIntegrate
             self.__pipe_diameter_to_parameters()
 
         super().priority_completed(priority)
+
     def post(self):
         super().post()
 
         self.__pipe_class_to_results()
         self.__pipe_diameter_to_parameters()
         self._pipe_heat_loss_to_parameters()
-

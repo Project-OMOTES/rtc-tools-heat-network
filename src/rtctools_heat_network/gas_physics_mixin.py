@@ -27,7 +27,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         super().__init__(*args, **kwargs)
 
-
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -35,7 +34,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         retrieving of the variables.
         """
         super().pre()
-
 
     def heat_network_options(self):
         r"""
@@ -131,7 +129,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
-
 
         return constraints
 

@@ -71,7 +71,7 @@ class HeatPython(
 
 class HeatESDL(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
