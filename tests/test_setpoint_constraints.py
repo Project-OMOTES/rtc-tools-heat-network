@@ -66,7 +66,7 @@ class TestSetpointConstraints(TestCase):
         - That setpoint does change twice over window length if 2 is specified
 
         Missing:
-        - This test runs extremely slow, should be fixed!
+        - This test runs extremely slow in current master, should be fixed!
         _ this test does not check for funtioning with varying timestep sizes, this or another test
         should be adapted to do so or a seperate test for that should be created.
 
@@ -102,7 +102,7 @@ class TestSetpointConstraints(TestCase):
         - That setpoint does not change over window length if 0 is specified
 
         Missing:
-        - This test runs extremely slow, should be fixed!
+        - This test runs extremely slow in current master, should be fixed!
         _ this test does not check for funtioning with varying timestep sizes, this or another test
         should be adapted to do so or a seperate test for that should be created.
         """
@@ -136,7 +136,7 @@ class TestSetpointConstraints(TestCase):
         window sizes
 
         Missing:
-        - This test runs extremely slow, should be fixed!
+        - This test runs extremely slow in current master, should be fixed!
         _ this test does not check for funtioning with varying timestep sizes, this or another test
         should be adapted to do so or a seperate test for that should be created.
 
