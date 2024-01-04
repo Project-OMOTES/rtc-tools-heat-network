@@ -33,6 +33,8 @@ class HeatExchanger(HeatFourPort, BaseAsset):
 
         self.component_type = "heat_exchanger"
         self.efficiency = nan
+        self.technical_life = nan
+        self.discount_rate = nan
 
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
