@@ -37,12 +37,12 @@ class TestEndScenarioSizingAnnualized(TestCase):
             HeatProblemDiscAnnualizedCostModifiedDiscountRate, base_folder=base_folder
         )
 
-        # # Assertion 1: Non annualized objective value with discount=0 and
-        # # technical life 1 year matches the objective value of the discounted problem
-        # np.testing.assert_allclose(
-        #     solution__annualized_modified_param.objective_value,
-        #     solution_run_ates.objective_value,
-        # )
+        # Assertion 1: Non annualized objective value with discount=0 and
+        # technical life 1 year matches the objective value of the discounted problem
+        np.testing.assert_allclose(
+            solution__annualized_modified_param.objective_value,
+            solution_run_ates.objective_value,
+        )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
         # due to cost of capital not considered in undiscounted problem

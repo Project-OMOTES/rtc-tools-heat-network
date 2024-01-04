@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="14" id="282b93b1-2cf2-44e1-9f9a-9175fd736635" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="14" id="f2dcc54c-66f3-479c-bac5-3220f26f4d57" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" name="Heat" supplyTemperature="70.0" id="7b32e287-d775-480c-b317-64ffdacf12c9"/>
@@ -8,20 +8,20 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="f852b941-99fe-487b-a20d-01beff9e7c43" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f4acc7ef-a37d-43b7-87cb-8af5b82e3fed" name="Untitled Area">
-      <KPIs xsi:type="esdl:KPIs" id="840d9ce7-489c-49c2-bcda-b26ad1a5ee7e">
+      <KPIs xsi:type="esdl:KPIs" id="5613634d-745b-4bd4-8308-c1e3f15de0ec">
         <kpi xsi:type="esdl:DistributionKPI" name="High level cost breakdown [EUR]">
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="8124908.0688206125" label="CAPEX"/>
-            <stringItem xsi:type="esdl:StringItem" value="122590.78432839474" label="OPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="8124908.068820616" label="CAPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="122590.78432839477" label="OPEX"/>
           </distribution>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="Overall cost breakdown [EUR]">
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3100000.0" label="Installation"/>
-            <stringItem xsi:type="esdl:StringItem" value="5024908.0688206125" label="Investment"/>
-            <stringItem xsi:type="esdl:StringItem" value="122590.78432839474" label="Variable OPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="5024908.068820616" label="Investment"/>
+            <stringItem xsi:type="esdl:StringItem" value="122590.78432839477" label="Variable OPEX"/>
             <stringItem xsi:type="esdl:StringItem" label="Fixed OPEX"/>
           </distribution>
         </kpi>
@@ -30,18 +30,18 @@
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3000000.0" label="HeatingDemand"/>
             <stringItem xsi:type="esdl:StringItem" value="3333067.2399999998" label="Pipe"/>
-            <stringItem xsi:type="esdl:StringItem" value="1791840.8288206134" label="HeatProducer"/>
+            <stringItem xsi:type="esdl:StringItem" value="1791840.828820616" label="HeatProducer"/>
           </distribution>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="OPEX breakdown [EUR]">
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="122590.78432839474" label="HeatProducer"/>
+            <stringItem xsi:type="esdl:StringItem" value="122590.78432839477" label="HeatProducer"/>
           </distribution>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="Energy production [Wh]">
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="20431797388.06579" label="HeatProducer_2"/>
+            <stringItem xsi:type="esdl:StringItem" value="20431797388.065792" label="HeatProducer_2"/>
           </distribution>
         </kpi>
       </KPIs>
@@ -295,7 +295,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="16918408.288206134" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb">
+      <asset xsi:type="esdl:HeatProducer" power="16918408.28820616" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb">
         <port xsi:type="esdl:OutPort" id="886e5430-bec1-44e3-bab6-221c4518c810" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:InPort" id="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="df6f89d0-7872-4891-934f-de407f6aa142"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lon="4.311726093292237" lat="52.04487621664103"/>

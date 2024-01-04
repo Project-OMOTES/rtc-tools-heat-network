@@ -243,16 +243,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             heat_transfer_coeff=1.0,
             state=self.get_state(asset),
             min_fraction_tank_volume=min_fraction_tank_volume,
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
@@ -466,16 +466,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -574,16 +574,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             efficiency=efficiency,
             nominal=max_power / 2.0,
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Heat_flow=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -637,16 +637,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             COP=cop,
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -707,16 +707,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             **self._supply_return_temperature_modifiers(asset),
@@ -801,16 +801,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
             nr_of_doublets=asset.attributes["aggregationCount"],
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             Heat_ates=dict(
                 min=-hfr_charge_max * asset.attributes["aggregationCount"],
                 max=hfr_discharge_max * asset.attributes["aggregationCount"],
@@ -850,16 +850,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
-            technical_life=self.get_asset_attribute_value(
-                asset,
-                "technicalLifetime",
-                default_value=30.0,
-                min_value=1.0,
-                max_value=50.0,
-            ),
-            discount_rate=self.get_asset_attribute_value(
-                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
-            ),
+            # technical_life=self.get_asset_attribute_value(
+            #     asset,
+            #     "technicalLifetime",
+            #     default_value=30.0,
+            #     min_value=1.0,
+            #     max_value=50.0,
+            # ),
+            # discount_rate=self.get_asset_attribute_value(
+            #     asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            # ),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )

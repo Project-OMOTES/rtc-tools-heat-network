@@ -1,10 +1,8 @@
 from typing import Any, Dict, List
 
-import numpy as np
-
-# from esdl.esdl import *
 import esdl
 
+import numpy as np
 
 from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -192,38 +190,19 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         goals = super().goals().copy()
 
         goals.append(MinimizeDiscAnnualizedCostGoal())
-
         return goals
 
-
-# class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
-#     @property
-#     def esdl_assets(self):
-#         assets = super().esdl_assets
-#         for i in range(1, 3):  # HeatProducers
-#             asset_name = f"HeatProducer_{i}"
-#             asset = next((a for a in assets.values() if a.name == asset_name), None)
-#             if asset is not None:
-#                 asset.attributes["technicalLifetime"] = 1.0
-#                 asset.attributes["costInformation"].discountRate.value = 0.0
-#         return assets
-
-
-# class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
-#     @property
-#     def esdl_assets(self):
-#         assets = super().esdl_assets
-#         for asset in assets.values():
-#             if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
-#                 asset.attributes["technicalLifetime"] = 1.0
-#                 if (
-#                     asset.attributes["costInformation"]
-#                     and asset.attributes["costInformation"].discountRate is not None
-#                     and asset.attributes["costInformation"].discountRate.value is not None
-#                 ):
-#                     asset.attributes["costInformation"].discountRate.value = 0.0
-
-#         return assets
+    def modify_discount_rate(self, assets):
+        for asset in assets.values():
+            if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
+                if "costInformation" in asset.attributes and (
+                    asset.attributes["costInformation"].discountRate is not None
+                    and asset.attributes["costInformation"].discountRate.value is not None
+                ):
+                    asset.attributes["costInformation"].discountRate.value = 0.0
+                else:
+                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
+        return assets
 
 
 class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
@@ -233,13 +212,7 @@ class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
         for asset in assets.values():
             if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
                 asset.attributes["technicalLifetime"] = 1.0
-                if "costInformation" in asset.attributes and (
-                    asset.attributes["costInformation"].discountRate is None
-                    and asset.attributes["costInformation"].discountRate.value is None
-                ):
-                    asset.attributes["costInformation"].discountRate.value = 0.0
-                else:
-                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
+        assets = self.modify_discount_rate(assets)
         return assets
 
 
@@ -247,11 +220,7 @@ class HeatProblemDiscAnnualizedCostModifiedDiscountRate(HeatProblemDiscAnnualize
     @property
     def esdl_assets(self):
         assets = super().esdl_assets
-        for i in range(1, 3):  # HeatProducers
-            asset_name = f"HeatProducer_{i}"
-            asset = next((a for a in assets.values() if a.name == asset_name), None)
-            if asset is not None:
-                asset.attributes["costInformation"].discountRate.value = 0.0
+        assets = self.modify_discount_rate(assets)
         return assets
 
 
