@@ -51,6 +51,11 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
         self.function_range = (0.0, 1.0e8)
         self.function_nominal = 1.0e7
 
+    def heat_network_options(self) -> Dict[str, Any]:
+        options = super().heat_network_options()
+        options["discounted_annualized_cost"] = True
+        return options
+
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
 

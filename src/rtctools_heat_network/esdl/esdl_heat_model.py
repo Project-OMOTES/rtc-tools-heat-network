@@ -150,9 +150,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ValueError: If the input value is not within the specified range.
         """
         if input_value < min_value or input_value > max_value:
-            logger.warning(
-                f"Input value {input_value} of attribute {attribute_name} is not within range ({min_value}, {max_value}) for asset {asset_name}."
+            warning_msg = (
+                f"Input value {input_value} of attribute {attribute_name} "
+                f"is not within range ({min_value}, {max_value}) for asset {asset_name}."
             )
+            logger.warning(warning_msg)
 
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         """

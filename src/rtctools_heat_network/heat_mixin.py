@@ -1002,6 +1002,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         +--------------------------------------+-----------+-----------------------------+
         | ``include_asset_is_realized ``       | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
+        | ``discounted_annualized_cost ``       | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
         per hour. Similarly, the ``maximum_flow_der`` parameter gives the
@@ -1036,6 +1038,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all
         possible insulation options.
+
+        The ``discounted_annualized_cost`` option computes the annualized discounted costs for
+        each asset, and defines the sum of these costs as the total cost of ownership for the
+        cost minimization goal.
         """
 
         options = super().heat_network_options()
@@ -1050,6 +1056,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         options["minimize_head_losses"] = False
         options["include_demand_insulation_options"] = False
         options["include_asset_is_realized"] = False
+        options["discounted_annualized_cost"] = False
 
         return options
 
@@ -4301,7 +4308,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
-        constraints.extend(self.__annualized_capex_constraints(ensemble_member))
+        if self.heat_network_options()["discounted_annualized_cost"]:
+            constraints.extend(self.__annualized_capex_constraints(ensemble_member))
 
         constraints.extend(self.__max_size_constraints(ensemble_member))
 

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="14" id="f2dcc54c-66f3-479c-bac5-3220f26f4d57" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="14" id="7bf5efc0-6b79-42cc-a354-ef5969f68a64" description="" esdlVersion="v2210" name="Untitled EnergySystem with return network_GrowOptimized">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="e64737d9-d772-4723-b092-a0b397ac00b3">
     <carriers xsi:type="esdl:Carriers" id="9dff13b9-77cd-4b99-8777-6b7680a155b6">
       <carrier xsi:type="esdl:HeatCommodity" name="Heat" supplyTemperature="70.0" id="7b32e287-d775-480c-b317-64ffdacf12c9"/>
@@ -8,11 +8,11 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="f852b941-99fe-487b-a20d-01beff9e7c43" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f4acc7ef-a37d-43b7-87cb-8af5b82e3fed" name="Untitled Area">
-      <KPIs xsi:type="esdl:KPIs" id="5613634d-745b-4bd4-8308-c1e3f15de0ec">
+      <KPIs xsi:type="esdl:KPIs" id="8d350300-a5ac-4f12-b848-4c2c6c83a4c5">
         <kpi xsi:type="esdl:DistributionKPI" name="High level cost breakdown [EUR]">
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
           <distribution xsi:type="esdl:StringLabelDistribution">
-            <stringItem xsi:type="esdl:StringItem" value="8124908.068820616" label="CAPEX"/>
+            <stringItem xsi:type="esdl:StringItem" value="8124908.068820611" label="CAPEX"/>
             <stringItem xsi:type="esdl:StringItem" value="122590.78432839477" label="OPEX"/>
           </distribution>
         </kpi>
@@ -20,7 +20,7 @@
           <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" physicalQuantity="COST"/>
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3100000.0" label="Installation"/>
-            <stringItem xsi:type="esdl:StringItem" value="5024908.068820616" label="Investment"/>
+            <stringItem xsi:type="esdl:StringItem" value="5024908.068820611" label="Investment"/>
             <stringItem xsi:type="esdl:StringItem" value="122590.78432839477" label="Variable OPEX"/>
             <stringItem xsi:type="esdl:StringItem" label="Fixed OPEX"/>
           </distribution>
@@ -30,7 +30,7 @@
           <distribution xsi:type="esdl:StringLabelDistribution">
             <stringItem xsi:type="esdl:StringItem" value="3000000.0" label="HeatingDemand"/>
             <stringItem xsi:type="esdl:StringItem" value="3333067.2399999998" label="Pipe"/>
-            <stringItem xsi:type="esdl:StringItem" value="1791840.828820616" label="HeatProducer"/>
+            <stringItem xsi:type="esdl:StringItem" value="1791840.8288206111" label="HeatProducer"/>
           </distribution>
         </kpi>
         <kpi xsi:type="esdl:DistributionKPI" name="OPEX breakdown [EUR]">
@@ -75,7 +75,7 @@
           </installationCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" diameter="DN200" innerDiameter="0.2101" name="Pipe2" length="195.4" related="Pipe2_ret" id="Pipe2">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" related="Pipe2_ret" diameter="DN200" innerDiameter="0.2101" name="Pipe2" length="195.4" id="Pipe2">
         <port xsi:type="esdl:InPort" id="5f65520d-61ee-4f68-8002-271f48f1daee" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32"/>
         <port xsi:type="esdl:OutPort" id="1dfdc172-9359-435a-8153-0a657932223a" connectedTo="2a873195-fa6b-4250-8519-046f040fedb7" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -100,7 +100,7 @@
         </costInformation>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" diameter="DN200" innerDiameter="0.2101" name="Pipe3" length="241.6" related="Pipe3_ret" id="Pipe3">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" related="Pipe3_ret" diameter="DN200" innerDiameter="0.2101" name="Pipe3" length="241.6" id="Pipe3">
         <port xsi:type="esdl:InPort" id="578ec414-3f11-430e-a893-60ea77848ff5" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="c0eac4db-f5da-47f3-8202-8438d000bd32"/>
         <port xsi:type="esdl:OutPort" id="dc1bc94f-26f2-4a49-a3bf-d0614b1f0df2" connectedTo="e0adf80a-b6f3-4c12-a439-dab4e555202a" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -125,7 +125,7 @@
         </costInformation>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe4" length="189.7" related="Pipe4_ret" id="Pipe4">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe4_ret" diameter="DN150" innerDiameter="0.1603" name="Pipe4" length="189.7" id="Pipe4">
         <port xsi:type="esdl:InPort" id="4b92e418-4ca6-4765-85ab-ce30f4127bf0" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="ed75b210-6b5a-488e-8a8d-efe570c84990"/>
         <port xsi:type="esdl:OutPort" id="53a54448-abdb-41ab-a53e-498556062216" connectedTo="a4a7c23e-4d77-4bbe-b8b4-ddf2d2d6e97e" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -150,7 +150,7 @@
         </costInformation>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe5" length="244.6" related="Pipe5_ret" id="Pipe5">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe5_ret" diameter="DN150" innerDiameter="0.1603" name="Pipe5" length="244.6" id="Pipe5">
         <port xsi:type="esdl:InPort" id="d1ce17fe-572d-4ade-a6e1-a3d3aa0fab64" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="ed75b210-6b5a-488e-8a8d-efe570c84990"/>
         <port xsi:type="esdl:OutPort" id="8f1bea52-e322-4d34-ad43-7d1e97243d62" connectedTo="1cb923b5-2a69-46d9-874c-68d552ef5576" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -175,7 +175,7 @@
         </costInformation>
         <dataSource xsi:type="esdl:DataSource" attribution="https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf" name="Logstor Product Catalogue Version 2020.03"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe6" length="176.6" related="Pipe6_ret" id="Pipe6">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe6_ret" diameter="DN150" innerDiameter="0.1603" name="Pipe6" length="176.6" id="Pipe6">
         <port xsi:type="esdl:InPort" id="7f162a30-7e41-4d7f-b011-ffcf4c1651f8" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9" connectedTo="a02e41ab-99f8-46d3-b2d1-be44aa5b7914"/>
         <port xsi:type="esdl:OutPort" id="16b1337c-5970-4eb4-90d3-e52d514a13df" connectedTo="770022e6-3e71-4e51-8544-0dba86c46a5b" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -230,7 +230,7 @@
         <port xsi:type="esdl:OutPort" id="59ccdddc-893b-4152-8bc4-0168e7e74bf3" connectedTo="2b7c3acb-69a7-497d-a72f-b98db189841c" name="ret_port" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lon="4.314494347576344" lat="52.03886034587139"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" diameter="DN200" innerDiameter="0.2101" name="Pipe2_ret" length="195.4" related="Pipe2" id="Pipe2_ret">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" related="Pipe2" diameter="DN200" innerDiameter="0.2101" name="Pipe2_ret" length="195.4" id="Pipe2_ret">
         <port xsi:type="esdl:InPort" id="18ce6906-595c-45e4-acf0-e07f7d7648c6" name="In_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="ef74ea8c-89b4-42e0-a98c-411860876c1a"/>
         <port xsi:type="esdl:OutPort" id="0431b8a0-a8d1-4375-b348-37a475add47a" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="Out_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Line">
@@ -243,7 +243,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" diameter="DN200" innerDiameter="0.2101" name="Pipe3_ret" length="241.6" related="Pipe3" id="Pipe3_ret">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.315" related="Pipe3" diameter="DN200" innerDiameter="0.2101" name="Pipe3_ret" length="241.6" id="Pipe3_ret">
         <port xsi:type="esdl:InPort" id="0650d850-58a9-45b3-8313-a3156a061988" name="In_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="2dd7961b-46ce-4027-84b6-cc2684a03a7b"/>
         <port xsi:type="esdl:OutPort" id="6b655eb1-2b66-455f-90a3-0dd6f2844fab" connectedTo="7893125d-d82f-4fe8-aaea-5fb6afecc635" name="Out_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Line">
@@ -256,7 +256,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe4_ret" length="189.7" related="Pipe4" id="Pipe4_ret">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe4" diameter="DN150" innerDiameter="0.1603" name="Pipe4_ret" length="189.7" id="Pipe4_ret">
         <port xsi:type="esdl:InPort" id="d126f79e-c43e-4d9d-a7ce-8f58be634695" name="In_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="bf6e0b6b-baac-468b-a9ba-f8397babf5d6"/>
         <port xsi:type="esdl:OutPort" id="b3187ef9-cd0b-4ea8-90e4-eab39fa225e9" connectedTo="a1b719cb-f735-4a30-a0d2-cf6945b3afa1" name="Out_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Line">
@@ -269,7 +269,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe5_ret" length="244.6" related="Pipe5" id="Pipe5_ret">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe5" diameter="DN150" innerDiameter="0.1603" name="Pipe5_ret" length="244.6" id="Pipe5_ret">
         <port xsi:type="esdl:InPort" id="2b7c3acb-69a7-497d-a72f-b98db189841c" name="In_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="59ccdddc-893b-4152-8bc4-0168e7e74bf3"/>
         <port xsi:type="esdl:OutPort" id="4b3973ab-6e4b-48af-947d-52c6d30f20ea" connectedTo="a1b719cb-f735-4a30-a0d2-cf6945b3afa1" name="Out_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Line">
@@ -282,7 +282,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" diameter="DN150" innerDiameter="0.1603" name="Pipe6_ret" length="176.6" related="Pipe6" id="Pipe6_ret">
+      <asset xsi:type="esdl:Pipe" outerDiameter="0.25" related="Pipe6" diameter="DN150" innerDiameter="0.1603" name="Pipe6_ret" length="176.6" id="Pipe6_ret">
         <port xsi:type="esdl:InPort" id="5cd0f2e0-d456-4909-a81c-4b312b1be857" name="In_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="9c025b19-57d1-43a8-b2e8-db3e684756f2"/>
         <port xsi:type="esdl:OutPort" id="2045aca9-4e50-42ec-99de-fbcffa627a86" connectedTo="f36b9767-8e64-4744-8cd0-08acb2ae873b" name="Out_ret" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret"/>
         <geometry xsi:type="esdl:Line">
@@ -295,7 +295,7 @@
           </investmentCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatProducer" power="16918408.28820616" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb">
+      <asset xsi:type="esdl:HeatProducer" power="16918408.28820611" name="HeatProducer_2" id="da00ddfc-cfa4-4f21-b5be-7c69d2bf53bb">
         <port xsi:type="esdl:OutPort" id="886e5430-bec1-44e3-bab6-221c4518c810" connectedTo="bbfed830-071d-4d02-bddd-e709247c8337" name="Out" carrier="7b32e287-d775-480c-b317-64ffdacf12c9"/>
         <port xsi:type="esdl:InPort" id="c7ed8915-ddd0-47f8-93d6-1dabfb5d320b" name="In" carrier="7b32e287-d775-480c-b317-64ffdacf12c9_ret" connectedTo="df6f89d0-7872-4891-934f-de407f6aa142"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lon="4.311726093292237" lat="52.04487621664103"/>
