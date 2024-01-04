@@ -65,6 +65,11 @@ class TestSetpointConstraints(TestCase):
         Checks:
         - That setpoint does change twice over window length if 2 is specified
 
+        Missing:
+        - This test runs extremely slow, should be fixed!
+        _ this test does not check for funtioning with varying timestep sizes, this or another test
+        should be adapted to do so or a seperate test for that should be created.
+
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
@@ -95,6 +100,11 @@ class TestSetpointConstraints(TestCase):
 
         Checks:
         - That setpoint does not change over window length if 0 is specified
+
+        Missing:
+        - This test runs extremely slow, should be fixed!
+        _ this test does not check for funtioning with varying timestep sizes, this or another test
+        should be adapted to do so or a seperate test for that should be created.
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
@@ -124,6 +134,11 @@ class TestSetpointConstraints(TestCase):
         Checks:
         - That setpoint does change once over window length if 1 is specified for multiple
         window sizes
+
+        Missing:
+        - This test runs extremely slow, should be fixed!
+        _ this test does not check for funtioning with varying timestep sizes, this or another test
+        should be adapted to do so or a seperate test for that should be created.
 
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
