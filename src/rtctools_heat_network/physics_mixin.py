@@ -26,6 +26,20 @@ class PhysicsMixin(
     BaseComponentTypeMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This class is to combine the physics of multiple commodities into a single mixin and add
+    functionalities that span multiple commodities.
+
+    Part of the physics constraints are dependent upon the asset size. What we have decided is to
+    keep all logic concerning the physics in the respective PhysicsMixin, this avoids the need to
+    overwrite constraints in the AssetSizingMixin with duplicate code. To allow for this principle
+    to work, we do instantiate empty maps in the respective PhysicsMixins, this allows all logic for
+    the constraints to be implemented in the PhysicsMixin utilizing some try/except and/or if
+    statements. The AssetSizingMixin instantiates all sizing variables and the maps will be
+    populated, resulting in that the correct constraints in the PhysicsMixin will be applied. This
+    also enables the user to run the PhysicsMixin separately.
+    """
+
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class

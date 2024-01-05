@@ -16,6 +16,19 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+    """
+    The FinancialMixin is used to instantiate variables for the different cost components of the
+    assets in the energy network and to set constraints to compute them based upon the usage and
+    size of the assets.
+
+    The FinancialMixin is logically dependent on the AssetSizingMixin, as for example investment
+    cost depends on asset size. We used abstractmethods to make these classes independent of each
+    other (one does not need to inherit the other). The TechnoEconomicMixin in now responsible to
+    make sure that the methods are there to allow the FinancialMixin to call for example asset size
+    variables. The main advantage is that we could now have different variations for the asset
+    sizing functionality all using the same FinancialMixin.
+    """
+
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
@@ -285,7 +298,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         Returns
         -------
-
+        Casadi symbol for the maximum size variable
         """
         raise NotImplementedError
 
@@ -296,7 +309,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         Returns
         -------
-
+        Casadi symbol for the aggregation count variable
         """
         raise NotImplementedError
 
@@ -307,7 +320,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         Returns
         -------
-
+        scalar or int with maximum amount of the aggregation count.
         """
         raise NotImplementedError
 
@@ -318,7 +331,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         Returns
         -------
-
+        Casadi symbol for the investment cost coefficient of the pipe.
         """
         raise NotImplementedError
 

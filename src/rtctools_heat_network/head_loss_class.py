@@ -182,7 +182,7 @@ class _MinimizeHydraulicPower(Goal):
 
 class HeadLossClass:
     """
-    Adds handling of discharge - head (loss) relationship to the model.
+    For handling of discharge - head (loss) relationship to the model.
     """
 
     def __init__(self, *args, **kwargs):
