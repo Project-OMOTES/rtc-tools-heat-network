@@ -13,7 +13,6 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.demand_insulation_class import DemandInsulationClass
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 

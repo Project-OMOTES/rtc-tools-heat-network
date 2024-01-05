@@ -10,7 +10,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -153,7 +152,7 @@ class HeatProblem(
 if __name__ == "__main__":
     from pathlib import Path
 
-    from rtctools.util import run_optimization_problem
+    # from rtctools.util import run_optimization_problem
 
     # from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
     import time
@@ -162,9 +161,8 @@ if __name__ == "__main__":
     start_time = time.time()
     base_folder = Path(__file__).resolve().parent.parent
 
-    solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
     # results = solution.extract_results()
-    # solution = run_end_scenario_sizing(EndScenarioSizingStaged)
+    solution = run_end_scenario_sizing(EndScenarioSizingStaged)
 
     # print(results["Pipe_352c__hn_diameter"])
     # print(results["Pipe_352c__hn_pipe_class_None"])

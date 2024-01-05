@@ -14,8 +14,6 @@ from rtctools_heat_network.control_variables import map_comp_type_to_control_var
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .electricity_physics_mixin import ElectricityPhysicsMixin
 from .gas_physics_mixin import GasPhysicsMixin
-
-from .head_loss_mixin import HeadLossOption, _HeadLossMixin
 from .heat_physics_mixin import HeatPhysicsMixin
 
 logger = logging.getLogger("rtctools_heat_network")

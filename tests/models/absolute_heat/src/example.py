@@ -11,7 +11,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassG
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 

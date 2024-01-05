@@ -10,13 +10,13 @@ from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.bounds_to_pipe_flow_directions_mixin import (
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
+from rtctools_heat_network.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
     BoundsToPipeFlowDirectionsMixin,
 )
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
-from rtctools_heat_network.qth_mixin import QTHMixin
+from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 if __name__ == "__main__":
     from model_qth import Model

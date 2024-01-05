@@ -1,10 +1,9 @@
 import logging
+from abc import abstractmethod
 
 import casadi as ca
 
 import numpy as np
-
-from abc import abstractmethod
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -483,7 +482,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             if asset_name in [*self.heat_network_components.get("pipe", [])]:
                 # We do the pipe seperately as their coefficients are specified per meter.
-                investment_cost_coefficient = self.get_pipe_investment_cost_coefficient(asset_name, ensemble_member)
+                investment_cost_coefficient = self.get_pipe_investment_cost_coefficient(
+                    asset_name, ensemble_member
+                )
                 asset_size = parameters[f"{asset_name}.length"]
             else:
                 asset_size = self.get_max_size_var(asset_name, ensemble_member)

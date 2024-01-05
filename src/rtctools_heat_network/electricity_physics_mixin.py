@@ -1,7 +1,4 @@
 import logging
-from typing import List
-
-import casadi as ca
 
 import numpy as np
 
@@ -12,7 +9,6 @@ from rtctools.optimization.timeseries import Timeseries
 
 
 from .base_component_type_mixin import BaseComponentTypeMixin
-from .demand_insulation_class import DemandInsulationClass
 
 
 logger = logging.getLogger("rtctools_heat_network")

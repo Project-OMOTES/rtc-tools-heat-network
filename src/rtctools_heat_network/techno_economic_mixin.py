@@ -7,7 +7,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from .asset_sizing_mixin import AssetSizingMixin
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .financial_mixin import FinancialMixin
-
 from .physics_mixin import PhysicsMixin
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -39,7 +38,9 @@ class TechnoEconomicMixin(
         return self.extra_variable(self._asset_max_size_map[asset_name], ensemble_member)
 
     def get_aggregation_count_var(self, asset_name, ensemble_member):
-        return self.extra_variable(self._asset_aggregation_count_var_map[asset_name], ensemble_member)
+        return self.extra_variable(
+            self._asset_aggregation_count_var_map[asset_name], ensemble_member
+        )
 
     def get_aggregation_count_max(self, asset_name):
         return self.bounds()[self._asset_aggregation_count_var_map[asset_name]][1]

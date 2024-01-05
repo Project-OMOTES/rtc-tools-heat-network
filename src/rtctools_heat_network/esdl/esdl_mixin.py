@@ -21,13 +21,13 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
-from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
-from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
 from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
+from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
@@ -36,7 +36,6 @@ from .common import Asset
 from .esdl_heat_model import ESDLHeatModel
 from .esdl_model_base import _ESDLModelBase
 from .esdl_qth_model import ESDLQTHModel
-from ..physics_mixin import PhysicsMixin
 
 logger = logging.getLogger("rtctools_heat_network")
 

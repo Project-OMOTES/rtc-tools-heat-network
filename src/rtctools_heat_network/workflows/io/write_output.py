@@ -21,7 +21,6 @@ import pytz
 
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
 

@@ -109,12 +109,12 @@ class _MinimizeHeadLosses(Goal):
 
     priority = 2**31 - 1
 
-    def __init__(self, optimization_problem: "_HeadLossMixin", *args, **kwargs):
+    def __init__(self, optimization_problem, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
         self.function_nominal = len(optimization_problem.times())
 
-    def function(self, optimization_problem: "_HeadLossMixin", ensemble_member):
+    def function(self, optimization_problem, ensemble_member):
         """
         This function returns the summed head loss of all pipes and pumps.
         """
@@ -152,14 +152,14 @@ class _MinimizeHydraulicPower(Goal):
 
     def __init__(
         self,
-        optimization_problem: "_HeadLossMixin",
+        optimization_problem,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
 
-    def function(self, optimization_problem: "_HeadLossMixin", ensemble_member):
+    def function(self, optimization_problem, ensemble_member):
         """
         This function returns the summed hydraulic power of all pipes
         """

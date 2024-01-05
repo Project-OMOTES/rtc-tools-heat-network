@@ -1,5 +1,4 @@
 import logging
-
 from typing import List, Optional, Set, Tuple
 
 import casadi as ca
@@ -15,10 +14,8 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 
 
 from .base_component_type_mixin import BaseComponentTypeMixin
-from .constants import GRAVITATIONAL_CONSTANT
 from .demand_insulation_class import DemandInsulationClass
-from .head_loss_mixin import HeadLossOption, _HeadLossMixin
-from .physics_mixin import PhysicsMixin
+from .head_loss_mixin import HeadLossOption
 from .pipe_class import PipeClass
 
 logger = logging.getLogger("rtctools_heat_network")
