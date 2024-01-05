@@ -270,16 +270,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     aggr_count_max = 0.0
                 self.__asset_is_realized_bounds[var_name] = (0.0, aggr_count_max)
 
+    @abstractmethod
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
         """
 
-        options = super().heat_network_options()
-
-        options["include_asset_is_realized"] = False
-
-        return options
+        return NotImplementedError
 
     @abstractmethod
     def get_max_size_var(self, asset_name, ensemble_member):

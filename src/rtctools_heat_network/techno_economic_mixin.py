@@ -56,7 +56,9 @@ class TechnoEconomicMixin(
         Returns a dictionary of heat network specific options.
         """
 
-        options = super().heat_network_options()
+        options = super(PhysicsMixin, self).heat_network_options()
+        # problem with abstractmethod
+        options["include_asset_is_realized"] = False
 
         return options
 

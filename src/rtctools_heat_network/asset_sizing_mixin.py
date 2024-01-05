@@ -1,4 +1,5 @@
 import logging
+from abc import abstractmethod
 from typing import List, Optional, Set, Tuple
 
 import casadi as ca
@@ -464,87 +465,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     aggr_count_max = 0.0
                 self.__asset_aggregation_count_var_bounds[aggr_count_var] = (0.0, aggr_count_max)
 
+    @abstractmethod
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
-
-        +--------------------------------------+-----------+-----------------------------+
-        | Option                               | Type      | Default value               |
-        +======================================+===========+=============================+
-        | ``minimum_pressure_far_point``       | ``float`` | ``1.0`` bar                 |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``maximum_temperature_der``          | ``float`` | ``2.0`` °C/hour             |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``maximum_flow_der``                 | ``float`` | ``np.inf`` m3/s/hour        |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``neglect_pipe_heat_losses``         | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``include_asset_is_realized ``       | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-
-        The ``maximum_temperature_der`` gives the maximum temperature change
-        per hour. Similarly, the ``maximum_flow_der`` parameter gives the
-        maximum flow change per hour. These options together are used to
-        constrain the maximum heat change per hour allowed in the entire
-        network. Note the unit for flow is m3/s, but the change is expressed
-        on an hourly basis leading to the ``m3/s/hour`` unit.
-
-        The ``heat_loss_disconnected_pipe`` option decides whether a
-        disconnectable pipe has heat loss or not when it is disconnected on
-        that particular time step. By default, a pipe has heat loss even if
-        it is disconnected, as it would still contain relatively hot water in
-        reality. We also do not want minimization of heat production to lead
-        to overly disconnecting pipes. In some scenarios it is hydraulically
-        impossible to supply heat to these disconnected pipes (Q is forced to
-        zero), in which case this option can be set to ``False``.
-
-        The ``neglect_pipe_heat_losses`` option sets the heat loss in pipes to
-        zero. This can be useful when the insulation properties are unknown.
-        Note that other components can still have heat loss, e.g. a buffer.
-
-        The ``minimum_velocity`` is the minimum absolute value of the velocity
-        in every pipe. It is mostly an option to improve the stability of the
-        solver in a possibly subsequent QTH problem: the default value of
-        `0.005` m/s helps the solver by avoiding the difficult case where
-        discharges get close to zero.
-
-        Note that the inherited options ``head_loss_option`` and
-        ``minimize_head_losses`` are changed from their default values to
-        ``HeadLossOption.LINEAR`` and ``False`` respectively.
-
-        The ``include_demand_insulation_options`` options is used, when insulations options per
-        demand is specificied, to include heat demand and supply matching via constraints for all
-        possible insulation options.
         """
 
-        options = super().heat_network_options()
-
-        options["minimum_pressure_far_point"] = 1.0
-        options["maximum_temperature_der"] = 2.0
-        options["maximum_flow_der"] = np.inf
-        options["neglect_pipe_heat_losses"] = False
-        options["heat_loss_disconnected_pipe"] = True
-        options["minimum_velocity"] = 0.005
-        options["head_loss_option"] = HeadLossOption.LINEAR
-        options["minimize_head_losses"] = False
-        options["asset_sizing_option"] = True
-
-        return options
+        return NotImplementedError
 
     def pipe_classes(self, pipe: str) -> List[PipeClass]:
         """
-        Note that this method is only queried for _hot_ pipes. Their
-        respective cold pipes are assumed to have the exact same properties.
+        This method gives the pipe class options for a given pipe.
 
         If the returned List is:
         - empty: use the pipe properties from the model
@@ -818,24 +749,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return min(max_sum_dh_pipes, max_dh_network_options)
 
-    @staticmethod
-    def __get_abs_max_bounds(*bounds):
-        """
-        This function returns the absolute maximum of the bounds given. Note that bounds can also be
-        a timeseries.
-        """
-        max_ = 0.0
-
-        for b in bounds:
-            if isinstance(b, np.ndarray):
-                max_ = max(max_, max(abs(b)))
-            elif isinstance(b, Timeseries):
-                max_ = max(max_, max(abs(b.values)))
-            else:
-                max_ = max(max_, abs(b))
-
-        return max_
-
     def __state_vector_scaled(self, variable, ensemble_member):
         """
         This functions returns the casadi symbols scaled with their nominal for the entire time
@@ -845,33 +758,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         return (
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
-
-    def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
-        """
-        This functions returns a nominal for the discharge of pipes under topology optimization.
-        """
-        try:
-            pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
-            area = np.median(c.area for c in pipe_classes)
-        except KeyError:
-            area = parameters[f"{pipe}.area"]
-
-        return area * heat_network_options["estimated_velocity"]
-
-    @staticmethod
-    def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
-        """
-        This function returns the head loss option for a pipe. Note that we assume that we can use
-        the more accurate DW linearized approximation when a pipe has a control valve.
-        """
-        head_loss_option = heat_network_options["head_loss_option"]
-
-        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
-            # If there is a control valve present, we use the more accurate
-            # Darcy-Weisbach inequality formulation.
-            head_loss_option = HeadLossOption.LINEARIZED_DW
-
-        return head_loss_option
 
     def __pipe_topology_constraints(self, ensemble_member):
         """
@@ -1313,38 +1199,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
-    def history(self, ensemble_member):
-        """
-        In this history function we avoid the optimization using artificial energy for storage
-        assets as the history is not defined.
-        """
-        history = super().history(ensemble_member)
-
-        initial_time = np.array([self.initial_time])
-        empty_timeseries = Timeseries(initial_time, [np.nan])
-        buffers = self.heat_network_components.get("buffer", [])
-
-        for b in buffers:
-            hist_heat_buffer = history.get(f"{b}.Heat_buffer", empty_timeseries).values
-            hist_stored_heat = history.get(f"{b}.Stored_heat", empty_timeseries).values
-
-            # One has to provide information of what Heat_buffer (i.e., the heat
-            # added/extracted from the buffer at that timestep) is at t0.
-            # Else the solution will always extract heat from the buffer at t0.
-            # This information can be passed in two ways:
-            # - non-trivial history of Heat_buffer at t0;
-            # - non-trivial history of Stored_heat.
-            # If not known, we assume that Heat_buffer is 0.0 at t0.
-
-            if (len(hist_heat_buffer) < 1 or np.isnan(hist_heat_buffer[0])) and (
-                len(hist_stored_heat) <= 1 or np.any(np.isnan(hist_stored_heat[-2:]))
-            ):
-                history[f"{b}.Heat_buffer"] = Timeseries(initial_time, [0.0])
-
-        # TODO: add ATES when component is available
-
-        return history
-
     def goal_programming_options(self):
         """
         Here we set the goal programming configuration. We use soft constraints for consecutive
@@ -1396,20 +1250,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for p in [pipe, self.hot_to_cold_pipe(pipe)]:
                     self.__pipe_topo_pipe_class_result[p] = pipe_class
 
-    def __pipe_diameter_to_parameters(self):
-        """
-        This function is used to update the parameters object with the results of the pipe class
-        optimization
-        """
-        for ensemble_member in range(self.ensemble_size):
-            d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
-            for pipe in self._pipe_topo_pipe_class_map:
-                pipe_class = self.get_optimized_pipe_class(pipe)
-
-                for p in [pipe, self.hot_to_cold_pipe(pipe)]:
-                    d[f"{p}.diameter"] = pipe_class.inner_diameter
-                    d[f"{p}.area"] = pipe_class.area
-
     def _pipe_heat_loss_to_parameters(self):
         """
         This function is used to set the optimized heat losses in the parameters object.
@@ -1426,6 +1266,20 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 h[f"{pipe}.Heat_loss"] = self._pipe_heat_loss(
                     options, parameters, pipe, pipe_class.u_values
                 )
+
+    def __pipe_diameter_to_parameters(self):
+        """
+        This function is used to update the parameters object with the results of the pipe class
+        optimization
+        """
+        for ensemble_member in range(self.ensemble_size):
+            d = self.__pipe_topo_diameter_area_parameters[ensemble_member]
+            for pipe in self._pipe_topo_pipe_class_map:
+                pipe_class = self.get_optimized_pipe_class(pipe)
+
+                for p in [pipe, self.hot_to_cold_pipe(pipe)]:
+                    d[f"{p}.diameter"] = pipe_class.inner_diameter
+                    d[f"{p}.area"] = pipe_class.area
 
     def priority_completed(self, priority):
         """
