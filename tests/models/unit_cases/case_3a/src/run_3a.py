@@ -10,7 +10,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
-from rtctools_heat_network.asset_sizing_mixin import AssetSizingMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
@@ -295,7 +294,7 @@ class HeatProblemTvarret(
 
 class HeatProblemProdProfile(
     _GoalsAndOptions,
-    AssetSizingMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
