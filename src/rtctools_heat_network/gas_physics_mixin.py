@@ -7,7 +7,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 
 from .base_component_type_mixin import BaseComponentTypeMixin
-from .head_loss_mixin import HeadLossOption
+from .head_loss_class import HeadLossOption
 
 
 logger = logging.getLogger("rtctools_heat_network")

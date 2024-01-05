@@ -15,19 +15,13 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .demand_insulation_class import DemandInsulationClass
-from .head_loss_mixin import HeadLossOption
+from .head_loss_class import HeadLossOption
 from .pipe_class import PipeClass
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
 class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-    __allowed_head_loss_options = {
-        HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
-    }
-
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class

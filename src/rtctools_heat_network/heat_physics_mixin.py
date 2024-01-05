@@ -17,13 +17,18 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
 from .demand_insulation_class import DemandInsulationClass
-from .head_loss_class import HeadLossClass
-from .head_loss_mixin import HeadLossOption
+from .head_loss_class import HeadLossClass, HeadLossOption
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
 class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+    __allowed_head_loss_options = {
+        HeadLossOption.NO_HEADLOSS,
+        HeadLossOption.LINEAR,
+        HeadLossOption.LINEARIZED_DW,
+    }
+
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
@@ -326,7 +331,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of heat network physics specific options.
 
         +--------------------------------------+-----------+-----------------------------+
         | Option                               | Type      | Default value               |
@@ -348,8 +353,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
         | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``asset_sizing_option``              | ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
 
         The ``maximum_temperature_der`` gives the maximum temperature change
@@ -398,7 +401,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
         options["include_demand_insulation_options"] = False
-        options["asset_sizing_option"] = False
 
         return options
 
@@ -2034,8 +2036,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         This functions returns a nominal for the discharge of pipes under topology optimization.
         """
+        try:
+            pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
+            area = np.median(c.area for c in pipe_classes)
+        except KeyError:
+            area = parameters[f"{pipe}.area"]
 
-        return parameters[f"{pipe}.area"] * heat_network_options["estimated_velocity"]
+        return area * heat_network_options["estimated_velocity"]
 
     @staticmethod
     def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
@@ -2543,7 +2550,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def solver_options(self):
         """
-        Here we define the solver options. By default we use the open-source solver cbc and casadi
+        Here we define the solver options. By default we use the open-source solver highs and casadi
         solver qpsol.
         """
         options = super().solver_options()

@@ -11,7 +11,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
+from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 

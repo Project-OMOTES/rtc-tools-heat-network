@@ -286,7 +286,7 @@ class PhysicsMixin(
 
     def solver_options(self):
         """
-        Here we define the solver options. By default we use the open-source solver cbc and casadi
+        Here we define the solver options. By default we use the open-source solver highs and casadi
         solver qpsol.
         """
         options = super().solver_options()

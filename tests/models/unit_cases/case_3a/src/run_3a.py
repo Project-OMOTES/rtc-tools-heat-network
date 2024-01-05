@@ -354,7 +354,7 @@ class QTHProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        from rtctools_heat_network.head_loss_mixin import HeadLossOption
+        from rtctools_heat_network.head_loss_class import HeadLossOption
 
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options

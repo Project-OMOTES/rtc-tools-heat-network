@@ -5,7 +5,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
+from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
 class TestHeadLossCalculation(TestCase):

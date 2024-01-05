@@ -11,18 +11,11 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 from rtctools.optimization.timeseries import Timeseries
 
 from .base_component_type_mixin import BaseComponentTypeMixin
-from .head_loss_mixin import HeadLossOption
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
 class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
-    __allowed_head_loss_options = {
-        HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
-    }
-
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
