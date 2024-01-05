@@ -21,14 +21,14 @@ import pytz
 
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
 
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class ScenarioOutput(HeatMixin):
+class ScenarioOutput(TechnoEconomicMixin):
     __optimized_energy_system_handler = None
 
     def __init__(self, **kwargs):

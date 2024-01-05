@@ -10,8 +10,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -66,7 +65,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -95,7 +94,7 @@ class HeatProblem(
 
 class HeatProblemTvarSecondary(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -116,7 +115,7 @@ class HeatProblemTvarSecondary(
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
 
@@ -152,7 +151,7 @@ class HeatProblemTvarSecondary(
 
 class HeatProblemTvar(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -204,7 +203,7 @@ class HeatProblemTvar(
 
 class HeatProblemTvarDisableHEX(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

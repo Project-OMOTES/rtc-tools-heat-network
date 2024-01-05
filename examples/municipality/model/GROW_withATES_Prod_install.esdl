@@ -38,12 +38,9 @@
         <port xsi:type="esdl:OutPort" id="bd8a6c48-a664-4f32-bf2e-68046a3bfeb4" connectedTo="cc9f9cec-d565-422a-b645-29c24f85678d" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75" name="Out"/>
         <port xsi:type="esdl:InPort" connectedTo="f7d48b4e-2348-4b24-9af9-98598f270be2" id="3aacb2a9-615b-4047-8b01-04f5f1f32379" carrier="39ec9ed1-30d6-40db-83a4-1bac7b0b3c75_ret" name="In"/>
         <costInformation xsi:type="esdl:CostInformation" id="b0498a6e-b4d6-4ab5-96a7-c4e3918a3edb">
-          <installationCosts xsi:type="esdl:SingleValue" value="300000.0" id="9c6bb73b-8430-49e8-85a1-b3d85d6669cb">
+          <installationCosts xsi:type="esdl:SingleValue" value="36300000.0" id="9c6bb73b-8430-49e8-85a1-b3d85d6669cb">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" id="f0ac8533-0914-4776-811e-9db8c0880e8d" description="Cost in EUR" unit="EURO"/>
           </installationCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" value="1800000.0" id="6d4bfe1c-3c57-4134-a06d-160722908207">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="572d594f-98fd-4bbe-bd61-8fa9cd5ccced" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
           <fixedOperationalCosts xsi:type="esdl:SingleValue" value="51367.0" id="25fafbb2-9fcc-4ac6-904a-f8447e22765c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="539ee2d5-60b5-4e19-9e9e-384789b91e51" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </fixedOperationalCosts>
@@ -4320,9 +4317,9 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="0.685" id="463aa0ae-0748-4523-be52-91142442d3f5">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="a754b88e-46f6-4921-bc09-5fcefc560a43" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" value="200000.0" id="050405e6-ce89-42fd-9dc2-6a62a8cbad98">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c6b63ce7-a13d-4d05-a9c8-05d0df8a7cc5" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
-          </investmentCosts>
+          <installationCosts xsi:type="esdl:SingleValue" value="2000000.0" id="050405e6-ce89-42fd-9dc2-6a62a8cbad98">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c6b63ce7-a13d-4d05-a9c8-05d0df8a7cc5" description="Cost in EUR"  physicalQuantity="COST" unit="EURO"/>
+          </installationCosts>
           <fixedOperationalCosts xsi:type="esdl:SingleValue" value="2584.0" id="af8e95a1-1f2d-44a1-aff1-d495e6ed082c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="eb9e4398-d6ce-4650-8686-551531d7e112" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" physicalQuantity="COST" unit="EURO"/>
           </fixedOperationalCosts>

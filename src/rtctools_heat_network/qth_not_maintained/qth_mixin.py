@@ -15,17 +15,17 @@ from rtctools.optimization.timeseries import Timeseries
 
 from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 from rtctools_heat_network.base_component_type_mixin import BaseComponentTypeMixin
-from rtctools_heat_network.head_loss_mixin import (
-    HeadLossOption,
-    _HeadLossMixin,
-    _MinimizeHeadLosses as _MinimizeHeadLossesBase,
-    _MinimizeHydraulicPower as _MinimizeHydraulicPowerBase,
-)
 from rtctools_heat_network.heat_network_common import (
     CheckValveStatus,
     ControlValveDirection,
     NodeConnectionDirection,
     PipeFlowDirection,
+)
+from rtctools_heat_network.qth_not_maintained.head_loss_mixin import (
+    HeadLossOption,
+    _HeadLossMixin,
+    _MinimizeHeadLosses as _MinimizeHeadLossesBase,
+    _MinimizeHydraulicPower as _MinimizeHydraulicPowerBase,
 )
 
 logger = logging.getLogger("rtctools_heat_network")

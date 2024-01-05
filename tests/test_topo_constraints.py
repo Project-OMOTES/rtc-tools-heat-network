@@ -8,8 +8,8 @@ import numpy.testing
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 MIP_TOLERANCE = 1e-8
@@ -20,7 +20,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
     Tests the topo variables and constraints of heat_mixin on the Pipe Diameter Sizing example.
     """
 
-    problem: HeatMixin
+    problem: TechnoEconomicMixin
     results: Dict[str, np.ndarray]
 
     @classmethod

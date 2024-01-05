@@ -11,6 +11,6 @@
     <outputResultsFile>../output</outputResultsFile>
     <outputDiagnosticFile>../output/diag.xml</outputDiagnosticFile>
     <properties>
-        <string key="ESDL_File_Path" value="../model/GROW_withATES_Prod_install.esdl"/>
+        <string key="ESDL_File_Path" value="../model/GROW_baseline2.esdl"/>
     </properties>
 </Run>

@@ -13,7 +13,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.demand_insulation_class import DemandInsulationClass
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class MinimizeSourcesHeatGoal(Goal):
@@ -45,7 +45,7 @@ class MinimizeSourcesFlowGoal(Goal):  # or pipediametersizingproblem
 
 # test 1. selecting the lowest heating demands passed on minimising the source heat production
 class HeatProblem(
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -137,7 +137,7 @@ class HeatProblem(
 
 # test 1b. ensure that the heat problem works when specifying only 1 insulation level for 1 demand
 class HeatProblemB(
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
