@@ -1872,6 +1872,9 @@ class AssetSizingMixin(
 
         return constraints
 
+    # def get_pipe_class_var(self, p):
+    #     return self.__pipe_topo_pipe_class_var[p]
+
     def constraints(self, ensemble_member):
         """
         This function adds the normal constraints to the problem. Unlike the path constraints these

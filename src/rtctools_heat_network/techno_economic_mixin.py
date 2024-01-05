@@ -16,6 +16,7 @@ logger = logging.getLogger("rtctools_heat_network")
 class TechnoEconomicMixin(
     FinancialMixin,
     AssetSizingMixin,
+    PhysicsMixin,
     BaseComponentTypeMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -33,6 +34,21 @@ class TechnoEconomicMixin(
         retrieving of the variables.
         """
         super().pre()
+
+    def get_max_size_var(self, asset_name, ensemble_member):
+        return self.extra_variable(self._asset_max_size_map[asset_name], ensemble_member)
+
+    def get_aggregation_count_var(self, asset_name, ensemble_member):
+        return self.extra_variable(self._asset_aggregation_count_var_map[asset_name], ensemble_member)
+
+    def get_aggregation_count_max(self, asset_name):
+        return self.bounds()[self._asset_aggregation_count_var_map[asset_name]][1]
+
+    def get_pipe_class_map(self):
+        return self._pipe_topo_pipe_class_map
+
+    def get_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
+        return self.extra_variable(self._pipe_topo_cost_map[asset_name], ensemble_member)
 
     def heat_network_options(self):
         r"""

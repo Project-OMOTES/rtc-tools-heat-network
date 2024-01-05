@@ -2317,6 +2317,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def get_pipe_class_var(self):
+        return []
+
     def constraints(self, ensemble_member):
         """
         This function adds the normal constraints to the problem. Unlike the path constraints these

@@ -4,6 +4,8 @@ import casadi as ca
 
 import numpy as np
 
+from abc import abstractmethod
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -211,8 +213,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
 
             if asset_name in self.heat_network_components.get("pipe", []):
-                if asset_name in self._pipe_topo_pipe_class_map:
-                    pipe_classes = self._pipe_topo_pipe_class_map[asset_name]
+                if asset_name in self.get_pipe_class_map().keys():
+                    pipe_classes = self.get_pipe_class_map()[asset_name]
                     max_cost = (
                         2.0
                         * parameters[f"{asset_name}.length"]
@@ -286,6 +288,62 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options["include_asset_is_realized"] = False
 
         return options
+
+    @abstractmethod
+    def get_max_size_var(self, asset_name, ensemble_member):
+        """
+        This function should return the max size variable of an asset.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_aggregation_count_var(self, asset_name, ensemble_member):
+        """
+        This function should return the aggregation count integer variable of an asset.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_aggregation_count_max(self, asset_name):
+        """
+        This function should return the aggregation count upper bound.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
+        """
+        This function should return the pipe investment cost coefficient variable.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_pipe_class_map(self):
+        """
+        This function should return the mapping between the pipe and all the possible pipe classes
+        available for that pipe.
+
+        Returns
+        -------
+
+        """
+        return NotImplementedError
 
     @property
     def extra_variables(self):
@@ -425,14 +483,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             if asset_name in [*self.heat_network_components.get("pipe", [])]:
                 # We do the pipe seperately as their coefficients are specified per meter.
-                investment_cost_coefficient = self.extra_variable(
-                    self._pipe_topo_cost_map[asset_name], ensemble_member
-                )
+                investment_cost_coefficient = self.get_pipe_investment_cost_coefficient(asset_name, ensemble_member)
                 asset_size = parameters[f"{asset_name}.length"]
-                nominal = self.variable_nominal(self._pipe_topo_cost_map[asset_name])
             else:
-                max_var = self._asset_max_size_map[asset_name]
-                asset_size = self.extra_variable(max_var, ensemble_member)
+                asset_size = self.get_max_size_var(asset_name, ensemble_member)
 
             constraints.append(
                 (
@@ -479,8 +533,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             fixed_operational_cost = self.extra_variable(
                 fixed_operational_cost_var, ensemble_member
             )
-            max_var = self._asset_max_size_map[asset_name]
-            asset_size = self.extra_variable(max_var, ensemble_member)
+            asset_size = self.get_max_size_var(asset_name, ensemble_member)
             fixed_operational_cost_coefficient = parameters[
                 f"{asset_name}.fixed_operational_cost_coefficient"
             ]
@@ -590,9 +643,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
             nominal = self.variable_nominal(self._asset_installation_cost_map[asset_name])
             installation_cost = parameters[f"{asset_name}.installation_cost"]
-            aggregation_count_sym = self.extra_variable(
-                self._asset_aggregation_count_var_map[asset_name]
-            )
+            aggregation_count_sym = self.get_aggregation_count_var(asset_name, ensemble_member)
             constraints.append(
                 (
                     (installation_cost_sym - aggregation_count_sym * installation_cost) / nominal,
@@ -648,7 +699,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                         + self.bounds()[f"{asset}__installation_cost"][1],
                         1.0,
                     )
-                    / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+                    / max(self.get_aggregation_count_max(asset), 1.0)
                 )
 
                 # Asset can be realized once the investments made equal the installation and
@@ -678,7 +729,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     big_m = (
                         1.5
                         * self.bounds()[f"{asset}.Heat_flow"][1]
-                        / max(self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0)
+                        / max(self.get_aggregation_count_max(asset), 1.0)
                     )
                 else:
                     try:
@@ -688,9 +739,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 self.bounds()[f"{asset}.HeatOut.Heat"][1],
                                 self.bounds()[f"{asset}.HeatIn.Heat"][1],
                             )
-                            / max(
-                                self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0
-                            )
+                            / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     except KeyError:
                         big_m = (
@@ -699,9 +748,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                                 self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
                                 self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
                             )
-                            / max(
-                                self.bounds()[self._asset_aggregation_count_var_map[asset]][1], 1.0
-                            )
+                            / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                 constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
                 constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
