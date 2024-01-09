@@ -1,10 +1,10 @@
-from rtctools_heat_network.pycml import Variable
-
 from numpy import nan
 
+from rtctools_heat_network.pycml import Variable
 from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
-from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import \
-    ElectricityComponent
+from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import (
+    ElectricityComponent,
+)
 from rtctools_heat_network.pycml.component_library.heat.electricity.electricity_base import (
     ElectricityPort,
 )
@@ -13,12 +13,11 @@ from rtctools_heat_network.pycml.component_library.heat.gas.gas_base import (
 )
 
 
-# TODO: for now in the electricity folder, but maybe we can make a multicommodity folder,
-# where this is then placed.
 class Electrolyzer(ElectricityComponent, BaseAsset):
     """
-    ????
+    An electrolyzer consumes electricity and produces hydrogen
     """
+
     def __init__(self, name, **modifiers):
         super().__init__(
             name,
@@ -28,7 +27,6 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
             ),
         )
 
-        # ...
         self.component_type = "electrolyzer"
 
         self.a_eff_coefficient = nan
@@ -39,7 +37,6 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
 
-        # ...
         self.Q_nominal = nan
         self.min_voltage = nan
 
@@ -55,7 +52,7 @@ class Electrolyzer(ElectricityComponent, BaseAsset):
         self.add_variable(GasPort, "GasOut")
         self.add_variable(
             Variable, "Gas_mass_flow_out", min=0.0, nominal=self.nominal_gass_mass_out
-        )  # [kg/s]
+        )  # [kg/hr]
         self.add_equation(
             (self.GasOut.mass_flow - self.Gas_mass_flow_out) / self.nominal_gass_mass_out
         )

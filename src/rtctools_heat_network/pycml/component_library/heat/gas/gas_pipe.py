@@ -1,6 +1,4 @@
-import math
-
-from numpy import pi, nan
+from numpy import nan, pi
 
 from rtctools_heat_network.pycml import Variable
 
@@ -20,11 +18,11 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.component_type = "gas_pipe"
         self.disconnectable = False
 
-        self.v_max = 15.
+        self.v_max = 15.0
         self.density = 2.5
         self.diameter = nan
-        self.area = pi * self.diameter ** 2
-        self.Q_nominal = self.v_max / 2. * self.area
+        self.area = pi * self.diameter**2
+        self.Q_nominal = self.v_max / 2.0 * self.area
 
         self.nominal_head = 30.0
         self.length = nan
@@ -34,15 +32,15 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.add_variable(Variable, "dH", nominal=self.Q_nominal * self.r)
 
         # head is lost over the pipe
-        self.add_equation(((self.GasOut.H - (self.GasIn.H - self.dH)) / (self.Q_nominal*self.r)))
+        self.add_equation(((self.GasOut.H - (self.GasIn.H - self.dH)) / (self.Q_nominal * self.r)))
         # for now simple linear head loss
-        self.add_equation(((self.dH - self.GasIn.Q * self.r) / (self.Q_nominal*self.r)))
+        self.add_equation(((self.dH - self.GasIn.Q * self.r) / (self.Q_nominal * self.r)))
         # Flow should be preserved
         self.add_equation(((self.GasIn.Q - self.GasOut.Q) / self.Q_nominal))
-        self.add_equation(((self.GasIn.Q) / self.Q_nominal))
+        self.add_equation(((self.GasIn.Q - self.GasIn.mass_flow / self.density) / self.Q_nominal))
         # Flow should be preserved
-        self.add_equation(((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density)))
-        # # shadow Q for aliases
         self.add_equation(
-            ((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3)))
+            ((self.GasIn.mass_flow - self.GasOut.mass_flow) / (self.Q_nominal * self.density))
         )
+        # # shadow Q for aliases
+        self.add_equation(((self.GasOut.Q_shadow - (self.GasIn.Q_shadow - 1.0e-3))))
