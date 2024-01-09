@@ -4087,13 +4087,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             ]
 
             sum = 0.0
+            timesteps = np.diff(self.times()) / 3600.0
             for i in range(1, len(self.times())):
-                sum += (
-                    variable_operational_cost_coefficient
-                    * gas_mass_flow[i]
-                    * (self.times()[i] - self.times()[i - 1])
-                    / 3600.0
-                )
+                sum += variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps[i - 1]
 
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
@@ -4136,12 +4132,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             ]
 
             sum = 0.0
+            timesteps = np.diff(self.times()) / 3600.0
             for i in range(1, len(self.times())):
                 sum += (
                     variable_operational_cost_coefficient
                     * power_consumer[i]
-                    * (self.times()[i] - self.times()[i - 1])
-                    / 3600.0  # gas_mass_flow unit is kg/hr
+                    * timesteps[i - 1]  # gas_mass_flow unit is kg/hr
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))

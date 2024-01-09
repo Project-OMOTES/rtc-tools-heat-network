@@ -43,101 +43,101 @@ class TestSetpointConstraints(TestCase):
             1.0e-6,
         )
 
-    # def test_run_small_ates_timed_setpoints_2_changes(self):
-    #     """
-    #     Run the small network with ATES and check that the setpoint changes as specified.
-    #     The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-    #     specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-    #     (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-    #     start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-    #     2 changes/year.
-    #     """
-    #     import models.test_case_small_network_with_ates.src.run_ates as run_ates
-    #     from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
-    #
-    #     base_folder = Path(run_ates.__file__).resolve().parent.parent
-    #
-    #     solution = run_optimization_problem(
-    #         HeatProblemSetPoints,
-    #         base_folder=base_folder,
-    #         **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
-    #     )
-    #     results = solution.extract_results()
-    #     check = abs(
-    #         results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
-    #     )
-    #     # check if there are less than 3 switches, a solution might be found with less
-    #     # than 2 switches
-    #     np.testing.assert_array_less((check >= 1.0).sum(), 3.0)
-    #
-    # def test_run_small_ates_timed_setpoints_0_changes(self):
-    #     """
-    #     Run the small network with ATES and check that the setpoint changes as specified.
-    #     The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-    #     specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-    #     (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-    #     start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-    #     2 changes/year.
-    #     """
-    #     import models.test_case_small_network_with_ates.src.run_ates as run_ates
-    #     from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
-    #
-    #     base_folder = Path(run_ates.__file__).resolve().parent.parent
-    #
-    #     solution = run_optimization_problem(
-    #         HeatProblemSetPoints,
-    #         base_folder=base_folder,
-    #         **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
-    #     )
-    #     results = solution.extract_results()
-    #     check = abs(
-    #         results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
-    #     )
-    #     np.testing.assert_array_less(check, 1.0e-6)
-    #
-    # def test_run_small_ates_timed_setpoints_multiple_constraints(self):
-    #     """
-    #     Run the small network with ATES and check that the setpoint changes as specified.
-    #     The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-    #     specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
-    #     (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
-    #     start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
-    #     2 changes/year.
-    #     """
-    #     import models.test_case_small_network_with_ates.src.run_ates as run_ates
-    #     from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
-    #
-    #     base_folder = Path(run_ates.__file__).resolve().parent.parent
-    #
-    #     for ihrs in range(119, 122):
-    #         solution = run_optimization_problem(
-    #             HeatProblemSetPoints,
-    #             base_folder=base_folder,
-    #             **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
-    #         )
-    #         results = solution.extract_results()
-    #         diff = (
-    #             results["HeatProducer_1.Heat_source"][2:]
-    #             - results["HeatProducer_1.Heat_source"][1:-1]
-    #         )
-    #         ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-6]
-    #         for ii in range(1, len(ires)):
-    #             check = (
-    #                 solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
-    #                 - solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[
-    #                     ires[ii - 1]
-    #                 ]
-    #             )
-    #             # The following checks should be true because the changes setpoint changes occur at
-    #             # the during 120hr time intervals
-    #             if ihrs == 119:
-    #                 np.testing.assert_array_less(ihrs * 3600, check)
-    #             elif ihrs == 120:
-    #                 np.testing.assert_equal(np.less_equal(ihrs * 3600, check), True)
-    #             elif ihrs == 121:
-    #                 np.testing.assert_equal(np.less_equal((ihrs - 1) * 3600, check), True)
-    #             else:
-    #                 exit("ii out of range")
+    def test_run_small_ates_timed_setpoints_2_changes(self):
+        """
+        Run the small network with ATES and check that the setpoint changes as specified.
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
+        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
+        2 changes/year.
+        """
+        import models.test_case_small_network_with_ates.src.run_ates as run_ates
+        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            HeatProblemSetPoints,
+            base_folder=base_folder,
+            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
+        )
+        results = solution.extract_results()
+        check = abs(
+            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+        )
+        # check if there are less than 3 switches, a solution might be found with less
+        # than 2 switches
+        np.testing.assert_array_less((check >= 1.0).sum(), 3.0)
+
+    def test_run_small_ates_timed_setpoints_0_changes(self):
+        """
+        Run the small network with ATES and check that the setpoint changes as specified.
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
+        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
+        2 changes/year.
+        """
+        import models.test_case_small_network_with_ates.src.run_ates as run_ates
+        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        solution = run_optimization_problem(
+            HeatProblemSetPoints,
+            base_folder=base_folder,
+            **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
+        )
+        results = solution.extract_results()
+        check = abs(
+            results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
+        )
+        np.testing.assert_array_less(check, 1.0e-6)
+
+    def test_run_small_ates_timed_setpoints_multiple_constraints(self):
+        """
+        Run the small network with ATES and check that the setpoint changes as specified.
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
+        start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
+        2 changes/year.
+        """
+        import models.test_case_small_network_with_ates.src.run_ates as run_ates
+        from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        for ihrs in range(119, 122):
+            solution = run_optimization_problem(
+                HeatProblemSetPoints,
+                base_folder=base_folder,
+                **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
+            )
+            results = solution.extract_results()
+            diff = (
+                results["HeatProducer_1.Heat_source"][2:]
+                - results["HeatProducer_1.Heat_source"][1:-1]
+            )
+            ires = [idx + 2 for idx, val in enumerate(diff) if abs(val) > 1e-6]
+            for ii in range(1, len(ires)):
+                check = (
+                    solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[ires[ii]]
+                    - solution.get_timeseries("HeatingDemand_1.target_heat_demand", 0).times[
+                        ires[ii - 1]
+                    ]
+                )
+                # The following checks should be true because the changes setpoint changes occur at
+                # the during 120hr time intervals
+                if ihrs == 119:
+                    np.testing.assert_array_less(ihrs * 3600, check)
+                elif ihrs == 120:
+                    np.testing.assert_equal(np.less_equal(ihrs * 3600, check), True)
+                elif ihrs == 121:
+                    np.testing.assert_equal(np.less_equal((ihrs - 1) * 3600, check), True)
+                else:
+                    exit("ii out of range")
 
 
 if __name__ == "__main__":
