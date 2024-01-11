@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Component
 
 
@@ -24,3 +26,5 @@ class BaseAsset(Component):
         self.fixed_operational_cost_coefficient = 0.0
         self.investment_cost_coefficient = 0.0
         self.installation_cost = 0.0
+        self.technical_life = nan
+        self.discount_rate = nan

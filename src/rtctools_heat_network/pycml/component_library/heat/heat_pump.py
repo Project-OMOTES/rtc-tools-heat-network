@@ -27,8 +27,6 @@ class HeatPump(HeatFourPort, BaseAsset):
         )
 
         self.component_type = "heat_pump"
-        self.technical_life = nan
-        self.discount_rate = nan
         self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT

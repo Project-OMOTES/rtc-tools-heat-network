@@ -18,8 +18,6 @@ class Pump(_NonStorageComponent):
         self.carrier_id = -1
 
         self.component_type = "pump"
-        self.technical_life = nan
-        self.discount_rate = nan
 
         self.add_variable(Variable, "dH", min=0.0)
 

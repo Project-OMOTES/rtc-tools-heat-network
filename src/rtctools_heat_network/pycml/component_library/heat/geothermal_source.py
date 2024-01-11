@@ -17,8 +17,6 @@ class GeothermalSource(Source):
         super().__init__(name, **modifiers)
 
         self.component_subtype = "geothermal"
-        self.technical_life = nan
-        self.discount_rate = nan
 
         self.target_flow_rate = nan
         self.single_doublet_power = nan

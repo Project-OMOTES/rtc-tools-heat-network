@@ -199,7 +199,8 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
 
     def modify_discount_rate(self, assets):
         for asset in assets.values():
-            if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
+            # if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
+            if asset.asset_type == "HeatProducer":
                 if "costInformation" in asset.attributes and (
                     asset.attributes["costInformation"].discountRate is not None
                     and asset.attributes["costInformation"].discountRate.value is not None
@@ -215,7 +216,8 @@ class HeatProblemDiscAnnualizedCostModifiedParam(HeatProblemDiscAnnualizedCost):
     def esdl_assets(self):
         assets = super().esdl_assets
         for asset in assets.values():
-            if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
+            # if asset.asset_type == "Pipe" or asset.asset_type == "HeatProducer":
+            if asset.asset_type == "HeatProducer":
                 asset.attributes["technicalLifetime"] = 1.0
         assets = self.modify_discount_rate(assets)
         return assets

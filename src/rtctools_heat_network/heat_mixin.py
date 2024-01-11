@@ -4217,28 +4217,26 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         for category in asset_categories:
             for asset_name in self.heat_network_components.get(category, []):
                 asset_life_years = parameters[f"{asset_name}.technical_life"]
-                # Input from ESLD file as annual percentage
+                # Input is assumed as as annual percentage
                 discount_percentage = parameters[f"{asset_name}.discount_rate"]
-                # If asset_life_years == nan or discount_percentage == nan, skip the loop
                 if np.isnan(asset_life_years) or np.isnan(discount_percentage):
+                    logger.warning(
+                        f"Annualized cost cannot be computed for {asset_name} since technical_life or discount_rate are not set."
+                    )
                     continue
 
-                try:
-                    symbol_name = self._annualized_capex_var_map[asset_name]
-                    symbol = self.extra_variable(symbol_name)
+                symbol_name = self._annualized_capex_var_map[asset_name]
+                symbol = self.extra_variable(symbol_name)
 
-                    investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-                    investment_cost_symbol = self.extra_variable(
-                        investment_cost_symbol_name, ensemble_member
-                    )
+                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                investment_cost_symbol = self.extra_variable(
+                    investment_cost_symbol_name, ensemble_member
+                )
 
-                    installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-                    installation_cost_symbol = self.extra_variable(
-                        installation_cost_symbol_name, ensemble_member
-                    )
-                except KeyError as e:
-                    print(f"KeyError: {e} is not a valid key.")
-                    continue
+                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                installation_cost_symbol = self.extra_variable(
+                    installation_cost_symbol_name, ensemble_member
+                )
 
                 investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
 
@@ -4564,8 +4562,9 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
 def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
     """
-    Calculate the annuity factor, given an annual discount_rate over
-    a specified number years_asset_life.
+    Calculate the annuity factor, given an annual discount_rate over a specified number
+    of years_asset_life. This annuity factor is used in the model to calculate the
+    annual constant payments equivalent to the initial investment or installation cost.
 
     Parameters:
         discount_rate (float): Annual discount rate (expressed
