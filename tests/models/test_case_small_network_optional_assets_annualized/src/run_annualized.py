@@ -36,20 +36,46 @@ class TargetDemandGoal(Goal):
 
 class MinimizeDiscAnnualizedCostGoal(Goal):
 
-    """This class represents an optimization goal that minimizes the
-      discounted annualized cost of a heat network model.
+    """
+    This class represents an optimization goal that minimizes the
+    discounted annualized cost of a heat network model.
 
     It takes the annualized cost calculated by the model and minimizes
     it by changing optimization variables such as asset sizes.
+
+    Attributes:
+        order (int): The order of the goal.
+        priority (int): The priority of the goal.
+        assets_and_costs_keys (list): List of tuples mapping asset categories to cost map keys.
     """
 
     order = 1
     priority = 2
 
-    def __init__(self):
+    def __init__(self, assets_and_costs_keys=None):
         self.target_max = 0.0
         self.function_range = (0.0, 1.0e8)
         self.function_nominal = 1.0e7
+        self.assets_and_costs_keys = (
+            assets_and_costs_keys
+            if assets_and_costs_keys is not None
+            else [
+                (["source", "ates"], ["_asset_variable_operational_cost_map"]),
+                (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
+                (
+                    [
+                        "source",
+                        "ates",
+                        "buffer",
+                        "demand",
+                        "heat_exchanger",
+                        "heat_pump",
+                        "pipe",
+                    ],
+                    ["_annualized_capex_var_map"],
+                ),
+            ]
+        )
 
     def heat_network_options(self) -> Dict[str, Any]:
         options = super().heat_network_options()
@@ -58,46 +84,20 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
-
-        assets_and_cost_keys = [
-            (["source", "ates"], ["_asset_variable_operational_cost_map"]),
-            (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
-            (
-                [
-                    "source",
-                    "ates",
-                    "buffer",
-                    "demand",
-                    "heat_exchanger",
-                    "heat_pump",
-                    "pipe",
-                ],
-                ["_annualized_capex_var_map"],
-            ),
-        ]
-
-        for asset_categories, cost_map_keys in assets_and_cost_keys:
-            obj += self.sum_cost(optimization_problem, asset_categories, cost_map_keys)
-
-        return obj
-
-    def sum_cost(
-        self,
-        optimization_problem,
-        asset_categories: List[str],
-        cost_map_keys: List[str],
-    ):
         """
-        Sums up the cost for the given optimization problem, asset categories,
-        and cost map keys.
+        For the given optimization problem, this function 
+        sums up the costs associated with specified assets in 
+        given asset categories, using defined cost map keys.
+
         """
-        obj = 0.0
-        for asset_category in asset_categories:
-            for asset in optimization_problem.heat_network_components.get(asset_category, []):
-                for cost_map_key in cost_map_keys:
-                    cost_map = getattr(optimization_problem, cost_map_key)
-                    cost = cost_map.get(asset, 0)
-                    obj += optimization_problem.extra_variable(cost)
+
+        for asset_categories, cost_map_keys in self.assets_and_costs_keys:
+            for asset_category in asset_categories:
+                for asset in optimization_problem.heat_network_components.get(asset_category, []):
+                    for cost_map_key in cost_map_keys:
+                        cost_map = getattr(optimization_problem, cost_map_key)
+                        cost = cost_map.get(asset, 0)
+                        obj += optimization_problem.extra_variable(cost)
         return obj
 
 
