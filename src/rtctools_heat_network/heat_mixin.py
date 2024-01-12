@@ -722,7 +722,8 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("electrolyzer", []):
-            ub = bounds[f"{asset_name}.Power_consumed"][1]
+            v = bounds[f"{asset_name}.Electricity_demand"][1]
+            ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
