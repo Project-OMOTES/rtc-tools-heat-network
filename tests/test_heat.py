@@ -7,6 +7,9 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestHeat(TestCase):
     def test_heat_loss(self):
@@ -15,7 +18,11 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(DoublePipeEqualHeat, base_folder=base_folder)
+        case = run_optimization_problem(
+            DoublePipeEqualHeat, base_folder=base_folder, esdl_file_name="absolute_heat.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv"
+        )
         results = case.extract_results()
 
         source = results["source.Heat_source"]
@@ -41,7 +48,11 @@ class TestHeat(TestCase):
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
 
-        run_optimization_problem(Model, base_folder=base_folder)
+        run_optimization_problem(
+            Model, base_folder=base_folder, esdl_file_name="model.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv"
+        )
 
 
 class TestMinMaxPressureOptions(TestCase):

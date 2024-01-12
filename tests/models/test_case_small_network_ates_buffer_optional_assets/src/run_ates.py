@@ -10,6 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
@@ -162,7 +164,11 @@ if __name__ == "__main__":
 
     # solution = run_optimization_problem(EndScenarioSizingHIGHS, base_folder=base_folder)
     # results = solution.extract_results()
-    solution = run_end_scenario_sizing(EndScenarioSizingStaged)
+    solution = run_end_scenario_sizing(
+        EndScenarioSizingStaged,
+        esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv")
 
     # print(results["Pipe_352c__hn_diameter"])
     # print(results["Pipe_352c__hn_pipe_class_None"])

@@ -6,6 +6,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
 # small demand and then increase the demand of the second node such that direction changes
@@ -26,7 +29,9 @@ class TestMILPElectricSourceSink(TestCase):
         tol = 1e-10
 
         results = run_optimization_problem(
-            ElectricityProblem, base_folder=base_folder
+            ElectricityProblem, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv"
         ).extract_results()
 
         # Test if capping is ok
@@ -68,7 +73,9 @@ class TestMILPElectricSourceSink(TestCase):
         v_min = 1.0e4  # set as minimum voltage for cables
 
         results = run_optimization_problem(
-            ElectricityProblemMaxCurr, base_folder=base_folder
+            ElectricityProblemMaxCurr, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv"
         ).extract_results()
 
         tolerance = 1e-10  # due to computational comparison

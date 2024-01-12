@@ -5,6 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestAssetIsRealized(TestCase):
     def test_asset_is_realized(self):
@@ -28,7 +31,12 @@ class TestAssetIsRealized(TestCase):
 
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
-        solution = run_optimization_problem(HeatProblemPlacingOverTime, base_folder=base_folder)
+        solution = run_optimization_problem(
+            HeatProblemPlacingOverTime, base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv"
+        )
 
         results = solution.extract_results()
 

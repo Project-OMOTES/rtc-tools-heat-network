@@ -16,6 +16,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
 
@@ -174,7 +176,11 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    heat_problem = run_optimization_problem(PipeDiameterSizingProblem)
+    heat_problem = run_optimization_problem(
+        PipeDiameterSizingProblem, esdl_file_name="2a.esdl",
+        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml"
+    )
     results = heat_problem.extract_results()
     print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])
     print("Heat: ", results["Pipe_2927_ret.HeatIn.Heat"])

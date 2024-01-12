@@ -98,11 +98,11 @@ class ESDLMixin(
 
         self.esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
-        molder_folder = kwargs.get("model_folder")
+        model_folder = kwargs.get("model_folder")
         esdl_file_name = kwargs.get("esdl_file_name", None)
         esdl_path = None
         if esdl_file_name is not None:
-            esdl_path = Path(molder_folder) / esdl_file_name
+            esdl_path = Path(model_folder) / esdl_file_name
 
         # TODO: discuss if this is correctly located here and why the reading of profiles is then
         #  in the read function?

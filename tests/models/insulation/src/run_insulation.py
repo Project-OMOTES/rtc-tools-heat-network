@@ -13,6 +13,8 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.demand_insulation_class import DemandInsulationClass
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
@@ -277,5 +279,9 @@ if __name__ == "__main__":
     import time
 
     start_time = time.time()
-    heat_problem = run_optimization_problem(HeatProblemB)
+    heat_problem = run_optimization_problem(
+        HeatProblemB, esdl_file_name="Insulation.esdl",
+        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml"
+    )
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

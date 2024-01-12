@@ -13,6 +13,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
@@ -182,5 +184,10 @@ if __name__ == "__main__":
     from pathlib import Path
 
     base_folder = Path(__file__).resolve().parent.parent
-    solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
+    solution = run_optimization_problem(
+        HeatProblem, base_folder=base_folder,
+        esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl",
+        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv"
+    )
     results = solution.extract_results()

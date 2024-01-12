@@ -19,6 +19,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 
@@ -374,5 +376,8 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemPlacingOverTime)
+    sol = run_optimization_problem(
+        HeatProblemPlacingOverTime, esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv")
     results = sol.extract_results()

@@ -10,6 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 from rtctools_heat_network.heat_mixin import HeatMixin
 
@@ -309,5 +311,9 @@ class HeatProblemTvarDisableHEX(
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(
+        HeatProblem, esdl_file_name="heat_exchanger.esdl",
+        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml"
+    )
     results = solution.extract_results()

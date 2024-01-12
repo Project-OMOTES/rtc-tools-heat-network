@@ -6,6 +6,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestMILPGasMultiDemandSourceNode(TestCase):
     """Unit tests for the MILP test case of 2 demands, 2 sources and a node"""
@@ -18,7 +21,11 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        results = run_optimization_problem(GasProblem, base_folder=base_folder).extract_results()
+        results = run_optimization_problem(
+            GasProblem, base_folder=base_folder, esdl_file_name="test.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv"
+        ).extract_results()
 
         # Test head at node
         for i in range(1, 5):

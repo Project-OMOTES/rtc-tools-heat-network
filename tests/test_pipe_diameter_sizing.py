@@ -6,6 +6,9 @@ from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestPipeDiameterSizingExample(TestCase):
     def test_half_network_gone(self):
@@ -24,7 +27,11 @@ class TestPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        problem = run_optimization_problem(PipeDiameterSizingProblem, base_folder=base_folder)
+        problem = run_optimization_problem(
+            PipeDiameterSizingProblem, base_folder=base_folder, esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml"
+        )
 
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}

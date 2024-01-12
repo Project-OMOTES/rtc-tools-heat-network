@@ -7,6 +7,9 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.head_loss_mixin import HeadLossOption
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestHeadLossCalculation(TestCase):
     def test_scalar_return_type(self):
@@ -32,7 +35,11 @@ class TestHeadLossCalculation(TestCase):
             HeadLossOption.CQ2_INEQUALITY,
             HeadLossOption.LINEARIZED_DW,
         ]:
-            m = run_optimization_problem(Model, head_loss_option=h, base_folder=base_folder)
+            m = run_optimization_problem(
+                Model, head_loss_option=h, base_folder=base_folder, esdl_file_name="model.esdl",
+                esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.xml"
+            )
 
             options = m.heat_network_options()
             parameters = m.parameters(0)
@@ -68,7 +75,11 @@ class TestHeadLossOptions(TestCase):
         with self.assertRaisesRegex(
             Exception, "Mixing .NO_HEADLOSS with other head loss options is not allowed"
         ):
-            run_optimization_problem(Model, base_folder=base_folder)
+            run_optimization_problem(
+                Model, base_folder=base_folder, esdl_file_name="model.esdl",
+                esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.csv"
+            )
 
     # def test_no_head_loss(self):
     #     # Test if a model with NO_HEADLOSS set runs without issues
