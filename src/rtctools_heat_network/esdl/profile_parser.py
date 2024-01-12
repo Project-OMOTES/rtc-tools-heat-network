@@ -12,7 +12,7 @@ from rtctools_heat_network.esdl.common import Asset
 import esdl
 from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
-from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W
+from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
 import pandas as pd
 import numpy as np
@@ -32,7 +32,7 @@ class BaseProfileReader:
     _energy_system: esdl.EnergySystem
     _file_path: Optional[Path]
     _profiles: Dict[int, Dict[str, np.ndarray]]
-    _reference_datetimes = pd.DatetimeIndex
+    _reference_datetimes: Optional[pd.DatetimeIndex]
     component_type_to_var_name_map: dict = {
         "demand": ".target_heat_demand",
         "source": ".target_heat_source",
@@ -75,7 +75,11 @@ class BaseProfileReader:
                                         esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
                                         ensemble_size=ensemble_size)
 
-        io.reference_datetime = self._reference_datetimes[0]
+        try:
+            io.reference_datetime = self._reference_datetimes[0]
+        except AttributeError:
+            raise RuntimeError(f"No profiles were provided so no timeframe for the profiles "
+                               f"could be deduced")
 
         esdl_asset_names_to_ids = dict(zip(esdl_asset_id_to_name_map.values(),
                                            esdl_asset_id_to_name_map.keys()))
@@ -108,9 +112,9 @@ class BaseProfileReader:
                                    esdl_asset_id_to_name_map: Dict[str, str],
                                    ensemble_size: int) -> None:
         """
-        This function should be implemented by the child. It should load the profiles the available
+        This function must be implemented by the child. It must load the available
         profiles for demands and sources from the correct source and saves them in the _profiles
-        attribute. It should also sets the _reference_datetime_index attribute to the correct
+        attribute. It must also set the _reference_datetime_index attribute to the correct
         index to be used in the DataStore when loading the profiles
         """
         raise NotImplementedError
@@ -118,136 +122,148 @@ class BaseProfileReader:
 
 class InfluxDBProfileReader(BaseProfileReader):
 
+    asset_type_to_variable_name_conversion = {
+        esdl.esdl.HeatingDemand: ".target_heat_demand",
+        esdl.esdl.HeatProducer: ".target_heat_source",
+        esdl.esdl.ElectricityDemand: ".target_electricity_demand",
+        esdl.esdl.ElectricityProducer: ".target_electricity_source",
+        esdl.esdl.GasDemand: ".target_gas_demand",
+        esdl.esdl.GasProducer: ".target_gas.source",
+    }
+
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
         super().__init__(energy_system=energy_system, file_path=file_path)
 
     def _load_profiles_from_source(self, heat_network_components: Dict[str, Set[str]],
                                    esdl_asset_id_to_name_map: Dict[str, str],
                                    ensemble_size: int) -> None:
-        profiles: Dict[str, pd.DataFrame] = dict()
-        logger.info("Caching profiles...")
-        error_neighbourhoods = list()
-        for profile in [x for x in self._energy_system.eAllContents() if isinstance(x, esdl.InfluxDBProfile)]:
-            profile_host = profile.host
-            containing_asset_id = profile.eContainer().energyasset.id
-
-            ssl_setting = False
-            if "https" in profile_host:
-                profile_host = profile_host[8:]
-                ssl_setting = True
-            elif "http" in profile_host:
-                profile_host = profile_host[7:]
-            if profile.port == 443:
-                ssl_setting = True
-            influx_host = "{}:{}".format(profile_host, profile.port)
-            if influx_host in influx_cred_map:
-                (username, password) = influx_cred_map[influx_host]
+        profiles: Dict[str, np.ndarray] = dict()
+        logger.info("Reading profiles from InfluxDB")
+        self._reference_datetimes = None
+        for profile in [x for x in self._energy_system.eAllContents()
+                        if isinstance(x, esdl.InfluxDBProfile)]:
+            series = self._load_profile_timeseries_from_database(profile=profile)
+            self._check_profile_time_series(profile_time_series=series, profile=profile)
+            if self._reference_datetimes is None:
+                # TODO: since the previous function ensures it's a date time index, I'm not sure
+                #  how to get rid of this type checking warning
+                self._reference_datetimes = series.index
             else:
-                username = None
-                password = None
+                if not all(series.index == self._reference_datetimes):
+                    raise RuntimeError(f"Obtained a profile for asset {profile.field} with a "
+                                       f"timeseries index that doesn't match the timeseries of "
+                                       f"other assets. Please ensure that the profile that is "
+                                       f"specified to be loaded for each asset covers exactly the "
+                                       f"same timeseries. "
+                                       )
+            converted_dataframe = self._convert_profile_to_correct_unit(
+                profile_time_series=series, profile=profile)
 
-            conn_settings = ConnectionSettings(
-                host=profile.host,
-                port=profile.port,
-                username=username,
-                password=password,
-                database=profile.database,
-                ssl=ssl_setting,
-                verify_ssl=ssl_setting,
+            asset = profile.eContainer().energyasset
+            try:
+                variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+            except KeyError:
+                raise RuntimeError(f"The asset {profile.field} is of type {type(asset)} which is "
+                                   f"currently not supported to have a profile to be loaded "
+                                   f"from the database.")
+            profiles[asset.name + variable_suffix] = converted_dataframe * profile.multiplier
+
+        for idx in range(ensemble_size):
+            self._profiles[idx]= profiles.copy()
+
+    @staticmethod
+    def _load_profile_timeseries_from_database(profile: esdl.InfluxDBProfile) -> pd.Series:
+        profile_host = profile.host
+
+        ssl_setting = False
+        if "https" in profile_host:
+            profile_host = profile_host[8:]
+            ssl_setting = True
+        elif "http" in profile_host:
+            profile_host = profile_host[7:]
+        if profile.port == 443:
+            ssl_setting = True
+        influx_host = "{}:{}".format(profile_host, profile.port)
+
+        # TODO: remove hard-coded database credentials, should probably be read from a settings file
+        if influx_host in influx_cred_map:
+            (username, password) = influx_cred_map[influx_host]
+        else:
+            username = None
+            password = None
+
+        conn_settings = ConnectionSettings(
+            host=profile.host,
+            port=profile.port,
+            username=username,
+            password=password,
+            database=profile.database,
+            ssl=ssl_setting,
+            verify_ssl=ssl_setting,
+        )
+        time_series_data = InfluxDBProfileManager(conn_settings)
+
+        time_series_data.load_influxdb(
+            '"' + profile.measurement + '"',
+            [profile.field],
+            profile.startDate,
+            profile.endDate,
+        )
+
+        for x in time_series_data.profile_data_list:
+            if len(x) != 2:
+                raise RuntimeError(f"InfluxDB profile currently only supports parsing exactly one "
+                                   f"profile for each asset")
+
+        index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
+        data = [x[1] for x in time_series_data.profile_data_list]
+
+        return pd.Series(data=data, index=index)
+
+    @staticmethod
+    def _check_profile_time_series(profile_time_series: pd.Series,
+                                   profile: esdl.InfluxDBProfile) -> None:
+        # TODO: Should raise Exceptions. Also, the start and end time of the profile should be
+        #  the same for every profile read and this should be checked.
+        # Error check start and end dates of profiles
+        if profile_time_series.index[0] != profile.startDate:
+            raise RuntimeError(
+                f"The user input profile start datetime: {profile.startDate} does not match the"
+                f" start date in the database: {profile_time_series.index[0]} for asset: "
+                f"{profile.field}"
             )
-            time_series_data = InfluxDBProfileManager(conn_settings)
+        if profile_time_series.index[-1] != profile.endDate:
+            raise RuntimeError(
+                f"The user input profile end datetime: {profile.endDate} does not match the end"
+                f" datetime in the database: {profile_time_series.index[-1]} for asset: "
+                f"{profile.field}")
 
-            time_series_data.load_influxdb(
-                '"' + profile.measurement + '"',
-                [profile.field],
-                profile.startDate,
-                profile.endDate,
+
+        # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
+        # expected
+        for d1, d2 in zip(profile_time_series.index, profile_time_series.index[1:]):
+            if d2 - d1 != pd.Timedelta(hours=1):
+                raise RuntimeError(
+                    f"The timestep for variable {profile.field} between {d1} and {d2} isn't "
+                    f"exactly 1 hour"
+                )
+
+    @staticmethod
+    def _convert_profile_to_correct_unit(profile_time_series: pd.Series, profile) -> pd.Series:
+        # TODO add test case. Currently no test case for esdl parsing
+        profile_quantity = profile.profileQuantityAndUnit.reference.physicalQuantity
+        if profile_quantity == esdl.PhysicalQuantityEnum.POWER:
+            target_unit = POWER_IN_W
+        elif profile_quantity == esdl.PhysicalQuantityEnum.ENERGY:
+            target_unit = ENERGY_IN_J
+        else:
+            raise RuntimeError(
+                f"The user input profile currently only supports loading profiles containing "
+                f"either power or energy values, not {profile_quantity}."
             )
-
-            # TODO: Should raise Exceptions. Also, the start and end time of the profile should be
-            #  the same for every profile read and this should be checked.
-            # Error check start and end dates of profiles
-            if time_series_data.end_datetime != profile.endDate:
-                logger.error(
-                    f"The user input profile end datetime: {profile.endDate} does not match the end"
-                    f" datetime in the database: {time_series_data.end_datetime} for variable: "
-                    f"{profile.field}"
-                )
-                sys.exit(1)
-            if time_series_data.start_datetime != profile.startDate:
-                logger.error(
-                    f"The user input profile start datetime: {profile.startDate} does not match the"
-                    f" start date in the database: {time_series_data.start_datetime} for variable: "
-                    f"{profile.field}"
-                )
-                sys.exit(1)
-            if time_series_data.start_datetime != time_series_data.profile_data_list[0][0]:
-                logger.error(
-                    f"The profile's variable value for the start datetime: "
-                    f"{time_series_data.start_datetime} does not match the start datetime of the"
-                    f" profile data: {time_series_data.profile_data_list[0][0]}"
-                )
-                sys.exit(1)
-            if time_series_data.end_datetime != time_series_data.profile_data_list[-1][0]:
-                logger.error(
-                    f"The profile's variable value for the end datetime: "
-                    f"{time_series_data.end_datetime} does not match the end datetime of the"
-                    f" profile data: {time_series_data.profile_data_list[-1][0]}"
-                )
-                sys.exit(1)
-
-            # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
-            # expected
-            for idp in range(len(time_series_data.profile_data_list) - 1):
-                time_resolution = (
-                        time_series_data.profile_data_list[idp + 1][0]
-                        - time_series_data.profile_data_list[idp][0]
-                )
-                if time_resolution.seconds != 3600:
-                    logger.error(
-                        f"The time resolution of the profile:{profile.measurement}-{profile.field} is"
-                        "not 3600s as expected"
-                    )
-                    sys.exit(1)
-
-            data_points = {
-                t[0].strftime("%Y-%m-%dT%H:%M:%SZ"): t[1] for t in
-                time_series_data.profile_data_list
-            }
-            df = pd.DataFrame.from_dict(data_points, orient="index")
-            df.index = pd.to_datetime(df.index, utc=True)
-
-            # TODO add test case. Currently no test case for esdl parsing
-            # Convert Power and Energy to standard unit of Watt and Joules
-            for idf in range(len(df)):
-                if (
-                        profile.profileQuantityAndUnit.reference.physicalQuantity
-                        == esdl.PhysicalQuantityEnum.POWER
-                ):
-                    df.iloc[idf] = convert_to_unit(
-                        df.iloc[idf], profile.profileQuantityAndUnit, POWER_IN_W
-                    )
-                elif (
-                        profile.profileQuantityAndUnit.reference.physicalQuantity
-                        == esdl.PhysicalQuantityEnum.ENERGY
-                ):
-                    df.iloc[idf] = convert_to_unit(
-                        df.iloc[idf], profile.profileQuantityAndUnit, ENERGY_IN_J
-                    )
-                else:
-                    print(
-                        f"Current the code only caters for: {esdl.PhysicalQuantityEnum.POWER} & "
-                        f"{esdl.PhysicalQuantityEnum.ENERGY}, and it does not cater for "
-                        f"{profile.profileQuantityAndUnit.reference.physicalQuantity}"
-                    )
-                    sys.exit(1)
-
-            profiles[containing_asset_id] = df * profile.multiplier
-
-            if len(error_neighbourhoods) > 0:
-                raise RuntimeError(f"Encountered errors loading data for {error_neighbourhoods}")
-
-        self._profiles = profiles
+        return profile_time_series.apply(func=lambda x: convert_to_unit(
+            value=x, source_unit=profile.profileQuantityAndUnit, target_unit=target_unit
+        ))
 
 
 class ProfileReaderFromFile(BaseProfileReader):
