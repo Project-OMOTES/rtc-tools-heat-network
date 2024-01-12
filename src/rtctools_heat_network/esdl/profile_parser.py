@@ -60,16 +60,22 @@ class BaseProfileReader:
         Note that at least one profile must be provided to determine the start and end times of the
         optimization horizon.
 
-        :param io:                          Datastore in which the profiles will be saved
-        :param heat_network_components:     Dictionary of the components of the network, should
-                                            contain at least every component for which a profile
-                                            needs to be loaded
-        :param esdl_asset_id_to_name_map    Dictionary that maps asset ids to asset names,
-                                            this is required when reading from an XML
-        :param ensemble_size                Integer denoting the size of the set of scenarios to
-                                            optimize. Currently only XML inputs support loading a
-                                            different profile for different ensemble members
-        :param esdl_assets                  Dictionary mapping asset IDs to loaded ESDL assets
+        Parameters
+        ----------
+        io : Datastore in which the profiles will be saved
+        heat_network_components :   Dictionary of the components of the network, should
+                                    contain at least every component for which a profile
+                                    needs to be loaded
+        esdl_asset_id_to_name_map : Dictionary that maps asset ids to asset names,
+                                    this is required when reading from an XML
+        ensemble_size :     Integer denoting the size of the set of scenarios to
+                            optimize. Currently only XML inputs support loading a
+                            different profile for different ensemble members
+        esdl_assets : Dictionary mapping asset IDs to loaded ESDL assets
+
+        Returns
+        -------
+        None
         """
         self._load_profiles_from_source(heat_network_components=heat_network_components,
                                         esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
@@ -116,6 +122,21 @@ class BaseProfileReader:
         profiles for demands and sources from the correct source and saves them in the _profiles
         attribute. It must also set the _reference_datetime_index attribute to the correct
         index to be used in the DataStore when loading the profiles
+
+        Parameters
+        ----------
+        heat_network_components :   Dictionary of the components of the network, should
+                                    contain at least every component for which a profile
+                                    needs to be loaded
+        esdl_asset_id_to_name_map : Dictionary that maps asset ids to asset names,
+                                    this is required when reading from an XML
+        ensemble_size :     Integer denoting the size of the set of scenarios to
+                            optimize. Currently only XML inputs support loading a
+                            different profile for different ensemble members
+
+        Returns
+        -------
+        None
         """
         raise NotImplementedError
 
@@ -173,6 +194,18 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     @staticmethod
     def _load_profile_timeseries_from_database(profile: esdl.InfluxDBProfile) -> pd.Series:
+        """
+        Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
+        the asset.
+
+        Parameters
+        ----------
+        profile : Input InfluxDBProfile for the asset in the ESDL for which a profile should be read
+
+        Returns
+        -------
+        A pandas Series of the profile for the asset.
+        """
         profile_host = profile.host
 
         ssl_setting = False
@@ -223,9 +256,18 @@ class InfluxDBProfileReader(BaseProfileReader):
     @staticmethod
     def _check_profile_time_series(profile_time_series: pd.Series,
                                    profile: esdl.InfluxDBProfile) -> None:
-        # TODO: Should raise Exceptions. Also, the start and end time of the profile should be
-        #  the same for every profile read and this should be checked.
-        # Error check start and end dates of profiles
+        """
+        Function that checks if the loaded profile matches what was expected
+
+        Parameters
+        ----------
+        profile_time_series : the pandas Series of the profile obtained for the profile.
+        profile : the InfluxDBProfile used to obtain the time series
+
+        Returns
+        -------
+        None
+        """
         if profile_time_series.index[0] != profile.startDate:
             raise RuntimeError(
                 f"The user input profile start datetime: {profile.startDate} does not match the"
@@ -250,7 +292,19 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     @staticmethod
     def _convert_profile_to_correct_unit(profile_time_series: pd.Series, profile) -> pd.Series:
-        # TODO add test case. Currently no test case for esdl parsing
+        """
+        Conversion function to change the values in the provided series to the correct unit
+
+        Parameters
+        ----------
+        profile_time_series: the time series obtained for the provided profile.
+        profile: the profile which was used to obtain the series.
+
+        Returns
+        -------
+        A pandas Series with the same index as the provided profile_time_series and with all values
+        converted to either Watt or Joules, depending on the quantity used in the profile.
+        """
         profile_quantity = profile.profileQuantityAndUnit.reference.physicalQuantity
         if profile_quantity == esdl.PhysicalQuantityEnum.POWER:
             target_unit = POWER_IN_W
