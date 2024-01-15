@@ -551,7 +551,7 @@ def run_end_scenario_sizing(
 
         # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
         # stage 1 optimization.
-        pc_map = solution._AssetSizingMixin__pipe_topo_pipe_class_map
+        pc_map = solution._pipe_topo_pipe_class_map
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
