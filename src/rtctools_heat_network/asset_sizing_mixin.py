@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import List, Optional, Set, Tuple
+from typing import List, Set
 
 import casadi as ca
 
@@ -11,7 +11,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
-from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe, pipe_heat_loss
+from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
 
 
 from .base_component_type_mixin import BaseComponentTypeMixin
@@ -1198,9 +1198,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             for pipe in self._pipe_heat_losses:
                 pipe_class = self.get_optimized_pipe_class(pipe)
 
-                h[f"{pipe}.Heat_loss"] = pipe_heat_loss(self,
-                                                        options, parameters, pipe, pipe_class.u_values
-                                                        )
+                h[f"{pipe}.Heat_loss"] = pipe_heat_loss(
+                    self, options, parameters, pipe, pipe_class.u_values
+                )
 
     def __pipe_diameter_to_parameters(self):
         """

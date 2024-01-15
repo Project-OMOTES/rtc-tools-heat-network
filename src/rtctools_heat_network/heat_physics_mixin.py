@@ -1,6 +1,6 @@
 import logging
 import math
-from typing import List, Optional, Tuple
+from typing import List
 
 import casadi as ca
 
@@ -11,7 +11,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
-from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe, pipe_heat_loss
+from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
 
 
 from .base_component_type_mixin import BaseComponentTypeMixin
@@ -2284,11 +2284,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
                     )
                 except KeyError:
-                    heat_loss = pipe_heat_loss(self,
-                                               self.heat_network_options(),
-                                               self.parameters(ensemble_member),
-                                               p,
-                                               )
+                    heat_loss = pipe_heat_loss(
+                        self,
+                        self.heat_network_options(),
+                        self.parameters(ensemble_member),
+                        p,
+                    )
                     constraints.append(
                         (
                             (heat_loss_sym - heat_loss) / constraint_nominal,
@@ -2301,12 +2302,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for temperature in temperatures:
                     temperature_is_selected = self.state_vector(f"{carrier}_{temperature}")
                     if len(pipe_classes) == 0:
-                        heat_loss = pipe_heat_loss(self,
-                                                   self.heat_network_options(),
-                                                   self.parameters(ensemble_member),
-                                                   p,
-                                                   temp=temperature,
-                                                   )
+                        heat_loss = pipe_heat_loss(
+                            self,
+                            self.heat_network_options(),
+                            self.parameters(ensemble_member),
+                            p,
+                            temp=temperature,
+                        )
                         big_m = 2.0 * heat_loss
                         constraints.append(
                             (
@@ -2334,13 +2336,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     else:
                         heat_losses = [
-                            pipe_heat_loss(self,
-                                           self.heat_network_options(),
-                                           self.parameters(ensemble_member),
-                                           p,
-                                           u_values=c.u_values,
-                                           temp=temperature,
-                                           )
+                            pipe_heat_loss(
+                                self,
+                                self.heat_network_options(),
+                                self.parameters(ensemble_member),
+                                p,
+                                u_values=c.u_values,
+                                temp=temperature,
+                            )
                             for c in pipe_classes
                         ]
                         count = 0

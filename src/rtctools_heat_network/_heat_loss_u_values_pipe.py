@@ -94,6 +94,7 @@ def heat_loss_u_values_pipe(
 
     return u_1, u_2
 
+
 def pipe_heat_loss(
     self,
     options,
