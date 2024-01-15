@@ -135,6 +135,10 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         self.__temperature_regime_var = {}
         self.__temperature_regime_var_bounds = {}
 
+        # Variable of selected ATES discrete temperature
+        self.__ates_temperature_disc_var = {}
+        self.__ates_temperature_disc_var_bounds = {}
+
         # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
@@ -313,6 +317,27 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             self.__control_valve_direction_map[v] = flow_dir_var
             self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
             self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
+
+        for ates, ((hot_pipe, _hot_pipe_orientation),
+                (_cold_pipe, _cold_pipe_orientation)) in self.heat_network_topology.ates.items():
+            ates_temp_disc_var_name = f"{ates}__temperature_ates_disc"
+            self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(ates_temp_disc_var_name)
+            carrier_id = parameters[f"{hot_pipe}.carrier_id"]
+            temperatures = self.temperature_regimes(carrier_id)
+            if len(temperatures)==0:
+                temperature = parameters[f"{hot_pipe}.temperature"]
+                self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (temperature, temperature)
+            elif len(temperatures)==1:
+                temperature = temperatures[0]
+                self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (
+                temperature, temperature)
+            else:
+                self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (
+                    min(temperatures),
+                    max(temperatures),
+                )
+
+
 
         # Pipe topology variables
 
@@ -1124,6 +1149,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         variables.extend(self._change_setpoint_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
+        variables.extend(self.__ates_temperature_disc_var.values())
         variables.extend(self.__disabled_hex_var.values())
         variables.extend(self.__cumulative_investments_made_in_eur_var.values())
         variables.extend(self.__asset_is_realized_var.values())
@@ -1201,6 +1227,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         bounds.update(self._change_setpoint_bounds)
         bounds.update(self.__temperature_regime_var_bounds)
         bounds.update(self.__carrier_selected_var_bounds)
+        bounds.update(self.__ates_temperature_disc_var_bounds)
         bounds.update(self.__disabled_hex_var_bounds)
         bounds.update(self.__asset_fixed_operational_cost_bounds)
         bounds.update(self.__asset_investment_cost_bounds)
@@ -2262,6 +2289,77 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
                                 )
                             )
         return constraints
+
+    def __ates_temperature_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to determine the temperature state of the ATES.
+
+        The temperature of the ATES is modelled as a continuous variable which is linked to a
+        discretized ates temperature for the linearisation of the equations.
+
+        The same discretized temperatures for ATES are used as the ones available at the pipe
+        connecting to the inport. During unloading of the ATES, the temperature of the pipe should
+        be the same as the discretized temperature of the ATES.
+        """
+
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for b, (
+                (hot_pipe, _hot_pipe_orientation),
+                (_cold_pipe, _cold_pipe_orientation),
+        ) in {**self.heat_network_topology.ates}.items():
+            heat_nominal = parameters[f"{b}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{b}.Q")
+            cp = parameters[f"{b}.cp"]
+            rho = parameters[f"{b}.rho"]
+            dt = parameters[f"{b}.dT"]
+
+            discharge = self.state(f"{b}.HeatIn.Q")
+            heat_out = self.state(f"{b}.HeatOut.Heat")
+            heat_in = self.state(f"{b}.HeatIn.Heat")
+
+            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+            is_buffer_charging = self.state(flow_dir_var)
+
+            sup_carrier = parameters[f"{b}.T_supply_id"]
+            ret_carrier = parameters[f"{b}.T_return_id"]
+            supply_temperatures = self.temperature_regimes(sup_carrier)
+            return_temperatures = self.temperature_regimes(ret_carrier)
+            ates_temperature = self.state(f"{b}.Temperature_ates")
+            ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
+
+
+            #TODO: implement temperature constraint ates continuous to integer
+            if len(supply_temperatures) ==0:
+                constraints.append((parameters[f"{b}.T_supply"]-ates_temperature_disc, 0.0, 0.0))
+            else:
+                big_m = max(supply_temperatures)
+                for supply_temperature in supply_temperatures:
+                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
+                    # equality constraint if discharging and temperature selected using big_m
+                    constraints.append(
+                        (
+                            ates_temperature_disc
+                            - supply_temperature
+                            + (1.0 - sup_temperature_is_selected) * big_m
+                            + is_buffer_charging * big_m,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            ates_temperature_disc
+                            - supply_temperature
+                            - (1.0 - sup_temperature_is_selected) * big_m
+                            - is_buffer_charging * big_m,
+                            -np.inf,
+                            0.0,
+                        )
+                    )
+        return constraints
+
 
     def __storage_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -4175,6 +4273,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
         constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
