@@ -11,7 +11,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.timeseries import Timeseries
 
-from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
+from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe, pipe_heat_loss
 
 
 from .base_component_type_mixin import BaseComponentTypeMixin
@@ -271,7 +271,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     0.0,
                 )
                 self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                    self._pipe_heat_loss({"neglect_pipe_heat_losses": False}, parameters, pipe),
+                    pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe),
                     1.0,
                 )
 
@@ -280,7 +280,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     h[f"{pipe}.Heat_loss"] = 0.0
 
             else:
-                heat_loss = self._pipe_heat_loss(options, parameters, pipe)
+                heat_loss = pipe_heat_loss(self, options, parameters, pipe)
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     0.0,
                     2.0 * heat_loss,
@@ -526,77 +526,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 g.append(self._head_loss_class._hpwr_minimization_goal_class(self))
 
         return g
-
-    def _pipe_heat_loss(
-        self,
-        options,
-        parameters,
-        p: str,
-        u_values: Optional[Tuple[float, float]] = None,
-        temp: float = None,
-    ):
-        """
-        The heat losses have three components:
-
-        - dependency on the pipe temperature
-        - dependency on the ground temperature
-        - dependency on temperature difference between the supply/return line.
-
-        This latter term assumes that the supply and return lines lie close
-        to, and thus influence, each other. I.e., the supply line loses heat
-        that is absorbed by the return line. Note that the term dtemp is
-        positive when the pipe is in the supply line and negative otherwise.
-        """
-        if options["neglect_pipe_heat_losses"]:
-            return 0.0
-
-        neighbour = self.has_related_pipe(p)
-
-        if u_values is None:
-            u_kwargs = {
-                "inner_diameter": parameters[f"{p}.diameter"],
-                "insulation_thicknesses": parameters[f"{p}.insulation_thickness"],
-                "conductivities_insulation": parameters[f"{p}.conductivity_insulation"],
-                "conductivity_subsoil": parameters[f"{p}.conductivity_subsoil"],
-                "depth": parameters[f"{p}.depth"],
-                "h_surface": parameters[f"{p}.h_surface"],
-                "pipe_distance": parameters[f"{p}.pipe_pair_distance"],
-            }
-
-            # NaN values mean we use the function default
-            u_kwargs = {k: v for k, v in u_kwargs.items() if not np.all(np.isnan(v))}
-            u_1, u_2 = heat_loss_u_values_pipe(**u_kwargs, neighbour=neighbour)
-        else:
-            u_1, u_2 = u_values
-
-        length = parameters[f"{p}.length"]
-        temperature = parameters[f"{p}.temperature"]
-        if temp is not None:
-            temperature = temp
-        temperature_ground = parameters[f"{p}.T_ground"]
-        if neighbour:
-            if self.is_hot_pipe(p):
-                dtemp = temperature - parameters[f"{self.hot_to_cold_pipe(p)}.temperature"]
-            else:
-                dtemp = temperature - parameters[f"{self.cold_to_hot_pipe(p)}.temperature"]
-        else:
-            dtemp = 0
-
-        # if no return/supply pipes can be linked to eachother, the influence of the heat of the
-        # neighbouring pipes can also not be determined and thus no influence is assumed
-        # (distance between pipes to infinity)
-        # This results in Rneighbour -> 0 and therefore u2->0, u1-> 1/(Rsoil+Rins)
-
-        heat_loss = (
-            length * (u_1 - u_2) * temperature
-            - (length * (u_1 - u_2) * temperature_ground)
-            + (length * u_2 * dtemp)
-        )
-
-        if heat_loss < 0:
-            raise Exception(f"Heat loss of pipe {p} should be nonnegative.")
-
-        return heat_loss
 
     def parameters(self, ensemble_member):
         """
@@ -2355,11 +2284,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         ((heat_loss_sym - heat_loss_expr) / constraint_nominal, 0.0, 0.0)
                     )
                 except KeyError:
-                    heat_loss = self._pipe_heat_loss(
-                        self.heat_network_options(),
-                        self.parameters(ensemble_member),
-                        p,
-                    )
+                    heat_loss = pipe_heat_loss(self,
+                                               self.heat_network_options(),
+                                               self.parameters(ensemble_member),
+                                               p,
+                                               )
                     constraints.append(
                         (
                             (heat_loss_sym - heat_loss) / constraint_nominal,
@@ -2372,12 +2301,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for temperature in temperatures:
                     temperature_is_selected = self.state_vector(f"{carrier}_{temperature}")
                     if len(pipe_classes) == 0:
-                        heat_loss = self._pipe_heat_loss(
-                            self.heat_network_options(),
-                            self.parameters(ensemble_member),
-                            p,
-                            temp=temperature,
-                        )
+                        heat_loss = pipe_heat_loss(self,
+                                                   self.heat_network_options(),
+                                                   self.parameters(ensemble_member),
+                                                   p,
+                                                   temp=temperature,
+                                                   )
                         big_m = 2.0 * heat_loss
                         constraints.append(
                             (
@@ -2405,13 +2334,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     else:
                         heat_losses = [
-                            self._pipe_heat_loss(
-                                self.heat_network_options(),
-                                self.parameters(ensemble_member),
-                                p,
-                                u_values=c.u_values,
-                                temp=temperature,
-                            )
+                            pipe_heat_loss(self,
+                                           self.heat_network_options(),
+                                           self.parameters(ensemble_member),
+                                           p,
+                                           u_values=c.u_values,
+                                           temp=temperature,
+                                           )
                             for c in pipe_classes
                         ]
                         count = 0
