@@ -214,7 +214,8 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         return chosen_pc[0]
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
-        return pipe_heat_loss(self.problem,
+        return pipe_heat_loss(
+            self.problem,
             options=self.problem.heat_network_options(),
             parameters=self.problem.parameters(0),
             p=pipe,
