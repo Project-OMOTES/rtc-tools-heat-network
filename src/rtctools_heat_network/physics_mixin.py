@@ -56,6 +56,19 @@ class PhysicsMixin(
 
         super().__init__(*args, **kwargs)
 
+    def heat_network_options(self):
+        r"""
+        Returns a dictionary of heat network specific options.
+        """
+
+        # options = super().heat_network_options()
+
+        options = HeatPhysicsMixin.heat_network_options(self)
+        options.update(ElectricityPhysicsMixin.heat_network_options(self))
+        options.update(GasPhysicsMixin.heat_network_options(self))
+
+        return options
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -73,15 +86,6 @@ class PhysicsMixin(
             self._component_to_change_setpoint_map[component_name] = change_setpoint_var
             self._change_setpoint_var[change_setpoint_var] = ca.MX.sym(change_setpoint_var)
             self._change_setpoint_bounds[change_setpoint_var] = (0, 1.0)
-
-    def heat_network_options(self):
-        r"""
-        Returns a dictionary of heat network specific options.
-        """
-
-        options = super().heat_network_options()
-
-        return options
 
     @property
     def extra_variables(self):

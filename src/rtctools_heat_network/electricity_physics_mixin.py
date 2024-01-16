@@ -32,6 +32,18 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         self.__windpark_upper_bounds = {}
 
+    def heat_network_options(self):
+        r"""
+        Returns a dictionary of heat network specific options.
+        """
+
+        options = {}
+
+        options["include_asset_is_switched_on"] = False
+        options["include_electric_cable_power_loss"] = False
+
+        return options
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -52,18 +64,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_map[asset] = var_name
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
-
-    def heat_network_options(self):
-        r"""
-        Returns a dictionary of heat network specific options.
-        """
-
-        options = {}
-
-        options["include_asset_is_switched_on"] = False
-        options["include_electric_cable_power_loss"] = False
-
-        return options
 
     @property
     def extra_variables(self):
