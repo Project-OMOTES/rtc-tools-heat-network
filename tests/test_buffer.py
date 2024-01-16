@@ -9,7 +9,7 @@ from rtctools.util import run_optimization_problem
 class TestBufferHistory(TestCase):
     def test_buffer_history(self):
         """
-        This test is to check the buffer asset and its interaction with the network.
+        Check the buffer asset and its interaction with the network.
 
         Checks:
         - The logic of how the history is set for the buffer. This is to avoid artificial energy

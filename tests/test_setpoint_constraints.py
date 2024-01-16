@@ -9,9 +9,9 @@ from rtctools.util import run_optimization_problem
 class TestSetpointConstraints(TestCase):
     def test_setpoint_constraints(self):
         """
-        This function checks the working of the setpoint constraints it does so for a few cases to
-        ensure the behaviour is as expected. The setpoint constraints are used to enforce assets to
-        at maximum change a X times over a desired window length.
+        his function checks the working of the setpoint constraints for a few cases to ensure the
+        behaviour is as expected. The setpoint constraints are used to enforce a maximum number of
+        changes allowed of X times over a desired window length.
 
         Checks:
         - That setpoint does not change over windowlength if 0 is specified
@@ -63,7 +63,7 @@ class TestSetpointConstraints(TestCase):
         2 changes/year.
 
         Checks:
-        - That setpoint does change twice over window length if 2 is specified
+        - That the setpoint does change twice over window length if 2 is specified
 
         Missing:
         - This test runs extremely slow in current master, should be fixed!
@@ -103,8 +103,6 @@ class TestSetpointConstraints(TestCase):
 
         Missing:
         - This test runs extremely slow in current master, should be fixed!
-        _ this test does not check for funtioning with varying timestep sizes, this or another test
-        should be adapted to do so or a seperate test for that should be created.
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import HeatProblemSetPoints

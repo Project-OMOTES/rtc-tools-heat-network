@@ -11,9 +11,10 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestVaryingTemperature(TestCase):
     def test_1a_temperature_variation(self):
         """
-        This test is to check if the varying temperature works as expected on a simple network. We
-        give it temperature options such that it should select a minimum delta T to be able to meet
-        the heat demands and thus we know which temperatures should be selected.
+        This test is to check if the varying network temperature works as expected on a simple
+        network. We give it temperature options such that it should select a minimum delta T to be
+        able to meet the heat demands. It is known which network temperatures should be selected
+        based on the specified input values.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
@@ -22,9 +23,6 @@ class TestVaryingTemperature(TestCase):
 
         Missing:
         - Check on integer variable for selected temperature.
-
-        Returns
-        -------
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -58,7 +56,8 @@ class TestVaryingTemperature(TestCase):
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation.
-        - Check if expected temperature is selected and if temperature variable is set correctly.
+        - Check if the expected temperature is selected and if temperature variable is set
+        correctly.
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -101,7 +100,8 @@ class TestVaryingTemperature(TestCase):
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation.
-        - Check if expected temperature is selected and if temperature variable is set correctly.
+        - Check if the expected temperature is selected and if temperature variable is set
+        correctly.
 
         Missing:
         - I think there is a double demand mathcing check now...
@@ -142,9 +142,9 @@ class TestVaryingTemperature(TestCase):
     def test_hex_temperature_variation(self):
         """
         This test is to check whether the heat exchanger behaves as expected when optimized under
-        varying temperature. This is of special interest as we want to ensure the temperatures
-        stay physicaly feasible, therefore we create a problem where the lowest supply T is
-        infeasible.
+        varying network temperature. This is of special interest as we want to ensure the
+        temperatures stay physically feasible, therefore we create a problem where the lowest
+        available supply T is infeasible.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation.
@@ -216,9 +216,9 @@ class TestVaryingTemperature(TestCase):
 
     def test_hex_temperature_variation_secondary(self):
         """
-        Check to see the funtioning of the varying temperature with a heat exchanger where all
-        options are feasible and we expect it to take the most advantageous one, which in this case
-        is the lowest one.
+        Check to see the functioning of the varying network temperature with a heat exchanger where
+        all options are feasible and we expect it to take the most advantageous one, which in this
+        case is the lowest one.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation.

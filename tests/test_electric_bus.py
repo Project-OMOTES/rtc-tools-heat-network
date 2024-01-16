@@ -19,7 +19,7 @@ from rtctools.util import run_optimization_problem
 class TestMILPbus(TestCase):
     def test_voltages_and_power_network1(self):
         """
-        This test checks the behaviour of electricity networks with an bus asset. A bus asset is the
+        Checks the behaviour of electricity networks with a bus asset. A bus asset is the
         only asset that is allowed to have more than one electricity port.
 
         Checks:

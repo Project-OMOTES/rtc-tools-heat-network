@@ -11,7 +11,7 @@ from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 class TestEndScenarioSizing(TestCase):
     def test_end_scenario_sizing(self):
         """
-        Test to check if the TestEndScenario sizing workflow is behaving as expected. This is an
+        Check if the TestEndScenario sizing workflow is behaving as expected. This is an
         optimization done over a full year with timesteps of 5 days and hour timesteps for the peak
         day.
 

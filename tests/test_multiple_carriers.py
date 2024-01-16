@@ -8,7 +8,7 @@ class TestMultipleCarriers(TestCase):
     def test_multiple_carriers(self):
         """
         Test to check optimzation is functioning as expected for a problem where two hydraulically
-        decoupled networks are present which have no interaction.
+        decoupled networks which have no interaction.
 
         Checks:
         - Heat to discharge relation for both networks are not interferring with each other

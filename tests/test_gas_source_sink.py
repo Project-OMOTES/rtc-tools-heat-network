@@ -10,7 +10,7 @@ from rtctools.util import run_optimization_problem
 class TestMILPGasSourceSink(TestCase):
     def test_source_sink(self):
         """
-        Test for  case of a source, a pipe, a sink.
+        Test case for a network consisting out of a source, pipes and a sink
 
         Checks:
         - That flow is maintained.

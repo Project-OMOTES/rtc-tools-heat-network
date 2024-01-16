@@ -8,7 +8,7 @@ from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pi
 class TestHeatLossUValues(TestCase):
     def test_scalar_equal_to_single_element_array(self):
         """
-        Test to check if u values give equivalent results when inputs are provided under the
+        Check if u values give equivalent results when inputs are provided under the
         different allowed types.
 
         """

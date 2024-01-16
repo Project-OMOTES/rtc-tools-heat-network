@@ -17,7 +17,7 @@ def demand_matching_test(solution, results):
 
 def _get_component_temperatures(solution, results, component, side=None):
     """
-    To get the temperatures for an asset
+    Return the temperatures for an asset
 
     Parameters
     ----------

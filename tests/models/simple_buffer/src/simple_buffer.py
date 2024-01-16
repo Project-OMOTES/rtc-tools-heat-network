@@ -76,7 +76,7 @@ class HeatBuffer(
 
     def path_goals(self):
         """
-        Basic goals to meet demad and minimize use of sources.
+        Basic goals to meet heating demand and minimize use of sources.
 
         Returns
         -------
@@ -101,8 +101,8 @@ class HeatBufferNoHistory(HeatBuffer):
 
 class HeatBufferHistory(HeatBuffer):
     """
-    Problem in which we force a certain amount of artificial heat from the buffer to check correct
-    optimization logic functioning.
+    Problem in which we force a certain amount of artificial heat to be stored at t0 at the buffer
+    to check correct optimization logic functioning.
     """
 
     def history(self, ensemble_member: int):

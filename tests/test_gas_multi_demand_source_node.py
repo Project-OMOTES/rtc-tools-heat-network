@@ -9,8 +9,10 @@ from rtctools.util import run_optimization_problem
 
 class TestMILPGasMultiDemandSourceNode(TestCase):
     def test_multi_demand_source_node(self):
-        """Test for case with 2 demands, 2 sources and a node. Verify that head is equal for all
-        ports at a node. And throughout the network the flow (mass) balance is maintained
+        """
+        Test a network consisting out of 2 demands, 2 sources and a node. Verify that the head is
+        equal for all ports at a node, and throughout the network that the flow (mass) balance is
+        maintained.
 
         Checks:
         - Head is equal for all ports on the node

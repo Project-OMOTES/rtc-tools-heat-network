@@ -37,7 +37,7 @@ class TargetDemandGoal(Goal):
 class _GoalsAndOptions:
     def path_goals(self):
         """
-        We add a goal to meet specified gas consumption.
+        Add a goal to meet specified gas consumption.
 
         Returns
         -------
@@ -68,7 +68,7 @@ class GasProblem(
 
     def times(self, variable=None) -> np.ndarray:
         """
-        We shorten the horizon here to have a faster test.
+        Shorten the horizon here to have a faster test.
 
         Parameters
         ----------

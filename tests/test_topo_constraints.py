@@ -193,7 +193,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_pipe_class_vars(self, pipe: str) -> Dict[str, np.ndarray]:
         """
-        This function allows to give the pipe class results.
+        This function returns the pipe class results.
 
         Parameters
         ----------
@@ -220,7 +220,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]) -> PipeClass:
         """
-        To retrieve the selected pipe class optimization result for a pipe.
+        This function retrieves the selected pipe class optimization result for a pipe.
 
         Parameters
         ----------
@@ -244,7 +244,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
         """
-        To compute the expected heat loss for a pipe class.
+        This function computes the expected heat loss for a pipe class.
 
         Parameters
         ----------
@@ -253,7 +253,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
         Returns
         -------
-        The value for the heat loss for that pipe.
+        Pipe heat loss value.
         """
         return self.problem._pipe_heat_loss(
             options=self.problem.heat_network_options(),

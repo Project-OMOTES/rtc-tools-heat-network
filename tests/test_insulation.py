@@ -41,7 +41,7 @@ class TestInsulation(TestCase):
     # test1
     def test_insulation_heatdemand(self):
         """
-        Test to check that the best insulation class is selected when we optimize for minimal
+        Check that the best insulation class is selected when we optimize for minimal
         heat production.
 
         Checks:

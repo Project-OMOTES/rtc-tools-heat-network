@@ -12,7 +12,7 @@ class TestPipeDiameterSizingExample(TestCase):
         """
         This test is to check if the optimization behaves as expected under pipe class optimization.
         The test uses a symmetrical network with three demands in the middle that can be provided
-        from a source both left and right. The optimal solution is that the the optimizer only uses
+        from a source both left and right. The optimal solution is that the optimizer only uses
         one source.
 
         Checks:

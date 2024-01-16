@@ -9,11 +9,11 @@ from rtctools.util import run_optimization_problem
 class TestESDL(TestCase):
     def test_basic_source_and_demand_heat(self):
         """
-        Test to check whether a hardcoded pycml model gives equivalent results compared to an esdl
-        specified model. Model used a source, pipe demand model.
+        Check whether a hardcoded pycml model gives equivalent results compared to an esdl
+        specified model. The model consists out of a source, pipe and demand
 
         Checks:
-        - heat demand is equal
+        - that the heat demand is equal.
 
         """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison

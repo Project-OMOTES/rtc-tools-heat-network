@@ -11,7 +11,7 @@ from rtctools_heat_network.head_loss_mixin import HeadLossOption
 class TestHeadLossCalculation(TestCase):
     def test_scalar_return_type(self):
         """
-        This is a unit test to check whether the _hn_pipe_head_loss() method of head loss mixin
+        Check whether the _hn_pipe_head_loss() method of head loss mixin
         behaves like expected. Meaning that it is checked whether it returns the expected types
         given the variations of input types, namely float and numpy array.
 
@@ -61,7 +61,7 @@ class TestHeadLossCalculation(TestCase):
 class TestHeadLossOptions(TestCase):
     def test_no_head_loss_mixing_options(self):
         """
-        This test is to check whether the optimization fails as expected when conflicting
+        This test is to check whether the optimization fails as expected when a conflicting
         configuration is provided for head loss options. This is achieved by overriding the
         _hn_get_pipe_head_loss_option() method.
 

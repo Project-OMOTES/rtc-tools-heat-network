@@ -37,7 +37,7 @@ class TargetDemandGoal(Goal):
 class _GoalsAndOptions:
     def path_goals(self):
         """
-        Add Goal to meet the specified power demands in the electricity network.
+        Add goals to meet the specified power demands in the electricity network.
 
         Returns
         -------

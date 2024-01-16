@@ -14,10 +14,10 @@ class TestHeat(TestCase):
         This is a test to check whether the network (pipes) are dissipating heat as we expect.
 
         Checks:
-        - Check that the produced heat is strictly higher that the consumed heat
+        - Check that the produced heat is strictly higher than the consumed heat
 
         Missing:
-        - The model used seems weird with a paraalell pipe, this test should be done with the simple
+        - The model used seems weird with a parallel pipe, this test should be done with the simple
         source, pipe, demand and with an esdl model.
         - We should check for energy conservation in the network
 
@@ -39,7 +39,7 @@ class TestHeat(TestCase):
 
     def test_zero_heat_loss(self):
         """
-        This test is to check whehter the optimziation function when the zero heat Loss is used.
+        Check the optimiziation function when the zero heat loss is used.
 
         Checks:
         - ....
@@ -116,8 +116,8 @@ class TestMinMaxPressureOptions(TestCase):
 
     def test_min_max_pressure_options(self):
         """
-        This test is to check if the min and max pressure options are correctly enforced on the
-        optimization. This is achieved by creating an problem where the pressure drop needed
+        Check if the min and max pressure options are correctly enforced on the
+        optimization. This is achieved by creating a problem where the pressure drop needed
         to match demands is infeasible under the desired pressured range.
 
         Checks:
@@ -220,11 +220,11 @@ class TestDisconnectablePipe(TestCase):
 
     def test_disconnected_network_pipe(self):
         """
-        This test checks whether the is_disconnected variable behaves like expected. We want the
-        variable to be True=1 when the flow through the pipe is zero. We do this by running to
-        problems, one where the flow is forced to zero and we expect the optimization to make the
-        pipe disconnected, and one where we expect it to stay connected to match demand although the
-        pipe is allowed to be disconnected.
+        Check whether the is_disconnected variable behaves as expected. This variable should be
+        True=1 when the flow through the pipe is zero. This is done by running two problems, one
+        where the flow is forced to zero and it is expected that the optimization should make the
+        pipe disconnected, and one where it is expected for the pipe to stay connected to match
+        demand although the pipe is allowed to be disconnected.
 
         Checks:
         - Sanity check that min velocity is >0
@@ -269,7 +269,7 @@ class TestDisconnectablePipe(TestCase):
         pipes works with LINEAR as well as LINEARIZED_DW.
 
         Checks:
-        - That flow is equal between both
+        - That the flow is equal for both types of head loss constraint settings
 
         Missing:
         - Check that is_disconnected is set correctly.

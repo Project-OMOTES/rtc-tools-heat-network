@@ -11,11 +11,11 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestHEX(TestCase):
     def test_heat_exchanger(self):
         """
-        This test checks the modelling of the Heat exchanger component. The heat exchanger allows
-        to hydraulically decoupled networks to exchange heat with each other. We enforce that heat
-        can only flow from primary side to the secondary side, and we allow heat exchangers to be
-        disabled for timesteps in which they are not used. This is to allow for the temperature
-        constraints (T_primary > T_secondary) to beccome deactivated.
+        Check the modelling of the heat exchanger component which allows two hydraulically
+        decoupled networks to exchange heat with each other. It is enforced that heat can only flow
+        from the primary side to the secondary side, and heat exchangers are allowed to be disabled
+        for timesteps in which they are not used. This is to allow for the temperature constraints
+        (T_primary > T_secondary) to become deactivated.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
@@ -63,8 +63,7 @@ class TestHEX(TestCase):
 class TestHP(TestCase):
     def test_heat_pump(self):
         """
-        This test is to check the modelling of the heat pump component. We model the heatpump with
-        a constant COP and with conservation of energy.
+        Check the modelling of the heat pump component which has a constant COP with no energy loss.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation

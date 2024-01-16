@@ -14,7 +14,7 @@ from rtctools.util import run_optimization_problem
 class TestMILPElectricSourceSink(TestCase):
     def test_source_sink(self):
         """
-        Tests for the MILP test case of a source, a cable, a sink.
+        Tests for an electricity network that consist out of a source, a cable and a sink.
 
         Checks:
         - Check that the caps set in the esdl work as intended
@@ -67,7 +67,7 @@ class TestMILPElectricSourceSink(TestCase):
 
     def test_source_sink_max_curr(self):
         """
-        Test to check bounds on the current.
+        Check bounds on the current.
 
         Checks:
         - Check that the caps set in the esdl work as intended

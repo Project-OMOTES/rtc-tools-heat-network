@@ -114,7 +114,7 @@ class HeatProblem(
 
     def solver_options(self):
         """
-        Setting the option to catch the jacabian to speed up the transcribing.
+        Setting the option to catch the Jacobian to speed up the transcribing.
 
         Returns
         -------
@@ -126,7 +126,7 @@ class HeatProblem(
 
     def constraints(self, ensemble_member: int):
         """
-        We add a constraint for cyclic behaviour of the ATES.
+        We add constraints for cyclic behaviour of the ATES.
 
         Parameters
         ----------
@@ -194,12 +194,12 @@ class HeatProblem(
 class HeatProblemPlacingOverTime(HeatProblem):
     """
     This problem is defined to test the asset_is_realized variable with constraints. This is
-    achieved by having a limit on the investment speed that can be achieved.
+    achieved by having an upper limit on the investment per time-step.
     """
 
     def heat_network_options(self):
         """
-        In this problem we are optimizing the placement of assets over time hence we set the
+        In this problem we are optimizing when the assets are realized over time, hence we set the
         inclusion of asset_is_realized variables and constraints to true.
 
         Returns
@@ -235,9 +235,9 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
     def constraints(self, ensemble_member):
         """
-        Here we add a constraints to limit the investing speed that one can have. This is to avoid
-        that infinite investments can be done immediately and hence avoid that all assets can be
-        realized at t=0.
+        Here we add constraints to limit the investment that one can have per timestep. This is to
+        prevent that infinite investments can be done immediately and hence avoid that all assets
+        can be realized at t=0.
 
         Parameters
         ----------

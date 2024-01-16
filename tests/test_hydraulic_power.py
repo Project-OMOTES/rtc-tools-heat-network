@@ -13,7 +13,7 @@ from rtctools_heat_network.head_loss_mixin import HeadLossOption
 class TestHydraulicPower(TestCase):
     def test_hydraulic_power(self):
         """
-        This test is to check the workings for the hydraulic power variable.
+        Check the workings for the hydraulic power variable.
 
         Scenario 1. LINEARIZED_DW (1 line segment)
         Scenario 2. LINEAR

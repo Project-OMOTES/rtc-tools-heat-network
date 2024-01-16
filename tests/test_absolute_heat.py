@@ -10,7 +10,8 @@ class TestAbsoluteHeat(TestCase):
     def test_absolute_heat(self):
         """
         This is a single line ring model, meaning that there are no dedicated supply or return
-        lines. This means that this model pipes are not related.
+        lines. This means that this model pipes are not related (no relation between hot and cold
+        pipes exists).
 
         Checks:
         1. demand is matched

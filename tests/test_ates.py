@@ -11,14 +11,14 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestAtes(TestCase):
     def test_ates(self):
         """
-        This test checks the constraints concerning the heat to discharge and energy conservation
-        for the ates. THe heat loss model used annd the typical cyclic constraint that will be
-        applied in most use cases.
+        Checks the constraints concerning the heat to discharge and energy conservation
+        for the ates. The heat loss model used are tested and the typical cyclic constraint that
+        will be applied in most use cases.
 
         Checks:
-        - The heat loss is computed as expected (loss coef * stored heat [J])
-        - Checks that the efficiency causes less energy to be discharged than charged
-        - Cyclic storage behaviour
+        - the heat loss is computed as expected (loss coef * stored heat [J])
+        - checks that the efficiency causes less energy discharged than charged
+        - cyclic storage behaviour
         - standard energy conservation, etc.
 
         Missing checks:

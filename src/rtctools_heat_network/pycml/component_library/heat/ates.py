@@ -16,6 +16,11 @@ class ATES(HeatTwoPort, BaseAsset):
     Like all storage assets we enforce that they must be connected as a demand. The heat to
     discharge constraints are set in the HeatMixin, where we use a big_m formulation to enforce the
     correct constraints depending on whether the ates is charging or discharging.
+
+    Please note that:
+    The user is responsible to implement the cyclic behaviour in their workflow constraints.
+    Meaning that the heat stored at the 1st and last time step should be equal. Furthermore, due
+    to the implicit solving note that the energy out of the ATES should be 0 for the 1st time step.
     """
 
     def __init__(self, name, **modifiers):

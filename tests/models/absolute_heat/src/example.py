@@ -90,7 +90,8 @@ class MinimizeSourcesHeatGoal(Goal):
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
     ) -> ca.MX:
         """
-        This function returns the state to which should to be matched.
+        This function returns the state variable to which should to be matched to the target
+        specified in the __init__.
 
         Parameters
         ----------
@@ -139,7 +140,7 @@ class HeatProblem(
     """
     This problem class is for the absolute heat tests. Meaning that this problem class
     is applied to an esdl where there is no dedicated supply or return line. For this test case
-    we just match demand (_GoalsAndOptions) and minimize the energy production to have a
+    we just match heating demand (_GoalsAndOptions) and minimize the energy production to have a
     representative result.
     """
 
