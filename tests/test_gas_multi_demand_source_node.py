@@ -28,8 +28,7 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         # Test if head is going down
         np.testing.assert_allclose(
-            results["GasDemand_47d0.Gas_demand_mass_flow"]
-            + results["GasDemand_7978.Gas_demand_mass_flow"],
-            results["GasProducer_3573.Gas_source_mass_flow"]
-            + results["GasProducer_a977.Gas_source_mass_flow"],
+            results["GasDemand_47d0.Gas_demand_flow"] + results["GasDemand_7978.Gas_demand_flow"],
+            results["GasProducer_3573.Gas_source_flow"]
+            + results["GasProducer_a977.Gas_source_flow"],
         )

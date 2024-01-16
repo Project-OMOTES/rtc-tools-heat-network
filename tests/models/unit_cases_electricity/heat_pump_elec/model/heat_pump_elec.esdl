@@ -6,7 +6,7 @@
       <carrier xsi:type="esdl:HeatCommodity" id="72126c73-87e9-4bf6-99cf-d02a6c07010c" name="heat2" supplyTemperature="90.0"/>
       <carrier xsi:type="esdl:HeatCommodity" returnTemperature="40.0" id="d336e381-ca6f-442e-985e-9f4c2bec1efe_ret" name="heat1_ret"/>
       <carrier xsi:type="esdl:HeatCommodity" returnTemperature="50.0" id="72126c73-87e9-4bf6-99cf-d02a6c07010c_ret" name="heat2_ret"/>
-      <carrier xsi:type="esdl:ElectricityCommodity" voltage="10000.0" id="3f149631-f5b5-48b4-934c-bb0faf3711b1" name="Electr"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" voltage="230.0" id="3f149631-f5b5-48b4-934c-bb0faf3711b1" name="Electr"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" name="MultipleCarrierTest" id="82399ebf-5e52-465d-830a-b502d6c1012b">
@@ -297,7 +297,7 @@
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.08654042953765" lon="4.385293722152711"/>
         <port xsi:type="esdl:OutPort" id="7f499c86-9c84-409b-8cff-68180b0e55b5" connectedTo="a7c8326f-36a3-4040-a37c-406685e438be" carrier="3f149631-f5b5-48b4-934c-bb0faf3711b1" name="Out"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" name="ElectricityCable_9d3b" id="9d3befbb-16a9-416c-8ffc-215b4aab7f40" length="146.6" capacity="1420000">
+      <asset xsi:type="esdl:ElectricityCable" name="ElectricityCable_9d3b" id="9d3befbb-16a9-416c-8ffc-215b4aab7f40" length="146.6">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="52.08654042953765" lon="4.385293722152711"/>
           <point xsi:type="esdl:Point" lat="52.08654740560273" lon="4.387439489364625"/>

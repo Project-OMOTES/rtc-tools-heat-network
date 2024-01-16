@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="12" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" version="10" id="c7ad2e58-111f-4e42-9e86-15516d1f5b29" description="" esdlVersion="v2303" name="h2">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="268b080c-6ee2-4498-9e7e-2c0105376c39">
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="89100761-b52c-4cc9-b8aa-f72e76c789db">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" unit="WATT" physicalQuantity="POWER" description="Power in W"/>
     </quantityAndUnits>
     <carriers xsi:type="esdl:Carriers" id="3ef72f2f-98da-4818-a63b-ac13b04c897c">
       <carrier xsi:type="esdl:ElectricityCommodity" voltage="50000.0" name="elec" id="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d">
-        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="electricity_price" measurement="ElectricityDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65187">
+        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-15T12:00:00.000000+0000" field="electricity_price" measurement="ElectricityDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65187">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="c78634b5-3876-4b8d-8ee8-d145b37b8215" unit="EURO" description="Cost in EUR/Wh" physicalQuantity="COST"/>
         </cost>
       </carrier>
       <carrier xsi:type="esdl:GasCommodity" name="gas" pressure="15.0" id="68904785-3ba5-4894-8751-78d5883dc372">
-        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="gas_price" measurement="GasDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65186">
+        <cost xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-15T12:00:00.000000+0000" field="gas_price" measurement="GasDemand2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65186">
           <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="CUBIC_METRE" id="ede3b53e-7d9f-45f6-9c69-9d8ef3647561" unit="EURO" description="Cost in EUR/m3" physicalQuantity="COST"/>
         </cost>
       </carrier>
@@ -27,8 +27,11 @@
           <investmentCosts xsi:type="esdl:SingleValue" id="5ee09361-d48b-4775-b5b1-182be6373d97" value="2000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="abbe4b85-715a-4715-a81c-4b8dc53dbeac" unit="EURO" description="Cost in EUR/kW" perMultiplier="KILO" physicalQuantity="COST"/>
           </investmentCosts>
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="336d392b-dae9-4073-859d-bbb818de1537" value="0.015">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="65892160-442b-4615-a675-ec1b53f984e1" unit="EURO" description="Cost in EUR/W/yr" physicalQuantity="COST" perTimeUnit="YEAR"/>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="77d091eb-265c-423c-98eb-c64d47bb8b4e" value="0.05">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="a91f0cc1-4253-4638-a458-8fc6288b32ef" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
+          </variableOperationalCosts>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="336d392b-dae9-4073-859d-bbb818de1537" value="15.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="65892160-442b-4615-a675-ec1b53f984e1" unit="EURO" description="Cost in EUR/kW/yr" perMultiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
           </fixedOperationalCosts>
         </costInformation>
       </asset>
@@ -36,27 +39,26 @@
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="ce57d55a-9b99-4ea4-b717-0a5ae1297966" id="207d34d5-a289-40b9-b94a-0c584aaa8753"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.91532019913456" lon="4.7289276123046875"/>
         <costInformation xsi:type="esdl:CostInformation" id="6f57c644-a1de-4c79-a707-76a6741c02b9">
-          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="0.005">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6ae2e528-2275-47b0-81a9-97517e478150" unit="EURO" description="Cost in EUR/kg/yr" multiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
-          </fixedOperationalCosts>
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6d5fb87d-f399-4813-9d20-061ec28572d7" value="0.000052">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f6578a3-6a81-41ea-9b71-3ad3db909f4a" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
+          <investmentCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="5.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6ae2e528-2275-47b0-81a9-97517e478150" unit="EURO" description="Cost in EUR/kg/yr" perMultiplier="KILO" physicalQuantity="COST" perTimeUnit="YEAR"/>
+          </investmentCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6d5fb87d-f399-4813-9d20-061ec28572d7" value="0.052">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f6578a3-6a81-41ea-9b71-3ad3db909f4a" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
           </variableOperationalCosts>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:ElectricityDemand" id="9d15a76b-cfc3-4abf-a166-6edc19b1264e" power="1000000000.0" name="ElectricityDemand_9d15">
         <port xsi:type="esdl:InPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="In" connectedTo="487db503-69b4-4604-9896-563634352699" id="8ed762e6-b62d-4dd0-b84d-d3759af40b3d"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.92463517826793" lon="4.727210998535157"/>
-        <costInformation xsi:type="esdl:CostInformation" id="20f9151a-b94c-4024-ba62-8339425be4c4"/>
+        <costInformation xsi:type="esdl:CostInformation" id="20f9151a-b94c-4024-ba62-8339425be4c4">
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="13ea3a5c-f2d1-4dc3-8314-a37a1a46fddd" value="0.15">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="6f529abf-9d1a-452b-8b97-08099b4fa4ba" unit="EURO" description="Cost in EUR/kg" perMultiplier="KILO" physicalQuantity="COST"/>
+          </fixedOperationalCosts>
+        </costInformation>
       </asset>
       <asset xsi:type="esdl:GasDemand" id="0cf3a097-01ea-4fea-a6af-f141a6885445" power="1000000000.0" name="GasDemand_0cf3">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="a75218ac-9a5b-4ee4-b0ad-ae1262329442" id="119be8fa-50a9-463b-ba1e-6b97cea86f0e"/>
         <geometry xsi:type="esdl:Point" lat="52.9214269116914" lon="4.734935760498048"/>
-        <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.00016">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="GRAM" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" unit="EURO" description="Cost in EUR/kg" multiplier="KILO" physicalQuantity="COST"/>
-          </variableOperationalCosts>
-        </costInformation>
       </asset>
       <asset xsi:type="esdl:Joint" id="c15601d5-a9ce-41b4-84eb-1a7658d65c72" name="Joint_c156">
         <port xsi:type="esdl:InPort" carrier="68904785-3ba5-4894-8751-78d5883dc372" name="In" connectedTo="8e1dbe29-588b-41e0-8fd5-c76bff01b1b0" id="f1e5ab4c-7d5f-4a8d-9bd9-e5131b34dd7d"/>
@@ -70,7 +72,7 @@
       </asset>
       <asset xsi:type="esdl:WindPark" id="7f140121-76d6-4abe-aa6f-4c611664280a" power="1000000000.0" name="WindPark_7f14" surfaceArea="69301306">
         <port xsi:type="esdl:OutPort" carrier="d7bfb1ae-b0ea-4d66-98a2-b7cf2b0f094d" name="Out" id="40593cd4-e512-4ec4-b702-47f1cc7d1836" connectedTo="2e47d054-4ea8-4ca0-a5a2-0cb60d8dd338">
-          <profile xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-28T00:00:00.000000+0000" field="maximum_production" measurement="Windpark2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65188">
+          <profile xsi:type="esdl:InfluxDBProfile" startDate="2030-01-01T01:00:00.000000+0000" filters="" host="omotes-poc-test.hesi.energy" port="8086" endDate="2030-02-15T12:00:00.000000+0000" field="maximum_production" measurement="Windpark2030" database="multicommodity_test" id="84f3ea22-7325-4d9d-a124-6012e3f65188">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>

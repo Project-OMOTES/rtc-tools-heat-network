@@ -43,12 +43,6 @@ class _GoalsAndOptions:
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
-        options["include_electric_cable_power_loss"] = True
-
-        return options
-
 
 class ElectricityProblem(
     _GoalsAndOptions,
@@ -71,18 +65,16 @@ class ElectricityProblemMaxCurr(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def read(self):
-        super().read()
-
-        for d in self.heat_network_components["electricity_demand"]:
-            new_timeseries = self.get_timeseries(f"{d}.target_electricity_demand").values * 50
-            self.set_timeseries(f"{d}.target_electricity_demand", new_timeseries)
-
     def path_goals(self):
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
             target = self.get_timeseries(f"{demand}.target_electricity_demand")
+            i = 0
+            for value in target.values:
+                target.values[i] = value * 50
+                i += 1
+
             state = f"{demand}.Electricity_demand"
 
             goals.append(TargetDemandGoal(state, target))

@@ -37,7 +37,7 @@ class _GoalsAndOptions:
 
         for demand in self.heat_network_components["gas_demand"]:
             target = self.get_timeseries(f"{demand}.target_gas_demand")
-            state = f"{demand}.Gas_demand_mass_flow"
+            state = f"{demand}.Gas_demand_flow"
 
             goals.append(TargetDemandGoal(state, target))
 

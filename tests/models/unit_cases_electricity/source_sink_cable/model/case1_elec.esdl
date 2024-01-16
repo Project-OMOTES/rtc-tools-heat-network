@@ -15,7 +15,7 @@
         <geometry xsi:type="esdl:Point" lat="51.96619321496721" CRS="WGS84" lon="4.421074390411378"/>
         <port xsi:type="esdl:InPort" name="In" id="3f5a40fd-1a3e-4bd0-a0da-7bca9f891328" connectedTo="d0d25328-6989-4933-ba30-7f9e1b47b8a0" carrier="a04bdbac-5198-477b-9989-d99c3c001eaf"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" length="245.5" name="ElectricityCable_238f" id="238feeba-231f-49b6-b5fc-ae3bfee9e6a5" capacity="32660">
+      <asset xsi:type="esdl:ElectricityCable" length="245.5" name="ElectricityCable_238f" id="238feeba-231f-49b6-b5fc-ae3bfee9e6a5">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lat="51.96477860380529" lon="4.417126178741456"/>
           <point xsi:type="esdl:Point" lat="51.965849481781945" lon="4.4202589988708505"/>
