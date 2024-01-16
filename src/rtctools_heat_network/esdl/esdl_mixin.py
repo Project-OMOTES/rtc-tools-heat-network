@@ -452,16 +452,20 @@ class ESDLMixin(
                         commodity = "electricity"
                     elif isinstance(ports[0].carrier, esdl.GasCommodity):
                         commodity = "gas"
-                    if (asset.asset_type == "HeatingDemand" or
-                        asset.asset_type == "GenericConsumer" or
-                        asset.asset_type == "ElectricityDemand" or
-                        asset.asset_type == "GasDemand"):
+                    if (
+                        asset.asset_type == "HeatingDemand"
+                        or asset.asset_type == "GenericConsumer"
+                        or asset.asset_type == "ElectricityDemand"
+                        or asset.asset_type == "GasDemand"
+                    ):
                         variable = f"{asset_name}.target_{commodity}_demand"
-                    elif (asset.asset_type == "GenericProcuder" or
-                        asset.asset_type == "HeatProducer" or
-                        asset.asset_type == "GasProducer" or
-                        asset.asset_type == "WindPark" or
-                        asset.asset_type == "ElectricityProducer"):
+                    elif (
+                        asset.asset_type == "GenericProcuder"
+                        or asset.asset_type == "HeatProducer"
+                        or asset.asset_type == "GasProducer"
+                        or asset.asset_type == "WindPark"
+                        or asset.asset_type == "ElectricityProducer"
+                    ):
                         variable = f"{asset_name}.maximum_production"
                     else:
                         logger.error(f"profile on {asset_name} not allowed")
@@ -620,9 +624,7 @@ class ESDLMixin(
                 except KeyError:
                     pass
                 try:
-                    values = csv_data[
-                        f"{demand.replace(' ', '')}.electricity_price"
-                    ].to_numpy()
+                    values = csv_data[f"{demand.replace(' ', '')}.electricity_price"].to_numpy()
                     self.io.set_timeseries(
                         demand + ".electricity_price",
                         timeseries_import_times,
@@ -633,9 +635,7 @@ class ESDLMixin(
                     pass
             for source in self.heat_network_components.get("electricity_source", []):
                 try:
-                    values = csv_data[
-                        f"{source.replace(' ', '')}.maximum_production"
-                    ].to_numpy()
+                    values = csv_data[f"{source.replace(' ', '')}.maximum_production"].to_numpy()
                     self.io.set_timeseries(
                         source + ".maximum_production",
                         timeseries_import_times,
@@ -668,9 +668,7 @@ class ESDLMixin(
                 except KeyError:
                     pass
                 try:
-                    values = csv_data[
-                        f"{demand.replace(' ', '')}.gas_price"
-                    ].to_numpy()
+                    values = csv_data[f"{demand.replace(' ', '')}.gas_price"].to_numpy()
                     self.io.set_timeseries(
                         demand + ".gas_price",
                         timeseries_import_times,

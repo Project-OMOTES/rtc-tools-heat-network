@@ -123,21 +123,15 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
                 unit = profile.profileQuantityAndUnit.reference.physicalQuantity
             except AttributeError:
                 unit = profile.profileQuantityAndUnit.physicalQuantity
-            if (
-                unit == esdl.PhysicalQuantityEnum.POWER
-            ):
+            if unit == esdl.PhysicalQuantityEnum.POWER:
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, POWER_IN_W
                 )
-            elif (
-                unit == esdl.PhysicalQuantityEnum.ENERGY
-            ):
+            elif unit == esdl.PhysicalQuantityEnum.ENERGY:
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, ENERGY_IN_J
                 )
-            elif (
-                unit == esdl.PhysicalQuantityEnum.COST
-            ):
+            elif unit == esdl.PhysicalQuantityEnum.COST:
                 # we assume no unit change for now
                 pass
             else:
