@@ -19,6 +19,14 @@ class TechnoEconomicMixin(
     BaseComponentTypeMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This class combines the different Mixin classes needed to do a full techno-economic
+    optimization. This class is created so that the different Mixin are fully modular and users
+    of the code base are able to replace a specific Mixin with their own implementation without
+    needing a full refactoring of the code.
+
+    """
+
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
@@ -138,7 +146,7 @@ class TechnoEconomicMixin(
 
     def solver_options(self):
         """
-        Here we define the solver options. By default we use the open-source solver cbc and casadi
+        Here we define the solver options. By default we use the open-source solver highs and casadi
         solver qpsol.
         """
         options = super().solver_options()

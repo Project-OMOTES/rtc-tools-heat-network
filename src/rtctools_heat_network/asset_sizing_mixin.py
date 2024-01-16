@@ -24,7 +24,7 @@ logger = logging.getLogger("rtctools_heat_network")
 
 class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
-    This class is used to place anc size assets in the energy system. We assume that the maps for
+    This class is used to place and size assets in the energy system. We assume that the maps for
     the asset sizing are already instantiated in the respective PhysicsMixin (see also docstring
     PhysicsMixin).
     """

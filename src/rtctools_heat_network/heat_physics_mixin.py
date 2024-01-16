@@ -28,6 +28,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         HeadLossOption.LINEAR,
         HeadLossOption.LINEARIZED_DW,
     }
+    """
+    This class is used to model the physics of a heat district network with its assets. We model
+    the different components with variety of linearization strategies.
+    """
 
     def __init__(self, *args, **kwargs):
         """

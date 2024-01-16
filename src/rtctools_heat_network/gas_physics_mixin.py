@@ -19,6 +19,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         HeadLossOption.LINEAR,
         HeadLossOption.LINEARIZED_DW,
     }
+    """
+    This class is used to model the physics of a gas network with its assets. We model
+    the different components with variety of linearization strategies.
+    """
 
     def __init__(self, *args, **kwargs):
         """

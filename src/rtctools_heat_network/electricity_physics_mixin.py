@@ -18,6 +18,11 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
+    """
+    This class is used to model the physics of an electricity network with its assets. We model
+    the different components with variety of linearization strategies.
+    """
+
     def __init__(self, *args, **kwargs):
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
