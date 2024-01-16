@@ -3,7 +3,6 @@ import sys
 from datetime import timedelta as td
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
@@ -48,22 +47,12 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             username = None
             password = None
 
-        conn_settings = ConnectionSettings(
-            host=profile_host,
-            port=profile.port,
-            username=username,
-            password=password,
-            database=profile.database,
-            ssl=ssl_setting,
-            verify_ssl=ssl_setting,
-        )
-        time_series_data = InfluxDBProfileManager(conn_settings)
-
-        time_series_data.load_influxdb(
-            '"' + profile.measurement + '"',
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
+        time_series_data = InfluxDBProfileManager.create_esdl_influxdb_profile_manager(
+            profile,
+            username,
+            password,
+            ssl_setting,
+            ssl_setting,
         )
 
         # Error check start and end dates of profiles
