@@ -699,7 +699,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for asset_name in self.heat_network_components.get("source", []):
             ub = bounds[f"{asset_name}.Heat_source"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("gas_demand", []):
@@ -750,12 +750,12 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
 
         for asset_name in self.heat_network_components.get("ates", []):
             ub = bounds[f"{asset_name}.Heat_ates"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("buffer", []):
             ub = bounds[f"{asset_name}.Stored_heat"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(
                 name=asset_name,
                 lb=lb,
@@ -769,7 +769,7 @@ class HeatMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOpti
             *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             ub = bounds[f"{asset_name}.Secondary_heat"][1]
-            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(
                 name=asset_name,
                 lb=lb,
