@@ -893,6 +893,15 @@ class ScenarioOutput(HeatMixin):
                 ssl=self.influxdb_ssl,
                 verify_ssl=self.influxdb_verify_ssl,
             )
+            # influxdb_conn_settings = ConnectionSettings(
+            #     host="omotes-poc-test.hesi.energy",  #self.influxdb_host,
+            #     port=8086,  # self.influxdb_port,
+            #     username="write-user",  #self.influxdb_username,
+            #     password="nwn_write_test",  #self.influxdb_password,
+            #     database="test_kvr",  # input_energy_system_id,
+            #     ssl=self.influxdb_ssl,
+            #     verify_ssl=self.influxdb_verify_ssl,
+            # )
 
             for asset_name in [
                 *self.heat_network_components.get("source", []),

@@ -22,7 +22,13 @@ class ElectricitySource(ElectricityComponent, BaseAsset):
 
         self.price = nan
 
-        self.add_variable(ElectricityPort, "ElectricityOut")
-        self.add_variable(Variable, "Electricity_source", min=0.0)
+        self.power_nominal = nan
 
-        self.add_equation((self.ElectricityOut.Power - self.Electricity_source))
+        self.add_variable(ElectricityPort, "ElectricityOut")  # [W]
+        self.add_variable(
+            Variable, "Electricity_source", min=0.0, nominal=self.power_nominal
+        )  # [W]
+
+        self.add_equation(
+            ((self.ElectricityOut.Power - self.Electricity_source) / self.power_nominal)
+        )
