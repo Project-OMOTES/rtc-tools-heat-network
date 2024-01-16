@@ -53,7 +53,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
                 self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
 
-
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
@@ -152,7 +151,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             lb = Timeseries(t, np.zeros(len(self.times())))
             ub = self.get_timeseries(f"{wp}.maximum_production")
             self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
-
 
     def __wind_park_set_point_constraints(self, ensemble_member):
         """
@@ -419,7 +417,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
 
         return constraints
@@ -432,6 +429,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         are indexed within the constraint formulation.
         """
         constraints = super().constraints(ensemble_member)
+
+        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
 
         return constraints
 

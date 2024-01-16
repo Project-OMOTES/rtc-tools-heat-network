@@ -488,7 +488,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("electricity_source", []):
-            ub = bounds[f"{asset_name}.Electricity_source"][1]
+            ub = (
+                bounds[f"{asset_name}.Electricity_source"][1]
+                if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
+                else np.max(bounds[f"{asset_name}.Electricity_source"][1].values)
+            )
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
@@ -1216,9 +1220,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
 
         return constraints
-
-    # def get_pipe_class_var(self, p):
-    #     return self.__pipe_topo_pipe_class_var[p]
 
     def constraints(self, ensemble_member):
         """

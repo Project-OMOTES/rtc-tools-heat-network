@@ -591,6 +591,27 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         for _ in self.heat_network_components.get("buffer", []):
             pass
 
+        for demand in self.heat_network_components.get("gas_demand", []):
+            gas_mass_flow = self.__state_vector_scaled(
+                f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+            )
+
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[demand]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{demand}.variable_operational_cost_coefficient"
+            ]
+
+            sum = 0.0
+            timesteps = np.diff(self.times()) / 3600.0
+            for i in range(1, len(self.times())):
+                sum += variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps[i - 1]
+
+            constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
         #  then ates varopex also needs to be added to the mnimize_tco_goal
