@@ -20,7 +20,7 @@
         <port xsi:type="esdl:InPort" carrier="48c94e57-26f7-4926-bf77-95437cebd000" name="In" id="2404d6a4-c7a1-433a-b0f9-ba3845ae706b" connectedTo="589a97da-a84f-4614-819d-ab123d66f5f1"/>
         <port xsi:type="esdl:OutPort" carrier="48c94e57-26f7-4926-bf77-95437cebd000" connectedTo="a2d49319-d387-49e3-aa58-2d159314e7d8" name="Out" id="9f455f7a-d82d-4c50-9120-9442ef4af39b"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="1ad063bc-0e08-4570-8c1e-839bc6f591e3" length="235.1" name="ElectricityCable_1ad0">
+      <asset xsi:type="esdl:ElectricityCable" id="1ad063bc-0e08-4570-8c1e-839bc6f591e3" length="235.1" name="ElectricityCable_1ad0" capacity="32660">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="5.119628906250001" lat="52.08610776589893"/>
           <point xsi:type="esdl:Point" lon="5.122611522674561" lat="52.085052958279135"/>
@@ -28,7 +28,7 @@
         <port xsi:type="esdl:InPort" carrier="48c94e57-26f7-4926-bf77-95437cebd000" name="In" id="a9f61f0f-960b-432d-a880-a56acd2f013e" connectedTo="3c904675-33f6-4d01-8ab0-427f25cb8eb8"/>
         <port xsi:type="esdl:OutPort" carrier="48c94e57-26f7-4926-bf77-95437cebd000" connectedTo="2404d6a4-c7a1-433a-b0f9-ba3845ae706b" name="Out" id="589a97da-a84f-4614-819d-ab123d66f5f1"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityCable" id="de9a9562-dbca-462c-95a1-4e03cb6fabc2" length="232.8" name="ElectricityCable_de9a">
+      <asset xsi:type="esdl:ElectricityCable" id="de9a9562-dbca-462c-95a1-4e03cb6fabc2" length="232.8" name="ElectricityCable_de9a" capacity="32660">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="5.122611522674561" lat="52.085052958279135"/>
           <point xsi:type="esdl:Point" lon="5.1258301734924325" lat="52.084367319956606"/>

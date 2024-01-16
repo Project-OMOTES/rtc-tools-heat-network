@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from .electricity_base import ElectricityPort
@@ -18,6 +20,8 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
 
         self.component_type = "electricity_node"
 
+        self.voltage_nominal = nan
+
         self.n = 2
         assert self.n >= 2
 
@@ -25,7 +29,7 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
         self.add_variable(Variable, "V", min=0.0)
 
         for i in range(1, self.n + 1):
-            self.add_equation(self.ElectricityConn[i].V - self.V)
+            self.add_equation((self.ElectricityConn[i].V - self.V) / self.voltage_nominal)
 
         # Because the orientation of the connected cables are important to setup the energy
         # conservation, these constraints are added in the mixin.

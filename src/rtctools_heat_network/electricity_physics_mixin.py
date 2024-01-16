@@ -1,4 +1,7 @@
 import logging
+from typing import Tuple
+
+import casadi as ca
 
 import numpy as np
 
@@ -22,6 +25,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         super().__init__(*args, **kwargs)
 
+        # Variable for when in time an asset switched on due to meeting a requirement
+        self.__asset_is_switched_on_map = {}
+        self.__asset_is_switched_on_var = {}
+        self.__asset_is_switched_on_bounds = {}
+
+        self.__windpark_upper_bounds = {}
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -30,12 +40,29 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         super().pre()
 
+        options = self.heat_network_options()
+
+        self.__update_windpark_upper_bounds()
+
+        if options["include_asset_is_switched_on"]:
+            for asset in [
+                *self.heat_network_components.get("electrolyzer", []),
+            ]:
+                var_name = f"{asset}__asset_is_switched_on"
+                self.__asset_is_switched_on_map[asset] = var_name
+                self.__asset_is_switched_on_var[var_name] = ca.MX.sym(var_name)
+                self.__asset_is_switched_on_bounds[var_name] = (0.0, 1.0)
+
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
         """
 
         options = {}
+
+        options["include_asset_is_switched_on"] = False
+        options["include_electric_cable_power_loss"] = False
 
         return options
 
@@ -58,6 +85,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         variables = super().path_variables.copy()
 
+        variables.extend(self.__asset_is_switched_on_var.values())
+
         return variables
 
     def variable_is_discrete(self, variable):
@@ -65,7 +94,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         All variables that only can take integer values should be added to this function.
         """
 
-        return super().variable_is_discrete(variable)
+        if variable in self.__asset_is_switched_on_var:
+            return True
+        else:
+            return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
         """
@@ -80,6 +112,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         the HeatMixin.
         """
         bounds = super().bounds()
+
+        bounds.update(self.__asset_is_switched_on_bounds)
+        bounds.update(self.__windpark_upper_bounds)
 
         return bounds
 
@@ -110,6 +145,34 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         return (
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
+
+    def __update_windpark_upper_bounds(self):
+        t = self.times()
+        for wp in self.heat_network_components.get("wind_park", []):
+            lb = Timeseries(t, np.zeros(len(self.times())))
+            ub = self.get_timeseries(f"{wp}.maximum_production")
+            self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
+
+
+    def __wind_park_set_point_constraints(self, ensemble_member):
+        """
+        This function adds constraints for wind parks which generates electrical power. The
+        produced electrical power is capped with a user specified percentage value of the maximum
+        value.
+        """
+        constraints = []
+
+        for wp in self.heat_network_components.get("wind_park", []):
+            set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
+            electricity_source = self.__state_vector_scaled(
+                f"{wp}.Electricity_source", ensemble_member
+            )
+            max = self.bounds()[f"{wp}.Electricity_source"][1].values
+            nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
+
+            constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
+
+        return constraints
 
     def __electricity_node_heat_mixing_path_constraints(self, ensemble_member):
         """
@@ -168,9 +231,14 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # Ensure that the current is sufficient to transport the power
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
-
             # Power loss constraint
-            constraints.append(((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0))
+            options = self.heat_network_options()
+            if options["include_electric_cable_power_loss"]:
+                constraints.append(
+                    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
+                )
+            else:
+                constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
 
         return constraints
 
@@ -188,6 +256,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         for elec_demand in [
             *self.heat_network_components.get("electricity_demand", []),
             *self.heat_network_components.get("heat_pump_elec", []),
+            *self.heat_network_components.get("electrolyzer", []),
         ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")
@@ -209,6 +278,136 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
+    def __get_electrolyzer_gas_mass_flow_out(
+        self, coef_a, coef_b, coef_c, electrical_power_input
+    ) -> float:
+        """
+        This function returns the gas mass flow rate [kg/s] out of an electrolyzer based on the
+        theoretical efficiency curve:
+        energy [Ws] / gas mass [kg] =
+        (coef_a / electrical_power_input) + (b * electrical_power_input) + coef_c
+
+        Parameters
+        ----------
+        coef_a: electrolyzer efficience curve coefficent
+        coef_b: electrolyzer efficience curve coefficent
+        coef_c: electrolyzer efficience curve coefficent
+        electrical_power_input: electrical power consumed [W]
+
+        Returns
+        -------
+        gas mass flow rate produced by the electrolyzer [kg/s]
+        """
+
+        eff = (coef_a / electrical_power_input) + (coef_b * electrical_power_input) + coef_c
+        gas_mass_flow_out = (1.0 / eff) * electrical_power_input
+
+        return gas_mass_flow_out
+
+    def _get_linear_coef_electrolyzer_mass_vs_epower_fit(
+        self, coef_a, coef_b, coef_c, n_lines, electrical_power_min, electrical_power_max
+    ) -> Tuple[np.array, np.array]:
+        """
+        This function returns a set of coefficients to approximate a gas mass flow rate curve with
+        linear functions in the form of: gass mass flow rate [kg/s] = b + (a * electrical_power)
+
+        Parameters
+        ----------
+        coef_a: electrolyzer efficience curve coefficent
+        coef_b: electrolyzer efficience curve coefficent
+        coef_c: electrolyzer efficience curve coefficent
+        n_lines: numebr of linear lines used to approximate the non-linear curve
+        electrical_power_min: minimum electrical power consumed [W]
+        electrical_power_max: maximum electrical power consumed [W]
+
+        Returns
+        -------
+        coefficients for linear curve fit(s) to the theoretical non-linear electrolyzer curve
+        """
+
+        electrical_power_points = np.linspace(
+            electrical_power_min, electrical_power_max, n_lines + 1
+        )
+
+        gas_mass_flow_points = np.array(
+            [
+                self.__get_electrolyzer_gas_mass_flow_out(coef_a, coef_b, coef_c, ep)
+                for ep in electrical_power_points
+            ]
+        )
+
+        a_vals = np.diff(gas_mass_flow_points) / np.diff(electrical_power_points)
+        b_vals = gas_mass_flow_points[1:] - a_vals * electrical_power_points[1:]
+
+        return a_vals, b_vals
+
+    def __electrolyzer_path_constaint(self, ensemble_member):
+        """
+        This functions add the constraints for the gas mass flow production based as a functions of
+        electrical power input. This production is approximated by an electrolyzer efficience curve
+        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized.
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        for asset in self.heat_network_components.get("electrolyzer", []):
+            gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
+            power_consumed = self.state(f"{asset}.Power_consumed")
+
+            # Multiple linear lines
+            curve_fit_number_of_lines = 3
+            linear_coef_a, linear_coef_b = self._get_linear_coef_electrolyzer_mass_vs_epower_fit(
+                parameters[f"{asset}.a_eff_coefficient"],
+                parameters[f"{asset}.b_eff_coefficient"],
+                parameters[f"{asset}.c_eff_coefficient"],
+                n_lines=curve_fit_number_of_lines,
+                electrical_power_min=1.0,
+                electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+            )
+            power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
+            gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
+            gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
+            nominal = (
+                self.variable_nominal(f"{asset}.Gas_mass_flow_out")
+                * min(linear_coef_a)
+                * self.variable_nominal(f"{asset}.Power_consumed")
+            ) ** 0.5
+            constraints.extend(
+                [
+                    (
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) / nominal,
+                        -np.inf,
+                        0.0,
+                    ),
+                ]
+            )
+
+            # Add constraints to ensure the electrolyzer is switched off when it reaches a power
+            # input below the minimum operating value
+            var_name = self.__asset_is_switched_on_map[asset]
+            asset_is_switched_on = self.state(var_name)
+
+            big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
+            constraints.append(
+                (
+                    (
+                        power_consumed
+                        - parameters[f"{asset}.minimum_load"]
+                        + (1.0 - asset_is_switched_on) * big_m
+                    )
+                    / self.variable_nominal(f"{asset}.Power_consumed"),
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                ((power_consumed + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -220,6 +419,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__wind_park_set_point_constraints(ensemble_member))
+        constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
 
         return constraints
 

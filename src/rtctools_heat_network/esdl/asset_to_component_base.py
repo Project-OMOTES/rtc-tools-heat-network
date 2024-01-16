@@ -76,6 +76,7 @@ class _AssetToComponentBase:
         "ElectricityCable": "electricity_cable",
         "ElectricityDemand": "electricity_demand",
         "ElectricityProducer": "electricity_source",
+        "Electrolyzer": "electrolyzer",
         "Bus": "electricity_node",
         "GenericConsumer": "demand",
         "HeatExchange": "heat_exchanger",
@@ -84,6 +85,7 @@ class _AssetToComponentBase:
         "GasHeater": "source",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
+        "GasStorage": "gas_tank_storage",
         "GenericProducer": "source",
         "GeothermalSource": "source",
         "HeatProducer": "source",
@@ -95,6 +97,7 @@ class _AssetToComponentBase:
         "HeatStorage": "buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
+        "WindPark": "electricity_source",
         "CheckValve": "check_valve",
     }
 
@@ -106,6 +109,9 @@ class _AssetToComponentBase:
         In this init we initialize some dicts and we load the edr pipes.
         """
         self._port_to_q_nominal = {}
+        self._port_to_q_max = {}
+        self._port_to_i_nominal = {}
+        self._port_to_i_max = {}
         self._port_to_esdl_component_type = {}
         self._edr_pipes = json.load(
             open(os.path.join(Path(__file__).parent, "_edr_pipes.json"), "r")
@@ -277,8 +283,112 @@ class _AssetToComponentBase:
         -------
         None
         """
-        self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
-        self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
+        try:
+            self._port_to_q_nominal[asset.in_ports[0]] = q_nominal
+        except TypeError:
+            pass
+        try:
+            self._port_to_q_nominal[asset.out_ports[0]] = q_nominal
+        except TypeError:
+            pass
+
+    def _set_q_max(self, asset: Asset, q_max: float) -> None:
+        """
+        This function populates a dict with the max volumetric flow in m3/s for the ports of all
+        pipes.
+
+        Parameters
+        ----------
+        asset :
+        q_max : float of the max flow through that pipe
+
+        Returns
+        -------
+        None
+        """
+        try:
+            self._port_to_q_max[asset.in_ports[0]] = q_max
+        except TypeError:
+            pass
+        try:
+            self._port_to_q_max[asset.out_ports[0]] = q_max
+        except TypeError:
+            pass
+
+    def _set_electricity_current_nominal_and_max(
+        self, asset: Asset, i_nominal: float, i_max: float
+    ) -> None:
+        """
+        This function populates a dict with the electricity current nominals [A] for the ports of
+        all electricity cables.
+
+        Parameters
+        ----------
+        asset :
+        q_max : float of the electricity current nominal
+
+        Returns
+        -------
+        None
+        """
+        try:
+            self._port_to_i_nominal[asset.in_ports[0]] = i_nominal
+            self._port_to_i_max[asset.in_ports[0]] = i_max
+        except TypeError:
+            pass
+        try:
+            self._port_to_i_nominal[asset.out_ports[0]] = i_nominal
+            self._port_to_i_max[asset.out_ports[0]] = i_max
+        except TypeError:
+            pass
+
+    def _get_connected_q_max(self, asset: Asset) -> float:
+        if asset.in_ports is None or asset.asset_type == "Electrolyzer":
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_max = self._port_to_q_max.get(connected_port, None)
+            if q_max is not None:
+                self._set_q_nominal(asset, q_max)
+                return q_max
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif asset.out_ports is None:
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_max = self._port_to_q_max.get(connected_port, None)
+            if q_max is not None:
+                self._set_q_max(asset, q_max)
+                return q_max
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max discharge for {asset.asset_type} '{asset.name}'"
+                )
+
+    def _get_connected_i_nominal_and_max(self, asset: Asset) -> Tuple[float, float]:
+        if asset.in_ports is None:
+            connected_port = asset.out_ports[0].connectedTo[0]
+            i_max = self._port_to_i_max.get(connected_port, None)
+            i_nom = self._port_to_i_nominal.get(connected_port, None)
+            if i_max is not None:
+                self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
+                return i_max, i_nom
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max and nominal current for {asset.asset_type}"
+                    " '{asset.name}'"
+                )
+        elif asset.out_ports is None or asset.asset_type == "Electrolyzer":
+            connected_port = asset.in_ports[0].connectedTo[0]
+            i_max = self._port_to_i_max.get(connected_port, None)
+            i_nom = self._port_to_i_nominal.get(connected_port, None)
+            if i_max is not None:
+                self._set_electricity_current_nominal_and_max(asset, i_max, i_nom)
+                return i_max, i_nom
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine max and nominal current for {asset.asset_type}"
+                    f" '{asset.name}'"
+                )
 
     def _get_connected_q_nominal(self, asset: Asset) -> Union[float, Dict]:
         """
@@ -296,7 +406,27 @@ class _AssetToComponentBase:
         Either the connected nominal flow [m3/s] if it is only connected to one hydraulic system,
         otherwise a dict with the flow nominals of both the primary and secondary side.
         """
-        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+        if asset.in_ports is None:
+            connected_port = asset.out_ports[0].connectedTo[0]
+            q_nominal = self._port_to_q_nominal.get(connected_port, None)
+            if q_nominal is not None:
+                self._set_q_nominal(asset, q_nominal)
+                return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif asset.out_ports is None:
+            connected_port = asset.in_ports[0].connectedTo[0]
+            q_nominal = self._port_to_q_nominal.get(connected_port, None)
+            if q_nominal is not None:
+                self._set_q_nominal(asset, q_nominal)
+                return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
             try:
                 connected_port = asset.in_ports[0].connectedTo[0]
                 q_nominal = self._port_to_q_nominal[connected_port]
@@ -383,6 +513,15 @@ class _AssetToComponentBase:
                 asset, per_unit=UnitEnum.WATT
             )
             modifiers["installation_cost"] = self.get_installation_costs(asset)
+        elif asset.asset_type == "GasDemand":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+        elif asset.asset_type == "Electrolyzer":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
+            modifiers["investment_cost_coefficient"] = self.get_investment_costs(asset)
+        elif asset.asset_type == "GasStorage":
+            modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
+            modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
         else:
             modifiers["variable_operational_cost_coefficient"] = self.get_variable_opex_costs(asset)
             modifiers["fixed_operational_cost_coefficient"] = self.get_fixed_opex_costs(asset)
@@ -582,13 +721,28 @@ class _AssetToComponentBase:
                     f"component per time, which we cannot handle."
                 )
                 continue
-            if per_unit != UnitEnum.WATTHOUR:
+            if per_unit != UnitEnum.WATTHOUR and asset.asset_type not in [
+                "GasDemand",
+                "GasStorage",
+                "Electrolyzer",
+            ]:
                 logger.warning(
                     f"Expected the specified OPEX for asset "
                     f"{asset.name} to be per Wh, but they are provided "
                     f"in {per_unit} instead."
                 )
                 continue
+            if (
+                asset.asset_type in ["GasDemand", "GasStorage", "Electrolyzer"]
+                and per_unit != UnitEnum.GRAM
+            ):
+                logger.warning(
+                    f"Expected the specified OPEX for asset "
+                    f"{asset.name} to be per g/s, but they are provided "
+                    f"in {per_unit}/{per_time} instead."
+                )
+                continue
+
             value += cost_value
 
         return value
@@ -630,7 +784,7 @@ class _AssetToComponentBase:
                         f"Expected cost information {cost_info} to " f"provide a cost in euros."
                     )
                     continue
-                if per_unit == UnitEnum.CUBIC_METRE:
+                if per_unit == UnitEnum.CUBIC_METRE and asset.asset_type != "GasStorage":
                     # index is 0 because buffers only have one in out port
                     supply_temp = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
                         "temperature"
@@ -679,13 +833,22 @@ class _AssetToComponentBase:
                         except KeyError:
                             return 0.0
                     cost_value = cost_value / size
-                elif per_unit != UnitEnum.WATT:
+                elif per_unit != UnitEnum.WATT and asset.asset_type != "GasStorage":
                     RuntimeWarning(
                         f"Expected the specified OPEX for asset "
                         f"{asset.name} to be per W or m3, but they are provided "
                         f"in {per_unit} instead."
                     )
                     continue
+                # still to decide if the cost is per kg or per m3
+                elif per_unit != UnitEnum.GRAM and asset.asset_type == "GasStorage":
+                    RuntimeWarning(
+                        f"Expected the specified OPEX for asset "
+                        f"{asset.name} to be per GRAM, but they are provided "
+                        f"in {per_unit} instead."
+                    )
+                    continue
+
                 value += cost_value
         return value
 

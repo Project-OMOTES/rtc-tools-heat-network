@@ -1,0 +1,4 @@
+DateTime,ElectricityDemand_9d15.electricity_price,GasDemand_0cf3.gas_price,WindPark_7f14.maximum_production
+01-01-2019 00:00, 1.0, 1000000.0, 100000000.0
+01-01-2019 01:00, 1.0, 1000000.0, 100000000.0
+01-01-2019 02:00, 1.0, 1000000.0, 100000000.0

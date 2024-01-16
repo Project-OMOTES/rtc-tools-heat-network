@@ -627,6 +627,11 @@ def main(runinfo_path, log_level):
         "influxdb_ssl": False,
         "influxdb_verify_ssl": False,
     }
+    # Temp comment for now
+    # omotes-poc-test.hesi.energy
+    # port 8086
+    # user write-user
+    # password nwn_write_test
 
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,

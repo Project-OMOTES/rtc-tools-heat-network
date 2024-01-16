@@ -457,6 +457,41 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 nominal=self.variable_nominal(f"{asset_name}.Secondary_heat"),
             )
 
+        for asset_name in self.heat_network_components.get("gas_demand", []):
+            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
+            # Note that we set the nominal to one to avoid division by zero
+            ub = 0.0
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+
+        for asset_name in self.heat_network_components.get("gas_source", []):
+            # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
+            # Note that we set the nominal to one to avoid division by zero
+            ub = 0.0
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
+
+        for asset_name in self.heat_network_components.get("gas_tank_storage", []):
+            ub = bounds[f"{asset_name}.Stored_gas_mass"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electrolyzer", []):
+            ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electricity_demand", []):
+            v = bounds[f"{asset_name}.Electricity_demand"][1]
+            ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
+        for asset_name in self.heat_network_components.get("electricity_source", []):
+            ub = bounds[f"{asset_name}.Electricity_source"][1]
+            lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
+            _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
+
         # Making the __aggregation_count variable for each asset
         for asset_list in self.heat_network_components.values():
             for asset in asset_list:
@@ -1024,6 +1059,71 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(
                 (
                     (np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("electricity_demand", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_demand = self.__state_vector_scaled(
+                f"{d}.Electricity_demand", ensemble_member
+            )
+            constraint_nominal = self.variable_nominal(f"{d}.Electricity_demand")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_demand)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("electricity_source", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_source = self.__state_vector_scaled(
+                f"{d}.Electricity_source", ensemble_member
+            )
+            constraint_nominal = self.variable_nominal(f"{d}.Electricity_source")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_source)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("electrolyzer", []):
+            max_var = self._asset_max_size_map[d]
+            max_power = self.extra_variable(max_var, ensemble_member)
+            electricity_electrolyzer = self.__state_vector_scaled(
+                f"{d}.Power_consumed", ensemble_member
+            )
+            constraint_nominal = self.variable_nominal(f"{d}.Power_consumed")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_power - electricity_electrolyzer)
+                    / constraint_nominal,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        for d in self.heat_network_components.get("gas_tank_storage", []):
+            max_var = self._asset_max_size_map[d]
+            max_size = self.extra_variable(max_var, ensemble_member)
+            gas_mass = self.__state_vector_scaled(f"{d}.Stored_gas_mass", ensemble_member)
+            constraint_nominal = self.variable_nominal(f"{d}.Stored_gas_mass")
+
+            constraints.append(
+                (
+                    (np.ones(len(self.times())) * max_size - gas_mass) / constraint_nominal,
                     0.0,
                     np.inf,
                 )
