@@ -96,7 +96,7 @@ def heat_loss_u_values_pipe(
 
 
 def pipe_heat_loss(
-    self,
+    optimization_problem,
     options,
     parameters,
     p: str,
@@ -118,7 +118,7 @@ def pipe_heat_loss(
     if options["neglect_pipe_heat_losses"]:
         return 0.0
 
-    neighbour = self.has_related_pipe(p)
+    neighbour = optimization_problem.has_related_pipe(p)
 
     if u_values is None:
         u_kwargs = {
@@ -143,10 +143,14 @@ def pipe_heat_loss(
         temperature = temp
     temperature_ground = parameters[f"{p}.T_ground"]
     if neighbour:
-        if self.is_hot_pipe(p):
-            dtemp = temperature - parameters[f"{self.hot_to_cold_pipe(p)}.temperature"]
+        if optimization_problem.is_hot_pipe(p):
+            dtemp = (
+                temperature - parameters[f"{optimization_problem.hot_to_cold_pipe(p)}.temperature"]
+            )
         else:
-            dtemp = temperature - parameters[f"{self.cold_to_hot_pipe(p)}.temperature"]
+            dtemp = (
+                temperature - parameters[f"{optimization_problem.cold_to_hot_pipe(p)}.temperature"]
+            )
     else:
         dtemp = 0
 
