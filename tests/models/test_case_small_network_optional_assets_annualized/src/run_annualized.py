@@ -11,7 +11,9 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.heat_mixin import HeatMixin
 
 try:
-    from models.test_case_small_network_optional_assets_annualized.src.run_ates import HeatProblem
+    from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
+        HeatProblem,
+    )
 except ModuleNotFoundError:
     from run_ates import HeatProblem
 
@@ -48,7 +50,7 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
     """
 
     order = 1
-    priority = 2
+    priority = 3
 
     def __init__(self, assets_and_costs_keys=None):
         self.target_max = 0.0
@@ -58,17 +60,17 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
             assets_and_costs_keys
             if assets_and_costs_keys is not None
             else [
-                (["source", "ates"], ["_asset_variable_operational_cost_map"]),
-                (["source", "ates", "buffer"], ["_asset_fixed_operational_cost_map"]),
+                (["source"], ["_asset_variable_operational_cost_map"]),
+                (["source"], ["_asset_fixed_operational_cost_map"]),
                 (
                     [
                         "source",
-                        "ates",
-                        "buffer",
-                        "demand",
-                        "heat_exchanger",
-                        "heat_pump",
-                        "pipe",
+                        # "ates",
+                        # "buffer",
+                        # "demand",
+                        # "heat_exchanger",
+                        # "heat_pump",
+                        # "pipe",
                     ],
                     ["_annualized_capex_var_map"],
                 ),
@@ -76,21 +78,30 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
         )
 
     def function(self, optimization_problem: HeatMixin, ensemble_member):
-        obj = 0.0
         """
-        For the given optimization problem, this function 
-        sums up the costs associated with specified assets in 
+        For the given optimization problem, this function
+        sums up the costs associated with specified assets in
         given asset categories, using defined cost map keys.
 
         """
 
-        for asset_categories, cost_map_keys in self.assets_and_costs_keys:
-            for asset_category in asset_categories:
-                for asset in optimization_problem.heat_network_components.get(asset_category, []):
-                    for cost_map_key in cost_map_keys:
-                        cost_map = getattr(optimization_problem, cost_map_key)
-                        cost = cost_map.get(asset, 0)
-                        obj += optimization_problem.extra_variable(cost)
+        obj = 0.0
+
+        for s in optimization_problem.heat_network_components.get("source", []):
+            obj += optimization_problem.extra_variable(
+                optimization_problem._annualized_capex_var_map[s]
+            )
+            obj += optimization_problem.extra_variable(
+                optimization_problem._asset_variable_operational_cost_map[s]
+            )
+
+        # for asset_categories, cost_map_keys in self.assets_and_costs_keys:
+        #     for asset_category in asset_categories:
+        #         for asset in optimization_problem.heat_network_components.get(asset_category, []):
+        #             for cost_map_key in cost_map_keys:
+        #                 cost_map = getattr(optimization_problem, cost_map_key)
+        #                 cost = cost_map.get(asset, 0)
+        #                 obj += optimization_problem.extra_variable(cost)
         return obj
 
 
@@ -125,11 +136,14 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
             if asset.asset_type == "HeatProducer":
                 if "costInformation" in asset.attributes and (
                     asset.attributes["costInformation"].discountRate is not None
-                    and asset.attributes["costInformation"].discountRate.value is not None
+                    and asset.attributes["costInformation"].discountRate.value
+                    is not None
                 ):
                     asset.attributes["costInformation"].discountRate.value = 0.0
                 else:
-                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
+                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(
+                        value=0.0
+                    )
         return assets
 
 
