@@ -1516,7 +1516,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_out = self.state(f"{b}.HeatOut.Heat")
             heat_in = self.state(f"{b}.HeatIn.Heat")
 
-            flow_dir_var = self.__pipe_to_flow_direct_map[hot_pipe]
+            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var)
 
             sup_carrier = parameters[f"{b}.T_supply_id"]
