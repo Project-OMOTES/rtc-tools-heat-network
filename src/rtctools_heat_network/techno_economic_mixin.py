@@ -65,6 +65,7 @@ class TechnoEconomicMixin(
         """
 
         options = PhysicsMixin.heat_network_options(self)
+        options.update(FinancialMixin.heat_network_options(self))
         # problem with abstractmethod
         options["include_asset_is_realized"] = False
 
