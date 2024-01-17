@@ -4,18 +4,14 @@ import esdl
 
 import numpy as np
 
-from rtctools.data.storage import DataStore
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
-from rtctools.optimization.linearized_order_goal_programming_mixin import (
-    LinearizedOrderGoalProgrammingMixin,
-)
+
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.heat_mixin import HeatMixin
+
+
+from models.test_case_small_network_optional_assets_annualized.src.run_ates import HeatProblem
 
 
 class TargetDemandGoal(Goal):
@@ -114,82 +110,6 @@ class _GoalsAndOptions:
         return goals
 
 
-class HeatProblem(
-    _GoalsAndOptions,
-    HeatMixin,
-    LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
-    ESDLMixin,
-    CollocatedIntegratedOptimizationProblem,
-):
-    def path_goals(self) -> List[Goal]:
-        goals = super().path_goals().copy()
-
-        return goals
-
-    def heat_network_options(self) -> Dict[str, Any]:
-        options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
-        options["neglect_pipe_heat_losses"] = True
-        options["heat_loss_disconnected_pipe"] = False
-        return options
-
-    def constraints(self, ensemble_member):
-        constraints = super().constraints(ensemble_member)
-
-        # By default we do not add any constraints on the cyclic behaviour of the ates, as we
-        # might want to do optimization over shorter periods of time where this would lead to
-        # infeasibility. In this case we do want the cyclic behaviour, therefore we add it to the
-        # problem.
-        for a in self.heat_network_components.get("ates", []):
-            stored_heat = self.state_vector(f"{a}.Stored_heat")
-            constraints.append(((stored_heat[0] - stored_heat[-1]), 0.0, 0.0))
-
-        return constraints
-
-    def solver_options(self) -> Dict[str, str]:
-        options = super().solver_options()
-        options["solver"] = "highs"
-
-        return options
-
-    def read(self) -> None:
-        """
-        Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
-        """
-        super().read()
-
-        demands = self.heat_network_components.get("demand", [])
-        new_datastore = DataStore(self)
-        new_datastore.reference_datetime = self.io.datetimes[0]
-
-        for ensemble_member in range(self.ensemble_size):
-            nr_of_days = 10
-            new_date_times = list()
-            for day in range(nr_of_days):
-                new_date_times.append(self.io.datetimes[day * 24])
-            new_date_times = np.asarray(new_date_times)
-
-            for demand in demands:
-                var_name = f"{demand}.target_heat_demand"
-                data = self.get_timeseries(
-                    variable=var_name, ensemble_member=ensemble_member
-                ).values
-                new_data = list()
-                for day in range(nr_of_days):
-                    data_for_day = data[day * 24 : (day + 1) * 24]
-                    new_data.append(np.mean(data_for_day))
-                new_datastore.set_timeseries(
-                    variable=var_name,
-                    datetimes=new_date_times,
-                    values=np.asarray(new_data),
-                    ensemble_member=ensemble_member,
-                    check_duplicates=True,
-                )
-
-            self.io = new_datastore
-
-
 class HeatProblemDiscAnnualizedCost(HeatProblem):
     def goals(self) -> List[Goal]:
         goals = super().goals().copy()
@@ -236,7 +156,6 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(
-        # HeatProblemDiscAnnualizedCost, base_folder=base_folder
         HeatProblemDiscAnnualizedCostModifiedParam,
         base_folder=base_folder,
     )

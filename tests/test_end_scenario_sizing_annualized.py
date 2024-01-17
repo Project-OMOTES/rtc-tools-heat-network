@@ -10,22 +10,24 @@ class TestEndScenarioSizingAnnualized(TestCase):
     """
     Tests for end scenario sizing with annualized costs in a small network with optional assets.
 
-    This class tests various scenarios using different models for a heat network, both with
+    This class tests two models for a heat network: with
     and without annualized costs. It asserts the following:
     1. Under some conditions, the objective value of the annualized model is equal to the solution
     from the non annualized one.
     2. The effect of the discount rate on the objective value.
     3. The correctness of annualized capital expenditures calculations.
+    4: The calculate_annuity_factor function returns the correct valuea
+
     """
 
     def test_end_scenario_sizing_annualized(self):
+        from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
+            HeatProblem,
+        )
         from models.test_case_small_network_optional_assets_annualized.src.run_annualized import (
             HeatProblemDiscAnnualizedCost,
             HeatProblemDiscAnnualizedCostModifiedParam,
             HeatProblemDiscAnnualizedCostModifiedDiscountRate,
-        )
-        from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
-            HeatProblem,
         )
         from models.test_case_small_network_optional_assets_annualized.src import (
             run_annualized,
@@ -36,20 +38,27 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         solution_run_ates = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
+        # Solution of model with annualized cost, considering a discount rate > 0
+        # and a technical life > 1
         solution_annualized_cost = run_optimization_problem(
             HeatProblemDiscAnnualizedCost, base_folder=base_folder
         )
 
+        # Solution of model with annualized cost, with discount rate = 0 and
+        # technical life = 1 year. This model is used to compare the objective value
+        # of the annualized model with the objective value of the non-discounted model.
         solution__annualized_modified_param = run_optimization_problem(
             HeatProblemDiscAnnualizedCostModifiedParam, base_folder=base_folder
         )
 
+        # Solution of model with annualized cost, with discount rate = 0.
+        # This model is used to test the effect of the discount rate on the objective value.
         solution__annualized_modified_discount = run_optimization_problem(
             HeatProblemDiscAnnualizedCostModifiedDiscountRate, base_folder=base_folder
         )
 
-        # Assertion 1: Model for annualized objective value with discount=0 and
-        # technical life 1 year matches the objective value of the non-discounted problem
+        # # Assertion 1: Model for annualized objective value with discount=0 and
+        # # technical life 1 year matches the objective value of the non-discounted problem
         np.testing.assert_allclose(
             solution__annualized_modified_param.objective_value,
             solution_run_ates.objective_value,
@@ -73,17 +82,34 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
             # These are the same parameters used by the model from the ESDL file:
-            years_asset_life = 25
-            discount_rate = 0.05
+            # years_asset_life = 25
+            # discount_rate = 0.05
+            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
+            years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
+                "technicalLifetime"
+            ]
+            discount_rate = (
+                solution_annualized_cost.esdl_assets[asset_id]
+                .attributes["costInformation"]
+                .discountRate.value
+            ) / 100
+            # TODO: Handle if NoneType
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
             annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
-            # Assertion 3: annualized capex matches the discounted investment
-            # and installation cost
+            # # Assertion 3: annualized capex matches the discounted investment
+            # # and installation cost
             np.testing.assert_almost_equal(
                 annualized_capex,
                 investment_and_installation_cost * discount_factor,
                 decimal,
             )
+
+        # Assertion 4: The calculate_annuity_factor function returns the correct value
+        # Checks that calculate_annuity_factor() returns 1.0 for a discount factor rate
+        # of 0 and technical life of 1, and that it returns a value of 1.1 for discount
+        # rate of 10%
+        assert np.isclose(calculate_annuity_factor(0, 1), 1.0, atol=1e-14, rtol=0.0)
+        assert np.isclose(calculate_annuity_factor(0.1, 1), 1.1, atol=1e-14, rtol=0.0)
 
 
 if __name__ == "__main__":
