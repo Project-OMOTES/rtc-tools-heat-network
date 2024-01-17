@@ -20,8 +20,8 @@ from rtctools.util import run_optimization_problem
 
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 from rtctools_heat_network.workflows.utils.adapt_profiles import (
     adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
@@ -142,7 +142,7 @@ class _GoalsAndOptions:
 class NetworkSimulator(
     ScenarioOutput,
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,

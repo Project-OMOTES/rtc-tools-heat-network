@@ -1,6 +1,7 @@
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
-from rtctools_heat_network.heat_mixin import HeatMixin
+# from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class MinimizeTCO(Goal):
@@ -14,7 +15,7 @@ class MinimizeTCO(Goal):
         self.priority = priority
         self.number_of_years = number_of_years
 
-    def function(self, optimization_problem: HeatMixin, ensemble_member):
+    def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member):
         obj = 0.0
 
         for asset in [
