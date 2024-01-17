@@ -75,11 +75,6 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
             ]
         )
 
-    def heat_network_options(self) -> Dict[str, Any]:
-        options = super().heat_network_options()
-        options["discounted_annualized_cost"] = True
-        return options
-
     def function(self, optimization_problem: HeatMixin, ensemble_member):
         obj = 0.0
         """
@@ -113,6 +108,11 @@ class _GoalsAndOptions:
 
 
 class HeatProblemDiscAnnualizedCost(HeatProblem):
+    def heat_network_options(self) -> Dict[str, Any]:
+        options = super().heat_network_options()
+        options["discounted_annualized_cost"] = True
+        return options
+
     def goals(self) -> List[Goal]:
         goals = super().goals().copy()
 
