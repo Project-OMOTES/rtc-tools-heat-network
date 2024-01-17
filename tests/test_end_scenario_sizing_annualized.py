@@ -74,16 +74,12 @@ class TestEndScenarioSizingAnnualized(TestCase):
         results = solution_annualized_cost.extract_results()
         heat_producers = [1, 2]
         decimal = 3
-        discount_rate = 0.0
-        years_asset_life = 1
         for i in heat_producers:
             investment_and_installation_cost = (
                 results[f"HeatProducer_{i}__investment_cost"]
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
             # These are the same parameters used by the model from the ESDL file:
-            # years_asset_life = 25
-            # discount_rate = 0.05
             asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
             years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
                 "technicalLifetime"
