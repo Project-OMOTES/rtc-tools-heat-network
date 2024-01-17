@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from .electricity_base import ElectricityTwoPort
@@ -23,12 +25,12 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         # Powerloss with inequality in the heat-mixin
         # values for NAYY 4x50 SE
         # from: https://pandapower.readthedocs.io/en/v2.6.0/std_types/basic.html
-        self.max_current = 142.0
-        self.max_voltage = 1.5e4
-        self.min_voltage = 1.0e4
-        self.nominal_current = self.max_current / 2.0
-        self.nominal_voltage = (self.max_voltage + self.min_voltage) / 2.0
-        self.r = 1.0e-4 * self.length  # TODO: temporary value
+        self.max_current = nan
+        self.min_voltage = nan
+        self.max_voltage = self.min_voltage * 2.0
+        self.nominal_current = nan
+        self.nominal_voltage = nan
+        self.r = 1.0e-6 * self.length  # TODO: temporary value
         self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.r * self.max_current**2)
 
         self.add_equation(

@@ -11,7 +11,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -37,7 +37,7 @@ class _GoalsAndOptions:
 
         for demand in self.heat_network_components["gas_demand"]:
             target = self.get_timeseries(f"{demand}.target_gas_demand")
-            state = f"{demand}.Gas_demand_flow"
+            state = f"{demand}.Gas_demand_mass_flow"
 
             goals.append(TargetDemandGoal(state, target))
 
@@ -46,7 +46,7 @@ class _GoalsAndOptions:
 
 class GasProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

@@ -14,10 +14,12 @@ from rtctools_heat_network.pycml.component_library.heat import (
     ElectricityDemand,
     ElectricityNode,
     ElectricitySource,
+    Electrolyzer,
     GasDemand,
     GasNode,
     GasPipe,
     GasSource,
+    GasTankStorage,
     GeothermalSource,
     HeatExchanger,
     HeatPump,
@@ -26,7 +28,10 @@ from rtctools_heat_network.pycml.component_library.heat import (
     Pipe,
     Pump,
     Source,
+    WindPark,
 )
+
+from scipy.optimize import fsolve
 
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
@@ -53,6 +58,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho=988.0,
         cp=4200.0,
         min_fraction_tank_volume=0.05,
+        v_max_gas=15.0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -61,6 +67,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.v_max = v_max
         self.rho = rho
         self.cp = cp
+        self.v_max_gas = v_max_gas
         self.min_fraction_tank_volume = min_fraction_tank_volume
         if "primary_port_name_convention" in kwargs.keys():
             self.primary_port_name_convention = kwargs["primary_port_name_convention"]
@@ -298,6 +305,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ) = self._pipe_get_diameter_and_insulation(asset)
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
+            q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
+            self._set_q_nominal(asset, q_nominal)
+            q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
+            self._set_q_max(asset, q_max)
             modifiers = dict(length=length, diameter=diameter)
 
             return GasPipe, modifiers
@@ -765,14 +776,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"ElectricityDemand"}
 
         max_demand = asset.attributes.get("power", math.inf)
-        max_current = 142.0
+        min_voltage = asset.in_ports[0].carrier.voltage
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
 
         modifiers = dict(
+            min_voltage=min_voltage,
+            elec_power_nominal=max_demand / 2.0,
             Electricity_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
-                I=dict(min=0.0, max=max_current, nominal=max_current / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=min_voltage, nominal=min_voltage),
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
 
         return ElectricityDemand, modifiers
@@ -792,20 +808,29 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
         )  # I think it would break with math.inf as input
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.out_ports[0].carrier.voltage
 
         modifiers = dict(
+            power_nominal=max_supply / 2.0,
             Electricity_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ElectricityOut=dict(
-                V=dict(min=0.0), I=dict(min=0.0), Power=dict(nominal=max_supply / 2.0)
+                V=dict(min=v_min, nominal=v_min),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                Power=dict(nominal=max_supply / 2.0),
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
 
-        return ElectricitySource, modifiers
+        if asset.asset_type == "ElectricityProducer":
+            return ElectricitySource, modifiers
+        if asset.asset_type == "WindPark":
+            return WindPark, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         """
@@ -831,6 +856,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         for x in asset.attributes["port"].items:
             if node_carrier is None:
                 node_carrier = x.carrier.name
+                nominal_voltage = x.carrier.voltage
             else:
                 if node_carrier != x.carrier.name:
                     raise _ESDLInputException(
@@ -841,7 +867,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             if isinstance(x, esdl.esdl.OutPort):
                 sum_out += len(x.connectedTo)
 
-        modifiers = dict(n=sum_in + sum_out)
+        modifiers = dict(voltage_nominal=nominal_voltage, n=sum_in + sum_out)
 
         return ElectricityNode, modifiers
 
@@ -863,18 +889,28 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"ElectricityCable"}
 
+        max_power = asset.attributes["capacity"]
+        min_voltage = asset.in_ports[0].carrier.voltage
+        max_current = max_power / min_voltage
+        self._set_electricity_current_nominal_and_max(asset, max_current / 2.0, max_current)
+
         modifiers = dict(
+            max_current=max_current,
+            min_voltage=min_voltage,
+            nominal_current=max_current / 2.0,
+            nominal_voltage=min_voltage,
             length=asset.attributes["length"],
             ElectricityOut=dict(
-                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
-                I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1.25e4),
+                V=dict(min=min_voltage, nominal=min_voltage),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
             ),
             ElectricityIn=dict(
-                V=dict(min=0.0, max=1.5e4, nominal=1.0e4),
-                I=dict(min=-142.0, max=142.0),
-                Power=dict(nominal=142.0 * 1.25e4),
+                V=dict(min=min_voltage, nominal=min_voltage),
+                I=dict(min=-max_current, max=max_current, nominal=max_current / 2.0),
+                Power=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
             ),
+            **self._get_cost_figure_modifiers(asset),
         )
         return ElectricityCable, modifiers
 
@@ -895,7 +931,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasDemand"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            GasIn=dict(
+                Q=dict(
+                    min=0.0,
+                    max=self._get_connected_q_max(asset),
+                    nominal=self._get_connected_q_nominal(asset),
+                ),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
 
         return GasDemand, modifiers
 
@@ -916,9 +962,108 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasProducer"}
 
-        modifiers = dict()
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            Gas_source_mass_flow=dict(
+                min=0.0,
+                max=self._get_connected_q_max(asset),
+                nominal=self._get_connected_q_nominal(asset),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
 
         return GasSource, modifiers
+
+    def convert_electrolyzer(self, asset: Asset) -> Tuple[Type[Electrolyzer], MODIFIERS]:
+        """
+        This function converts the Electrolyzer object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Electrolyzer class with modifiers
+        """
+        assert asset.asset_type in {"Electrolyzer"}
+
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.in_ports[0].carrier.voltage
+        max_power = asset.attributes.get("power", math.inf)
+        min_load = float(asset.attributes["minLoad"])
+        max_load = float(asset.attributes["maxLoad"])
+        eff_min_load = asset.attributes["effMinLoad"] * 1.0e3
+        eff_max_load = asset.attributes["effMaxLoad"] * 1.0e3
+        eff_max = asset.attributes["efficiency"] * 1.0e3
+
+        def equations(x):
+            a, b, c = x
+            eq1 = a / min_load + b * min_load + c - eff_min_load
+            eq2 = a / max_load + b * max_load + c - eff_max_load
+            eq3 = a / (min_load * 2.5) + b * (min_load * 2.5) + c - eff_max
+            return [eq1, eq2, eq3]
+
+        # Here we approximate the efficiency curve of the electrolyzer with the function:
+        # 1/eff = a/P_e + b*P_e + c. We find the coefficients with a simple solve function.
+        # At the moment we abbuse the efficiency attribute of esdl to quantify the maximum
+        # operational efficiency.
+        a, b, c = fsolve(equations, (0, 0, 0))
+
+        modifiers = dict(
+            min_voltage=v_min,
+            a_eff_coefficient=a,
+            b_eff_coefficient=b,
+            c_eff_coefficient=c,
+            minimum_load=min_load,
+            nominal_power_consumed=max_power / 2.0,
+            Q_nominal=self._get_connected_q_nominal(asset),
+            GasOut=dict(
+                Q=dict(
+                    min=0.0,
+                    max=self._get_connected_q_max(asset),
+                    nominal=self._get_connected_q_nominal(asset),
+                )
+            ),
+            ElectricityIn=dict(
+                Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
+                I=dict(min=0.0, max=i_max, nominal=i_nom),
+                V=dict(min=v_min, nominal=v_min),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return Electrolyzer, modifiers
+
+    def convert_gas_tank_storage(self, asset: Asset) -> Tuple[Type[GasTankStorage], MODIFIERS]:
+        """
+        This function converts the GasTankStorage object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasTankStorage class with modifiers
+        """
+        assert asset.asset_type in {"GasStorage"}
+
+        modifiers = dict(
+            Q_nominal=self._get_connected_q_nominal(asset),
+            volume=asset.attributes["workingVolume"],
+            # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
+            # volumetric flow
+            # Gas_tank_flow=dict(
+            #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
+            #     nominal=self._get_connected_q_nominal(asset),
+            # )
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return GasTankStorage, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

@@ -25,8 +25,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 from rtctools_heat_network.workflows.utils.adapt_profiles import (
@@ -75,7 +75,7 @@ class TargetHeatGoal(Goal):
 
 class EndScenarioSizing(
     ScenarioOutput,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -551,7 +551,7 @@ def run_end_scenario_sizing(
 
         # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
         # stage 1 optimization.
-        pc_map = solution._HeatMixin__pipe_topo_pipe_class_map
+        pc_map = solution.get_pipe_class_map()
         for pipe_classes in pc_map.values():
             v_prev = 0.0
             first_pipe_class = True
@@ -627,6 +627,11 @@ def main(runinfo_path, log_level):
         "influxdb_ssl": False,
         "influxdb_verify_ssl": False,
     }
+    # Temp comment for now
+    # omotes-poc-test.hesi.energy
+    # port 8086
+    # user write-user
+    # password nwn_write_test
 
     _ = run_optimization_problem(
         EndScenarioSizingHIGHS,

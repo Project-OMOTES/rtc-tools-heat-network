@@ -6,9 +6,9 @@ from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMi
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 
 if __name__ == "__main__":
@@ -41,7 +41,7 @@ class _GoalsAndOptions:
 
 class HeatModelica(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -53,7 +53,7 @@ class HeatModelica(
 
 class HeatPython(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,
@@ -70,7 +70,7 @@ class HeatPython(
 
 class HeatESDL(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,

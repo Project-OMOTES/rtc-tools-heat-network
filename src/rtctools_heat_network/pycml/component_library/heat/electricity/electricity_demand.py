@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from .electricity_base import ElectricityPort
@@ -16,10 +18,12 @@ class ElectricityDemand(ElectricityComponent, BaseAsset):
         super().__init__(name, **modifiers)
 
         self.component_type = "electricity_demand"
-        self.min_voltage = 1.0e4
+        self.min_voltage = nan
+        self.elec_power_nominal = nan
 
         self.add_variable(ElectricityPort, "ElectricityIn")
-        self.add_variable(Variable, "Electricity_demand", min=0.0)
-        self.elec_power_nominal = self.Electricity_demand.nominal
+        self.add_variable(Variable, "Electricity_demand", min=0.0, nominal=self.elec_power_nominal)
 
-        self.add_equation((self.ElectricityIn.Power - self.Electricity_demand))
+        self.add_equation(
+            ((self.ElectricityIn.Power - self.Electricity_demand) / self.elec_power_nominal)
+        )
