@@ -12,7 +12,8 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -62,7 +63,7 @@ class _GoalsAndOptions:
 
 class ElectricityProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -76,7 +77,7 @@ class ElectricityProblem(
 
 
 class ElectricityProblemMaxCurr(
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

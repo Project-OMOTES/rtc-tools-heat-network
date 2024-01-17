@@ -11,8 +11,9 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -129,7 +130,7 @@ class _GoalsAndOptions:
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -162,7 +163,7 @@ class HeatProblem(
 
 class HeatProblemSetPointConstraints(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -184,7 +185,7 @@ class HeatProblemSetPointConstraints(
 
 class HeatProblemTvarsup(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -233,7 +234,7 @@ class HeatProblemTvarsup(
 
 class HeatProblemTvarret(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -293,7 +294,7 @@ class HeatProblemTvarret(
 
 class HeatProblemProdProfile(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -353,7 +354,7 @@ class QTHProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        from rtctools_heat_network.head_loss_mixin import HeadLossOption
+        from rtctools_heat_network.head_loss_class import HeadLossOption
 
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options
@@ -362,9 +363,10 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(
-        HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
-    )
+    sol = run_optimization_problem(HeatProblemProdProfile)
+    # sol = run_optimization_problem(
+    #     HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
+    # )
     results = sol.extract_results()
     # import matplotlib.pyplot as plt
     #
@@ -373,5 +375,5 @@ if __name__ == "__main__":
     # plt.figure()
     # plt.plot(results["HeatStorage_4b0c.Stored_heat"])
     # plt.show()
-    # a = 1
+    a = 1
     # run_heat_network_optimization(HeatProblem, QTHProblem)

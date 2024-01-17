@@ -11,9 +11,9 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 if __name__ == "__main__":
     from model import Model
@@ -54,7 +54,7 @@ class MinimizeSourceGoal(Goal):
 
 
 class HeatBuffer(
-    HeatMixin,
+    TechnoEconomicMixin,
     ModelicaComponentTypeMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
@@ -146,7 +146,7 @@ class HeatBufferHistoryStoredHeat(HeatBuffer):
         history = {}
 
         initial_time = self.initial_time
-        stored_heat_lb = self._HeatMixin__buffer_t0_bounds["buffer.Stored_heat"][0].values[0]
+        stored_heat_lb = self._HeatPhysicsMixin__buffer_t0_bounds["buffer.Stored_heat"][0].values[0]
         history["buffer.Stored_heat"] = Timeseries(
             np.array([initial_time - 1, initial_time]),
             np.array([stored_heat_lb + 12000.0, stored_heat_lb]),

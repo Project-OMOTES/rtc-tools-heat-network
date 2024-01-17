@@ -5,8 +5,8 @@ from rtctools.optimization.csv_mixin import CSVMixin
 from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.modelica_component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 
 if __name__ == "__main__":
@@ -40,7 +40,7 @@ class MinimizeProduction(Goal):
 
 
 class DoublePipeEqualHeat(
-    HeatMixin,
+    PhysicsMixin,
     ModelicaComponentTypeMixin,
     GoalProgrammingMixin,
     CSVMixin,

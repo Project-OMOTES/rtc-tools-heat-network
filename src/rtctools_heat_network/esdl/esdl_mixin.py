@@ -21,13 +21,13 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
-from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
-from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
-from rtctools_heat_network.modelica_component_type_mixin import (
+from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
+from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
@@ -128,7 +128,7 @@ class ESDLMixin(
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
 
-        if isinstance(self, HeatMixin):
+        if isinstance(self, PhysicsMixin):
             self.__model = ESDLHeatModel(assets, **self.esdl_heat_model_options())
         else:
             assert isinstance(self, QTHMixin)
