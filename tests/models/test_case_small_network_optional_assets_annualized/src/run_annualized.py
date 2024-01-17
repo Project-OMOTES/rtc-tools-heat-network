@@ -10,8 +10,10 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.heat_mixin import HeatMixin
 
-
-from models.test_case_small_network_optional_assets_annualized.src.run_ates import HeatProblem
+try:
+    from models.test_case_small_network_optional_assets_annualized.src.run_ates import HeatProblem
+except ModuleNotFoundError:
+    from run_ates import HeatProblem
 
 
 class TargetDemandGoal(Goal):
