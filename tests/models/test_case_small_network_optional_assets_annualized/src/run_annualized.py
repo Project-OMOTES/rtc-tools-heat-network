@@ -87,21 +87,21 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
 
         obj = 0.0
 
-        for s in optimization_problem.heat_network_components.get("source", []):
-            obj += optimization_problem.extra_variable(
-                optimization_problem._annualized_capex_var_map[s]
-            )
-            obj += optimization_problem.extra_variable(
-                optimization_problem._asset_variable_operational_cost_map[s]
-            )
+        # for s in optimization_problem.heat_network_components.get("source", []):
+        #     obj += optimization_problem.extra_variable(
+        #         optimization_problem._annualized_capex_var_map[s]
+        #     )
+        #     obj += optimization_problem.extra_variable(
+        #         optimization_problem._asset_variable_operational_cost_map[s]
+        #     )
 
-        # for asset_categories, cost_map_keys in self.assets_and_costs_keys:
-        #     for asset_category in asset_categories:
-        #         for asset in optimization_problem.heat_network_components.get(asset_category, []):
-        #             for cost_map_key in cost_map_keys:
-        #                 cost_map = getattr(optimization_problem, cost_map_key)
-        #                 cost = cost_map.get(asset, 0)
-        #                 obj += optimization_problem.extra_variable(cost)
+        for asset_categories, cost_map_keys in self.assets_and_costs_keys:
+            for asset_category in asset_categories:
+                for asset in optimization_problem.heat_network_components.get(asset_category, []):
+                    for cost_map_key in cost_map_keys:
+                        cost_map = getattr(optimization_problem, cost_map_key)
+                        cost = cost_map.get(asset, 0)
+                        obj += optimization_problem.extra_variable(cost)
         return obj
 
 
@@ -136,14 +136,11 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
             if asset.asset_type == "HeatProducer":
                 if "costInformation" in asset.attributes and (
                     asset.attributes["costInformation"].discountRate is not None
-                    and asset.attributes["costInformation"].discountRate.value
-                    is not None
+                    and asset.attributes["costInformation"].discountRate.value is not None
                 ):
                     asset.attributes["costInformation"].discountRate.value = 0.0
                 else:
-                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(
-                        value=0.0
-                    )
+                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
         return assets
 
 

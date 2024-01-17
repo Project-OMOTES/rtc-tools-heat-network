@@ -908,7 +908,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 discount_percentage = parameters[f"{asset_name}.discount_rate"]
                 if np.isnan(asset_life_years) or np.isnan(discount_percentage):
                     logger.warning(
-                        f"Annualized cost cannot be computed for {asset_name} since technical_life or discount_rate are not set."
+                        f"Annualized cost cannot be computed for \
+                              {asset_name} since technical_life \
+                                or discount_rate are not set."
                     )
                     continue
 

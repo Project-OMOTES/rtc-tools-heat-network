@@ -36,9 +36,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
-        solution_run_ates = run_optimization_problem(
-            HeatProblem, base_folder=base_folder
-        )
+        solution_run_ates = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
         # Solution of model with annualized cost, considering a discount rate > 0
         # and a technical life > 1
@@ -82,12 +80,10 @@ class TestEndScenarioSizingAnnualized(TestCase):
                 + results[f"HeatProducer_{i}__installation_cost"]
             )
             # These are the same parameters used by the model from the ESDL file:
-            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[
-                f"HeatProducer_{i}"
+            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
+            years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
+                "technicalLifetime"
             ]
-            years_asset_life = solution_annualized_cost.esdl_assets[
-                asset_id
-            ].attributes["technicalLifetime"]
             discount_rate = (
                 solution_annualized_cost.esdl_assets[asset_id]
                 .attributes["costInformation"]
@@ -118,7 +114,4 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestEndScenarioSizingAnnualized()
     a.test_end_scenario_sizing_annualized()
-    print(
-        "Execution time: "
-        + time.strftime("%M:%S", time.gmtime(time.time() - start_time))
-    )
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
