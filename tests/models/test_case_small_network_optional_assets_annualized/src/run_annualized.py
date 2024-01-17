@@ -8,7 +8,7 @@ import numpy as np
 from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 try:
     from models.test_case_small_network_optional_assets_annualized.src.run_ates import (
@@ -77,7 +77,7 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
             ]
         )
 
-    def function(self, optimization_problem: HeatMixin, ensemble_member):
+    def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member):
         """
         For the given optimization problem, this function
         sums up the costs associated with specified assets in
@@ -136,14 +136,11 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
             if asset.asset_type == "HeatProducer":
                 if "costInformation" in asset.attributes and (
                     asset.attributes["costInformation"].discountRate is not None
-                    and asset.attributes["costInformation"].discountRate.value
-                    is not None
+                    and asset.attributes["costInformation"].discountRate.value is not None
                 ):
                     asset.attributes["costInformation"].discountRate.value = 0.0
                 else:
-                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(
-                        value=0.0
-                    )
+                    asset.attributes["costInformation"].discountRate = esdl.SingleValue(value=0.0)
         return assets
 
 

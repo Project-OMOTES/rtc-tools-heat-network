@@ -85,6 +85,79 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         return dict(rho=self.rho, cp=self.cp)
 
+    def get_asset_attribute_value(
+        self,
+        asset: Asset,
+        attribute_name: str,
+        default_value: float,
+        min_value: float,
+        max_value: float,
+    ) -> float:
+        """
+        Get the value of the specified attribute for the given asset.
+        Args:
+            asset: The asset to retrieve the attribute value for.
+            attribute_name: The name of the attribute to retrieve.
+            default_value: The default value to use if the attribute is not present.
+            min_value: The minimum value for the attribute.
+            max_value: The maximum value for the attribute.
+        Returns:
+            The value of the specified attribute for the given asset.
+        Raises:
+            ValueError: If the attribute value is not within the specified range.
+        """
+        if attribute_name == "discountRate":
+            attribute_value = (
+                asset.attributes["costInformation"].discountRate.value
+                if asset.attributes["costInformation"]
+                and asset.attributes["costInformation"].discountRate is not None
+                and asset.attributes["costInformation"].discountRate.value is not None
+                else default_value
+            )
+        else:
+            attribute_value = (
+                asset.attributes[attribute_name]
+                if asset.attributes[attribute_name] and asset.attributes[attribute_name] != 0
+                else default_value
+            )
+        self.validate_attribute_input(
+            # NOTE: this validation happens after assigning default values
+            # discountRate and technicalLife need to be included in input files of tests
+            # before this input validation can be relocated earlier in this function
+            asset.name,
+            attribute_name,
+            attribute_value,
+            min_value,
+            max_value,
+        )
+        return attribute_value
+
+    def validate_attribute_input(
+        self,
+        asset_name: str,
+        attribute_name: str,
+        input_value: float,
+        min_value: float,
+        max_value: float,
+    ) -> None:
+        """
+        Validates if the input value is within the specified range.
+        Args:
+            asset_name (str): The name of the asset.
+            attribute_name (str): The name of the attribute.
+            input_value (float): The value to be validated.
+            min_value (float): The minimum value of the range.
+            max_value (float): The maximum value of the range.
+        Raises:
+            ValueError: If the input value is not within the specified range.
+        """
+        if input_value < min_value or input_value > max_value:
+            warning_msg = (
+                f"Input value {input_value} of attribute {attribute_name} "
+                f"is not within range ({min_value}, {max_value}) for asset {asset_name}."
+            )
+            logger.warning(warning_msg)
+
     def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
@@ -172,6 +245,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             state=self.get_state(asset),
             min_fraction_tank_volume=min_fraction_tank_volume,
             Stored_heat=dict(min=min_heat, max=max_heat),
@@ -338,6 +421,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             length=length,
             diameter=diameter,
             disconnectable=self._is_disconnectable_pipe(asset),
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
@@ -379,6 +472,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type == "Pump"
 
         modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
@@ -474,6 +577,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             efficiency=efficiency,
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             nominal=max_power / 2.0,
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -528,6 +641,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             COP=cop,
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Power_elec=dict(min=0.0, max=power_electrical, nominal=power_electrical / 2.0),
             Primary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
             Secondary_heat=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -585,6 +708,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
 
         modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
@@ -667,6 +800,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
             efficiency = 0.7
 
         modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Q_nominal=self._get_connected_q_nominal(asset),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
@@ -709,6 +852,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type == "Valve"
 
         modifiers = dict(
+            technical_life=self.get_asset_attribute_value(
+                asset,
+                "technicalLifetime",
+                default_value=30.0,
+                min_value=1.0,
+                max_value=50.0,
+            ),
+            discount_rate=self.get_asset_attribute_value(
+                asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
+            ),
             Q_nominal=self._get_connected_q_nominal(asset),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),

@@ -69,6 +69,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__asset_is_realized_var = {}
         self.__asset_is_realized_bounds = {}
 
+        # Variable for annualized capex cost
+        self._annualized_capex_var_map = {}
+        self.__annualized_capex_var = {}
+        self.__annualized_capex_var_bounds = {}
+        self.__annualized_capex_var_nominals = {}
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
@@ -262,6 +268,30 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 else 1.0e2
             )
 
+        for asset in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("demand", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("pipe", []),
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+        ]:
+            annualized_capex_var_name = f"{asset}__annualized_capex"
+            self._annualized_capex_var_map[asset] = annualized_capex_var_name
+            self.__annualized_capex_var[annualized_capex_var_name] = ca.MX.sym(
+                annualized_capex_var_name
+            )
+            self.__annualized_capex_var_bounds[annualized_capex_var_name] = (
+                0.0,
+                np.inf,
+            )  # (lb, ub)
+            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+            investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+            self.__annualized_capex_var_nominals[annualized_capex_var_name] = self.variable_nominal(
+                installation_cost_symbol_name
+            ) + self.variable_nominal(investment_cost_symbol_name)
+
         if options["include_asset_is_realized"]:
             for asset in [
                 *self.heat_network_components.get("source", []),
@@ -300,9 +330,21 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
+
+        +--------------------------------------+-----------+-----------------------------+
+        | ``discounted_annualized_cost ``       | ``bool``  | ``False``                   |
+        +--------------------------------------+-----------+-----------------------------+
+
+        The ``discounted_annualized_cost`` option computes the annualized discounted costs for
+        each asset, and defines the sum of these costs as the total cost of ownership for the
+        cost minimization goal.
         """
 
-        return NotImplementedError
+        options = {}
+
+        options["discounted_annualized_cost"] = False
+
+        return options
 
     @abstractmethod
     def get_max_size_var(self, asset_name, ensemble_member):
@@ -371,6 +413,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         variables.extend(self.__asset_investment_cost_var.values())
         variables.extend(self.__asset_installation_cost_var.values())
         variables.extend(self.__asset_variable_operational_cost_var.values())
+        variables.extend(self.__annualized_capex_var.values())
         return variables
 
     @property
@@ -408,6 +451,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             return self.__asset_installation_cost_nominals[variable]
         elif variable in self.__cumulative_investments_made_in_eur_nominals:
             return self.__cumulative_investments_made_in_eur_nominals[variable]
+        elif variable in self.__annualized_capex_var_nominals:
+            return self.__annualized_capex_var_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -423,6 +468,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         bounds.update(self.__asset_variable_operational_cost_bounds)
         bounds.update(self.__asset_is_realized_bounds)
         bounds.update(self.__cumulative_investments_made_in_eur_bounds)
+        bounds.update(self.__annualized_capex_var_bounds)
         return bounds
 
     @staticmethod
@@ -831,6 +877,71 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return constraints
 
+    def __annualized_capex_constraints(self, ensemble_member):
+        """
+        Calculate the annualized capital expenditure (CAPEX) constraints for different categories
+        of assets in a heat network, taking into account the initial investment cost, the technical
+        life of the asset, and the discount rate.
+        The discount rate is used to calculate the periodic annual equivalent cost of the asset's
+        capital investment over its technical life using the annuity formula.
+        The discount rate reflects the time value of money and the risk associated with the
+        investment. A higher discount rate will result in a lower present value of the annuity and
+        a higher periodic payment, while a lower discount rate will result in a higher present
+        value of the annuity and a lower periodic payment.
+
+                Args:
+                    ensemble_member: The ensemble member used to get parameters for the calculation.
+
+                Returns:
+                    A list of constraints for each asset.
+        """
+        constraints = []
+
+        asset_categories = ["source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
+
+        parameters = super().parameters(ensemble_member)
+
+        for category in asset_categories:
+            for asset_name in self.heat_network_components.get(category, []):
+                asset_life_years = parameters[f"{asset_name}.technical_life"]
+                # Input is assumed as as annual percentage
+                discount_percentage = parameters[f"{asset_name}.discount_rate"]
+                if np.isnan(asset_life_years) or np.isnan(discount_percentage):
+                    logger.warning(
+                        f"Annualized cost cannot be computed for {asset_name} since technical_life or discount_rate are not set."
+                    )
+                    continue
+
+                symbol_name = self._annualized_capex_var_map[asset_name]
+                symbol = self.extra_variable(symbol_name)
+
+                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                investment_cost_symbol = self.extra_variable(
+                    investment_cost_symbol_name, ensemble_member
+                )
+
+                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                installation_cost_symbol = self.extra_variable(
+                    installation_cost_symbol_name, ensemble_member
+                )
+
+                investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
+
+                nominal = self.variable_nominal(symbol_name)
+                discount_rate = discount_percentage / 100
+
+                annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+
+                constraints.append(
+                    (
+                        (symbol - investment_and_installation_cost * annuity_factor) / nominal,
+                        0.0,
+                        0.0,
+                    )
+                )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -858,6 +969,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
+
+        if self.heat_network_options()["discounted_annualized_cost"]:
+            constraints.extend(self.__annualized_capex_constraints(ensemble_member))
 
         return constraints
 
@@ -887,3 +1001,29 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options = super().compiler_options()
         options["resolve_parameter_values"] = True
         return options
+
+
+def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> float:
+    """
+    Calculate the annuity factor, given an annual discount_rate over a specified number
+    of years_asset_life. This annuity factor is used in the model to calculate the
+    annual constant payments equivalent to the initial investment or installation cost.
+    Parameters:
+        discount_rate (float): Annual discount rate (expressed
+        as a decimal, e.g., 0.05 for 5%).
+        years_asset_life (flor): Asset technical life (years).
+    Returns:
+        float: annuity_factor.
+    """
+
+    if discount_rate < 0 or discount_rate > 1:
+        raise ValueError("Discount rate must be between 0-1")
+
+    if years_asset_life <= 0:
+        raise ValueError("Asset technical life must be greather than 0")
+
+    if discount_rate == 0:
+        annuity_factor = 1 / years_asset_life
+    else:
+        annuity_factor = discount_rate / (1 - (1 + discount_rate) ** (-years_asset_life))
+    return annuity_factor
