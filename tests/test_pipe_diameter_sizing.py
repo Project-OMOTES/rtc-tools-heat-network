@@ -13,13 +13,14 @@ class TestPipeDiameterSizingExample(TestCase):
         This test is to check if the optimization behaves as expected under pipe class optimization.
         The test uses a symmetrical network with three demands in the middle that can be provided
         from a source both left and right. The optimal solution is that the optimizer only uses
-        one source.
+        the left source and the associated left pipes.
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
         - That expected pipes are removed
 
         Missing:
+        - Use the optional as state for the pipes in the esdl.
         - Check that the Q is under the max.
         - Check that head losses are as expected for the selected diameter
         - Check that head loss equals zero for removed pipes

@@ -12,9 +12,9 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestProducerMaxProfile(TestCase):
     """
     A test to verify that the producer can have a given scaled profile, where the producer will
-    always produce equal or less than said profile. The constraint for the producer profile is
-    checked by ensuring that the producer is temporarily less available (reducing the profile value
-    at a few time steps).
+    always produce equal or less than said profile. This constraint is checked for a producer,
+    where the producer's profile was also intentionally reduced for a couple of time-steps
+    (reducing the profile value at a few time steps).
 
     Checks:
     - Demand matching
