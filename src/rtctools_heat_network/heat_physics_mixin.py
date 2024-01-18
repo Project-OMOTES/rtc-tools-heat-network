@@ -1535,11 +1535,27 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_temperature = self.state(f"{b}.Temperature_ates")
             ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
 
+            # discretized tempeature should alwyas be smaller or equal to ATES temperature
+            constraints.append((
+                ates_temperature - ates_temperature_disc,
+                0.0,
+                np.inf
+            ))
+
             # TODO: implement temperature constraint ates continuous to integer
             if len(supply_temperatures) == 0:
                 constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
             else:
                 big_m = max(supply_temperatures)
+                #TODO: temperature if charging T_ates = T_astes_discrete, will be replaced by temperatures based on losses and heat addition
+                constraints.append((ates_temperature - ates_temperature_disc
+                                    - (1 - is_buffer_charging) *big_m,
+                                    -np.inf,
+                                    0.0))
+                constraints.append((ates_temperature - ates_temperature_disc
+                                    + (1 - is_buffer_charging) * big_m,
+                                    0.0,
+                                    np.inf))
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
                     # equality constraint if discharging and temperature selected using big_m
@@ -1564,6 +1580,56 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     )
         return constraints
+
+    def __ates_losses_path_constraints(self, ensemble_member):
+        """
+        Contains constraints for the heat and temperature losses in the ates
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for b, (
+                (hot_pipe, _hot_pipe_orientation),
+                (_cold_pipe, _cold_pipe_orientation),
+        ) in {**self.heat_network_topology.ates}.items():
+            heat_nominal = parameters[f"{b}.Heat_nominal"]
+            q_nominal = self.variable_nominal(f"{b}.Q")
+            cp = parameters[f"{b}.cp"]
+            rho = parameters[f"{b}.rho"]
+            dt = parameters[f"{b}.dT"]
+            soil_temperature = parameters[f"{b}.T_amb"]
+
+            discharge = self.state(f"{b}.HeatIn.Q")
+            heat_out = self.state(f"{b}.HeatOut.Heat")
+            heat_in = self.state(f"{b}.HeatIn.Heat")
+
+            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+            is_buffer_charging = self.state(flow_dir_var)
+
+            sup_carrier = parameters[f"{b}.T_supply_id"]
+            ret_carrier = parameters[f"{b}.T_return_id"]
+            supply_temperatures = self.temperature_regimes(sup_carrier)
+            return_temperatures = self.temperature_regimes(ret_carrier)
+            ates_temperature = self.state(f"{b}.Temperature_ates")
+            ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
+            ates_dt_charging = self.state(f"{b}.Temperature_change_charging")
+            ates_dt_loss = self.state(f"{b}.Temperature_loss")
+
+
+            #TODO: wip, only placeholders
+            if len(supply_temperatures) == 0:
+                constraints.append(ates_dt_charging, 0.0, 0.0)
+                constraints.append(ates_dt_loss, 0.0, 0.0)
+            else:
+                for supply_temperature in supply_temperatures:
+                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
+                    #if is selected, then specific temeprature loss constraint should be applicable, which will be a function of the stored heat
+                    # a(T_disc-Tamb) exp(-storedheat*b) where a and b are factors and the exponential function is linearised.
+
+
+
+        return constraints
+
 
     def __storage_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -2522,6 +2588,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_losses_path_constraints(ensemble_member))
 
         return constraints
 
