@@ -10,6 +10,18 @@ from rtctools_heat_network.head_loss_class import HeadLossOption
 
 class TestHeat(TestCase):
     def test_heat_loss(self):
+        """
+        This is a test to check whether the network (pipes) are dissipating heat as we expect.
+
+        Checks:
+        - Check that the produced heat is strictly higher than the consumed heat
+
+        Missing:
+        - The model used seems weird with a parallel pipe, this test should be done with the simple
+        source, pipe, demand and with an esdl model.
+        - We should check for energy conservation in the network
+
+        """
         import models.double_pipe_heat.src.double_pipe_heat as double_pipe_heat
         from models.double_pipe_heat.src.double_pipe_heat import DoublePipeEqualHeat
 
@@ -26,6 +38,17 @@ class TestHeat(TestCase):
         np.testing.assert_array_less(demand, source)
 
     def test_zero_heat_loss(self):
+        """
+        Check the optimiziation function when the zero heat loss is used.
+
+        Checks:
+        - ....
+
+        Missing:
+        - Should check that produced equals consumed.
+        - Should check the heat loss variable being zero
+
+        """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatPython
 
@@ -92,6 +115,20 @@ class TestMinMaxPressureOptions(TestCase):
             return options
 
     def test_min_max_pressure_options(self):
+        """
+        Check if the min and max pressure options are correctly enforced on the
+        optimization. This is achieved by creating a problem where the pressure drop needed
+        to match demands is infeasible under the desired pressured range.
+
+        Checks:
+        - unbounded problem has requires more pressure drop than allowed by the min and max pressure
+        - min pressure
+        - max pressure
+
+        Missing:
+        - Should use esdl model.
+
+        """
         case_default = run_optimization_problem(self.SmallerPipes, base_folder=self.base_folder)
         case_min_pressure = run_optimization_problem(self.MinPressure, base_folder=self.base_folder)
         case_max_pressure = run_optimization_problem(self.MaxPressure, base_folder=self.base_folder)
@@ -182,6 +219,24 @@ class TestDisconnectablePipe(TestCase):
             return options
 
     def test_disconnected_network_pipe(self):
+        """
+        Check whether the is_disconnected variable behaves as expected. This variable should be
+        True=1 when the flow through the pipe is zero. This is done by running two problems, one
+        where the flow is forced to zero and it is expected that the optimization should make the
+        pipe disconnected, and one where it is expected for the pipe to stay connected to match
+        demand although the pipe is allowed to be disconnected.
+
+        Checks:
+        - Sanity check that min velocity is >0
+        - Check that pipe stays connected when flow is not forced to zero
+        - Chekc that pipe becomes disconnected when flow is forced to zero
+
+        Missing:
+        - Should explicitly check the is_disconnected variable. Now we are just checking
+        additionally added constraints.
+        - Should be using an ESDL model
+
+        """
         case_connected = run_optimization_problem(self.ModelConnected, base_folder=self.base_folder)
         results_connected = case_connected.extract_results()
         q_connected = results_connected["pipe_hot.Q"]
@@ -212,6 +267,12 @@ class TestDisconnectablePipe(TestCase):
         """
         Just a sanity check that the head loss constraints for disconnectable
         pipes works with LINEAR as well as LINEARIZED_DW.
+
+        Checks:
+        - That the flow is equal for both types of head loss constraint settings
+
+        Missing:
+        - Check that is_disconnected is set correctly.
         """
 
         case_linear = run_optimization_problem(self.ModelDisconnected, base_folder=self.base_folder)

@@ -10,6 +10,22 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestHEX(TestCase):
     def test_heat_exchanger(self):
+        """
+        Check the modelling of the heat exchanger component which allows two hydraulically
+        decoupled networks to exchange heat with each other. It is enforced that heat can only flow
+        from the primary side to the secondary side, and heat exchangers are allowed to be disabled
+        for timesteps in which they are not used. This is to allow for the temperature constraints
+        (T_primary > T_secondary) to become deactivated.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - That the efficiency is correclty implemented for heat from primary to secondary
+        - Check that the is_disabled is set correctly.
+
+        Missing:
+        - Check if the temperatures provided are physically feasible.
+
+        """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
         from models.heat_exchange.src.run_heat_exchanger import (
             HeatProblem,
@@ -46,6 +62,17 @@ class TestHEX(TestCase):
 
 class TestHP(TestCase):
     def test_heat_pump(self):
+        """
+        Check the modelling of the heat pump component which has a constant COP with no energy loss.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - Check that the heat pump is producing according to its COP
+
+        Missing:
+        - Source allocation is as expected see also TODO.
+
+        """
         import models.heatpump.src.run_heat_pump as run_heat_pump
         from models.heatpump.src.run_heat_pump import (
             HeatProblem,
@@ -61,7 +88,6 @@ class TestHP(TestCase):
         sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
         power_elec = results["GenericConversion_3d3f.Power_elec"]
 
-        # TODO: we should also check if heatdemand target is matched
         # TODO: check if the primary source utilisisation is maximised and secondary minimised
         # I think it is badly scaled or some scaling issues in constraints. (possible in combination
         # with disconnected)

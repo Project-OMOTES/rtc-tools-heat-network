@@ -10,6 +10,20 @@ from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
 
 class TestEndScenarioSizing(TestCase):
     def test_end_scenario_sizing(self):
+        """
+        Check if the TestEndScenario sizing workflow is behaving as expected. This is an
+        optimization done over a full year with timesteps of 5 days and hour timesteps for the peak
+        day.
+
+        Checks:
+        - Cyclic behaviour for ATES
+        - That buffer tank is only used on peak day
+        - demand matching
+
+        Missing:
+        - Check if TCO goal included the desired cost components.
+
+        """
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
