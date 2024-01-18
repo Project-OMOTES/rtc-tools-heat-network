@@ -60,6 +60,10 @@ class HeatPython(
     PyCMLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    Problem using simple python model for a heat network with a source, pump, pipe and demand.
+    """
+
     def __init__(self, *args, **kwargs):
         self.__model = Model()
         super().__init__(*args, **kwargs)

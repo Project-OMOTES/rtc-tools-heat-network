@@ -9,6 +9,24 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestPipeDiameterSizingExample(TestCase):
     def test_half_network_gone(self):
+        """
+        This test is to check if the optimization behaves as expected under pipe class optimization.
+        The test uses a symmetrical network with three demands in the middle that can be provided
+        from a source both left and right. The optimal solution is that the optimizer only uses
+        the left source and the associated left pipes.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - That expected pipes are removed
+
+        Missing:
+        - Use the optional as state for the pipes in the esdl.
+        - Check that the Q is under the max.
+        - Check that head losses are as expected for the selected diameter
+        - Check that head loss equals zero for removed pipes
+        - Same for hydraulic power, no idea why it is outcommented
+
+        """
         root_folder = str(Path(__file__).resolve().parent.parent)
         sys.path.insert(1, root_folder)
 

@@ -15,7 +15,7 @@ class TestNetworkSimulator(TestCase):
     In this test case 2 heat producers and an ATES is used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
 
-    Testing:
+    Checks:
     - General checks namely demand matching, energy conservation and asset heat variable vs
       calculated heat (based on flow rate)
     - Check that producer 1 (merit oder = 2) is only used for the supply of heat lossed in the

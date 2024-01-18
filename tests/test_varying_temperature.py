@@ -10,6 +10,21 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 
 class TestVaryingTemperature(TestCase):
     def test_1a_temperature_variation(self):
+        """
+        This test is to check if the varying network temperature works as expected on a simple
+        network. We give it temperature options such that it should select a minimum delta T to be
+        able to meet the heat demands. It is known which network temperatures should be selected
+        based on the specified input values.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - Check expected supply temperature
+        - Check expected return temperature
+
+        Missing:
+        - Check on integer variable for selected temperature.
+
+        """
         import models.unit_cases.case_1a.src.run_1a as run_1a
         from models.unit_cases.case_1a.src.run_1a import HeatProblemTvar
 
@@ -35,6 +50,16 @@ class TestVaryingTemperature(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
     def test_3a_temperature_variation_supply(self):
+        """
+        Check varying temperature behoviour for network with storage (tank). In this case we
+        Minimise the produced heat and thus we expect the lowest temperature to be selected.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Check if the expected temperature is selected and if temperature variable is set
+        correctly.
+
+        """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblemTvarsup
 
@@ -68,6 +93,20 @@ class TestVaryingTemperature(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
     def test_3a_temperature_variation_return(self):
+        """
+        Check varying temperature behoviour for network with storage (tank). In this case we
+        Minimise the flow at the producer, and thus we expect the lowest temperature to be selected
+        to maximise the detla T.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Check if the expected temperature is selected and if temperature variable is set
+        correctly.
+
+        Missing:
+        - I think there is a double demand mathcing check now...
+
+        """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblemTvarret
 
@@ -101,6 +140,17 @@ class TestVaryingTemperature(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
     def test_hex_temperature_variation(self):
+        """
+        This test is to check whether the heat exchanger behaves as expected when optimized under
+        varying network temperature. This is of special interest as we want to ensure the
+        temperatures stay physically feasible, therefore we create a problem where the lowest
+        available supply T is infeasible.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Check that the infeasible temperature is not selected.
+
+        """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
         from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvar
 
@@ -130,6 +180,16 @@ class TestVaryingTemperature(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
     def test_hex_temperature_variation_disablehex(self):
+        """
+        This test is to check if the optimizer disables the heat exchanger when only infeasible
+        temperature option are provided to it.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Infeasible T for heat exchanger is selected.
+        - Heat exchanger is disabled.
+
+        """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
         from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvarDisableHEX
 
@@ -155,6 +215,16 @@ class TestVaryingTemperature(TestCase):
         heat_to_discharge_test(heat_problem, results)
 
     def test_hex_temperature_variation_secondary(self):
+        """
+        Check to see the functioning of the varying network temperature with a heat exchanger where
+        all options are feasible and we expect it to take the most advantageous one, which in this
+        case is the lowest one.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Check that lowest temperature is selected and set correctly.
+
+        """
         import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
         from models.heat_exchange.src.run_heat_exchanger import HeatProblemTvarSecondary
 
@@ -166,8 +236,8 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in secondary supply temp 70 and 90 deg
-        # lowest temperature should be selected because of larger dT causing lowest flow rates
-        # and we apply source dH minimization goal
+        # lowest temperature should be selected because of heat minimization and lower T has
+        # lower heat loss.
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (70.0) is the outputted temperature
