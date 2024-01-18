@@ -665,21 +665,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
         efficiency = asset.attributes["dischargeEfficiency"]
         if not efficiency:
             efficiency = 0.7
-        #TODO: temporary value for standard dT on which capacity is based, Q in m3/s
+        # TODO: temporary value for standard dT on which capacity is based, Q in m3/s
         temperatures = self._supply_return_temperature_modifiers(asset)
-        dT = temperatures['T_supply']-temperatures['T_return']
+        dT = temperatures["T_supply"] - temperatures["T_return"]
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             Q=dict(
-                min=-hfr_discharge_max/(4200*998*dT) * asset.attributes["aggregationCount"],
-                max=hfr_discharge_max/(4200*998*dT) * asset.attributes["aggregationCount"],
+                min=-hfr_discharge_max / (4200 * 998 * dT) * asset.attributes["aggregationCount"],
+                max=hfr_discharge_max / (4200 * 998 * dT) * asset.attributes["aggregationCount"],
                 nominal=self._get_connected_q_nominal(asset) * asset.attributes["aggregationCount"],
             ),
             T_amb=asset.attributes["aquiferMidTemperature"],
             Temperature_ates=dict(
-                min=temperatures['T_return'], # or potentially 0
-                max=temperatures['T_supply'],
-                nominal=temperatures['T_return'],
+                min=temperatures["T_return"],  # or potentially 0
+                max=temperatures["T_supply"],
+                nominal=temperatures["T_return"],
             ),
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),

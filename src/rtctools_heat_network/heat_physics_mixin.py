@@ -234,19 +234,28 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__control_valve_direction_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
             self.__control_valve_direction_var_bounds[flow_dir_var] = (0.0, 1.0)
 
-        for ates, ((hot_pipe, _hot_pipe_orientation),
-                (_cold_pipe, _cold_pipe_orientation)) in self.heat_network_topology.ates.items():
+        for ates, (
+            (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
+        ) in self.heat_network_topology.ates.items():
             ates_temp_disc_var_name = f"{ates}__temperature_ates_disc"
-            self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(ates_temp_disc_var_name)
+            self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(
+                ates_temp_disc_var_name
+            )
             carrier_id = parameters[f"{hot_pipe}.carrier_id"]
             temperatures = self.temperature_regimes(carrier_id)
-            if len(temperatures)==0:
+            if len(temperatures) == 0:
                 temperature = parameters[f"{hot_pipe}.temperature"]
-                self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (temperature, temperature)
-            elif len(temperatures)==1:
+                self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (
+                    temperature,
+                    temperature,
+                )
+            elif len(temperatures) == 1:
                 temperature = temperatures[0]
                 self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (
-                temperature, temperature)
+                    temperature,
+                    temperature,
+                )
             else:
                 self.__ates_temperature_disc_var_bounds[ates_temp_disc_var_name] = (
                     min(temperatures),
@@ -1503,8 +1512,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(ensemble_member)
 
         for b, (
-                (hot_pipe, _hot_pipe_orientation),
-                (_cold_pipe, _cold_pipe_orientation),
+            (hot_pipe, _hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.heat_network_topology.ates}.items():
             heat_nominal = parameters[f"{b}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{b}.Q")
@@ -1526,10 +1535,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_temperature = self.state(f"{b}.Temperature_ates")
             ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
 
-
-            #TODO: implement temperature constraint ates continuous to integer
-            if len(supply_temperatures) ==0:
-                constraints.append((parameters[f"{b}.T_supply"]-ates_temperature_disc, 0.0, 0.0))
+            # TODO: implement temperature constraint ates continuous to integer
+            if len(supply_temperatures) == 0:
+                constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
             else:
                 big_m = max(supply_temperatures)
                 for supply_temperature in supply_temperatures:
@@ -1556,7 +1564,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                     )
         return constraints
-
 
     def __storage_heat_to_discharge_path_constraints(self, ensemble_member):
         """
@@ -2515,7 +2522,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
-
 
         return constraints
 
