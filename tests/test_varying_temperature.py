@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -49,6 +51,25 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            temperature = results[f"{carrier_id}_temperature"]
+            heat_loss_calc = [
+                pipe_heat_loss(
+                    heat_problem,
+                    heat_problem.heat_network_options(),
+                    heat_problem.parameters(0),
+                    pipe,
+                    None,
+                    temp,
+                )
+                for temp in temperature
+            ]
+            np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
+
     def test_3a_temperature_variation_supply(self):
         """
         Check varying temperature behoviour for network with storage (tank). In this case we
@@ -91,6 +112,26 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 4195016129475469474608:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
     def test_3a_temperature_variation_return(self):
         """
@@ -139,6 +180,26 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 4195016129475469474608000:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
+
     def test_hex_temperature_variation(self):
         """
         This test is to check whether the heat exchanger behaves as expected when optimized under
@@ -178,6 +239,26 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 33638164429859421:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
     def test_hex_temperature_variation_disablehex(self):
         """
