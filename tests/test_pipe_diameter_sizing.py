@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -68,6 +70,22 @@ class TestPipeDiameterSizingExample(TestCase):
             ),
             "The incorrect 4 pipes have been removed",
         )
+
+        for pipe in problem.heat_network_components.get("pipe", []):
+            neighbour = problem.has_related_pipe(pipe)
+            if neighbour and pipe not in problem.hot_pipes:
+                pipe = problem.cold_to_hot_pipe(pipe)
+            given_pipe_classes = problem.pipe_classes(pipe)
+            chosen_pc = [
+                pc
+                for pc in given_pipe_classes
+                if round(results[f"{pipe}__hn_pipe_class_{pc.name}"][0]) == 1.0
+            ][0]
+            np.testing.assert_array_less(
+                results[f"{pipe}.Q"],
+                chosen_pc.maximum_velocity * np.pi * (chosen_pc.inner_diameter / 2.0) ** 2 + 1.0e-6,
+            )
+
         # Ensure that the removed pipes do not have predicted hydraulic power values
         hydraulic_power_sum = 0.0
         for pipe in diameters.keys():
