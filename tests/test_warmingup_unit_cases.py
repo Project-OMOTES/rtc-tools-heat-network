@@ -19,6 +19,7 @@ class TestWarmingUpUnitCases(TestCase):
         - Energy conservation
         - Heat to discharge
         - Checks for conservation at the node
+        - Checks that the minimum pressure-drop constraints at the demand are satisfied
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -45,6 +46,11 @@ class TestWarmingUpUnitCases(TestCase):
 
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
             np.testing.assert_allclose(0.0, heat_sum, atol=1.0e-6)
+
+        for demand in heat_problem.heat_network_components.get("demand", []):
+            np.testing.assert_array_less(
+                10.2 - 1.0e-6, results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
+            )
 
     def test_2a(self):
         """
