@@ -31,9 +31,9 @@ class TestMaxSizeAggregationCount(TestCase):
         - Check that max_size source 2 is > utilization
         - Check cost components for source 1 and 2
         - Check max size and placement of ates
+        - Fixed operational cost for sources
 
         Missing:
-        - Fixed operational cost for sources
         - Remove hard coded values for cost checks
 
         """
@@ -48,6 +48,7 @@ class TestMaxSizeAggregationCount(TestCase):
         solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         # Producer 1 should not produce due to higher cost
         # Producer 2 should produce
@@ -57,6 +58,8 @@ class TestMaxSizeAggregationCount(TestCase):
         prod_2_placed = results["HeatProducer_2_aggregation_count"]
         var_cost_1 = results["HeatProducer_1__variable_operational_cost"]
         var_cost_2 = results["HeatProducer_2__variable_operational_cost"]
+        fix_cost_1 = results["HeatProducer_1__fixed_operational_cost"]
+        fix_cost_2 = results["HeatProducer_2__fixed_operational_cost"]
         inst_cost_1 = results["HeatProducer_1__installation_cost"]
         inst_cost_2 = results["HeatProducer_2__installation_cost"]
         inv_cost_1 = results["HeatProducer_1__investment_cost"]
@@ -87,6 +90,12 @@ class TestMaxSizeAggregationCount(TestCase):
         # to avoid test failing when heat losses slightly change
         np.testing.assert_allclose(var_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(var_cost_2, 6174.920222, atol=1000.0, rtol=1.0e-2)
+        np.testing.assert_allclose(fix_cost_1, 0.0, atol=1.0e-6)
+        np.testing.assert_allclose(
+            fix_cost_2,
+            max_size_2 * parameters["HeatProducer_2.fixed_operational_cost_coefficient"],
+            atol=1.0e-6,
+        )
         np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(inst_cost_2, 100000.0)
         np.testing.assert_allclose(inv_cost_1, 0.0, atol=1e-9)

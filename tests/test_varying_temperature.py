@@ -22,6 +22,7 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check expected supply temperature
         - Check expected return temperature
+        - Check if the heat losses are correct for the selected temperature
 
         Missing:
         - Check on integer variable for selected temperature.
@@ -79,6 +80,7 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -143,6 +145,7 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
+        - Check if the heat losses are correct for the selected temperature
 
         Missing:
         - I think there is a double demand mathcing check now...

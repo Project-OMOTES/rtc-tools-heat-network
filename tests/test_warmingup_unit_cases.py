@@ -18,6 +18,7 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
+        - Checks for conservation at the node
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a

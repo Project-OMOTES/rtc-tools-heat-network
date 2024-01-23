@@ -20,10 +20,10 @@ class TestPipeDiameterSizingExample(TestCase):
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
         - That expected pipes are removed
+        - Check that the Q is under the max for the selected pipe class.
 
         Missing:
         - Use the optional as state for the pipes in the esdl.
-        - Check that the Q is under the max.
         - Check that head losses are as expected for the selected diameter
         - Check that head loss equals zero for removed pipes
         - Same for hydraulic power, no idea why it is outcommented
