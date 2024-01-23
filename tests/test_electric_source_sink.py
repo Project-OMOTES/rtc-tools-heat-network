@@ -22,6 +22,8 @@ class TestMILPElectricSourceSink(TestCase):
         - Check for energy conservation with consumed power, lost power and produced power.
         - Check that the voltage drops over the line.
         - Check the Electricity_source/demand variable is correctly set.
+        - Check that minimum voltage is exactly matched.
+        - Check that power at the demands equals the current * voltage.
 
         Missing:
         The hardcoded stuff should be replaced.
@@ -36,6 +38,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         solution = run_optimization_problem(ElectricityProblem, base_folder=base_folder)
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
         v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
@@ -79,6 +82,16 @@ class TestMILPElectricSourceSink(TestCase):
                 results[f"{demand}.ElectricityIn.Power"],
                 atol=1.0e-6,
             )
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"],
+                parameters[f"{demand}.min_voltage"],
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.Power"],
+                atol=1.0e-3,
+            )
 
     def test_source_sink_max_curr(self):
         """
@@ -90,6 +103,8 @@ class TestMILPElectricSourceSink(TestCase):
         - Check for energy conservation with consumed power, lost power and produced power.
         - Check that the voltage drops over the line.
         - Check that the current limit is not exceeded
+        - Check that minimum voltage is exactly matched
+        - Check that power at the demands equals the current * voltage
 
         Missing:
         This test seems to be formulated wrong, as the only additional thing we test is the
@@ -107,6 +122,7 @@ class TestMILPElectricSourceSink(TestCase):
 
         solution = run_optimization_problem(ElectricityProblemMaxCurr, base_folder=base_folder)
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         tolerance = 1e-10  # due to computational comparison
 
@@ -150,3 +166,15 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_allclose(current_cable, current_producer)
         biggerthen = all(142.0 * np.ones(len(current_demand)) >= current_demand - tolerance)
         self.assertTrue(biggerthen)
+
+        for demand in solution.heat_network_components.get("electricity_demand", []):
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"],
+                parameters[f"{demand}.min_voltage"],
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.ElectricityIn.V"] * results[f"{demand}.ElectricityIn.I"],
+                results[f"{demand}.ElectricityIn.Power"],
+                atol=1.0e-3,
+            )
