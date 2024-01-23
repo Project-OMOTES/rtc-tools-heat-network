@@ -21,6 +21,7 @@ class TestMILPElectricSourceSink(TestCase):
         - Check that the consumed power is always>= 0.
         - Check for energy conservation with consumed power, lost power and produced power.
         - Check that the voltage drops over the line.
+        - Check the Electricity_source/demand variable is correctly set.
 
         Missing:
         The hardcoded stuff should be replaced.
@@ -64,6 +65,20 @@ class TestMILPElectricSourceSink(TestCase):
         np.testing.assert_array_less(v_out, v_in)
         biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
         self.assertTrue(biggerthen)
+
+        for source in solution.heat_network_components.get("electricity_source", []):
+            np.testing.assert_allclose(
+                results[f"{source}.Electricity_source"],
+                results[f"{source}.ElectricityOut.Power"],
+                atol=1.0e-6,
+            )
+
+        for demand in solution.heat_network_components.get("electricity_demand", []):
+            np.testing.assert_allclose(
+                results[f"{demand}.Electricity_demand"],
+                results[f"{demand}.ElectricityIn.Power"],
+                atol=1.0e-6,
+            )
 
     def test_source_sink_max_curr(self):
         """
