@@ -18,8 +18,11 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
-        - Checks for conservation at the node
+        - Checks for conservation of flow and heat at the node
+        - Check for equal head at all node connections
         - Checks that the minimum pressure-drop constraints at the demand are satisfied
+        - Check that Heat_demand & Heat_source are set correctly and are linked to the Heat_flow
+        variable
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -43,6 +46,9 @@ class TestWarmingUpUnitCases(TestCase):
             for i_conn, (_pipe, orientation) in connected_pipes.items():
                 discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
                 heat_sum += results[f"{node}.HeatConn[{i_conn+1}].Heat"] * orientation
+                np.testing.assert_allclose(
+                    results[f"{node}.HeatConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                )
 
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
             np.testing.assert_allclose(0.0, heat_sum, atol=1.0e-6)
@@ -50,6 +56,24 @@ class TestWarmingUpUnitCases(TestCase):
         for demand in heat_problem.heat_network_components.get("demand", []):
             np.testing.assert_array_less(
                 10.2 - 1.0e-6, results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.HeatIn.Heat"] - results[f"{demand}.HeatOut.Heat"],
+                results[f"{demand}.Heat_demand"],
+                atol=1.0e-6,
+            )
+            np.testing.assert_allclose(
+                results[f"{demand}.Heat_demand"], results[f"{demand}.Heat_flow"], atol=1.0e-6
+            )
+
+        for source in heat_problem.heat_network_components.get("source", []):
+            np.testing.assert_allclose(
+                results[f"{source}.HeatOut.Heat"] - results[f"{source}.HeatIn.Heat"],
+                results[f"{source}.Heat_source"],
+                atol=1.0e-6,
+            )
+            np.testing.assert_allclose(
+                results[f"{source}.Heat_source"], results[f"{source}.Heat_flow"], atol=1.0e-6
             )
 
     def test_2a(self):
