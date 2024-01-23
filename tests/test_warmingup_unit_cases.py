@@ -1,6 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
+import numpy as np
+
 from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -26,9 +28,22 @@ class TestWarmingUpUnitCases(TestCase):
         # Just a "problem is not infeasible"
         heat_problem = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
-        demand_matching_test(heat_problem, heat_problem.extract_results())
-        energy_conservation_test(heat_problem, heat_problem.extract_results())
-        heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+        results = heat_problem.extract_results()
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        for node, connected_pipes in heat_problem.heat_network_topology.nodes.items():
+            discharge_sum = 0.0
+            heat_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                discharge_sum += results[f"{node}.HeatConn[{i_conn+1}].Q"] * orientation
+                heat_sum += results[f"{node}.HeatConn[{i_conn+1}].Heat"] * orientation
+
+            np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
+            np.testing.assert_allclose(0.0, heat_sum, atol=1.0e-6)
 
     def test_2a(self):
         """
