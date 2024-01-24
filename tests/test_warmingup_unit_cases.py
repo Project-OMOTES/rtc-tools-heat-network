@@ -108,6 +108,12 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
+        - Check the flow direction variable (this problem should always have a switching flow
+        direction for the pipe connected to the buffer tank)
+        - Check that the Heat_buffer & Heat_flow variable are set correctly
+        - Check that the history for the buffer is set correctly at t=0
+        - Check that the heat loss is positive and as expected
+        - Check that the Stored heat is the sum of (dis)charge and losses
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -118,6 +124,42 @@ class TestWarmingUpUnitCases(TestCase):
         # Just a "problem is not infeasible"
         heat_problem = run_optimization_problem(HeatProblem, base_folder=base_folder)
 
-        demand_matching_test(heat_problem, heat_problem.extract_results())
-        energy_conservation_test(heat_problem, heat_problem.extract_results())
-        heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+        bounds = heat_problem.bounds()
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        # We only check the flow directions for the time-steps that there is flow in the pipe.
+        inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
+        np.testing.assert_allclose(
+            np.round(results["Pipe_e53a__flow_direct_var"][inds]) * 2.0 - 1.0,
+            np.sign(results["Pipe_e53a.Q"][inds]),
+        )
+
+        for buffer in heat_problem.heat_network_components.get("buffer", []):
+            np.testing.assert_allclose(
+                results[f"{buffer}.Heat_buffer"], results[f"{buffer}.Heat_flow"]
+            )
+            np.testing.assert_allclose(
+                results[f"{buffer}.HeatIn.Heat"] - results[f"{buffer}.HeatOut.Heat"],
+                results[f"{buffer}.Heat_buffer"],
+            )
+            # buffer should have positive heat loss
+            assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
+            np.testing.assert_allclose(
+                results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
+                results[f"{buffer}.Heat_loss"],
+            )
+            np.testing.assert_allclose(
+                results[f"{buffer}.Stored_heat"][0], bounds[f"{buffer}.Stored_heat"][0].values[0]
+            )
+            np.testing.assert_allclose(
+                results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
+                np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
+                - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
+                atol=1.0e-3,
+            )
+            np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
