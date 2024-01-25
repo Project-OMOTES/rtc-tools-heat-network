@@ -1,6 +1,5 @@
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
-# from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
