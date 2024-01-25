@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
@@ -15,9 +15,13 @@ class MinimizeTCO(Goal):
     """
 
     order = 1
-    NOMINAL = 1.0e6
 
-    def __init__(self, priority: int = 2, number_of_years: float = 25.0):
+    def __init__(
+        self,
+        priority: int = 2,
+        number_of_years: float = 25.0,
+        custom_asset_type_maps: Optional[Dict[str, Set[str]]] = None,
+    ):
         """
         Initialize the MinimizeTCO goal.
 
@@ -27,6 +31,45 @@ class MinimizeTCO(Goal):
         """
         self.priority = priority
         self.number_of_years = number_of_years
+        self.function_nominal = 1.0e6
+
+        default_asset_type_maps = {
+            "operational": {"source", "ates"},
+            "fixed_operational": {"source", "ates", "buffer"},
+            "investment": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
+            "installation": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
+            "annualized": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
+        }
+
+        self.asset_type_maps = (
+            custom_asset_type_maps
+            if custom_asset_type_maps is not None
+            else default_asset_type_maps
+        )
 
     def _calculate_cost(
         self,
@@ -75,38 +118,6 @@ class MinimizeTCO(Goal):
             "annualized": optimization_problem._annualized_capex_var_map,
         }
 
-        asset_type_maps = {
-            "operational": {"source", "ates"},
-            "fixed_operational": {"source", "ates", "buffer"},
-            "investment": {
-                "source",
-                "ates",
-                "buffer",
-                "demand",
-                "heat_exchanger",
-                "heat_pump",
-                "pipe",
-            },
-            "installation": {
-                "source",
-                "ates",
-                "buffer",
-                "demand",
-                "heat_exchanger",
-                "heat_pump",
-                "pipe",
-            },
-            "annualized": {
-                "source",
-                "ates",
-                "buffer",
-                "demand",
-                "heat_exchanger",
-                "heat_pump",
-                "pipe",
-            },
-        }
-
         if options["discounted_annualized_cost"]:
             cost_type_list = ["operational", "fixed_operational", "annualized"]
         else:
@@ -116,8 +127,8 @@ class MinimizeTCO(Goal):
         for cost_type in cost_type_list:
             obj += self._calculate_cost(
                 optimization_problem,
-                asset_type_maps[cost_type],
+                self.asset_type_maps[cost_type],
                 cost_type_maps[cost_type],
             )
 
-        return obj / self.NOMINAL
+        return obj / self.function_nominal
