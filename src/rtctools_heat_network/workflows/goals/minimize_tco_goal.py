@@ -65,31 +65,31 @@ class MinimizeTCO(Goal):
             float: The total cost objective function value in millions.
         """
         asset_types = {"source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"}
-        operational_cost_types = {"source", "ates"}
-        fixed_operational_cost_types = {"source", "ates", "buffer"}
-        investment_cost_types = asset_types
-        installation_cost_types = asset_types
+        operational_cost_asset_types = {"source", "ates"}
+        fixed_operational_cost_asset_types = {"source", "ates", "buffer"}
+        investment_cost_asset_types = asset_types
+        installation_cost_asset_types = asset_types
+
+        cost_type_maps = {
+            "operational": optimization_problem._asset_variable_operational_cost_map,
+            "fixed_operational": optimization_problem._asset_fixed_operational_cost_map,
+            "investment": optimization_problem._asset_investment_cost_map,
+            "installation": optimization_problem._asset_installation_cost_map,
+        }
+
+        asset_type_maps = {
+            "operational": operational_cost_asset_types,
+            "fixed_operational": fixed_operational_cost_asset_types,
+            "investment": investment_cost_asset_types,
+            "installation": installation_cost_asset_types,
+        }
 
         obj = 0.0
-        obj += self._calculate_cost(
-            optimization_problem,
-            operational_cost_types,
-            optimization_problem._asset_variable_operational_cost_map,
-        )
-        obj += self._calculate_cost(
-            optimization_problem,
-            fixed_operational_cost_types,
-            optimization_problem._asset_fixed_operational_cost_map,
-        )
-        obj += self._calculate_cost(
-            optimization_problem,
-            investment_cost_types,
-            optimization_problem._asset_investment_cost_map,
-        )
-        obj += self._calculate_cost(
-            optimization_problem,
-            installation_cost_types,
-            optimization_problem._asset_installation_cost_map,
-        )
+        for cost_type in asset_type_maps.keys():
+            obj += self._calculate_cost(
+                optimization_problem,
+                asset_type_maps[cost_type],
+                cost_type_maps[cost_type],
+            )
 
         return obj / self.NOMINAL

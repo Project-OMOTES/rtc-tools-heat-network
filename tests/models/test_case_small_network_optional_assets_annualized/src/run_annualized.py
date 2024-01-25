@@ -87,14 +87,6 @@ class MinimizeDiscAnnualizedCostGoal(Goal):
 
         obj = 0.0
 
-        # for s in optimization_problem.heat_network_components.get("source", []):
-        #     obj += optimization_problem.extra_variable(
-        #         optimization_problem._annualized_capex_var_map[s]
-        #     )
-        #     obj += optimization_problem.extra_variable(
-        #         optimization_problem._asset_variable_operational_cost_map[s]
-        #     )
-
         for asset_categories, cost_map_keys in self.assets_and_costs_keys:
             for asset_category in asset_categories:
                 for asset in optimization_problem.heat_network_components.get(asset_category, []):
