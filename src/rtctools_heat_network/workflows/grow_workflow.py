@@ -74,7 +74,7 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class EndScenarioSizingDiscounted(
+class EndScenarioSizingDiscountedHIGS(
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
