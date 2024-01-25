@@ -34,6 +34,14 @@ class TestAtesTemperature(TestCase):
         ates_temperature_disc = results['ATES_cb47__temperature_ates_disc']
         carrier_temperature = results['41770304791669983859190_temperature']
 
+        ates_temperature_loss = results['ATES_cb47.Temperature_loss']
+        ates_temperature_change_charging = results['ATES_cb47.Temperature_change_charging']
+        ates_stored_heat = results['ATES_cb47.Stored_heat']
+        ates_max_heat = bounds['ATES_cb47.Stored_heat'][1]
+
+        results['ATES_cb47__temperature_disc_50.0']
+        results['ATES_cb47__temperature_disc_70.0']
+
         np.testing.assert_array_less(ates_temperature_disc, ates_temperature)
         np.testing.assert_allclose((1-ates_charging)*ates_temperature_disc, (1-ates_charging)*carrier_temperature)
 
