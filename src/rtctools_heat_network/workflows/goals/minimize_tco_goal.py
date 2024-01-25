@@ -64,28 +64,56 @@ class MinimizeTCO(Goal):
         Returns:
             float: The total cost objective function value in millions.
         """
-        asset_types = {"source", "ates", "buffer", "demand", "heat_exchanger", "heat_pump", "pipe"}
-        operational_cost_asset_types = {"source", "ates"}
-        fixed_operational_cost_asset_types = {"source", "ates", "buffer"}
-        investment_cost_asset_types = asset_types
-        installation_cost_asset_types = asset_types
+
+        options = optimization_problem.heat_network_options()
 
         cost_type_maps = {
             "operational": optimization_problem._asset_variable_operational_cost_map,
             "fixed_operational": optimization_problem._asset_fixed_operational_cost_map,
             "investment": optimization_problem._asset_investment_cost_map,
             "installation": optimization_problem._asset_installation_cost_map,
+            "annualized": optimization_problem._annualized_capex_var_map,
         }
 
         asset_type_maps = {
-            "operational": operational_cost_asset_types,
-            "fixed_operational": fixed_operational_cost_asset_types,
-            "investment": investment_cost_asset_types,
-            "installation": installation_cost_asset_types,
+            "operational": {"source", "ates"},
+            "fixed_operational": {"source", "ates", "buffer"},
+            "investment": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
+            "installation": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
+            "annualized": {
+                "source",
+                "ates",
+                "buffer",
+                "demand",
+                "heat_exchanger",
+                "heat_pump",
+                "pipe",
+            },
         }
 
+        if options["discounted_annualized_cost"]:
+            cost_type_list = ["operational", "fixed_operational", "annualized"]
+        else:
+            cost_type_list = ["operational", "fixed_operational", "investment", "installation"]
+
         obj = 0.0
-        for cost_type in asset_type_maps.keys():
+        for cost_type in cost_type_list:
             obj += self._calculate_cost(
                 optimization_problem,
                 asset_type_maps[cost_type],
