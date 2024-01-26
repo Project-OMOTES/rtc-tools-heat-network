@@ -74,7 +74,7 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class EndScenarioSizingDiscountedHIGS(
+class EndScenarioSizingDiscounted(
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -256,11 +256,11 @@ class EndScenarioSizingDiscountedHIGS(
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.02
-
-        options["gurobi"] = None
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
 
         return options
 
@@ -400,6 +400,21 @@ class EndScenarioSizingDiscountedHIGS(
                 results_path = os.path.join(results_path.__str__() + "results.json")
         with open(results_path, "w") as file:
             json.dump(results_dict, fp=file)
+
+class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
+
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
+
 
 
 class EndScenarioSizing(
@@ -845,14 +860,9 @@ def run_end_scenario_sizing_no_heat_losses(
     **kwargs,
 ):
     """
-    This function is used to run end_scenario_sizing problem. There are a few variations of the
-    same basic class. The main functionality this function adds is the staged approach, where
-    we first solve without heat_losses, to then solve the same problem with heat losses but
-    constraining the problem to only allow for the earlier found pipe classes and one size up.
-
-    This staged approach is done to speed up the problem, as the problem without heat losses is
-    much faster as it avoids inequality big_m constraints for the heat to discharge on pipes. The
-    one size up possibility is to avoid infeasibilities in compensating for the heat losses.
+    This function is used to run end_scenario_sizing problem without heat losses. This is a
+    simplification from the fully staged approach allowing users to more quickly iterate over
+    results.
 
     Parameters
     ----------
