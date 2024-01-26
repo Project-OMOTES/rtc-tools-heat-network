@@ -84,7 +84,8 @@ class EndScenarioSizingDiscounted(
 ):
     """
     Goal priorities are:
-    1. minimize TCO = Capex + Opex*lifetime
+    1. Match heat demand with target
+    2. minimize TCO = Capex + Opex*lifetime
     """
 
     def __init__(self, *args, **kwargs):
