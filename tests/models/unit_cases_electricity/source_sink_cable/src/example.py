@@ -8,12 +8,14 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -21,7 +23,7 @@ class TargetDemandGoal(Goal):
 
     order = 2
 
-    def __init__(self, state, target):
+    def __init__(self, state: str, target: Timeseries):
         self.state = state
 
         self.target_min = target
@@ -29,12 +31,21 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem, ensemble_member):
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ):
         return optimization_problem.state(self.state)
 
 
 class _GoalsAndOptions:
     def path_goals(self):
+        """
+        Add goal to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
@@ -45,38 +56,59 @@ class _GoalsAndOptions:
 
         return goals
 
+    def heat_network_options(self):
+        options = super().heat_network_options()
+        options["include_electric_cable_power_loss"] = True
+
+        return options
+
 
 class ElectricityProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
-        goals = super().path_goals().copy()
+    """
+    Problem to check the behaviour of a simple source, cable, demand network.
+    """
 
-        return goals
+    pass
 
 
 class ElectricityProblemMaxCurr(
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    Problem to check the behaviour of a simple source, cable, demand network with increased demand
+    to push current to max.
+    """
+
+    def read(self):
+        super().read()
+
+        for d in self.heat_network_components["electricity_demand"]:
+            new_timeseries = self.get_timeseries(f"{d}.target_electricity_demand").values * 50
+            self.set_timeseries(f"{d}.target_electricity_demand", new_timeseries)
+
     def path_goals(self):
+        """
+        Modified targets for the demand matching goal to push up the current in the system.
+
+        Returns
+        -------
+        list with goals.
+        """
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
             target = self.get_timeseries(f"{demand}.target_electricity_demand")
-            i = 0
-            for value in target.values:
-                target.values[i] = value * 50
-                i += 1
-
             state = f"{demand}.Electricity_demand"
 
             goals.append(TargetDemandGoal(state, target))
@@ -84,6 +116,13 @@ class ElectricityProblemMaxCurr(
         return goals
 
     def bounds(self):
+        """
+        Setting bounds to get things to its max, this might be incorrect here.
+
+        Returns
+        -------
+        Dict with the bounds.
+        """
         bounds = super().bounds()
         bounds["ElectricityProducer_b95d.Electricity_source"] = (0.0, 100000.0)
         bounds["ElectricityCable_238f.ElectricityIn.Power"] = (0.0, 100000.0)

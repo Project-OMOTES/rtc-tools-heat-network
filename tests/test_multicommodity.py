@@ -17,15 +17,23 @@ class TestMultiCommodityHeatPump(TestCase):
     electricity and heat"""
 
     def test_heat_pump_elec_min_heat(self):
-        """Test to verify the optimisation of minimisation of the heat_source used, and thus
-        exploiting the heatpump as much as possible, and minimum use of heat source at secondary
-        side."""
+        """
+        Verify that the minimisation of the heat_source used, and thus the optimization should
+        exploit the heatpump as much as possible, and minimum use of heat source at secondary
+        side.
+
+        Checks:
+        - Demand matching
+        - Checks for sufficient production
+        - Checks for heat pump energy conservation and COP modelling
+        - Checks for Power = I * V at the heatpump
+
+        Missing:
+        - Replace checks for sufficient production with energy balance
+
+        """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
         from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem2
-
-        v_min = 1.0e4
-        i_max = 142
-        cop = 4
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
@@ -35,6 +43,10 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml"
         )
         results = solution.extract_results()
+
+        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
+        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
+        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -77,21 +89,30 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
         np.testing.assert_array_less(heatpump_current, i_max * np.ones(len(heatpump_current)))
-        np.testing.assert_allclose(v_min * np.ones(len(heatpump_voltage)), heatpump_voltage)
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
 
     def test_heat_pump_elec_min_heat_curr_limit(self):
-        """Test to verify the optimisation of minimisation of the heat_source used, however due to
-        limitations in the electricity transport through the cables, the power and thus the heat
-        produced at the heatpump is limited, resulting in heat production by the secondary
-        heatsource, e.g. the heat produced by this asset is not 0."""
+        """
+        Verify the minimization of the heat_source used. However, due to limitations in the
+        electricity transport through the cables, the power to the heatpump is limited. This in
+        turn limits the heat produced by the heatpump which is then not sufficient for the total
+        heating demand, resulting in heat production by the secondary heatsource (heat produced by
+        this asset is not 0).
+
+        Checks:
+        - Demand matching
+        - Checks for sufficient production
+        - Checks for heat pump energy conservation and COP modelling
+        - Checks for Power = I * V at the heatpump
+
+        Missing:
+        - I think this test is obsolete given the first and third test in this file.
+
+        """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
         from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
-
-        v_min = 230
-        i_max = 142
-        cop = 4
 
         solution = run_optimization_problem(
             HeatProblem, base_folder=base_folder, esdl_file_name="heat_pump_elec.esdl",
@@ -99,6 +120,10 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml"
         )
         results = solution.extract_results()
+
+        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
+        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
+        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
 
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
         heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
@@ -130,7 +155,7 @@ class TestMultiCommodityHeatPump(TestCase):
             heatdemand_sec - (heatpump_heat_sec + heatsource_sec), np.zeros(len(heatdemand_sec))
         )
         # check that heatpump is limited by electric transport power limitations:
-        np.testing.assert_allclose(heatpump_power, i_max * v_min * np.ones(len(heatpump_power)))
+        np.testing.assert_allclose(heatpump_power, i_max * v_min_hp * np.ones(len(heatpump_power)))
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
         # check that heatpumppower*COP==secondaryheat heatpump
@@ -140,15 +165,26 @@ class TestMultiCommodityHeatPump(TestCase):
         np.testing.assert_array_less(heatpump_power, elec_prod_power)
         # check if current and voltage limits are satisfied
         np.testing.assert_allclose(heatpump_current, i_max * np.ones(len(heatpump_current)))
-        np.testing.assert_allclose(v_min * np.ones(len(heatpump_voltage)), heatpump_voltage)
+        np.testing.assert_allclose(v_min_hp * np.ones(len(heatpump_voltage)), heatpump_voltage)
         # TODO: currently connecting pipes at HPs can not be disabled, these don't have the
         # functionality as this causes other problems with HP tests, have to adjust this later.
         # This option would be added/changed in asset_to_component_base
 
     def test_heat_pump_elec_min_elec(self):
-        """Test to verify the optimisation of minimisation of the electricity power used, and thus
-        exploiting the heatpump only for heat that can not directly be covered by other sources as
-        possible."""
+        """
+        Verify that minimisation of the electricity power used, and thus
+        exploiting the heatpump only for heat that cannot directly be covered by other sources.
+
+        Checks:
+        - Demand matching
+        - Checks for sufficient production
+        - Checks for heat pump energy conservation and COP modelling
+        - Checks for Power = I * V at the heatpump
+
+        Missing:
+        - Replace checks for sufficient production with energy balance
+
+        """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
         from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
             ElectricityProblem,

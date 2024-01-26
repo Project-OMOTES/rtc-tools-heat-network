@@ -11,8 +11,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -64,7 +64,7 @@ class _GoalsAndOptions:
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -248,6 +248,6 @@ class HeatProblem(
         except Exception:  # Case when there is only one row value added
             m_rows_added = 1
 
-        df_MILP.loc[
-            (index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"
-        ] = manual_set_pipe_length
+        df_MILP.loc[(index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"] = (
+            manual_set_pipe_length
+        )

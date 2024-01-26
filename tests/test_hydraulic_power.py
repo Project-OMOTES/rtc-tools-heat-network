@@ -7,7 +7,7 @@ import pandas as pd
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
+from rtctools_heat_network.head_loss_class import HeadLossOption
 
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
@@ -15,6 +15,37 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 class TestHydraulicPower(TestCase):
     def test_hydraulic_power(self):
+        """
+        Check the workings for the hydraulic power variable.
+
+        Scenario 1. LINEARIZED_DW (1 line segment)
+        Scenario 2. LINEAR
+        Scenario 3. LINEARIZED_DW (default line segments = 5)
+
+        Checks:
+        - For all scenarios (unless stated otherwise):
+            - check that the hydraulic power variable (based on linearized setting) is larger than
+            the numerically calculated (post processed)
+            - Scenario 1&3: check that the hydraulic power variable = known/verified value for the
+            specific case
+            - Scenario 1: check that the hydraulic power for the supply and return pipe is the same
+            - Scenario 1&2: check that the hydraulic power for these two scenarios are the same
+            - Scenario 2: check that the post processed hydraulic power based on flow results
+            (voluemtric flow rate * pressure loss) of scenario 1 & 2 are the same.
+            - Scenario 3: check that the hydraulic power variable of scenatio 1 > scenario 3, which
+            would be expected because scenario 3 has more linear line segments, theerefore the
+            approximation would be closer to the theoretical non-linear curve when compared to 1
+            linear line approximation of the theoretical non-linear curve.
+
+        Missing:
+        - The way the problems are ran and adapted is different compared to the other tests, where
+        a global variable is adapted between different runs. I would suggest that we make separate
+        problems like we do in the other tests.
+        - Also I would prefer using the results directly in this test instead of calling the
+        df_MILP.
+        - See if the hard coded values can be avoided.
+
+        """
         import models.pipe_test.src.run_hydraulic_power as run_hydraulic_power
         from models.pipe_test.src.run_hydraulic_power import (
             HeatProblem,

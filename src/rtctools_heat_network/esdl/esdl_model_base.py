@@ -192,6 +192,22 @@ class _ESDLModelBase(_Model):
                     raise Exception(
                         f"{asset.name} has does not have 2 or 3 in_ports and 2 " f"out_ports "
                     )
+            elif asset.asset_type == "Electrolyzer":
+                if len(asset.out_ports) == 1 and len(asset.in_ports) == 1:
+                    if isinstance(asset.out_ports[0].carrier, esdl.GasCommodity):
+                        port_map[asset.out_ports[0].id] = getattr(component, gas_out_suf)
+                    else:
+                        raise Exception(f"{asset.name} must have a gas commodity on the outport")
+                    if isinstance(asset.in_ports[0].carrier, esdl.ElectricityCommodity):
+                        port_map[asset.in_ports[0].id] = getattr(component, elec_in_suf)
+                    else:
+                        raise Exception(
+                            f"{asset.name} must have a electricity commodity on the inport "
+                        )
+                else:
+                    raise Exception(
+                        f"{asset.name} must have one inport for electricity and one outport for gas"
+                    )
             elif (
                 asset.in_ports is None
                 and isinstance(asset.out_ports[0].carrier, esdl.ElectricityCommodity)

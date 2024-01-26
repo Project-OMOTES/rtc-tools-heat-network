@@ -18,8 +18,8 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.heat_mixin import HeatMixin
 from rtctools_heat_network.pipe_class import PipeClass
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -61,7 +61,7 @@ class MinimizeLDGoal(Goal):
 
 
 class PipeDiameterSizingProblem(
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,

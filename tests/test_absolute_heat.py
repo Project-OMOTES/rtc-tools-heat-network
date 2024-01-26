@@ -13,8 +13,14 @@ class TestAbsoluteHeat(TestCase):
     def test_absolute_heat(self):
         """
         This is a single line ring model, meaning that there are no dedicated supply or return
-        lines. This means that this test checks whether this model is correctly parsed from esdl
-        and meets the logical energy and heat to discharge constraints.
+        lines. This means that this model pipes are not related (no relation between hot and cold
+        pipes exists).
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+
         """
         import models.absolute_heat.src.example as example
         from models.absolute_heat.src.example import HeatProblem

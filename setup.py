@@ -2,6 +2,7 @@
 
 Includes Modelica models and their accompanying Mixins for heat networks.
 """
+
 import sys
 from pathlib import Path
 
@@ -58,7 +59,7 @@ setup(
         "pyecore",
         "pymoca >= 0.9.0",
         "rtc-tools == 2.6.0a3",
-        "pyesdl >= 23.11.1",
+        "pyesdl >= 23.12",
         "pandas >= 1.3.1, < 2.0",
         "casadi == 3.6.3",
     ],

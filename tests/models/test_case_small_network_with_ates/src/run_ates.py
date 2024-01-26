@@ -21,7 +21,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -79,26 +79,35 @@ class _GoalsAndOptions:
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+    """
+    This problem is used to test the logic of networks including an ATES.
+    """
+
     def __init__(self, *args, **kwargs):
+        """
+        We instantiate some attributes.
+        """
         super().__init__(*args, **kwargs)
 
         # variables for solver settings
         self._qpsol = None
 
     def pre(self):
+        """
+        We use the CachingQPSol to speed up the solver.
+
+        Returns
+        -------
+        None
+        """
         super().pre()
         self._qpsol = CachingQPSol()
-
-    def path_goals(self):
-        goals = super().path_goals().copy()
-
-        return goals
 
     def heat_network_options(self):
         options = super().heat_network_options()
@@ -106,12 +115,29 @@ class HeatProblem(
         return options
 
     def solver_options(self):
+        """
+        Setting the option to catch the Jacobian to speed up the transcribing.
+
+        Returns
+        -------
+        Dict of solver options
+        """
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
-        # options["solver"] = "gurobi"
         return options
 
-    def constraints(self, ensemble_member):
+    def constraints(self, ensemble_member: int):
+        """
+        We add constraints for cyclic behaviour of the ATES.
+
+        Parameters
+        ----------
+        ensemble_member : int of the esemble member
+
+        Returns
+        -------
+        Extended constraints
+        """
         constraints = super().constraints(ensemble_member)
 
         for a in self.heat_network_components.get("ates", []):
@@ -168,7 +194,20 @@ class HeatProblem(
 
 
 class HeatProblemPlacingOverTime(HeatProblem):
+    """
+    This problem is defined to test the asset_is_realized variable with constraints. This is
+    achieved by having an upper limit on the investment per time-step.
+    """
+
     def heat_network_options(self):
+        """
+        In this problem we are optimizing when the assets are realized over time, hence we set the
+        inclusion of asset_is_realized variables and constraints to true.
+
+        Returns
+        -------
+        dict with the adapted network options
+        """
         options = super().heat_network_options()
         options["include_asset_is_realized"] = True
 
@@ -176,6 +215,16 @@ class HeatProblemPlacingOverTime(HeatProblem):
 
     @property
     def esdl_assets(self):
+        """
+        In this problem we want the heat producers to be optional so that the asset_is_realized
+        variables are generated for them, thus we adapt the esdl assets here to avoid the need
+        of an extra esdl file.
+
+        Returns
+        -------
+
+        The adapted assets.
+        """
         assets = super().esdl_assets
 
         asset = next(a for a in assets.values() if a.name == "HeatProducer_1")
@@ -187,6 +236,19 @@ class HeatProblemPlacingOverTime(HeatProblem):
         return assets
 
     def constraints(self, ensemble_member):
+        """
+        Here we add constraints to limit the investment that one can have per timestep. This is to
+        prevent that infinite investments can be done immediately and hence avoid that all assets
+        can be realized at t=0.
+
+        Parameters
+        ----------
+        ensemble_member : integer with the esemble member
+
+        Returns
+        -------
+        The extended constraints
+        """
         constraints = super().constraints(ensemble_member)
 
         # Constraints for investment speed, please note that we need to enforce index 0 to be 0.
@@ -208,12 +270,23 @@ class HeatProblemPlacingOverTime(HeatProblem):
         return constraints
 
     def times(self, variable=None):
+        """
+        For the purposes of this test we take only 25 timesteps to speed up the test.
+
+        Parameters
+        ----------
+        variable : name of the variable.
+
+        Returns
+        -------
+        The shortened times.
+        """
         return super().times(variable)[:25]
 
 
 class HeatProblemSetPoints(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

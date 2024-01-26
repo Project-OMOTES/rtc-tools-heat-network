@@ -19,21 +19,23 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 )
 from rtctools.optimization.io_mixin import IOMixin
 
-from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
-from rtctools_heat_network.esdl.common import Asset
-from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.esdl.esdl_heat_model import ESDLHeatModel
-from rtctools_heat_network.esdl.esdl_model_base import _ESDLModelBase
-from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
-from rtctools_heat_network.esdl.esdl_qth_model import ESDLQTHModel
-from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
-from rtctools_heat_network.heat_mixin import HeatMixin
-from rtctools_heat_network.modelica_component_type_mixin import (
+from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
+from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
+from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
+from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
+from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
+
+from .common import Asset
+from .esdl_heat_model import ESDLHeatModel
+from .esdl_model_base import _ESDLModelBase
+from .esdl_qth_model import ESDLQTHModel
 
 
 logger = logging.getLogger("rtctools_heat_network")
@@ -126,7 +128,7 @@ class ESDLMixin(
         # Although we work with the names, the FEWS import data uses the component IDs
         self.__timeseries_id_map = {a.id: a.name for a in assets.values()}
 
-        if isinstance(self, HeatMixin):
+        if isinstance(self, PhysicsMixin):
             self.__model = ESDLHeatModel(assets, **self.esdl_heat_model_options())
         else:
             assert isinstance(self, QTHMixin)
@@ -458,249 +460,6 @@ class ESDLMixin(
             ensemble_size=self.ensemble_size,
             esdl_assets=self.esdl_assets
         )
-        # if self._profiles:
-        #     datetimes = None
-        #     for id, profile in self._profiles.items():
-        #         asset_name = self.esdl_asset_id_to_name_map[id]
-        #         asset = next(a for a in self.esdl_assets.values() if a.name == asset_name)
-        #         ports = []
-        #         ports.extend(asset.in_ports) if asset.in_ports is not None else ports
-        #         ports.extend(asset.out_ports) if asset.out_ports is not None else ports
-        #         if isinstance(ports[0].carrier, esdl.HeatCommodity):
-        #             commodity = "heat"
-        #         elif isinstance(ports[0].carrier, esdl.ElectricityCommodity):
-        #             commodity = "electricity"
-        #         elif isinstance(ports[0].carrier, esdl.GasCommodity):
-        #             commodity = "gas"
-        #         variable = f"{asset_name}.target_{commodity}_demand"
-        #         values = profile.values
-        #         flat_list = []
-        #         for sublist in values:
-        #             for item in sublist:
-        #                 if not np.isnan(item):
-        #                     flat_list.append(item)
-        #                 else:
-        #                     if len(flat_list) > 0:
-        #                         logger.warning(
-        #                             f"Found NaN value in profile for {variable},  "
-        #                             f"using value of previous timestep"
-        #                         )
-        #                         flat_list.append(flat_list[-1])
-        #                     else:
-        #                         logger.error(
-        #                             f"Found NaN value as first value in profile for "
-        #                             f"{variable}, using 0 instead"
-        #                         )
-        #                         flat_list.append(0.0)
-        #         if datetimes is None:
-        #             datetimes = profile.index.tz_convert(None).to_pydatetime()
-        #         elif len(profile.index.tz_convert(None).to_pydatetime()) != len(datetimes):
-        #             logger.error(f"Unequal profile lengths for {variable}")
-        #         for ensemble_member in range(self.ensemble_size):
-        #             self.io.set_timeseries(
-        #                 variable, datetimes, flat_list, ensemble_member=ensemble_member
-        #             )
-        #         if self.io.reference_datetime is None:
-        #             self.io.reference_datetime = (profile.index.tz_convert(None).to_pydatetime())[0]
-        # elif not hasattr(self, "_input_timeseries_file"):
-        #     demand_assets = [
-        #         asset for asset in self.esdl_assets.values() if asset.asset_type == "HeatingDemand"
-        #     ]
-        #     try:
-        #         datetimes = self.io.datetimes
-        #     except AttributeError:
-        #         logger.warning(
-        #             f"No profiles provided for demands, could not infer the period over "
-        #             f"which to optimize, using the period between "
-        #             f"{DEFAULT_START_TIMESTAMP} and {DEFAULT_END_TIMESTAMP}."
-        #         )
-        #         start_time = datetime.datetime.fromisoformat(DEFAULT_START_TIMESTAMP)
-        #         end_time = datetime.datetime.fromisoformat(DEFAULT_END_TIMESTAMP)
-        #         datetimes = pd.date_range(start=start_time, end=end_time, freq="H").to_pydatetime()
-        #         if self.io.reference_datetime is None:
-        #             self.io.reference_datetime = start_time
-        #     for demand in demand_assets:
-        #         if self._profiles and self.esdl_asset_name_to_id_map[demand.name] in self._profiles:
-        #             continue
-        #         logger.warning(
-        #             f"No demand profile specified for {demand} in an influxdb "
-        #             f"profile and no file provided with profiles. Using the asset "
-        #             f"power instead to generate a constant profile, with default "
-        #             f"asset power of 0.0"
-        #         )
-        #         demand_power = demand.attributes["power"]
-        #         profile = [demand_power] * len(datetimes)
-        #         for ensemble_member in range(self.ensemble_size):
-        #             self.io.set_timeseries(
-        #                 variable=f"{demand.name}.target_heat_demand",
-        #                 datetimes=datetimes,
-        #                 values=profile,
-        #                 ensemble_member=ensemble_member,
-        #                 check_duplicates=True,
-        #             )
-        # else:
-        #     if self._input_timeseries_file is None:
-        #         return
-        #
-        #     input_timeseries_file = Path(self._input_timeseries_file)
-        #     assert input_timeseries_file.is_absolute()
-        #     assert input_timeseries_file.suffix == ".xml" or input_timeseries_file.suffix == ".csv"
-        #
-        #     if input_timeseries_file.suffix == ".xml":
-        #         self.read_xml(input_timeseries_file)
-        #     elif input_timeseries_file.suffix == ".csv":
-        #         self.read_csv(input_timeseries_file)
-
-    # def read_csv(self, input_timeseries_file: str) -> None:
-    #     """
-    #     This function reads profiles from a csv and writes them to the io attribute for later use.
-    #     We assume that the csv file has a column with "DateTime" header name in which the datetimes
-    #     are specified for the demand. For most practical workflows we assume hourly resolution data.
-    #
-    #     Parameters
-    #     ----------
-    #     input_timeseries_file : str of filepath of the csv
-    #
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #     csv_data = pd.read_csv(input_timeseries_file)
-    #     try:
-    #         timeseries_import_times = [
-    #             datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-    #             for entry in csv_data["DateTime"].to_numpy()
-    #         ]
-    #     except ValueError:
-    #         try:
-    #             timeseries_import_times = [
-    #                 datetime.datetime.strptime(entry.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
-    #                 for entry in csv_data["DateTime"].to_numpy()
-    #             ]
-    #         except ValueError:
-    #             try:
-    #                 timeseries_import_times = [
-    #                     datetime.datetime.strptime(entry.replace("Z", ""), "%d-%m-%Y %H:%M")
-    #                     for entry in csv_data["DateTime"].to_numpy()
-    #                 ]
-    #             except ValueError:
-    #                 logger.error("Date time string is not in supported format")
-    #
-    #     self.io.reference_datetime = timeseries_import_times[0]
-    #     for ensemble_member in range(self.ensemble_size):
-    #         for demand in self.heat_network_components.get("demand", []):
-    #             try:
-    #                 values = csv_data[f"{demand}"].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     demand + ".target_heat_demand",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #         for source in self.heat_network_components.get("source", []):
-    #             try:
-    #                 values = csv_data[f"{source.replace(' ', '')}"].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     source + ".target_heat_source",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #         for demand in self.heat_network_components.get("electricity_demand", []):
-    #             try:
-    #                 values = csv_data[
-    #                     f"{demand.replace(' ', '')}.target_electricity_demand"
-    #                 ].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     demand + ".target_electricity_demand",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #         for source in self.heat_network_components.get("electricity_source", []):
-    #             try:
-    #                 values = csv_data[
-    #                     f"{source.replace(' ', '')}.target_electricity_source"
-    #                 ].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     source + ".target_electricity_source",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #         for demand in self.heat_network_components.get("gas_demand", []):
-    #             try:
-    #                 values = csv_data[f"{demand.replace(' ', '')}.target_gas_demand"].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     demand + ".target_gas_demand",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #         for source in self.heat_network_components.get("gas_source", []):
-    #             try:
-    #                 values = csv_data[f"{source.replace(' ', '')}.target_gas_source"].to_numpy()
-    #                 self.io.set_timeseries(
-    #                     source + ".target_gas_source",
-    #                     timeseries_import_times,
-    #                     values,
-    #                     ensemble_member,
-    #                 )
-    #             except KeyError:
-    #                 pass
-    #
-    # def read_xml(self, input_timeseries_file: str) -> None:
-    #     """
-    #     This function reads profiles from a xml and writes them to the io attribute for later use.
-    #     This method still works but is no longer maintained.
-    #
-    #     Parameters
-    #     ----------
-    #     input_timeseries_file : str of filepath of the xml
-    #
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #     timeseries_import_basename = input_timeseries_file.stem
-    #     input_folder = input_timeseries_file.parent
-    #
-    #     try:
-    #         self.__timeseries_import = pi.Timeseries(
-    #             self.esdl_pi_input_data_config(
-    #                 self.__timeseries_id_map, self.heat_network_components.copy()
-    #             ),
-    #             input_folder,
-    #             timeseries_import_basename,
-    #             binary=False,
-    #             pi_validate_times=self.esdl_pi_validate_timeseries,
-    #         )
-    #     except IOError:
-    #         raise Exception(
-    #             "ESDLMixin: {}.xml not found in {}.".format(
-    #                 timeseries_import_basename, input_folder
-    #             )
-    #         )
-    #
-    #     # Convert timeseries timestamps to seconds since t0 for internal use
-    #     timeseries_import_times = self.__timeseries_import.times
-    #
-    #     # Offer input timeseries to IOMixin
-    #     self.io.reference_datetime = self.__timeseries_import.forecast_datetime
-    #
-    #     for ensemble_member in range(self.__timeseries_import.ensemble_size):
-    #         for variable, values in self.__timeseries_import.items(ensemble_member):
-    #             self.io.set_timeseries(variable, timeseries_import_times, values, ensemble_member)
 
     def write(self) -> None:
         """

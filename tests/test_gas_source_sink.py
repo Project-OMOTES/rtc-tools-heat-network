@@ -11,9 +11,15 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestMILPGasSourceSink(TestCase):
-    """Unit tests for the MILP test case of a source, a pipe, a sink"""
-
     def test_source_sink(self):
+        """
+        Test case for a network consisting out of a source, pipes and a sink
+
+        Checks:
+        - That flow is maintained.
+        - That the head drops over the pipe.
+
+        """
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
         from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
 

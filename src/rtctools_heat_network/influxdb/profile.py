@@ -3,7 +3,6 @@ import sys
 from datetime import timedelta as td
 
 import esdl
-from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
@@ -13,7 +12,10 @@ import pandas as pd
 logger = logging.getLogger()
 
 data_set = {}
-influx_cred_map = {"wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup")}
+influx_cred_map = {
+    "wu-profiles.esdl-beta.hesi.energy:443": ("warmingup", "warmingup"),
+    "omotes-poc-test.hesi.energy:8086": ("write-user", "nwn_write_test"),
+}
 time_step = td(seconds=3600)
 time_step_notation = "{}s".format(int(time_step.total_seconds()))
 
@@ -23,7 +25,12 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
     error_neighbourhoods = list()
     for profile in [x for x in es.eAllContents() if isinstance(x, esdl.InfluxDBProfile)]:
         profile_host = profile.host
-        containing_asset_id = profile.eContainer().energyasset.id
+        try:
+            # profile associated to asset
+            containing_asset_id = profile.eContainer().energyasset.id
+        except AttributeError:
+            # profile associated to carrier
+            containing_asset_id = profile.eContainer().id
 
         ssl_setting = False
         if "https" in profile_host:
@@ -40,22 +47,12 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
             username = None
             password = None
 
-        conn_settings = ConnectionSettings(
-            host=profile_host,
-            port=profile.port,
-            username=username,
-            password=password,
-            database=profile.database,
-            ssl=ssl_setting,
-            verify_ssl=ssl_setting,
-        )
-        time_series_data = InfluxDBProfileManager(conn_settings)
-
-        time_series_data.load_influxdb(
-            '"' + profile.measurement + '"',
-            [profile.field],
-            profile.startDate,
-            profile.endDate,
+        time_series_data = InfluxDBProfileManager.create_esdl_influxdb_profile_manager(
+            profile,
+            username,
+            password,
+            ssl_setting,
+            ssl_setting,
         )
 
         # Error check start and end dates of profiles
@@ -111,25 +108,26 @@ def parse_esdl_profiles(es, start_date=None, end_date=None):
         # TODO add test case. Currently no test case for esdl parsing
         # Convert Power and Energy to standard unit of Watt and Joules
         for idf in range(len(df)):
-            if (
-                profile.profileQuantityAndUnit.reference.physicalQuantity
-                == esdl.PhysicalQuantityEnum.POWER
-            ):
+            try:
+                unit = profile.profileQuantityAndUnit.reference.physicalQuantity
+            except AttributeError:
+                unit = profile.profileQuantityAndUnit.physicalQuantity
+            if unit == esdl.PhysicalQuantityEnum.POWER:
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, POWER_IN_W
                 )
-            elif (
-                profile.profileQuantityAndUnit.reference.physicalQuantity
-                == esdl.PhysicalQuantityEnum.ENERGY
-            ):
+            elif unit == esdl.PhysicalQuantityEnum.ENERGY:
                 df.iloc[idf] = convert_to_unit(
                     df.iloc[idf], profile.profileQuantityAndUnit, ENERGY_IN_J
                 )
+            elif unit == esdl.PhysicalQuantityEnum.COST:
+                # we assume no unit change for now
+                pass
             else:
                 print(
                     f"Current the code only caters for: {esdl.PhysicalQuantityEnum.POWER} & "
                     f"{esdl.PhysicalQuantityEnum.ENERGY}, and it does not cater for "
-                    f"{profile.profileQuantityAndUnit.reference.physicalQuantity}"
+                    f"{unit}"
                 )
                 sys.exit(1)
 

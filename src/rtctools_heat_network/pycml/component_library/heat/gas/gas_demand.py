@@ -1,3 +1,5 @@
+from numpy import nan
+
 from rtctools_heat_network.pycml import Variable
 
 from .gas_base import GasPort
@@ -16,7 +18,15 @@ class GasDemand(GasComponent, BaseAsset):
         self.component_type = "gas_demand"
         self.min_head = 30.0
 
-        self.add_variable(GasPort, "GasIn")
-        self.add_variable(Variable, "Gas_demand_flow", min=0.0)
+        self.Q_nominal = nan
 
-        self.add_equation((self.GasIn.Q - self.Gas_demand_flow))
+        self.density = 2.5  # H2 density [kg/m3] at 30bar
+
+        self.add_variable(GasPort, "GasIn")
+        self.add_variable(
+            Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal * self.density
+        )
+
+        self.add_equation(
+            ((self.GasIn.mass_flow - self.Gas_demand_mass_flow) / (self.Q_nominal * self.density))
+        )

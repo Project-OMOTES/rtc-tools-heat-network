@@ -8,6 +8,14 @@ from rtctools.util import run_optimization_problem
 
 class TestESDL(TestCase):
     def test_basic_source_and_demand_heat(self):
+        """
+        Check whether a hardcoded pycml model gives equivalent results compared to an esdl
+        specified model. The model consists out of a source, pipe and demand
+
+        Checks:
+        - that the heat demand is equal.
+
+        """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatESDL, HeatPython
 

@@ -15,24 +15,36 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestMILPElectricSourceSink(TestCase):
-    """Unit tests for the MILP test case of a source, a cable, a sink"""
-
     def test_source_sink(self):
-        """Test to verify if when a target it set that is more or less than
-        then max or min of the respective component it is capped. 1000"""
+        """
+        Tests for an electricity network that consist out of a source, a cable and a sink.
+
+        Checks:
+        - Check that the caps set in the esdl work as intended
+        - Check that the consumed power is always>= 0.
+        - Check for energy conservation with consumed power, lost power and produced power.
+        - Check that the voltage drops over the line.
+
+        Missing:
+        The hardcoded stuff should be replaced.
+
+        """
+
         import models.unit_cases_electricity.source_sink_cable.src.example as example
         from models.unit_cases_electricity.source_sink_cable.src.example import ElectricityProblem
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        max_ = 1000.0  # This max is set in the esdl file
-        v_min = 230  # set as minimum voltage for cables
         tol = 1e-10
 
-        results = run_optimization_problem(
+        solution = run_optimization_problem(
             ElectricityProblem, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv"
-        ).extract_results()
+        )
+        results = solution.extract_results()
+
+        max_ = solution.bounds()["ElectricityDemand_2af6__max_size"][0]
+        v_min = solution.parameters(0)["ElectricityCable_238f.min_voltage"]
 
         # Test if capping is ok
         power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
@@ -61,22 +73,36 @@ class TestMILPElectricSourceSink(TestCase):
         self.assertTrue(biggerthen)
 
     def test_source_sink_max_curr(self):
-        """Test to verify if when a target it set that is more or less than
-        then max or min of the respective component it is capped. 1000"""
+        """
+        Check bounds on the current.
+
+        Checks:
+        - Check that the caps set in the esdl work as intended
+        - Check that the consumed power is always>= 0.
+        - Check for energy conservation with consumed power, lost power and produced power.
+        - Check that the voltage drops over the line.
+        - Check that the current limit is not exceeded
+
+        Missing:
+        This test seems to be formulated wrong, as the only additional thing we test is the
+        current cap, however the current is not pushed to it's max. This should be changed
+        """
+
         import models.unit_cases_electricity.source_sink_cable.src.example as example
         from models.unit_cases_electricity.source_sink_cable.src.example import (
             ElectricityProblemMaxCurr,
         )
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        max_ = 142.0 * 1.5e4  # This max is based on max current and voltage requirement at consumer
-        v_min = 1.0e4  # set as minimum voltage for cables
+        max_ = 32660  # This max is based on max current and voltage requirement at consumer
+        v_min = 230  # set as minimum voltage for cables
 
-        results = run_optimization_problem(
+        solution = run_optimization_problem(
             ElectricityProblemMaxCurr, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv"
-        ).extract_results()
+        )
+        results = solution.extract_results()
 
         tolerance = 1e-10  # due to computational comparison
 
@@ -84,6 +110,12 @@ class TestMILPElectricSourceSink(TestCase):
         power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
         smallerthen = all(power_consumed - tolerance <= np.ones(len(power_consumed)) * max_)
         self.assertTrue(smallerthen)
+        demand_target = solution.get_timeseries(
+            "ElectricityDemand_2af6.target_electricity_demand"
+        ).values
+        np.testing.assert_allclose(
+            power_consumed, np.minimum(demand_target, np.ones(len(power_consumed)) * max_)
+        )
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
 

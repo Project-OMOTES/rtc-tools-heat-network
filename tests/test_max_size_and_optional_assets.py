@@ -12,6 +12,33 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 class TestMaxSizeAggregationCount(TestCase):
     def test_max_size_and_aggr_count(self):
+        """
+        Check the behaviour of the asset sizing, asset placement and the cost
+        components associated to those variables.
+
+        - the asset size should be at least as large as it's maximum utilization
+        - the asset should be placed when it is utilized
+        - the cost components should be present if the asset is placed and used.
+        - For this scenario a problem is set-up with two optional sources (with their connection
+        pipes) where one source can supply the network by itself. It is expected that only one
+        source will be placed due to the minimization of the cost (which cost is this?, I assume
+        operational cost) and installation cost. The placement behaviour is further tested in a
+        second case by adding an optional ates and buffer. However, these 2 additional optional
+        assets should not be placed by the optmizer because of heat losses.
+
+        Checks:
+        - Check that source 1 is utilized and also placed
+        - Check that source 2 is utilized and placed
+        - Check that max_size source 1 is zero
+        - Check that max_size source 2 is > utilization
+        - Check cost components for source 1 and 2
+        - Check max size and placement of ates
+
+        Missing:
+        - Fixed operational cost for sources
+        - Remove hard coded values for cost checks
+
+        """
         import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
         from models.test_case_small_network_with_ates_with_buffer.src.run_ates import (
             HeatProblem,

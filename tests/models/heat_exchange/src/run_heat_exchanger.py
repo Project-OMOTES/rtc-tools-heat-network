@@ -12,8 +12,8 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_mixin import HeadLossOption
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -68,7 +68,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
 class HeatProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -97,7 +97,7 @@ class HeatProblem(
 
 class HeatProblemTvarSecondary(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -154,7 +154,7 @@ class HeatProblemTvarSecondary(
 
 class HeatProblemTvar(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -206,7 +206,7 @@ class HeatProblemTvar(
 
 class HeatProblemTvarDisableHEX(
     _GoalsAndOptions,
-    HeatMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,

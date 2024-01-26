@@ -3,6 +3,11 @@ from rtctools_heat_network.pycml.component_library.heat import Demand, Pipe, Pum
 
 
 class Model(_Model):
+    """
+    Very simple model of a heat network consisting of a source, pump, pipe and demand for testing
+    head loss.
+    """
+
     def __init__(self):
         super().__init__(None)
 

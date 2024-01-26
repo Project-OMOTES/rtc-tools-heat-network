@@ -8,10 +8,11 @@ import numpy.testing
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 MIP_TOLERANCE = 1e-8
@@ -22,7 +23,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
     Tests the topo variables and constraints of heat_mixin on the Pipe Diameter Sizing example.
     """
 
-    problem: HeatMixin
+    problem: TechnoEconomicMixin
     results: Dict[str, np.ndarray]
 
     @classmethod
@@ -52,12 +53,15 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def test_pipe_class_var(self):
         """
+        This test is to check whether all variables associated to pipe class optimization are set
+        as expected.
+
         Tests the variables stored in:
-        - pipe_topo_pipe_class_var
-        - pipe_topo_max_discharge_var
-        - pipe_topo_cost_var
-        - pipe_diameter_var
-        - pipe_heat_loss_var
+        - pipe_topo_pipe_class_var check that only one is selected
+        - pipe_topo_max_discharge_var is that of the selected pipe class
+        - pipe_topo_cost_var is that of the selected pipe class
+        - pipe_diameter_var is that of the selected pipe class
+        - pipe_heat_loss_var is that of the selected pipe class
         """
         for p in self.problem.heat_network_components.get("pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made
@@ -102,6 +106,10 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def test_pipe_class_ordering_vars(self):
         """
+        This test is to check if the pipe class ordering variables are set as expected. The pipe
+        class ordering variables are there to help the optimizer in seeing the relation between
+        mulitple integer variables.
+
         Tests the variables stored in:
         - pipe_topo_global_pipe_clas_count_var
         - pipe_topo_pipe_class_discharge_ordering_var
@@ -192,6 +200,17 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         )
 
     def get_pipe_class_vars(self, pipe: str) -> Dict[str, np.ndarray]:
+        """
+        This function returns the pipe class results.
+
+        Parameters
+        ----------
+        pipe : str with pipe name
+
+        Returns
+        -------
+        Dict with variable name as key and result as value.
+        """
         given_pipe_classes = self.problem.pipe_classes(pipe)
         if pipe in self.problem.cold_pipes:
             expected_class_vars = [
@@ -208,6 +227,18 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         return class_vars
 
     def get_chosen_pipe_class(self, pipe: str, pipe_class_vars: Dict[str, np.ndarray]) -> PipeClass:
+        """
+        This function retrieves the selected pipe class optimization result for a pipe.
+
+        Parameters
+        ----------
+        pipe : string with pipe name
+        pipe_class_vars : dict from get_pipe_class_vars() method
+
+        Returns
+        -------
+        The selected pipe class
+        """
         chosen_var = None
         given_pipe_classes = self.problem.pipe_classes(pipe)
         for var_name, value in pipe_class_vars.items():
@@ -220,7 +251,20 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         return chosen_pc[0]
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
-        return self.problem._pipe_heat_loss(
+        """
+        This function computes the expected heat loss for a pipe class.
+
+        Parameters
+        ----------
+        pipe : string with pipe name
+        pipe_class : the selected pipe class optimized result for that pie
+
+        Returns
+        -------
+        Pipe heat loss value.
+        """
+        return pipe_heat_loss(
+            self.problem,
             options=self.problem.heat_network_options(),
             parameters=self.problem.parameters(0),
             p=pipe,

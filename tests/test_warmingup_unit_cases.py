@@ -11,6 +11,16 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 class TestWarmingUpUnitCases(TestCase):
     def test_1a(self):
+        """
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes one source, pipes, a node, and 3 demands.
+
+        Checks;
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+
+        """
         import models.unit_cases.case_1a.src.run_1a as run_1a
         from models.unit_cases.case_1a.src.run_1a import HeatProblem
 
@@ -28,6 +38,16 @@ class TestWarmingUpUnitCases(TestCase):
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
 
     def test_2a(self):
+        """
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes two source, pipes, nodes, and 3 demands.
+
+        Checks;
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+
+        """
         import models.unit_cases.case_2a.src.run_2a as run_2a
         from models.unit_cases.case_2a.src.run_2a import HeatProblem
 
@@ -45,6 +65,16 @@ class TestWarmingUpUnitCases(TestCase):
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
 
     def test_3a(self):
+        """
+        This is the most basic check where we have a simple network and check for the basic physics.
+        This simple network includes one source, pipes, node, a tank storage and 3 demands.
+
+        Checks;
+        - Demand matching
+        - Energy conservation
+        - Heat to discharge
+
+        """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblem
 

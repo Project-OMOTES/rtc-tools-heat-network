@@ -21,6 +21,11 @@ class TestAssetIsRealized(TestCase):
         there is a cap on the investments that can be done per timestep. We expect the optimizer
         to find a solution that releases the sources as soon as possible in order to match demand
         and the demand not to be matched until that point in time.
+
+        Checks:
+        - That the investment cap per time step is satisfied
+        - Check that the total investments actually are sufficient once the asset is realized
+        - Check that the asset is not used before the asset_is_realized == 1
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import (

@@ -20,15 +20,14 @@ import pytz
 import rtctools_heat_network.esdl.esdl_parser
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.utils.helpers import _sort_numbered
 
 
 logger = logging.getLogger("rtctools_heat_network")
 
 
-class ScenarioOutput(HeatMixin, ESDLMixin):
+class ScenarioOutput(TechnoEconomicMixin):
     __optimized_energy_system_handler = None
 
     def __init__(self, **kwargs):
@@ -887,6 +886,15 @@ class ScenarioOutput(HeatMixin, ESDLMixin):
                 ssl=self.influxdb_ssl,
                 verify_ssl=self.influxdb_verify_ssl,
             )
+            # influxdb_conn_settings = ConnectionSettings(
+            #     host="omotes-poc-test.hesi.energy",  #self.influxdb_host,
+            #     port=8086,  # self.influxdb_port,
+            #     username="write-user",  #self.influxdb_username,
+            #     password="nwn_write_test",  #self.influxdb_password,
+            #     database="test_kvr",  # input_energy_system_id,
+            #     ssl=self.influxdb_ssl,
+            #     verify_ssl=self.influxdb_verify_ssl,
+            # )
 
             for asset_name in [
                 *self.heat_network_components.get("source", []),

@@ -8,12 +8,13 @@ from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
+from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.heat_mixin import HeatMixin
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -21,7 +22,7 @@ class TargetDemandGoal(Goal):
 
     order = 2
 
-    def __init__(self, state, target):
+    def __init__(self, state: str, target: Timeseries):
         self.state = state
 
         self.target_min = target
@@ -29,12 +30,21 @@ class TargetDemandGoal(Goal):
         self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
-    def function(self, optimization_problem, ensemble_member):
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ):
         return optimization_problem.state(self.state)
 
 
 class _GoalsAndOptions:
     def path_goals(self):
+        """
+        Add goals to meet the specified power demands in the electricity network.
+
+        Returns
+        -------
+        Extended goals list.
+        """
         goals = super().path_goals().copy()
 
         for demand in self.heat_network_components["electricity_demand"]:
@@ -48,16 +58,17 @@ class _GoalsAndOptions:
 
 class ElectricityProblem(
     _GoalsAndOptions,
-    HeatMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def path_goals(self):
-        goals = super().path_goals().copy()
+    """
+    Problem to check optimization behoviour of electricity networks with a bus.
+    """
 
-        return goals
+    pass
 
 
 if __name__ == "__main__":
