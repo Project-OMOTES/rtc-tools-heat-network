@@ -6,7 +6,7 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.workflows import (
-    EndScenarioSizingDiscountedHIGS,
+    EndScenarioSizingDiscountedHIGHS,
     EndScenarioSizingHIGHS,
     run_end_scenario_sizing_no_heat_losses,
 )
@@ -89,7 +89,7 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        class TestEndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscountedHIGS):
+        class TestEndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscountedHIGHS):
             def solver_options(self):
                 options = super().solver_options()
                 options["solver"] = "highs"
