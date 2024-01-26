@@ -35,7 +35,6 @@ class TargetDemandGoal(Goal):
 
 
 class MinimizeDiscAnnualizedCostGoal(Goal):
-
     """
     This class represents an optimization goal that minimizes the
     discounted annualized cost of a heat network model.
