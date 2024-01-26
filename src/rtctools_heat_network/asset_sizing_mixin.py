@@ -339,9 +339,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self.__pipe_topo_pipe_class_discharge_ordering_map[pipe][
                         c
                     ] = pipe_class_ordering_name
-                    self.__pipe_topo_pipe_class_discharge_ordering_var[
-                        pipe_class_ordering_name
-                    ] = ca.MX.sym(pipe_class_ordering_name)
+                    self.__pipe_topo_pipe_class_discharge_ordering_var[pipe_class_ordering_name] = (
+                        ca.MX.sym(pipe_class_ordering_name)
+                    )
                     self.__pipe_topo_pipe_class_discharge_ordering_var_bounds[
                         pipe_class_ordering_name
                     ] = (0.0, 1.0)
@@ -349,9 +349,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self.__pipe_topo_pipe_class_cost_ordering_map[pipe][
                         c
                     ] = pipe_class_cost_ordering_name
-                    self.__pipe_topo_pipe_class_cost_ordering_var[
-                        pipe_class_cost_ordering_name
-                    ] = ca.MX.sym(pipe_class_cost_ordering_name)
+                    self.__pipe_topo_pipe_class_cost_ordering_var[pipe_class_cost_ordering_name] = (
+                        ca.MX.sym(pipe_class_cost_ordering_name)
+                    )
                     self.__pipe_topo_pipe_class_cost_ordering_var_bounds[
                         pipe_class_cost_ordering_name
                     ] = (0.0, 1.0)

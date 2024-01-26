@@ -21,6 +21,8 @@ class TestEndScenarioSizing(TestCase):
         - demand matching
 
         Missing:
+        - Link ATES t0 utilization to state of charge at end of year for optimizations over one
+        year.
         - Check if TCO goal included the desired cost components.
 
         """

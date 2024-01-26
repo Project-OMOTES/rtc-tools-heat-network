@@ -95,7 +95,8 @@ class TestMILPElectricSourceSink(TestCase):
 
     def test_source_sink_max_curr(self):
         """
-        Check bounds on the current.
+        Check bounds on the current, this is achieved by upping the demand forcing the current to
+        its max.
 
         Checks:
         - Check that the caps set in the esdl work as intended
@@ -106,9 +107,6 @@ class TestMILPElectricSourceSink(TestCase):
         - Check that minimum voltage is exactly matched
         - Check that power at the demands equals the current * voltage
 
-        Missing:
-        This test seems to be formulated wrong, as the only additional thing we test is the
-        current cap, however the current is not pushed to it's max. This should be changed
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example
@@ -117,12 +115,16 @@ class TestMILPElectricSourceSink(TestCase):
         )
 
         base_folder = Path(example.__file__).resolve().parent.parent
-        max_ = 32660  # This max is based on max current and voltage requirement at consumer
-        v_min = 230  # set as minimum voltage for cables
 
         solution = run_optimization_problem(ElectricityProblemMaxCurr, base_folder=base_folder)
         results = solution.extract_results()
         parameters = solution.parameters(0)
+
+        max_ = (
+            parameters["ElectricityCable_238f.min_voltage"]
+            * parameters["ElectricityCable_238f.max_current"]
+        )  # This max is based on max current and voltage requirement at consumer
+        v_min = parameters["ElectricityCable_238f.min_voltage"]  # set as minimum voltage for cables
 
         tolerance = 1e-10  # due to computational comparison
 
