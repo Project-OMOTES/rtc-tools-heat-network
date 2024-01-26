@@ -5,6 +5,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
+
 # from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -18,18 +22,23 @@ class TestElectrolyzer(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        milp_problem = run_optimization_problem(MILPProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            MILPProblem, base_folder=base_folder,
+            esdl_file_name="h2.esdl", esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv"
+        )
 
-        results = milp_problem.extract_results()
+        results = solution.extract_results()
 
         price_profile = "GasDemand_0cf3.gas_price"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
-        nominal = milp_problem.variable_nominal(state) * np.median(
-            milp_problem.get_timeseries(price_profile).values
+        nominal = solution.variable_nominal(state) * np.median(
+            solution.get_timeseries(price_profile).values
         )
         gas_revenue = (
             np.sum(
-                milp_problem.get_timeseries("GasDemand_0cf3.gas_price").values
+                solution.get_timeseries("GasDemand_0cf3.gas_price").values
                 * results["GasDemand_0cf3.Gas_demand_mass_flow"]
             )
             / nominal
@@ -37,19 +46,19 @@ class TestElectrolyzer(TestCase):
 
         price_profile = "ElectricityDemand_9d15.electricity_price"
         state = "ElectricityDemand_9d15.ElectricityIn.Power"
-        nominal = milp_problem.variable_nominal(state) * np.median(
-            milp_problem.get_timeseries(price_profile).values
+        nominal = solution.variable_nominal(state) * np.median(
+            solution.get_timeseries(price_profile).values
         )
         electricity_revenue = (
             np.sum(
-                milp_problem.get_timeseries("ElectricityDemand_9d15.electricity_price").values
+                solution.get_timeseries("ElectricityDemand_9d15.electricity_price").values
                 * results["ElectricityDemand_9d15.ElectricityIn.Power"]
             )
             / nominal
         )
         # Check that goal is as expected
         np.testing.assert_allclose(
-            milp_problem.objective_value,
+            solution.objective_value,
             -(gas_revenue + electricity_revenue),
             atol=1e-2,
             rtol=1e-2,
@@ -59,7 +68,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_array_less(-results["Electrolyzer_fc66.ElectricityIn.Power"], tol)
 
         # Check that windfarm does not produce more than the specified maximum profile
-        ub = milp_problem.get_timeseries("WindPark_7f14.maximum_production").values
+        ub = solution.get_timeseries("WindPark_7f14.maximum_production").values
         np.testing.assert_array_less(results["WindPark_7f14.ElectricityOut.Power"], ub + tol)
 
         # Check that the wind farm setpoint matches with the production
@@ -69,7 +78,7 @@ class TestElectrolyzer(TestCase):
 
         # Checks on the storage
         timestep = 3600.0
-        rho = milp_problem.parameters(0)["GasStorage_e492.density_max_storage"]
+        rho = solution.parameters(0)["GasStorage_e492.density_max_storage"]
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
             results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep,
@@ -77,13 +86,13 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.0)
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
 
-        for cable in milp_problem.heat_network_components.get("electricity_cable", []):
-            ub = milp_problem.esdl_assets[
-                milp_problem.esdl_asset_name_to_id_map[f"{cable}"]
+        for cable in solution.heat_network_components.get("electricity_cable", []):
+            ub = solution.esdl_assets[
+                solution.esdl_asset_name_to_id_map[f"{cable}"]
             ].attributes["capacity"]
             np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"], ub + tol)
             lb = (
-                milp_problem.esdl_assets[milp_problem.esdl_asset_name_to_id_map[f"{cable}"]]
+                solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]]
                 .in_ports[0]
                 .carrier.voltage
             )
@@ -95,16 +104,16 @@ class TestElectrolyzer(TestCase):
             )
 
         # Electrolyser
-        coef_a = milp_problem.parameters(0)["Electrolyzer_fc66.a_eff_coefficient"]
-        coef_b = milp_problem.parameters(0)["Electrolyzer_fc66.b_eff_coefficient"]
-        coef_c = milp_problem.parameters(0)["Electrolyzer_fc66.c_eff_coefficient"]
-        a, b = milp_problem._get_linear_coef_electrolyzer_mass_vs_epower_fit(
+        coef_a = solution.parameters(0)["Electrolyzer_fc66.a_eff_coefficient"]
+        coef_b = solution.parameters(0)["Electrolyzer_fc66.b_eff_coefficient"]
+        coef_c = solution.parameters(0)["Electrolyzer_fc66.c_eff_coefficient"]
+        a, b = solution._get_linear_coef_electrolyzer_mass_vs_epower_fit(
             coef_a,
             coef_b,
             coef_c,
             n_lines=3,
             electrical_power_min=0.0,
-            electrical_power_max=milp_problem.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
+            electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
         # the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
@@ -126,8 +135,8 @@ class TestElectrolyzer(TestCase):
         # Check variable opex: transport cost 0.1 euro/kg H2
         gas_tranport_cost = sum(
             (
-                milp_problem.get_timeseries(price_profile).times[1:]
-                - milp_problem.get_timeseries(price_profile).times[0:-1]
+                solution.get_timeseries(price_profile).times[1:]
+                - solution.get_timeseries(price_profile).times[0:-1]
             )
             / 3600.0
             * results["Pipe_6ba6.GasOut.mass_flow"][1:]

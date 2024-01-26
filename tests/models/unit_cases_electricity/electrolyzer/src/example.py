@@ -11,6 +11,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -136,7 +138,11 @@ class MILPProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(MILPProblem)
+    elect = run_optimization_problem(
+        MILPProblem, esdl_file_name="h2.esdl", esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv"
+    )
     r = elect.extract_results()
 
     print(r["Electrolyzer_fc66.ElectricityIn.Power"])

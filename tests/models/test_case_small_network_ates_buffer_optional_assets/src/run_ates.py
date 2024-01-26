@@ -161,7 +161,6 @@ if __name__ == "__main__":
     from rtctools_heat_network.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
     start_time = time.time()
-    base_folder = Path(__file__).resolve().parent.parent
 
     # results = solution.extract_results()
     solution = run_end_scenario_sizing(

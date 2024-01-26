@@ -12,13 +12,9 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-<<<<<<< HEAD
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.heat_mixin import HeatMixin
-=======
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
->>>>>>> master
 
 
 class TargetDemandGoal(Goal):

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest import TestCase
 
@@ -31,12 +32,19 @@ class TestBufferHistory(TestCase):
         )
 
         base_folder = Path(simple_buffer.__file__).resolve().parent.parent
+        # TODO: SUPER DIRTY hack! According to the docstring of the run_optimization_problem
+        #  function, adding the base_folder to the function call should be sufficient, but it
+        #  doesn't work without changing the working directory!
+        old_cwd = os.getcwd()
+        os.chdir(base_folder)
 
         nohistory = run_optimization_problem(HeatBufferNoHistory, base_folder=base_folder)
         history = run_optimization_problem(HeatBufferHistory, base_folder=base_folder)
         historystoredheat = run_optimization_problem(
             HeatBufferHistoryStoredHeat, base_folder=base_folder
         )
+
+        os.chdir(old_cwd)
 
         nohistory_results = nohistory.extract_results()
         history_results = history.extract_results()
