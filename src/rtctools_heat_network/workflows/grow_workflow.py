@@ -402,8 +402,8 @@ class EndScenarioSizingDiscounted(
         with open(results_path, "w") as file:
             json.dump(results_dict, fp=file)
 
-class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
 
+class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
@@ -414,8 +414,6 @@ class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
         options["gurobi"] = None
 
         return options
-
-
 
 
 class EndScenarioSizing(
