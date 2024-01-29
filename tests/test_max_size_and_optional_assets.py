@@ -89,7 +89,17 @@ class TestMaxSizeAggregationCount(TestCase):
         # Test that cost only exist for 2 and not for 1. Note the tolerances
         # to avoid test failing when heat losses slightly change
         np.testing.assert_allclose(var_cost_1, 0.0, atol=1e-9)
-        np.testing.assert_allclose(var_cost_2, 6174.920222, atol=1000.0, rtol=1.0e-2)
+        np.testing.assert_allclose(
+            var_cost_2,
+            np.sum(
+                results["HeatProducer_2.Heat_source"][1:]
+                * (solution.times()[1:] - solution.times()[:-1])
+                / 3600
+            )
+            * parameters["HeatProducer_2.variable_operational_cost_coefficient"],
+            atol=1000.0,
+            rtol=1.0e-2,
+        )
         np.testing.assert_allclose(fix_cost_1, 0.0, atol=1.0e-6)
         np.testing.assert_allclose(
             fix_cost_2,
@@ -99,7 +109,12 @@ class TestMaxSizeAggregationCount(TestCase):
         np.testing.assert_allclose(inst_cost_1, 0.0, atol=1e-9)
         np.testing.assert_allclose(inst_cost_2, 100000.0)
         np.testing.assert_allclose(inv_cost_1, 0.0, atol=1e-9)
-        np.testing.assert_allclose(inv_cost_2, 476459.893686, atol=1000.0, rtol=1.0e-2)
+        np.testing.assert_allclose(
+            inv_cost_2,
+            max_size_2 * parameters["HeatProducer_2.investment_cost_coefficient"],
+            atol=1.0,
+            rtol=1.0e-2,
+        )
 
         # Since the buffer and ates are not optional they must consume some heat to compensate
         # losses as the buffer has a minimum fraction volume of 5%.

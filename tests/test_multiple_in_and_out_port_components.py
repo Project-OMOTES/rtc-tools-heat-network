@@ -72,13 +72,14 @@ class TestHP(TestCase):
     def test_heat_pump(self):
         """
         Check the modelling of the heat pump component which has a constant COP with no energy loss.
+        In this specific problem we expect the use of the secondary source to be maximised as
+        electrical heat from the HP is "free".
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check that the heat pump is producing according to its COP
+        - Check that Secondary source use in minimized
 
-        Missing:
-        - Source allocation is as expected see also TODO.
 
         """
         import models.heatpump.src.run_heat_pump as run_heat_pump
@@ -96,9 +97,12 @@ class TestHP(TestCase):
         sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
         power_elec = results["GenericConversion_3d3f.Power_elec"]
 
-        # TODO: check if the primary source utilisisation is maximised and secondary minimised
-        # I think it is badly scaled or some scaling issues in constraints. (possible in combination
-        # with disconnected)
+        # Check that only the minimum velocity is flowing through the secondary source.
+        np.testing.assert_allclose(
+            results["ResidualHeatSource_aec9.Q"] / (np.pi * (0.3127 / 2.0) ** 2),
+            1.0e-3,
+            atol=2.5e-5,
+        )
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
