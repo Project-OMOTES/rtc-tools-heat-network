@@ -25,9 +25,6 @@ class TestMILPElectricSourceSink(TestCase):
         - Check that minimum voltage is exactly matched.
         - Check that power at the demands equals the current * voltage.
 
-        Missing:
-        The hardcoded stuff should be replaced.
-
         """
 
         import models.unit_cases_electricity.source_sink_cable.src.example as example

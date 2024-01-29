@@ -25,9 +25,6 @@ class TestMultiCommodityHeatPump(TestCase):
         - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
 
-        Missing:
-        - Replace checks for sufficient production with energy balance
-
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
         from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import HeatProblem2

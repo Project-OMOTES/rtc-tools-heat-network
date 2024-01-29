@@ -33,9 +33,6 @@ class TestMaxSizeAggregationCount(TestCase):
         - Check max size and placement of ates
         - Fixed operational cost for sources
 
-        Missing:
-        - Remove hard coded values for cost checks
-
         """
         import models.test_case_small_network_with_ates_with_buffer.src.run_ates as run_ates
         from models.test_case_small_network_with_ates_with_buffer.src.run_ates import (
