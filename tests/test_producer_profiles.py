@@ -17,11 +17,8 @@ class TestProducerMaxProfile(TestCase):
     (reducing the profile value at a few time steps).
 
     Checks:
-    - Demand matching
+    - Standard checks demand matching, energy conservation and heat to discharge
     - check that heat_source <= scaled_profile * size_source.
-
-    Missing:
-    - Use standard checks.
 
     """
 

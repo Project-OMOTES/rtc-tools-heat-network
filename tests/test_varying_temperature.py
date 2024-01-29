@@ -22,10 +22,8 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check expected supply temperature
         - Check expected return temperature
-        - Check if the heat losses are correct for the selected temperature
-
-        Missing:
         - Check on integer variable for selected temperature.
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -44,9 +42,11 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
         # Check that the highest supply temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359}_85.0"], 1.0)
 
         # Check that the lowest return temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359000}_60.0"], 1.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
@@ -147,9 +147,6 @@ class TestVaryingTemperature(TestCase):
         correctly.
         - Check if the heat losses are correct for the selected temperature
 
-        Missing:
-        - I think there is a double demand mathcing check now...
-
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblemTvarret
@@ -165,13 +162,6 @@ class TestVaryingTemperature(TestCase):
         # lowest temperature should be selected because of larger dT causing lowest flow rates
         # and we apply source Q minimization goal
         results = heat_problem.extract_results()
-
-        # Check whehter the heat demand is matched
-        for d in heat_problem.heat_network_components.get("demand", []):
-            target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
-                : len(heat_problem.times())
-            ]
-            np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check that the lowest temperature (30.0) is the outputted temperature
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_temperature"], 30.0)
