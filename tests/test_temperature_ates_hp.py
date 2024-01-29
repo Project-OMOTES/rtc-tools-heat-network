@@ -24,6 +24,7 @@ class TestAtesTemperature(TestCase):
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
+        times = solution.times()
         # check if
         # - discrete temperature ates is equal to temperature of pipe (carrier) at inport during discharging
         # - discrete temperature ates is equal or lower then temperature ates
@@ -39,10 +40,12 @@ class TestAtesTemperature(TestCase):
         ates_stored_heat = results['ATES_cb47.Stored_heat']
         ates_max_heat = bounds['ATES_cb47.Stored_heat'][1]
 
-        results['ATES_cb47__temperature_disc_50.0']
-        results['ATES_cb47__temperature_disc_70.0']
+        t_50 = results['ATES_cb47__temperature_disc_50.0']
+        t_70 = results['ATES_cb47__temperature_disc_70.0']
 
         np.testing.assert_array_less(ates_temperature_disc, ates_temperature)
+        np.testing.assert_allclose(t_50*50+t_70*70, ates_temperature_disc)
+
         np.testing.assert_allclose((1-ates_charging)*ates_temperature_disc, (1-ates_charging)*carrier_temperature)
 
 

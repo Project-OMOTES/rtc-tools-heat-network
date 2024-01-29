@@ -78,6 +78,9 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
+        # options["solver"] = "gurobi"
+        # gurobi_options = options["gurobi"] = {}
+        # gurobi_options["MIPgap"] = 0.02
 
         return options
 
@@ -122,6 +125,8 @@ class HeatProblem(
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
             constraints.append((heat_ates[0], 0.0, 0.0))
+            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
+            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
 
         return constraints
 
