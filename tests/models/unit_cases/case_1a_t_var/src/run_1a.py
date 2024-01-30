@@ -1,3 +1,5 @@
+import esdl
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -65,6 +67,7 @@ class HeatProblem(
     def temperature_regimes(self, carrier):
 
         temperature_options = []
+        temperature_step = 2.5
 
         try:
             temperature_options = self.__temperature_options[carrier]
@@ -72,6 +75,10 @@ class HeatProblem(
             for asset in [
                 *self.heat_network_components.get("source", []),
                 *self.heat_network_components.get("ates", []),
+                *self.heat_network_components.get("buffer", []),
+                *self.heat_network_components.get("heat_pump", []),
+                *self.heat_network_components.get("heat_exchanger", []),
+                *self.heat_network_components.get("demand", []),
             ]:
                 esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
                 parameters = self.parameters(0)
@@ -80,11 +87,23 @@ class HeatProblem(
                     if (
                         constraint.name == "supply_temperature"
                         and carrier == parameters[f"{asset}.T_supply_id"]
+                    ) or (
+                        constraint.name == "return_temperature"
+                        and carrier == parameters[f"{asset}.T_return_id"]
                     ):
                         lb = constraint.range.minValue
                         ub = constraint.range.maxValue
-                        n_options = round((ub - lb) / 2.5)
+                        n_options = round((ub - lb) / temperature_step)
                         temperature_options = np.linspace(lb, ub, n_options + 1)
+                        if not isinstance(
+                            constraint.range.profileQuantityAndUnit.unit,
+                            esdl.UnitEnum.DEGREES_CELSIUS,
+                        ):
+                            RuntimeError(
+                                f"{asset} has a temperature constraint with wrong unit "
+                                f"{constraint.range.profileQuantityAndUnit.unit}, should "
+                                f"always be in degrees celcius."
+                            )
                         self.__temperature_options[carrier] = temperature_options
 
         return temperature_options
