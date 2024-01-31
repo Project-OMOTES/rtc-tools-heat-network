@@ -2389,7 +2389,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         parameters = self.parameters(ensemble_member)
 
-        for hp in self.heat_network_components.get("heat_pump", []):
+        for hp in [
+            *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
+        ]:
             sec_sup_carrier = parameters[f"{hp}.Secondary.T_supply_id"]
             sec_ret_carrier = parameters[f"{hp}.Secondary.T_return_id"]
             prim_sup_carrier = parameters[f"{hp}.Primary.T_supply_id"]
