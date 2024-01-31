@@ -51,7 +51,7 @@ class HeatPump(HeatFourPort, BaseAsset):
             ((self.Primary_heat + self.Power_elec - self.Secondary_heat) / self.nominal)
         )
 
-        self.add_equation(((self.Secondary_heat - self.COP * self.Power_elec) / self.nominal))
+        # self.add_equation(((self.Secondary_heat - self.COP * self.Power_elec) / self.nominal))
 
         self.add_equation(
             (
