@@ -1,5 +1,3 @@
-import esdl
-
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -11,6 +9,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
@@ -47,6 +46,7 @@ class _GoalsAndOptions:
 
 class HeatProblem(
     _GoalsAndOptions,
+    ESDLAdditionalVarsMixin,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
@@ -54,59 +54,12 @@ class HeatProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
 
-    __temperature_options = {}
+    # __temperature_options = {}
 
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
         return options
-
-    def temperature_carriers(self):
-        return self.esdl_carriers
-
-    def temperature_regimes(self, carrier):
-
-        temperature_options = []
-        temperature_step = 2.5
-
-        try:
-            temperature_options = self.__temperature_options[carrier]
-        except KeyError:
-            for asset in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("buffer", []),
-                *self.heat_network_components.get("heat_pump", []),
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("demand", []),
-            ]:
-                esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
-                parameters = self.parameters(0)
-                for i in range(len(esdl_asset.attributes["constraint"].items)):
-                    constraint = esdl_asset.attributes["constraint"].items[i]
-                    if (
-                        constraint.name == "supply_temperature"
-                        and carrier == parameters[f"{asset}.T_supply_id"]
-                    ) or (
-                        constraint.name == "return_temperature"
-                        and carrier == parameters[f"{asset}.T_return_id"]
-                    ):
-                        lb = constraint.range.minValue
-                        ub = constraint.range.maxValue
-                        n_options = round((ub - lb) / temperature_step)
-                        temperature_options = np.linspace(lb, ub, n_options + 1)
-                        if not isinstance(
-                            constraint.range.profileQuantityAndUnit.unit,
-                            esdl.UnitEnum.DEGREES_CELSIUS,
-                        ):
-                            RuntimeError(
-                                f"{asset} has a temperature constraint with wrong unit "
-                                f"{constraint.range.profileQuantityAndUnit.unit}, should "
-                                f"always be in degrees celcius."
-                            )
-                        self.__temperature_options[carrier] = temperature_options
-
-        return temperature_options
 
 
 if __name__ == "__main__":
