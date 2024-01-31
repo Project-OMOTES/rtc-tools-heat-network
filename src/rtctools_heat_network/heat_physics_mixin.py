@@ -2414,13 +2414,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 constraints.append(((sec_heat - cop * elec) / nominal, 0.0, 0.0))
             else:
                 big_m = 2.0 * self.bounds()[f"{hp}.Secondary_heat"][1]
-                selected = 0.0
                 for sec_sup_temp in (
                     sec_sup_temps
                     if len(sec_sup_temps) > 0
                     else [parameters[f"{hp}.Secondary.T_supply"]]
                 ):
-                    selected += (
+                    sec_sup_selected = (
                         1.0 - self.state(f"{sec_sup_carrier}_{sec_sup_temp}")
                         if len(sec_sup_temps) > 0
                         else 0
@@ -2430,7 +2429,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         if len(sec_ret_temps) > 0
                         else [parameters[f"{hp}.Secondary.T_return"]]
                     ):
-                        selected += (
+                        sec_ret_selected = (
                             1.0 - self.state(f"{sec_ret_carrier}_{sec_ret_temp}")
                             if len(sec_ret_temps) > 0
                             else 0
@@ -2440,7 +2439,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             if len(prim_sup_temps) > 0
                             else [parameters[f"{hp}.Primary.T_supply"]]
                         ):
-                            selected += (
+                            prim_sup_selected = (
                                 1.0 - self.state(f"{prim_sup_carrier}_{prim_sup_temp}")
                                 if len(prim_sup_temps) > 0
                                 else 0
@@ -2450,16 +2449,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 if len(prim_ret_temps) > 0
                                 else [parameters[f"{hp}.Primary.T_return"]]
                             ):
-                                selected += (
+                                prim_ret_selected = (
                                     1.0 - self.state(f"{prim_ret_carrier}_{prim_ret_temp}")
                                     if len(prim_ret_temps) > 0
                                     else 0
                                 )
-                                efficiency = 0.5
+                                efficiency = parameters[f"{hp}.efficiency"]
                                 t_cond = 273.15 + sec_sup_temp
                                 t_evap = 273.15 + prim_sup_temp
 
                                 cop_carnot = efficiency * t_cond / (t_cond - t_evap)
+                                selected = (
+                                    prim_ret_selected
+                                    + prim_sup_selected
+                                    + sec_ret_selected
+                                    + sec_sup_selected
+                                )
 
                                 constraints.append(
                                     (

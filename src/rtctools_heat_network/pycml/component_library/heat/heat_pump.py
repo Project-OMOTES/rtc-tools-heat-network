@@ -27,6 +27,7 @@ class HeatPump(HeatFourPort, BaseAsset):
         )
 
         self.component_type = "heat_pump"
+        self.efficiency = nan
         self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
@@ -50,8 +51,6 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.add_equation(
             ((self.Primary_heat + self.Power_elec - self.Secondary_heat) / self.nominal)
         )
-
-        # self.add_equation(((self.Secondary_heat - self.COP * self.Power_elec) / self.nominal))
 
         self.add_equation(
             (
