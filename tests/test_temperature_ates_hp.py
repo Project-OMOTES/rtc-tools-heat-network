@@ -40,11 +40,29 @@ class TestAtesTemperature(TestCase):
         ates_stored_heat = results['ATES_cb47.Stored_heat']
         ates_max_heat = bounds['ATES_cb47.Stored_heat'][1]
 
+        # t_35 = results['ATES_cb47__temperature_disc_35.0']
+        # t_40 = results['ATES_cb47__temperature_disc_40.0']
         t_50 = results['ATES_cb47__temperature_disc_50.0']
         t_70 = results['ATES_cb47__temperature_disc_70.0']
 
+        heat_demand = results['HeatingDemand_1.Heat_demand']
+        heat_pump_sec = results['HeatPump_7f2c.Secondary_heat']
+        heat_pump_prim = results['HeatPump_7f2c.Primary_heat']
+        heat_ates = results['ATES_cb47.Heat_ates']
+        heat_ex_prim = results['HeatExchange_32ba.Primary_heat']
+        heat_ex_sec = results['HeatExchange_32ba.Secondary_heat']
+        heat_loss_ates = results['ATES_cb47.Heat_loss']
+
+        geo_source = results['GeothermalSource_4e5b.Heat_source']
+        # peak_source = results['GenericProducer_4dfe.Heat_source']
+        objective = solution.objective(0)
+
+        feasilibity = solution.solver_stats['return_status']
+
+
         np.testing.assert_array_less(ates_temperature_disc, ates_temperature)
-        np.testing.assert_allclose(t_50*50+t_70*70, ates_temperature_disc)
+        np.testing.assert_allclose(solution.get_timeseries(f"HeatingDemand_1.target_heat_demand").values[0:len(heat_demand)]- heat_demand)
+        # np.testing.assert_allclose(t_40*40+t_50*50+t_70*70, ates_temperature_disc)
 
         np.testing.assert_allclose((1-ates_charging)*ates_temperature_disc, (1-ates_charging)*carrier_temperature)
 

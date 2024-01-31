@@ -135,12 +135,12 @@
           </fixedMaintenanceCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:GenericProducer" id="4dfef171-02b4-4ad7-ad67-75bf36c92423" power="6000000.0" name="GenericProducer_4dfe">
+      <asset xsi:type="esdl:GenericProducer" id="4dfef171-02b4-4ad7-ad67-75bf36c92423" power="6000000.0" name="GenericProducer_4dfe" state="ENABLED">
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="Out" id="49470edb-de9f-4e15-ae8e-f22416915e3b" connectedTo="f6284605-daa7-4f27-8e06-317344a19094"/>
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="In" connectedTo="38b164c3-9c95-4f7e-b29f-416dbcfd2c11" id="3e41c106-c498-4d77-a5c8-d0856484570f"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.0330748992019" lon="4.30783781758207"/>
         <costInformation xsi:type="esdl:CostInformation" id="e86e46df-ea92-4f8f-9c5a-5587a1569df4">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" id="1e9ded33-463e-4927-8c1b-a889495378e1" value="300.0">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="1e9ded33-463e-4927-8c1b-a889495378e1" value="3000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATTHOUR" id="ec8c9da3-4275-4a57-8bf8-e52f86d4c0ee" unit="EURO" description="Cost in EUR/MWh" perMultiplier="MEGA" physicalQuantity="COST"/>
           </variableOperationalCosts>
           <investmentCosts xsi:type="esdl:SingleValue" id="55bfdf02-2d05-4357-9ca4-351b81116419" value="1000000.0">
@@ -220,7 +220,7 @@
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="Out" id="d8381212-2d28-4446-a19c-d661aa3f371b" connectedTo="b7b1c1e9-2288-436f-971d-dfce9cd4c624 22236a93-b4ac-43d4-9356-9af7c542d59f"/>
         <geometry xsi:type="esdl:Point" lat="52.03724647331762" lon="4.310541249504155"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" related="Pipe5_ret" id="Pipe5" outerDiameter="0.8" diameter="DN600" name="Pipe5" length="730.5" innerDiameter="0.5958">
+      <asset xsi:type="esdl:Pipe" related="Pipe5_ret" id="Pipe5" outerDiameter="0.8" diameter="DN600" name="Pipe5" length="730.5" innerDiameter="0.5958" state="ENABLED">
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="In" connectedTo="49470edb-de9f-4e15-ae8e-f22416915e3b" id="f6284605-daa7-4f27-8e06-317344a19094"/>
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="Out" id="65f4ff4c-ad4d-41ff-bad2-550db7a53f77" connectedTo="5710ec36-7159-41dc-afe2-fd09ae4bb66f"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
@@ -365,7 +365,7 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.03733647340762" lon="4.309903730049743"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" related="Pipe5" id="Pipe5_ret" outerDiameter="0.8" diameter="DN600" name="Pipe5_ret" length="730.5" innerDiameter="0.5958">
+      <asset xsi:type="esdl:Pipe" related="Pipe5" id="Pipe5_ret" outerDiameter="0.8" diameter="DN600" name="Pipe5_ret" length="730.5" innerDiameter="0.5958" state="ENABLED">
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="In_ret" connectedTo="4f487e75-ce7c-4c87-9101-38e73be55bdb" id="f5e323c1-9378-4649-882d-23695b24f210"/>
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="Out_ret" id="38b164c3-9c95-4f7e-b29f-416dbcfd2c11" connectedTo="3e41c106-c498-4d77-a5c8-d0856484570f"/>
         <geometry xsi:type="esdl:Line">

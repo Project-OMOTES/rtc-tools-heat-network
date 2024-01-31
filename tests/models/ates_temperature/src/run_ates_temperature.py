@@ -48,9 +48,9 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 10e8)
+        self.function_range = (0.0, 10e4)
         self.source = source
-        self.function_nominal = 1e7
+        self.function_nominal = 1e3
 
     def function(self, optimization_problem, ensemble_member):
         return (
@@ -78,9 +78,9 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
-        # gurobi_options = options["gurobi"] = {}
-        # gurobi_options["MIPgap"] = 0.02
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.02
 
         return options
 
@@ -113,7 +113,7 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = [70.0, 50.0]
+            temperatures = [70.0, 55.0, 50.0, 45.0]#, 37.5, 35.0]
 
         return temperatures
 
@@ -127,6 +127,9 @@ class HeatProblem(
             constraints.append((heat_ates[0], 0.0, 0.0))
             ates_temperature = self.state_vector(f"{a}.Temperature_ates")
             constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
+
+            #TODO; temporary temperature at which it should start
+            # constraints.append((ates_temperature[0],40.0,np.inf))
 
         return constraints
 

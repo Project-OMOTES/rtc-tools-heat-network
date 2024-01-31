@@ -10,6 +10,6 @@
     <workDir>.</workDir>
     <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>
     <properties>
-        <string key="ESDL_File_Path" value="../model/HP_ATES with return network.esdl"/>
+        <string key="ESDL_File_Path" value="../model/HP_ATES with return network_1prod.esdl"/>
     </properties>
 </Run>
