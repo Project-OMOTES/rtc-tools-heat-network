@@ -92,8 +92,8 @@ class TestMILPElectricSourceSink(TestCase):
 
     def test_source_sink_max_curr(self):
         """
-        Check bounds on the current, this is achieved by upping the demand forcing the current to
-        its max.
+        Check bounds on the current, this is achieved by increasing the demand forcing the current
+        to its max.
 
         Checks:
         - Check that the caps set in the esdl work as intended
@@ -117,7 +117,7 @@ class TestMILPElectricSourceSink(TestCase):
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
-        max_ = (
+        max_power_transport = (
             parameters["ElectricityCable_238f.min_voltage"]
             * parameters["ElectricityCable_238f.max_current"]
         )  # This max is based on max current and voltage requirement at consumer
@@ -127,13 +127,16 @@ class TestMILPElectricSourceSink(TestCase):
 
         # Test if capping is ok (capping based on max power as result of v_min*Imax)
         power_consumed = results["ElectricityDemand_2af6.ElectricityIn.Power"]
-        smallerthen = all(power_consumed - tolerance <= np.ones(len(power_consumed)) * max_)
+        smallerthen = all(
+            power_consumed - tolerance <= np.ones(len(power_consumed)) * max_power_transport
+        )
         self.assertTrue(smallerthen)
         demand_target = solution.get_timeseries(
             "ElectricityDemand_2af6.target_electricity_demand"
         ).values
         np.testing.assert_allclose(
-            power_consumed, np.minimum(demand_target, np.ones(len(power_consumed)) * max_)
+            power_consumed,
+            np.minimum(demand_target, np.ones(len(power_consumed)) * max_power_transport),
         )
         biggerthen = all(power_consumed >= np.zeros(len(power_consumed)))
         self.assertTrue(biggerthen)
@@ -163,7 +166,10 @@ class TestMILPElectricSourceSink(TestCase):
         current_cable = results["ElectricityCable_238f.ElectricityOut.I"]
         np.testing.assert_allclose(current_demand, current_cable)
         np.testing.assert_allclose(current_cable, current_producer)
-        biggerthen = all(142.0 * np.ones(len(current_demand)) >= current_demand - tolerance)
+        biggerthen = all(
+            parameters["ElectricityCable_238f.max_current"] * np.ones(len(current_demand))
+            >= current_demand - tolerance
+        )
         self.assertTrue(biggerthen)
 
         for demand in solution.heat_network_components.get("electricity_demand", []):

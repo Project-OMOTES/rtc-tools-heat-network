@@ -100,6 +100,9 @@ class TestMinMaxPressureOptions(TestCase):
             bounds["source.Heat_source"] = (0.0, 125_000.0)
             return bounds
 
+        def goals(self):
+            return []
+
     class MinPressure(SmallerPipes):
         def heat_network_options(self):
             options = super().heat_network_options()
@@ -173,6 +176,11 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
+        target = case_default.get_timeseries("demand.target_heat_demand").values
+        self.assertLess(
+            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+        )
 
 
 class TestDisconnectablePipe(TestCase):

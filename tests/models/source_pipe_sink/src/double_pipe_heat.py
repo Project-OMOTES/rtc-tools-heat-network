@@ -15,7 +15,7 @@ from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 class TargetDemandGoal(Goal):
     priority = 1
 
-    order = 1
+    order = 2
 
     def __init__(self, optimization_problem):
         self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
