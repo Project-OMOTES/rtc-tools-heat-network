@@ -171,7 +171,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 len(self.heat_network_components.get("pipe", [])),
             )
 
-        unique_pipe_classes = self.get_unique_pipe_classes()
+        unique_pipe_classes = self.get_unique_gas_pipe_classes()
         for pc in unique_pipe_classes:
             pipe_class_count = f"{pc.name}__global_gas_pipe_class_count"
             self.__gas_pipe_topo_global_pipe_class_count_var[pipe_class_count] = ca.MX.sym(
@@ -1550,7 +1550,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     single_power = parameters[f"{asset_name}.volume"]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.HeatIn.Q")
-                elif asset_name in [*self.heat_network_components.get("node", [])]:
+                elif asset_name in [
+                    *self.heat_network_components.get("node", []),
+                    *self.heat_network_components.get("gas_node", []),
+                    *self.heat_network_components.get("gas_pipe", []),
+                ]:
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
                     continue

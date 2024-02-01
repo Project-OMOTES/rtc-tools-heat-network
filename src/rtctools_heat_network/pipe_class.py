@@ -29,6 +29,7 @@ class PipeClass:
         return 0.25 * math.pi * self.inner_diameter**2
 
 
+@dataclass(frozen=True)
 class GasPipeClass:
     """
     This class defines a certain pipe. The optimization can select different pipe classes for each

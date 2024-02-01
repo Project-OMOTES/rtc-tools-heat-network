@@ -56,8 +56,14 @@ class TechnoEconomicMixin(
     def get_pipe_class_map(self):
         return self._pipe_topo_pipe_class_map
 
+    def get_gas_pipe_class_map(self):
+        return self._gas_pipe_topo_pipe_class_map
+
     def get_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
         return self.extra_variable(self._pipe_topo_cost_map[asset_name], ensemble_member)
+
+    def get_gas_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
+        return self.extra_variable(self._gas_pipe_topo_cost_map[asset_name], ensemble_member)
 
     def heat_network_options(self):
         r"""
