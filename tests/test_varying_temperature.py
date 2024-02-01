@@ -264,13 +264,16 @@ class TestVaryingTemperature(TestCase):
         heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
 
         results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        expected_cop = (273.15 + results[f"{7212673879469902607010}_temperature"]) / (
-            results[f"{7212673879469902607010}_temperature"] - 70.0
+        expected_cop = (
+            parameters["GenericConversion_3d3f.efficiency"]
+            * (273.15 + results[f"{7212673879469902607010}_temperature"])
+            / (results[f"{7212673879469902607010}_temperature"] - 70.0)
         )
 
         np.testing.assert_allclose(
