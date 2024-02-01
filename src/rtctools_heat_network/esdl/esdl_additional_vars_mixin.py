@@ -47,8 +47,14 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                         constraint.name == "return_temperature"
                         and carrier == parameters[f"{asset}.T_return_id"]
                     ):
-                        lb = constraint.range.minValue
-                        ub = constraint.range.maxValue
+                        try:
+                            lb = self.__temperature_options[carrier][0]
+                            ub = self.__temperature_options[carrier][-1]
+                            lb = constraint.range.minValue if constraint.range.minValue > lb else lb
+                            ub = constraint.range.maxValue if constraint.range.maxValue < ub else ub
+                        except KeyError:
+                            lb = constraint.range.minValue
+                            ub = constraint.range.maxValue
                         n_options = round((ub - lb) / temperature_step)
                         temperature_options = np.linspace(lb, ub, n_options + 1)
                         if (
