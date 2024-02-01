@@ -11,7 +11,16 @@ from rtctools.util import run_optimization_problem
 class TestElectrolyzer(TestCase):
     def test_electrolyzer(self):
         """
-        ...
+        This test is to check the functioning the example with an offshore wind farm in combination
+        with an electrolyzer and hydrogen storage.
+
+        Checks:
+        - The objective value with the revenue included
+        - Check the bounds on the electrolyzer
+        - Check the setpoint for the windfarm
+        - Check the max production profile of the windfarm
+        - Check the electrolyzer inequality constraints formulation
+
         """
         import models.unit_cases_electricity.electrolyzer.src.example as example
         from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
