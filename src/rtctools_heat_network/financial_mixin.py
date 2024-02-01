@@ -108,7 +108,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
+                nominal_fixed_operational = self.variable_nominal(
+                    f"{asset_name}.Heat_ates"
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("demand", [])]:
@@ -120,7 +122,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("source", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
+                nominal_fixed_operational = self.variable_nominal(
+                    f"{asset_name}.Heat_source"
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("pipe", [])]:
@@ -128,15 +132,21 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("buffer", [])]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Stored_heat")
-                nominal_variable_operational = self.variable_nominal(f"{asset_name}.Heat_buffer")
+                nominal_fixed_operational = self.variable_nominal(
+                    f"{asset_name}.Stored_heat"
+                )
+                nominal_variable_operational = self.variable_nominal(
+                    f"{asset_name}.Heat_buffer"
+                )
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [
                 *self.heat_network_components.get("heat_exchanger", []),
                 *self.heat_network_components.get("heat_pump", []),
                 *self.heat_network_components.get("heat_pump_elec", []),
             ]:
-                nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Secondary_heat")
+                nominal_fixed_operational = self.variable_nominal(
+                    f"{asset_name}.Secondary_heat"
+                )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             # TODO: set the nominal values below
@@ -168,15 +178,21 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             # fixed operational cost
             asset_fixed_operational_cost_var = f"{asset_name}__fixed_operational_cost"
-            self._asset_fixed_operational_cost_map[asset_name] = asset_fixed_operational_cost_var
-            self.__asset_fixed_operational_cost_var[asset_fixed_operational_cost_var] = ca.MX.sym(
+            self._asset_fixed_operational_cost_map[
+                asset_name
+            ] = asset_fixed_operational_cost_var
+            self.__asset_fixed_operational_cost_var[
                 asset_fixed_operational_cost_var
-            )
-            self.__asset_fixed_operational_cost_bounds[asset_fixed_operational_cost_var] = (
+            ] = ca.MX.sym(asset_fixed_operational_cost_var)
+            self.__asset_fixed_operational_cost_bounds[
+                asset_fixed_operational_cost_var
+            ] = (
                 0.0,
                 np.inf,
             )
-            self.__asset_fixed_operational_cost_nominals[asset_fixed_operational_cost_var] = (
+            self.__asset_fixed_operational_cost_nominals[
+                asset_fixed_operational_cost_var
+            ] = (
                 max(
                     parameters[f"{asset_name}.fixed_operational_cost_coefficient"]
                     * nominal_fixed_operational,
@@ -188,15 +204,21 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             # variable operational cost
             variable_operational_cost_var = f"{asset_name}__variable_operational_cost"
-            self._asset_variable_operational_cost_map[asset_name] = variable_operational_cost_var
-            self.__asset_variable_operational_cost_var[variable_operational_cost_var] = ca.MX.sym(
+            self._asset_variable_operational_cost_map[
+                asset_name
+            ] = variable_operational_cost_var
+            self.__asset_variable_operational_cost_var[
                 variable_operational_cost_var
-            )
-            self.__asset_variable_operational_cost_bounds[variable_operational_cost_var] = (
+            ] = ca.MX.sym(variable_operational_cost_var)
+            self.__asset_variable_operational_cost_bounds[
+                variable_operational_cost_var
+            ] = (
                 0.0,
                 np.inf,
             )
-            self.__asset_variable_operational_cost_nominals[variable_operational_cost_var] = (
+            self.__asset_variable_operational_cost_nominals[
+                variable_operational_cost_var
+            ] = (
                 max(
                     parameters[f"{asset_name}.variable_operational_cost_coefficient"]
                     * nominal_variable_operational
@@ -258,10 +280,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     else bounds[f"{asset_name}__max_size"][1]
                     * parameters[f"{asset_name}.investment_cost_coefficient"]
                 )
-            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
+            self.__asset_investment_cost_bounds[asset_investment_cost_var] = (
+                0.0,
+                max_cost,
+            )
             self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
                 max(
-                    parameters[f"{asset_name}.investment_cost_coefficient"] * nominal_investment,
+                    parameters[f"{asset_name}.investment_cost_coefficient"]
+                    * nominal_investment,
                     1.0e2,
                 )
                 if nominal_investment is not None
@@ -286,11 +312,17 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 0.0,
                 np.inf,
             )  # (lb, ub)
-            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+            installation_cost_symbol_name = self._asset_installation_cost_map[
+                asset_name
+            ]
             investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
-            self.__annualized_capex_var_nominals[annualized_capex_var_name] = self.variable_nominal(
+            self.__annualized_capex_var_nominals[
+                annualized_capex_var_name
+            ] = self.variable_nominal(
                 installation_cost_symbol_name
-            ) + self.variable_nominal(investment_cost_symbol_name)
+            ) + self.variable_nominal(
+                investment_cost_symbol_name
+            )
 
         if options["include_asset_is_realized"]:
             for asset in [
@@ -303,13 +335,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]:
                 var_name = f"{asset}__cumulative_investments_made_in_eur"
                 self.__cumulative_investments_made_in_eur_map[asset] = var_name
-                self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
+                self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(
+                    var_name
+                )
                 self.__cumulative_investments_made_in_eur_nominals[
                     var_name
-                ] = self.variable_nominal(f"{asset}__investment_cost") + self.variable_nominal(
+                ] = self.variable_nominal(
+                    f"{asset}__investment_cost"
+                ) + self.variable_nominal(
                     f"{asset}__installation_cost"
                 )
-                self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
+                self.__cumulative_investments_made_in_eur_bounds[var_name] = (
+                    0.0,
+                    np.inf,
+                )
 
                 # This is an integer variable between [0, max_aggregation_count] that allows the
                 # increments of the asset to become used by the optimizer. Meaning that when this
@@ -496,7 +535,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+            self.state_vector(canonical, ensemble_member)
+            * self.variable_nominal(canonical)
+            * sign
         )
 
     def __investment_cost_constraints(self, ensemble_member):
@@ -536,7 +577,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             investment_cost_var = self._asset_investment_cost_map[asset_name]
             investment_costs = self.extra_variable(investment_cost_var, ensemble_member)
-            investment_cost_coefficient = parameters[f"{asset_name}.investment_cost_coefficient"]
+            investment_cost_coefficient = parameters[
+                f"{asset_name}.investment_cost_coefficient"
+            ]
             nominal = self.variable_nominal(investment_cost_var)
 
             if asset_name in [*self.heat_network_components.get("pipe", [])]:
@@ -550,7 +593,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(
                 (
-                    (investment_costs - asset_size * investment_cost_coefficient) / nominal,
+                    (investment_costs - asset_size * investment_cost_coefficient)
+                    / nominal,
                     0.0,
                     0.0,
                 )
@@ -585,7 +629,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]:
                 # currently no support for joints
                 continue
-            fixed_operational_cost_var = self._asset_fixed_operational_cost_map[asset_name]
+            fixed_operational_cost_var = self._asset_fixed_operational_cost_map[
+                asset_name
+            ]
             fixed_operational_cost = self.extra_variable(
                 fixed_operational_cost_var, ensemble_member
             )
@@ -598,7 +644,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(
                 (
-                    (fixed_operational_cost - asset_size * fixed_operational_cost_coefficient)
+                    (
+                        fixed_operational_cost
+                        - asset_size * fixed_operational_cost_coefficient
+                    )
                     / nominal,
                     0.0,
                     0.0,
@@ -618,7 +667,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         parameters = self.parameters(ensemble_member)
 
         for s in self.heat_network_components.get("source", []):
-            heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
+            heat_source = self.__state_vector_scaled(
+                f"{s}.Heat_source", ensemble_member
+            )
             variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
@@ -631,8 +682,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             sum = 0.0
             for i in range(1, len(self.times())):
-                sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
-            constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+                sum += (
+                    variable_operational_cost_coefficient
+                    * heat_source[i]
+                    * timesteps[i - 1]
+                )
+            constraints.append(
+                ((variable_operational_cost - sum) / (nominal), 0.0, 0.0)
+            )
 
         for _ in self.heat_network_components.get("buffer", []):
             pass
@@ -642,7 +699,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
             )
 
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[demand]
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[
+                demand
+            ]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
@@ -654,9 +713,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             sum = 0.0
             timesteps = np.diff(self.times()) / 3600.0
             for i in range(1, len(self.times())):
-                sum += variable_operational_cost_coefficient * gas_mass_flow[i] * timesteps[i - 1]
+                sum += (
+                    variable_operational_cost_coefficient
+                    * gas_mass_flow[i]
+                    * timesteps[i - 1]
+                )
 
-            constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
+            constraints.append(
+                ((variable_operational_cost - sum) / (nominal), 0.0, 0.0)
+            )
 
         # for a in self.heat_network_components.get("ates", []):
         # TODO: needs to be replaced with the positive or abs value of this, see varOPEX,
@@ -687,7 +752,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 f"{electrolyzer}.Gas_mass_flow_out", ensemble_member
             )
 
-            variable_operational_cost_var = self._asset_variable_operational_cost_map[electrolyzer]
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[
+                electrolyzer
+            ]
             variable_operational_cost = self.extra_variable(
                 variable_operational_cost_var, ensemble_member
             )
@@ -763,12 +830,17 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             installation_cost_sym = self.extra_variable(
                 self._asset_installation_cost_map[asset_name]
             )
-            nominal = self.variable_nominal(self._asset_installation_cost_map[asset_name])
+            nominal = self.variable_nominal(
+                self._asset_installation_cost_map[asset_name]
+            )
             installation_cost = parameters[f"{asset_name}.installation_cost"]
-            aggregation_count_sym = self.get_aggregation_count_var(asset_name, ensemble_member)
+            aggregation_count_sym = self.get_aggregation_count_var(
+                asset_name, ensemble_member
+            )
             constraints.append(
                 (
-                    (installation_cost_sym - aggregation_count_sym * installation_cost) / nominal,
+                    (installation_cost_sym - aggregation_count_sym * installation_cost)
+                    / nominal,
                     0.0,
                     0.0,
                 )
@@ -827,9 +899,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 # Asset can be realized once the investments made equal the installation and
                 # investment cost
                 capex_sym = 0.0
-                if self.variable_nominal(self._asset_installation_cost_map[asset]) > 1.0e2:
+                if (
+                    self.variable_nominal(self._asset_installation_cost_map[asset])
+                    > 1.0e2
+                ):
                     capex_sym = capex_sym + installation_cost_sym
-                if self.variable_nominal(self._asset_investment_cost_map[asset]) > 1.0e2:
+                if (
+                    self.variable_nominal(self._asset_investment_cost_map[asset])
+                    > 1.0e2
+                ):
                     capex_sym = capex_sym + investment_cost_sym
 
                 constraints.append(
@@ -872,8 +950,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             )
                             / max(self.get_aggregation_count_max(asset), 1.0)
                         )
-                constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
-                constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
+                constraints.append(
+                    ((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf)
+                )
+                constraints.append(
+                    ((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0)
+                )
 
         return constraints
 
@@ -897,7 +979,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = []
 
-        asset_categories = ["source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
+        asset_categories = [
+            "source",
+            "ates",
+            "buffer",
+            "pipe",
+            "heat_exchanger",
+            "heat_pump",
+        ]
 
         parameters = super().parameters(ensemble_member)
 
@@ -917,26 +1006,35 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 symbol_name = self._annualized_capex_var_map[asset_name]
                 symbol = self.extra_variable(symbol_name)
 
-                investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+                investment_cost_symbol_name = self._asset_investment_cost_map[
+                    asset_name
+                ]
                 investment_cost_symbol = self.extra_variable(
                     investment_cost_symbol_name, ensemble_member
                 )
 
-                installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
+                installation_cost_symbol_name = self._asset_installation_cost_map[
+                    asset_name
+                ]
                 installation_cost_symbol = self.extra_variable(
                     installation_cost_symbol_name, ensemble_member
                 )
 
-                investment_and_installation_cost = investment_cost_symbol + installation_cost_symbol
+                investment_and_installation_cost = (
+                    investment_cost_symbol + installation_cost_symbol
+                )
 
                 nominal = self.variable_nominal(symbol_name)
                 discount_rate = discount_percentage / 100
 
-                annuity_factor = calculate_annuity_factor(discount_rate, asset_life_years)
+                annuity_factor = calculate_annuity_factor(
+                    discount_rate, asset_life_years
+                )
 
                 constraints.append(
                     (
-                        (symbol - investment_and_installation_cost * annuity_factor) / nominal,
+                        (symbol - investment_and_installation_cost * annuity_factor)
+                        / nominal,
                         0.0,
                         0.0,
                     )
@@ -967,7 +1065,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = super().constraints(ensemble_member)
 
-        constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
+        constraints.extend(
+            self.__variable_operational_cost_constraints(ensemble_member)
+        )
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
@@ -1027,5 +1127,7 @@ def calculate_annuity_factor(discount_rate: float, years_asset_life: float) -> f
     if discount_rate == 0:
         annuity_factor = 1 / years_asset_life
     else:
-        annuity_factor = discount_rate / (1 - (1 + discount_rate) ** (-years_asset_life))
+        annuity_factor = discount_rate / (
+            1 - (1 + discount_rate) ** (-years_asset_life)
+        )
     return annuity_factor

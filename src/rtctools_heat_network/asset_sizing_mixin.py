@@ -128,7 +128,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__pipe_topo_global_pipe_class_count_var[pipe_class_count] = ca.MX.sym(
                 pipe_class_count
             )
-            self.__pipe_topo_global_pipe_class_count_map[f"{pc.name}"] = pipe_class_count
+            self.__pipe_topo_global_pipe_class_count_map[
+                f"{pc.name}"
+            ] = pipe_class_count
             self.__pipe_topo_global_pipe_class_count_var_bounds[pipe_class_count] = (
                 0.0,
                 len(self.heat_network_components.get("pipe", [])),
@@ -164,7 +166,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self._pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
 
             if len(pipe_classes) > 0:
-                self.__pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
+                self.__pipe_topo_max_discharge_nominals[pipe] = np.median(
+                    max_discharges
+                )
                 self.__pipe_topo_max_discharge_var_bounds[pipe] = (
                     -max(max_discharges),
                     max(max_discharges),
@@ -183,20 +187,36 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = parameters[f"{pipe}.diameter"]
                 investment_cost = parameters[f"{pipe}.investment_cost_coefficient"]
-                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
-                self.__pipe_topo_cost_var_bounds[cost_var_name] = (investment_cost, investment_cost)
+                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (
+                    diameter,
+                    diameter,
+                )
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
-                    self.__pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
+                    self.__pipe_topo_cost_nominals[cost_var_name] = max(
+                        investment_cost, 1.0
+                    )
             elif len(pipe_classes) == 1:
                 # No pipe class decision to make for this pipe w.r.t. diameter
                 diameter = pipe_classes[0].inner_diameter
                 investment_cost = pipe_classes[0].investment_costs
-                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
-                self.__pipe_topo_cost_var_bounds[cost_var_name] = (investment_cost, investment_cost)
+                self.__pipe_topo_diameter_var_bounds[diam_var_name] = (
+                    diameter,
+                    diameter,
+                )
+                self.__pipe_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
                 if diameter > 0.0:
                     self.__pipe_topo_diameter_nominals[diam_var_name] = diameter
-                    self.__pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
+                    self.__pipe_topo_cost_nominals[cost_var_name] = max(
+                        investment_cost, 1.0
+                    )
                     if investment_cost == 0.0:
                         RuntimeWarning(f"{pipe} has an investment cost of 0. €/m")
 
@@ -245,13 +265,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                        pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe),
+                        pipe_heat_loss(
+                            self, {"neglect_pipe_heat_losses": False}, parameters, pipe
+                        ),
                         1.0,
                     )
 
                 for ensemble_member in range(self.ensemble_size):
                     h = self.__pipe_topo_heat_loss_parameters[ensemble_member]
-                    h[f"{pipe}.Heat_loss"] = pipe_heat_loss(self, options, parameters, pipe)
+                    h[f"{pipe}.Heat_loss"] = pipe_heat_loss(
+                        self, options, parameters, pipe
+                    )
 
             elif len(pipe_classes) == 1:
                 # No pipe class decision to make for this pipe w.r.t. heat loss
@@ -266,7 +290,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                        pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe),
+                        pipe_heat_loss(
+                            self, {"neglect_pipe_heat_losses": False}, parameters, pipe
+                        ),
                         1.0,
                     )
 
@@ -334,7 +360,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self.__pipe_topo_pipe_class_var[pipe_class_var_name] = ca.MX.sym(
                         pipe_class_var_name
                     )
-                    self.__pipe_topo_pipe_class_var_bounds[pipe_class_var_name] = (0.0, 1.0)
+                    self.__pipe_topo_pipe_class_var_bounds[pipe_class_var_name] = (
+                        0.0,
+                        1.0,
+                    )
 
                     self.__pipe_topo_pipe_class_discharge_ordering_map[pipe][
                         c
@@ -374,7 +403,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             pipe_classes = self._pipe_topo_pipe_class_map[pipe]
             max_discharge = max([c.maximum_discharge for c in pipe_classes])
 
-            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (-max_discharge, max_discharge)
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.Q"] = (
+                -max_discharge,
+                max_discharge,
+            )
 
             # Heat on cold side is zero, so no change needed
             cp = parameters[f"{pipe}.cp"]
@@ -384,8 +416,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # TODO: if temperature is variable these bounds should be set differently
             max_heat = 2.0 * cp * rho * temperature * max_discharge
 
-            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatIn.Heat"] = (-max_heat, max_heat)
-            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatOut.Heat"] = (-max_heat, max_heat)
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatIn.Heat"] = (
+                -max_heat,
+                max_heat,
+            )
+            self.__pipe_topo_heat_discharge_bounds[f"{pipe}.HeatOut.Heat"] = (
+                -max_heat,
+                max_heat,
+            )
 
         # When optimizing for pipe size, we do not yet support all options
         if self._pipe_topo_pipe_class_map:
@@ -404,7 +442,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         def _make_max_size_var(name, lb, ub, nominal):
             asset_max_size_var = f"{name}__max_size"
             self._asset_max_size_map[name] = asset_max_size_var
-            self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(asset_max_size_var)
+            self.__asset_max_size_var[asset_max_size_var] = ca.MX.sym(
+                asset_max_size_var
+            )
             self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
             self.__asset_max_size_nominals[asset_max_size_var] = nominal
 
@@ -483,14 +523,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for asset_name in self.heat_network_components.get("electricity_demand", []):
             v = bounds[f"{asset_name}.Electricity_demand"][1]
-            ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
+            ub = (
+                v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
+            )
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         for asset_name in self.heat_network_components.get("electricity_source", []):
             ub = (
                 bounds[f"{asset_name}.Electricity_source"][1]
-                if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
+                if not isinstance(
+                    bounds[f"{asset_name}.Electricity_source"][1], Timeseries
+                )
                 else np.max(bounds[f"{asset_name}.Electricity_source"][1].values)
             )
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
@@ -501,14 +545,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
                 self._asset_aggregation_count_var_map[asset] = aggr_count_var
-                self.__asset_aggregation_count_var[aggr_count_var] = ca.MX.sym(aggr_count_var)
+                self.__asset_aggregation_count_var[aggr_count_var] = ca.MX.sym(
+                    aggr_count_var
+                )
                 try:
                     aggr_count_max = parameters[f"{asset}.nr_of_doublets"]
                 except KeyError:
                     aggr_count_max = 1.0
                 if parameters[f"{asset}.state"] == 0:
                     aggr_count_max = 0.0
-                self.__asset_aggregation_count_var_bounds[aggr_count_var] = (0.0, aggr_count_max)
+                self.__asset_aggregation_count_var_bounds[aggr_count_var] = (
+                    0.0,
+                    aggr_count_max,
+                )
 
     @abstractmethod
     def heat_network_options(self):
@@ -549,7 +598,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         return self.__pipe_topo_pipe_class_result[pipe]
 
-    def get_optimized_deman_insulation_class(self, demand_insulation: str) -> DemandInsulationClass:
+    def get_optimized_deman_insulation_class(
+        self, demand_insulation: str
+    ) -> DemandInsulationClass:
         """
         Return the optimized demand_insulation class for a specific pipe. If no
         optimized demand insulation class is available (yet), a `KeyError` is returned.
@@ -662,7 +713,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # to NaN in that case. In post(), they are set to their resulting
         # values once again.
         if self.__pipe_topo_diameter_area_parameters:
-            parameters.update(self.__pipe_topo_diameter_area_parameters[ensemble_member])
+            parameters.update(
+                self.__pipe_topo_diameter_area_parameters[ensemble_member]
+            )
         if self.__pipe_topo_heat_loss_parameters:
             parameters.update(self.__pipe_topo_heat_loss_parameters[ensemble_member])
 
@@ -699,7 +752,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe,
+                            self,
+                            options,
+                            parameters,
+                            pc.maximum_discharge,
+                            pipe_class=pc,
                         )
                         for pc in pipe_classes
                         if pc.maximum_discharge > 0.0
@@ -730,7 +788,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+            self.state_vector(canonical, ensemble_member)
+            * self.variable_nominal(canonical)
+            * sign
         )
 
     def __pipe_topology_constraints(self, ensemble_member):
@@ -763,10 +823,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for pc in pipe_classes:
                     neighbour = self.has_related_pipe(p)
                     if neighbour and p not in self.hot_pipes:
-                        var_name = f"{self.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
+                        var_name = (
+                            f"{self.cold_to_hot_pipe(p)}__hn_pipe_class_{pc.name}"
+                        )
                     else:
                         var_name = f"{p}__hn_pipe_class_{pc.name}"
-                    pipe_class_count_sum[pc.name] += self.extra_variable(var_name, ensemble_member)
+                    pipe_class_count_sum[pc.name] += self.extra_variable(
+                        var_name, ensemble_member
+                    )
 
         for pc in unique_pipe_classes:
             var = self.extra_variable(
@@ -775,16 +839,22 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append(((pipe_class_count_sum[pc.name] - var), 0.0, 0.0))
 
         # These are the constraints to order the discharge capabilities of the pipe classes
-        for p, pipe_classes in self.__pipe_topo_pipe_class_discharge_ordering_map.items():
+        for (
+            p,
+            pipe_classes,
+        ) in self.__pipe_topo_pipe_class_discharge_ordering_map.items():
             max_discharge = self.extra_variable(self._pipe_topo_max_discharge_map[p])
             max_discharges = {
-                pc.name: pc.maximum_discharge for pc in self._pipe_topo_pipe_class_map[p]
+                pc.name: pc.maximum_discharge
+                for pc in self._pipe_topo_pipe_class_map[p]
             }
             median_discharge = np.median(list(max_discharges.values()))
 
             big_m = 2.0 * max(max_discharges.values())
             for pc, var_name in pipe_classes.items():
-                pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
+                pipe_class_discharge_ordering = self.extra_variable(
+                    var_name, ensemble_member
+                )
 
                 constraints.append(
                     (
@@ -815,11 +885,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for p, pipe_classes in self.__pipe_topo_pipe_class_cost_ordering_map.items():
             cost_sym_name = self._pipe_topo_cost_map[p]
             cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
-            costs = {pc.name: pc.investment_costs for pc in self._pipe_topo_pipe_class_map[p]}
+            costs = {
+                pc.name: pc.investment_costs for pc in self._pipe_topo_pipe_class_map[p]
+            }
 
             big_m = 2.0 * max(costs.values())
             for pc, var_name in pipe_classes.items():
-                pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
+                pipe_class_cost_ordering = self.extra_variable(
+                    var_name, ensemble_member
+                )
 
                 # should be one if >= than cost_symbol
                 constraints.append(
@@ -832,7 +906,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
                 constraints.append(
                     (
-                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
+                        (
+                            cost_sym
+                            - costs[pc.name]
+                            - (1.0 - pipe_class_cost_ordering) * big_m
+                        )
                         / self.variable_nominal(cost_sym_name),
                         -np.inf,
                         0.0,
@@ -841,10 +919,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         # These are the constraints to order the heat loss of the pipe classes.
         if not self.heat_network_options()["neglect_pipe_heat_losses"]:
-            for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
+            for (
+                pipe,
+                pipe_classes,
+            ) in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
                 if pipe in self.hot_pipes and self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
-                    heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
+                    heat_loss_sym = self.extra_variable(
+                        heat_loss_sym_name, ensemble_member
+                    )
                     cold_name = self._pipe_heat_loss_map[self.hot_to_cold_pipe(pipe)]
                     heat_loss_sym += self.extra_variable(cold_name, ensemble_member)
                     heat_losses = [
@@ -856,7 +939,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ]
                 elif pipe in self.hot_pipes and not self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
-                    heat_loss_sym = self.extra_variable(heat_loss_sym_name, ensemble_member)
+                    heat_loss_sym = self.extra_variable(
+                        heat_loss_sym_name, ensemble_member
+                    )
 
                     heat_losses = self._pipe_heat_losses[pipe]
                 else:  # cold pipe
@@ -864,12 +949,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 big_m = 2.0 * max(heat_losses)
                 for var_name, heat_loss in zip(pipe_classes.values(), heat_losses):
-                    pipe_class_heat_loss_ordering = self.extra_variable(var_name, ensemble_member)
+                    pipe_class_heat_loss_ordering = self.extra_variable(
+                        var_name, ensemble_member
+                    )
 
                     # should be one if >= than heat_loss_symbol
                     constraints.append(
                         (
-                            (heat_loss_sym - heat_loss + pipe_class_heat_loss_ordering * big_m)
+                            (
+                                heat_loss_sym
+                                - heat_loss
+                                + pipe_class_heat_loss_ordering * big_m
+                            )
                             / self.variable_nominal(heat_loss_sym_name),
                             0.0,
                             np.inf,
@@ -919,7 +1010,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             diameters = {pc.name: pc.inner_diameter for pc in pipe_classes}
 
-            diam_expr = sum(variables[pc_name] * diameters[pc_name] for pc_name in variables)
+            diam_expr = sum(
+                variables[pc_name] * diameters[pc_name] for pc_name in variables
+            )
 
             constraint_nominal = self.variable_nominal(diam_sym_name)
             constraints.append(((diam_sym - diam_expr) / constraint_nominal, 0.0, 0.0))
@@ -935,7 +1028,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
             costs_constraint_nominal = self.variable_nominal(cost_sym_name)
 
-            constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
+            constraints.append(
+                ((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0)
+            )
 
         return constraints
 
@@ -953,10 +1048,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             discharge_sym_hot = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
 
-            max_discharge = self.__pipe_topo_max_discharge_var[self._pipe_topo_max_discharge_map[p]]
+            max_discharge = self.__pipe_topo_max_discharge_var[
+                self._pipe_topo_max_discharge_map[p]
+            ]
 
-            constraints.append(((max_discharge - discharge_sym_hot) / nominal, 0.0, np.inf))
-            constraints.append(((-max_discharge - discharge_sym_hot) / nominal, -np.inf, 0.0))
+            constraints.append(
+                ((max_discharge - discharge_sym_hot) / nominal, 0.0, np.inf)
+            )
+            constraints.append(
+                ((-max_discharge - discharge_sym_hot) / nominal, -np.inf, 0.0)
+            )
 
         return constraints
 
@@ -976,12 +1077,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for b in self.heat_network_components.get("buffer", []):
             max_var = self._asset_max_size_map[b]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
+            stored_heat = self.__state_vector_scaled(
+                f"{b}.Stored_heat", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(max_var)
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - stored_heat) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_heat - stored_heat)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -991,7 +1095,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for s in self.heat_network_components.get("source", []):
             max_var = self._asset_max_size_map[s]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
+            heat_source = self.__state_vector_scaled(
+                f"{s}.Heat_source", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             try:
@@ -1000,7 +1106,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for i in range(0, len(self.times())):
                     constraints.append(
                         (
-                            (profile_scaled[i] * max_heat - heat_source[i]) / constraint_nominal,
+                            (profile_scaled[i] * max_heat - heat_source[i])
+                            / constraint_nominal,
                             0.0,
                             np.inf,
                         )
@@ -1008,7 +1115,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             except KeyError:
                 constraints.append(
                     (
-                        (np.ones(len(self.times())) * max_heat - heat_source) / constraint_nominal,
+                        (np.ones(len(self.times())) * max_heat - heat_source)
+                        / constraint_nominal,
                         0.0,
                         np.inf,
                     )
@@ -1021,12 +1129,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         ]:
             max_var = self._asset_max_size_map[hx]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_secondary = self.__state_vector_scaled(f"{hx}.Secondary_heat", ensemble_member)
+            heat_secondary = self.__state_vector_scaled(
+                f"{hx}.Secondary_heat", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{hx}.Secondary_heat")
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_secondary) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_heat - heat_secondary)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1035,13 +1146,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for d in self.heat_network_components.get("demand", []):
             max_var = self._asset_max_size_map[d]
             max_heat = self.extra_variable(max_var, ensemble_member)
-            heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
+            heat_demand = self.__state_vector_scaled(
+                f"{d}.Heat_demand", ensemble_member
+            )
             constraint_nominal = max(
-                self.variable_nominal(f"{d}.Heat_demand"), self.variable_nominal(f"{d}.HeatIn.Heat")
+                self.variable_nominal(f"{d}.Heat_demand"),
+                self.variable_nominal(f"{d}.HeatIn.Heat"),
             )
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_demand) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_heat - heat_demand)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1055,14 +1170,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_heat - heat_ates)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
             )
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_heat + heat_ates)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1122,12 +1239,15 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for d in self.heat_network_components.get("gas_tank_storage", []):
             max_var = self._asset_max_size_map[d]
             max_size = self.extra_variable(max_var, ensemble_member)
-            gas_mass = self.__state_vector_scaled(f"{d}.Stored_gas_mass", ensemble_member)
+            gas_mass = self.__state_vector_scaled(
+                f"{d}.Stored_gas_mass", ensemble_member
+            )
             constraint_nominal = self.variable_nominal(f"{d}.Stored_gas_mass")
 
             constraints.append(
                 (
-                    (np.ones(len(self.times())) * max_size - gas_mass) / constraint_nominal,
+                    (np.ones(len(self.times())) * max_size - gas_mass)
+                    / constraint_nominal,
                     0.0,
                     np.inf,
                 )
@@ -1155,7 +1275,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             for asset_name_list in self.heat_network_components.values()
             for asset_name in asset_name_list
         ]:
-            if parameters[f"{asset_name}.state"] == 0 or parameters[f"{asset_name}.state"] == 2:
+            if (
+                parameters[f"{asset_name}.state"] == 0
+                or parameters[f"{asset_name}.state"] == 2
+            ):
                 if asset_name in [
                     *self.heat_network_components.get("geothermal", []),
                     *self.heat_network_components.get("ates", []),
@@ -1185,14 +1308,16 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 constraints.append(
                     (
-                        (single_power * aggregation_count - state_var) / constraint_nominal,
+                        (single_power * aggregation_count - state_var)
+                        / constraint_nominal,
                         0.0,
                         np.inf,
                     )
                 )
                 constraints.append(
                     (
-                        (-single_power * aggregation_count - state_var) / constraint_nominal,
+                        (-single_power * aggregation_count - state_var)
+                        / constraint_nominal,
                         -np.inf,
                         0.0,
                     )
