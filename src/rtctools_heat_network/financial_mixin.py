@@ -304,9 +304,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 var_name = f"{asset}__cumulative_investments_made_in_eur"
                 self.__cumulative_investments_made_in_eur_map[asset] = var_name
                 self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
-                self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                    self.variable_nominal(f"{asset}__investment_cost")
-                    + self.variable_nominal(f"{asset}__installation_cost")
+                self.__cumulative_investments_made_in_eur_nominals[
+                    var_name
+                ] = self.variable_nominal(f"{asset}__investment_cost") + self.variable_nominal(
+                    f"{asset}__installation_cost"
                 )
                 self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 

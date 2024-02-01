@@ -319,9 +319,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         self.__demand_insulation_class_map[dmnd][
                             insl
                         ] = demand_insulation_class_var_name
-                        self.__demand_insulation_class_var[demand_insulation_class_var_name] = (
-                            ca.MX.sym(demand_insulation_class_var_name)
-                        )
+                        self.__demand_insulation_class_var[
+                            demand_insulation_class_var_name
+                        ] = ca.MX.sym(demand_insulation_class_var_name)
                         self.__demand_insulation_class_var_bounds[
                             demand_insulation_class_var_name
                         ] = (0.0, 1.0)
