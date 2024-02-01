@@ -48,6 +48,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         options = {}
 
+        options["gas_maximum_velocity"] = 15.0
+
         return options
 
     @property

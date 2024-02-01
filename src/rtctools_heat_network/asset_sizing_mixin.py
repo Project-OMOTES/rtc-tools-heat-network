@@ -687,7 +687,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         options = {}
-        options["gas_maximum_velocity"] = 15.0
 
         return options
 
