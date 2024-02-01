@@ -57,6 +57,8 @@ class TestAtesTemperature(TestCase):
         # peak_source = results['GenericProducer_4dfe.Heat_source']
         objective = solution.objective(0)
 
+        objective_calc = results['GeothermalSource_4e5b__variable_operational_cost'] + sum(parameters['HeatPump_7f2c.variable_operational_cost_coefficient']*results['HeatPump_7f2c.Power_elec'][1:])
+
         feasilibity = solution.solver_stats['return_status']
 
 

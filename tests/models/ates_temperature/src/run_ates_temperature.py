@@ -53,8 +53,11 @@ class MinimizeCostHeatGoal(Goal):
         self.function_nominal = 1e3
 
     def function(self, optimization_problem, ensemble_member):
-        return (
-            optimization_problem.state(f"{self.source}.Heat_source")
+        try:
+            state = optimization_problem.state(f"{self.source}.Heat_source")
+        except KeyError:
+            state = optimization_problem.state(f"{self.source}.Power_elec") #heatpumps are not yet in the variable_operational_costs in financial_mixin
+        return (state
             * optimization_problem.parameters(0)[
                 f"{self.source}.variable_operational_cost_coefficient"]
         )
@@ -70,7 +73,8 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components.get("source"):
+        for s in [*self.heat_network_components.get("source"),
+                  *self.heat_network_components.get("heat_pump")]:
             goals.append(MinimizeCostHeatGoal(s))
         # goals.append(MinimizeTCO)
 
@@ -80,7 +84,7 @@ class _GoalsAndOptions:
         options = super().solver_options()
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["MIPgap"] = 0.05
 
         return options
 
@@ -103,11 +107,12 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        options["minimum_velocity"] = 0.0005#0.0001
+        options["heat_loss_disconnected_pipe"] = False #required since we want to disconnect HP & HEX
         return options
 
     def temperature_carriers(self):
-        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+        return self.esdl_carriers
 
     def temperature_regimes(self, carrier):
         temperatures = []
@@ -116,6 +121,34 @@ class HeatProblem(
             temperatures = [70.0, 55.0, 50.0, 45.0]#, 37.5, 35.0]
 
         return temperatures
+
+    def path_constraints(self, ensemble_member):
+        constraints = super().path_constraints(ensemble_member)
+
+        #To prevent heat being consumer by hex to upgrade it (add heat) by heatpump to match demand without loading/unloading ates.
+        sum_disabled_vars = 0
+        for asset in [*self.heat_network_components.get("heat_pump"),
+            *self.heat_network_components.get("heat_exchanger")]:
+            disabled_var = self.state(f"{asset}__disabled")
+            sum_disabled_vars +=disabled_var
+
+        constraints.append((sum_disabled_vars, 1.0, 2.0))
+        #
+        # sum_disabled_vars = 0
+        # for asset in [*self.heat_network_components.get("heat_pump"),
+        #         *self.heat_network_components.get("heat_exchanger")]:
+        #     disabled_var = self.state(f"{asset}__disabled")
+        #     sum_disabled_vars += disabled_var
+        #
+        # constraints.append((1-sum_disabled_vars, 0.0, 0.0))
+
+        #maybe replace by only required to have one disabled instead of at least one of them
+        # e.g. 1-dis_hp-dis_hex ==0 (actually takes longer assumption because trying to balance heatlosses for which lower minimum velocity is required) instead of 1<=dis_hp+dis_hex<=2
+        #when using compound asset instead of separate assets, one could still use this constraint
+        # but potentially add the constraint that if hex is enabled, ates is loading and if hp is
+        # enabled ates is unloading (dis_hex-ates_charging, 0.0, 0.0)
+
+        return constraints
 
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)

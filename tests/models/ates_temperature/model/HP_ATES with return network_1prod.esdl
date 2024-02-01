@@ -36,6 +36,9 @@
           <fixedOperationalCosts xsi:type="esdl:SingleValue" value="900.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Cost in EUR/MW" perMultiplier="MEGA" perUnit="WATT" id="9dd51278-62a3-46d3-be1b-d9f352eca327" unit="EURO"/>
           </fixedOperationalCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Cost in EUR/MWh" perMultiplier="MEGA" perUnit="WATTHOUR" id="9dd51278-62a3-46d3-be1b-d9f352eca328" unit="EURO"/>
+          </variableOperationalCosts>
           <investmentCosts xsi:type="esdl:SingleValue" value="300000.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Cost in EUR/MW" perMultiplier="MEGA" perUnit="WATT" id="62fdea30-ff3b-4bdc-b687-537eef8c13c8" unit="EURO"/>
           </investmentCosts>
