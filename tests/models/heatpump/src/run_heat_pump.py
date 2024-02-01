@@ -114,12 +114,28 @@ class HeatProblem(
 
         return options
 
+
+class HeatProblemTvar(HeatProblem):
+
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.005
         return options
+
+    def temperature_carriers(self):
+        return self.esdl_carriers  # geeft terug de carriers met multiple temperature options
+
+    def temperature_regimes(self, carrier):
+        temperatures = []
+        if carrier == 7212673879469902607010:
+            # supply
+            temperatures = [85.0, 90.0]
+
+        return temperatures
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblem)
+    solution = run_optimization_problem(HeatProblemTvar)
     results = solution.extract_results()

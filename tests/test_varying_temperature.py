@@ -324,6 +324,38 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+    def test_heat_pump_varying_temperature(self):
+        """
+        Check to see if the Heat pump under varying temperature has the expected COP behaviour.
+
+
+        """
+        import models.heatpump.src.run_heat_pump as run_heat_pump
+        from models.heatpump.src.run_heat_pump import HeatProblemTvar
+
+        base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
+
+        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        expected_cop = (
+            parameters["GenericConversion_3d3f.efficiency"]
+            * (273.15 + results[f"{7212673879469902607010}_temperature"])
+            / (results[f"{7212673879469902607010}_temperature"] - 70.0)
+        )
+
+        np.testing.assert_allclose(
+            expected_cop,
+            results["GenericConversion_3d3f.Secondary_heat"]
+            / results["GenericConversion_3d3f.Power_elec"],
+        )
+
     # Note that CBC struggles heavily and tends to crash, therefore excluded from pipeline
     # def test_varying_temperature_with_pipe_sizing(self):
     #     root_folder = str(Path(__file__).resolve().parent.parent)
