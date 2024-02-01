@@ -725,7 +725,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         unique_pipe_classes = set()
         for p in self.heat_network_components.get("pipe", []):
-            unique_pipe_classes.update(self.gpipe_classes(p))
+            unique_pipe_classes.update(self.pipe_classes(p))
         return unique_pipe_classes
 
     def get_unique_gas_pipe_classes(self) -> Set[PipeClass]:
@@ -781,6 +781,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__asset_max_size_var.values())
         variables.extend(self.__asset_aggregation_count_var.values())
         variables.extend(self.__gas_pipe_topo_max_discharge_var.values())
+        variables.extend(self.__pipe_topo_max_discharge_var.values())
         variables.extend(self.__pipe_topo_global_pipe_class_count_var.values())
         variables.extend(self.__gas_pipe_topo_global_pipe_class_count_var.values())
         variables.extend(self.__pipe_topo_pipe_class_discharge_ordering_var.values())
