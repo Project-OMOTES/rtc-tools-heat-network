@@ -31,6 +31,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         super().__init__(*args, **kwargs)
 
+        self._gas_pipe_topo_pipe_class_map = {}
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
