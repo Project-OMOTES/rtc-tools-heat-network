@@ -2422,7 +2422,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if len(sec_sup_temps) > 0
                     else [parameters[f"{hp}.Secondary.T_supply"]]
                 ):
-                    sec_sup_selected = (
+                    sec_sup_not_selected = (
                         1.0 - self.state(f"{sec_sup_carrier}_{sec_sup_temp}")
                         if len(sec_sup_temps) > 0
                         else 0
@@ -2432,7 +2432,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         if len(sec_ret_temps) > 0
                         else [parameters[f"{hp}.Secondary.T_return"]]
                     ):
-                        sec_ret_selected = (
+                        sec_ret_not_selected = (
                             1.0 - self.state(f"{sec_ret_carrier}_{sec_ret_temp}")
                             if len(sec_ret_temps) > 0
                             else 0
@@ -2442,7 +2442,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             if len(prim_sup_temps) > 0
                             else [parameters[f"{hp}.Primary.T_supply"]]
                         ):
-                            prim_sup_selected = (
+                            prim_sup_not_selected = (
                                 1.0 - self.state(f"{prim_sup_carrier}_{prim_sup_temp}")
                                 if len(prim_sup_temps) > 0
                                 else 0
@@ -2452,7 +2452,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 if len(prim_ret_temps) > 0
                                 else [parameters[f"{hp}.Primary.T_return"]]
                             ):
-                                prim_ret_selected = (
+                                prim_ret_not_selected = (
                                     1.0 - self.state(f"{prim_ret_carrier}_{prim_ret_temp}")
                                     if len(prim_ret_temps) > 0
                                     else 0
@@ -2462,23 +2462,25 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 t_evap = 273.15 + prim_sup_temp
 
                                 cop_carnot = efficiency * t_cond / (t_cond - t_evap)
-                                selected = (
-                                    prim_ret_selected
-                                    + prim_sup_selected
-                                    + sec_ret_selected
-                                    + sec_sup_selected
+                                not_selected = (
+                                    prim_ret_not_selected
+                                    + prim_sup_not_selected
+                                    + sec_ret_not_selected
+                                    + sec_sup_not_selected
                                 )
 
                                 constraints.append(
                                     (
-                                        (sec_heat - cop_carnot * elec + selected * big_m) / nominal,
+                                        (sec_heat - cop_carnot * elec + not_selected * big_m)
+                                        / nominal,
                                         0.0,
                                         np.inf,
                                     )
                                 )
                                 constraints.append(
                                     (
-                                        (sec_heat - cop_carnot * elec - selected * big_m) / nominal,
+                                        (sec_heat - cop_carnot * elec - not_selected * big_m)
+                                        / nominal,
                                         -np.inf,
                                         0.0,
                                     )
