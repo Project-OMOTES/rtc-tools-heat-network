@@ -583,7 +583,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     asset_name, ensemble_member
                 )
                 asset_size = parameters[f"{asset_name}.length"]
-            if asset_name in [*self.heat_network_components.get("gas_pipe", [])]:
+            elif asset_name in [*self.heat_network_components.get("gas_pipe", [])]:
                 # We do the pipe seperately as their coefficients are specified per meter.
                 investment_cost_coefficient = self.get_gas_pipe_investment_cost_coefficient(
                     asset_name, ensemble_member
