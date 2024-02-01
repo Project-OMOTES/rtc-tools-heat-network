@@ -140,6 +140,18 @@ def heat_to_discharge_test(solution, results):
         # dt = solution.parameters(0)[f"{d}.dT"]
         # supply_t = solution.parameters(0)[f"{d}.T_supply"]
         # return_t = solution.parameters(0)[f"{d}.T_return"]
+        try:
+            np.testing.assert_allclose(
+                results[f"{d}.Heat_ates"],
+                results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+                atol=tol,
+            )
+        except KeyError:
+            np.testing.assert_allclose(
+                results[f"{d}.Heat_buffer"],
+                results[f"{d}.HeatIn.Heat"] - results[f"{d}.HeatOut.Heat"],
+                atol=tol,
+            )
         supply_temp, return_temp, dt = _get_component_temperatures(solution, results, d)
         indices = results[f"{d}.HeatIn.Q"] >= 0
         if isinstance(supply_temp, float):

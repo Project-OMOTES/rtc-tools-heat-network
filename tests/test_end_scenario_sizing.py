@@ -23,10 +23,12 @@ class TestEndScenarioSizing(TestCase):
         - Cyclic behaviour for ATES
         - That buffer tank is only used on peak day
         - demand matching
-
-        Missing:
         - Check if TCO goal included the desired cost components.
 
+
+        Missing:
+        - Link ATES t0 utilization to state of charge at end of year for optimizations over one
+        year.
         """
         import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
 
@@ -69,6 +71,24 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
+
+        obj = 0.0
+        years = solution.parameters(0)["number_of_years"]
+        for asset in [
+            *solution.heat_network_components.get("source", []),
+            *solution.heat_network_components.get("ates", []),
+            *solution.heat_network_components.get("buffer", []),
+            *solution.heat_network_components.get("demand", []),
+            *solution.heat_network_components.get("heat_exchanger", []),
+            *solution.heat_network_components.get("heat_pump", []),
+            *solution.heat_network_components.get("pipe", []),
+        ]:
+            obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
+            obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
+            obj += results[f"{solution._asset_investment_cost_map[asset]}"]
+            obj += results[f"{solution._asset_installation_cost_map[asset]}"]
+
+        np.testing.assert_allclose(obj / 1.0e6, solution.objective_value)
 
     def test_end_scenario_sizing_discounted(self):
         """
