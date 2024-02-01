@@ -2,9 +2,6 @@ from typing import Any, Dict, List
 
 import esdl
 
-import numpy as np
-
-
 from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.util import run_optimization_problem
 
@@ -19,35 +16,6 @@ except ModuleNotFoundError:
     from run_ates import HeatProblem
 
 
-class TargetDemandGoal(Goal):
-    priority = 1
-    order = 2
-
-    def __init__(self, state, target):
-        self.state = state
-
-        self.target_min = target
-        self.target_max = target
-        self.function_range = (-1.0, 2.0 * max(target.values))
-        self.function_nominal = np.median(target.values)
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(self.state)
-
-
-class _GoalsAndOptions:
-    def path_goals(self) -> List[Goal]:
-        goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components["demand"]:
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
-
-        return goals
-
-
 class HeatProblemDiscAnnualizedCost(HeatProblem):
     def heat_network_options(self) -> Dict[str, Any]:
         options = super().heat_network_options()
@@ -55,7 +23,7 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         return options
 
     def goals(self) -> List[Goal]:
-        goals = super().goals().copy()
+        goals = []
 
         custom_asset_type_maps = {
             "operational": {"source"},

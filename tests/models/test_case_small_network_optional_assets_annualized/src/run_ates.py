@@ -38,7 +38,7 @@ class MinimizeSourcesHeatCostGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e7)
+        self.function_range = (0.0, 1.0e6)
         self.source = source
         self.function_nominal = 1.0e6
 
@@ -157,3 +157,4 @@ if __name__ == "__main__":
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
     results = solution.extract_results()
+    print("Finished")

@@ -1,4 +1,6 @@
-from typing import Dict, Optional, Set
+from typing import Any, Dict, Optional, Set
+
+from casadi import MX
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 
@@ -74,27 +76,38 @@ class MinimizeTCO(Goal):
     def _calculate_cost(
         self,
         optimization_problem: TechnoEconomicMixin,
+        cost_type,
         asset_types: Set[str],
-        cost_map: Dict[str, float],
-    ) -> float:
+        cost_type_map: Dict[str, float],
+        options: Dict[str, Any],
+    ) -> MX:
         """
         Calculate the cost for given asset types using a specified cost map.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
+            cost_type (str): The type of cost to calculate ("operational",
+                            "fixed_operational", "investment", "installation")
             asset_types (Set[str]): Set of asset types to consider for cost calculation.
-            cost_map (Dict[str, float]): Mapping of assets to their respective costs.
+            cost_type_map (Dict[str, Any]): Mapping of assets to their respective costs.
+            options (Dict[str, Any]): Options dictionary from heat_network_options
 
         Returns:
-            float: The total cost for the given asset types.
+            MX object: CasADi expression with total cost for the given asset types.
         """
         obj = 0.0
         for asset_type in asset_types:
             for asset in optimization_problem.heat_network_components.get(asset_type, []):
-                obj += optimization_problem.extra_variable(cost_map[asset]) * self.number_of_years
+                extra_var = optimization_problem.extra_variable(cost_type_map[asset])
+                if options["discounted_annualized_cost"]:
+                    obj += extra_var
+                elif "operational" in cost_type:
+                    obj += extra_var * self.number_of_years
+                else:
+                    obj += extra_var
         return obj
 
-    def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> float:
+    def function(self, optimization_problem: TechnoEconomicMixin, ensemble_member) -> MX:
         """
         Calculate the objective function value for the optimization problem.
 
@@ -105,7 +118,7 @@ class MinimizeTCO(Goal):
             ensemble_member: The current ensemble member being considered in the optimization.
 
         Returns:
-            float: The total cost objective function value in millions.
+            MX object: CasADi expression with the total cost objective function value.
         """
 
         options = optimization_problem.heat_network_options()
@@ -127,8 +140,10 @@ class MinimizeTCO(Goal):
         for cost_type in cost_type_list:
             obj += self._calculate_cost(
                 optimization_problem,
+                cost_type,
                 self.asset_type_maps[cost_type],
                 cost_type_maps[cost_type],
+                options,
             )
 
-        return obj / self.function_nominal
+        return obj
