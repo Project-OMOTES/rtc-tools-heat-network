@@ -1737,7 +1737,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if len(supply_temperatures) == 0:
                 constraints.append((ates_dt_charging, 0.0, 0.0))
                 constraints.append((ates_dt_loss, 0.0, 0.0))
-                constraints.append((heat_loss, 0.0, 0.0))
+                coeff_efficiency_ates = parameters[f"{ates}.heat_loss_coeff"]
+                constraints.append(((heat_loss - stored_heat*coeff_efficiency_ates)/heat_loss_nominal, 0.0, 0.0))
             else:
                 big_m_dt = bounds[f"{ates}.Temperature_loss"][1] #max(supply_temperatures)
                 big_m_heatloss = 2*heat_loss_nominal
