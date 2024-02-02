@@ -1446,15 +1446,46 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))
             )
 
+            carrier = parameters[f"{p}.carrier_id"]
+            temperatures = self.temperature_regimes(carrier)
+
             for heat in [scaled_heat_in, scaled_heat_out]:
                 if self.heat_network_options()["neglect_pipe_heat_losses"]:
-                    constraints.append(
-                        (
-                            (heat - pipe_q * (cp * rho * temp)) / heat_nominal,
-                            0.0,
-                            0.0,
+                    if len(temperatures) == 0:
+                        constraints.append(
+                            (
+                                (heat - pipe_q * (cp * rho * temp)) / heat_nominal,
+                                0.0,
+                                0.0,
+                            )
                         )
-                    )
+                    else:
+                        for temperature in temperatures:
+                            temperature_is_selected = self.state(f"{carrier}_{temperature}")
+                            constraints.append(
+                                (
+                                    (
+                                            heat
+                                            - pipe_q * (cp * rho * temperature)
+                                            + (1.0 - temperature_is_selected) * big_m
+                                    )
+                                    / big_m,
+                                    0.0,
+                                    np.inf,
+                                )
+                            )
+                            constraints.append(
+                                (
+                                    (
+                                            heat
+                                            - pipe_q * (cp * rho * temperature)
+                                            - (1.0 - temperature_is_selected) * big_m
+                                    )
+                                    / big_m,
+                                    -np.inf,
+                                    0.0,
+                                )
+                            )
                 else:
                     assert big_m > 0.0
 
