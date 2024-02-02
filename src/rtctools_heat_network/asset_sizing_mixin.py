@@ -304,7 +304,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if investment_cost == 0.0:
                         RuntimeWarning(f"{cable} has an investment cost of 0. €/m")
             else:
-                resistances = [c.inner_diameter for c in cable_classes]
+                resistances = [c.resistance for c in cable_classes]
                 self.__electricity_cable_topo_resistance_var_bounds[res_var_name] = (
                     min(resistances),
                     max(resistances),
@@ -325,20 +325,20 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # No pipe class decision to make for this pipe
                     pass
                 else:
-                    self.__electricity_cable_topo_cable_class_var[cable] = {}
+                    self._electricity_cable_topo_cable_class_map[cable] = {}
                     self.__electricity_cable_topo_cable_class_current_ordering_map[cable] = {}
                     self.__electricity_cable_topo_cable_class_cost_ordering_map[cable] = {}
 
                     for c in cable_classes:
-                        cable_class_var_name = f"{cable}__en_pipe_class_{c.name}"
+                        cable_class_var_name = f"{cable}__en_cable_class_{c.name}"
                         cable_class_ordering_name = (
-                            f"{cable}__en_pipe_class_{c.name}_discharge_ordering"
+                            f"{cable}__en_cable_class_{c.name}_current_ordering"
                         )
                         cable_class_cost_ordering_name = (
-                            f"{cable}__en_pipe_class_{c.name}_cost_ordering"
+                            f"{cable}__en_cable_class_{c.name}_cost_ordering"
                         )
 
-                        self.__electricity_cable_topo_cable_class_var[cable][
+                        self._electricity_cable_topo_cable_class_map[cable][
                             c
                         ] = cable_class_var_name
                         self.__electricity_cable_topo_cable_class_var[cable_class_var_name] = (
@@ -1540,7 +1540,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 pass
             else:
                 for cc in cable_classes:
-                    var_name = f"{c}__gn_pipe_class_{cc.name}"
+                    var_name = f"{c}__en_cable_class_{cc.name}"
                     cable_class_count_sum[cc.name] += self.extra_variable(var_name, ensemble_member)
 
         for cc in unique_cable_classes:
