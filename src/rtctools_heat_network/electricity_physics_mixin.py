@@ -37,6 +37,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         self.__windpark_upper_bounds = {}
 
+        self._electricity_cable_topo_cable_class_map = {}
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
