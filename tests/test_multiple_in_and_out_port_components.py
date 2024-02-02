@@ -24,8 +24,6 @@ class TestHEX(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - That the efficiency is correclty implemented for heat from primary to secondary
         - Check that the is_disabled is set correctly.
-
-        Missing:
         - Check if the temperatures provided are physically feasible.
 
         """
@@ -43,13 +41,14 @@ class TestHEX(TestCase):
         )
 
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         prim_heat = results["HeatExchange_39ed.Primary_heat"]
         sec_heat = results["HeatExchange_39ed.Secondary_heat"]
         disabled = results["HeatExchange_39ed__disabled"]
 
         # We check the energy converted betweeen the commodities
-        eff = solution.parameters(0)["HeatExchange_39ed.efficiency"]
+        eff = parameters["HeatExchange_39ed.efficiency"]
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
@@ -66,18 +65,28 @@ class TestHEX(TestCase):
         # Check that heat is flowing through the hex
         np.testing.assert_array_less(-prim_heat[:-1], 0.0)
 
+        np.testing.assert_array_less(
+            parameters["HeatExchange_39ed.Secondary.T_supply"],
+            parameters["HeatExchange_39ed.Primary.T_supply"],
+        )
+        np.testing.assert_array_less(
+            parameters["HeatExchange_39ed.Secondary.T_return"],
+            parameters["HeatExchange_39ed.Primary.T_return"],
+        )
+
 
 class TestHP(TestCase):
     def test_heat_pump(self):
         """
         Check the modelling of the heat pump component which has a constant COP with no energy loss.
+        In this specific problem we expect the use of the secondary source to be maximised as
+        electrical heat from the HP is "free".
 
         Checks:
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check that the heat pump is producing according to its COP
+        - Check that Secondary source use in minimized
 
-        Missing:
-        - Source allocation is as expected see also TODO.
 
         """
         import models.heatpump.src.run_heat_pump as run_heat_pump
@@ -94,19 +103,24 @@ class TestHP(TestCase):
         )
 
         results = solution.extract_results()
+        parameters = solution.parameters(0)
 
         prim_heat = results["GenericConversion_3d3f.Primary_heat"]
         sec_heat = results["GenericConversion_3d3f.Secondary_heat"]
         power_elec = results["GenericConversion_3d3f.Power_elec"]
 
-        # TODO: check if the primary source utilisisation is maximised and secondary minimised
-        # I think it is badly scaled or some scaling issues in constraints. (possible in combination
-        # with disconnected)
+        # Check that only the minimum velocity is flowing through the secondary source.
+        cross_sectional_area = parameters["Pipe3.area"]
+        np.testing.assert_allclose(
+            results["ResidualHeatSource_aec9.Q"] / cross_sectional_area,
+            1.0e-3,
+            atol=2.5e-5,
+        )
 
         demand_matching_test(solution, results)
         heat_to_discharge_test(solution, results)
         energy_conservation_test(solution, results)
 
         # We check the energy converted betweeen the commodities
-        np.testing.assert_allclose(power_elec * 4.0, sec_heat)
+        np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)

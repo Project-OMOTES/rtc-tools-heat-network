@@ -23,13 +23,10 @@ class TestMultiCommodityHeatPump(TestCase):
         side.
 
         Checks:
-        - Demand matching
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
         - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
-
-        Missing:
-        - Replace checks for sufficient production with energy balance
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
@@ -43,6 +40,10 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml"
         )
         results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
 
         v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
         i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
@@ -61,21 +62,10 @@ class TestMultiCommodityHeatPump(TestCase):
         heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
         elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
 
-        heatdemand_prim_target = solution.get_timeseries(
-            "HeatingDemand_3322.target_heat_demand"
-        ).values
-        heatdemand_sec_target = solution.get_timeseries(
-            "HeatingDemand_18aa.target_heat_demand"
-        ).values
-
         heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
         heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
 
         np.testing.assert_allclose(heatsource_sec, 0.0, atol=1.0e-3)
-
-        # first check if demands are met
-        np.testing.assert_allclose(heatdemand_sec_target, heatdemand_sec)
-        np.testing.assert_allclose(heatdemand_prim_target, heatdemand_prim)
 
         # check that heatpump is providing more energy to secondary side than demanded
         np.testing.assert_array_less(heatdemand_sec - heatpump_heat_sec, 0)
@@ -100,13 +90,10 @@ class TestMultiCommodityHeatPump(TestCase):
         this asset is not 0).
 
         Checks:
-        - Demand matching
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
         - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
-
-        Missing:
-        - I think this test is obsolete given the first and third test in this file.
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
@@ -121,6 +108,10 @@ class TestMultiCommodityHeatPump(TestCase):
         )
         results = solution.extract_results()
 
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
         v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
         i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
         cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
@@ -134,18 +125,8 @@ class TestMultiCommodityHeatPump(TestCase):
         heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
         elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
 
-        heatdemand_prim_target = solution.get_timeseries(
-            "HeatingDemand_3322.target_heat_demand"
-        ).values
-        heatdemand_sec_target = solution.get_timeseries(
-            "HeatingDemand_18aa.target_heat_demand"
-        ).values
-
         heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
         heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
-
-        np.testing.assert_allclose(heatdemand_sec_target, heatdemand_sec)
-        np.testing.assert_allclose(heatdemand_prim_target, heatdemand_prim)
 
         # check that heatpump isnot providing enough energy to secondary side for demanded
         np.testing.assert_array_less(
@@ -176,13 +157,10 @@ class TestMultiCommodityHeatPump(TestCase):
         exploiting the heatpump only for heat that cannot directly be covered by other sources.
 
         Checks:
-        - Demand matching
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
         - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
-
-        Missing:
-        - Replace checks for sufficient production with energy balance
 
         """
         import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
@@ -200,6 +178,10 @@ class TestMultiCommodityHeatPump(TestCase):
         )
         results = solution.extract_results()
 
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
         tol = 1e-6
         heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
         # heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
@@ -207,20 +189,10 @@ class TestMultiCommodityHeatPump(TestCase):
         heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
         heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
         heatpump_disabled = results["GenericConversion_3d3f__disabled"]
-        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
+        # heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
         heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
         elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
         # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
-
-        heatdemand_prim_target = solution.get_timeseries(
-            "HeatingDemand_3322.target_heat_demand"
-        ).values
-        heatdemand_sec_target = solution.get_timeseries(
-            "HeatingDemand_18aa.target_heat_demand"
-        ).values
-
-        np.testing.assert_allclose(heatdemand_sec_target, heatdemand_sec)
-        np.testing.assert_allclose(heatdemand_prim_target, heatdemand_prim)
 
         # check that heatpump is not used:
         np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)

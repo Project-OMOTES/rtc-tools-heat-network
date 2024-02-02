@@ -1,9 +1,6 @@
 from pathlib import Path
 from unittest import TestCase
 
-import numpy as np
-
-
 from rtctools.util import run_optimization_problem
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -20,11 +17,8 @@ class TestProducerMaxProfile(TestCase):
     (reducing the profile value at a few time steps).
 
     Checks:
-    - Demand matching
+    - Standard checks demand matching, energy conservation and heat to discharge
     - check that heat_source <= scaled_profile * size_source.
-
-    Missing:
-    - Use standard checks.
 
     """
 
@@ -45,11 +39,9 @@ class TestProducerMaxProfile(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
         tol = 1e-8
-        heat_demand1 = results["HeatingDemand_a3b8.Heat_demand"]
         heat_producer = results["GeothermalSource_b702.Heat_source"]
         size_producer = results["GeothermalSource_b702__max_size"]
 
-        heatdemand1_target = solution.get_timeseries("HeatingDemand_a3b8.target_heat_demand").values
         heat_producer_profile_scaled = solution.get_timeseries(
             "GeothermalSource_b702.target_heat_source"
         ).values
@@ -58,6 +50,3 @@ class TestProducerMaxProfile(TestCase):
         # check that heat produced is smaller than the profile
         biggerthen = all(heat_producer_profile_full + tol >= heat_producer)
         self.assertTrue(biggerthen)
-
-        # heat should be stored in buffer and thus heatdemand should still be able to be matched.
-        np.testing.assert_allclose(heat_demand1, heatdemand1_target)

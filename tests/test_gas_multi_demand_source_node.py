@@ -20,8 +20,6 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
         Checks:
         - Head is equal for all ports on the node
         - Consumed flow equals produced flow
-
-        Missing:
         - Check for flow balance at the gas node
 
         """
@@ -30,17 +28,23 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        results = run_optimization_problem(
+        heat_problem = run_optimization_problem(
             GasProblem, base_folder=base_folder, esdl_file_name="test.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.csv"
-        ).extract_results()
+        )
+        results = heat_problem.extract_results()
 
         # Test head at node
-        for i in range(1, 5):
-            np.testing.assert_allclose(
-                results[f"Joint_17c4.GasConn[{i}].H"], results["Joint_17c4.H"]
-            )
+        for node, connected_pipes in heat_problem.heat_network_topology.gas_nodes.items():
+            discharge_sum = 0.0
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                discharge_sum += results[f"{node}.GasConn[{i_conn+1}].Q"] * orientation
+                np.testing.assert_allclose(
+                    results[f"{node}.GasConn[{i_conn+1}].H"], results[f"{node}.H"], atol=1.0e-6
+                )
+            np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
 
         # Test if head is going down
         np.testing.assert_allclose(

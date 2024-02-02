@@ -196,6 +196,9 @@
           <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="b6c85259-9211-417f-b9db-89fb473f2f1c">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="47fcbff2-f0f1-48d9-b7c1-7e34a90b1539" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </investmentCosts>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" value="5000.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="88a009ff-0eeb-48b1-9eb3-60dba04b3e79" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
+          </fixedOperationalCosts>
           <variableOperationalAndMaintenanceCosts xsi:type="esdl:SingleValue" value="15.0" id="b90c659f-4d87-4402-b042-90a7594e7016">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="0d948406-7864-4eff-bc65-7670533bf18b" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </variableOperationalAndMaintenanceCosts>
@@ -337,6 +340,9 @@
           <variableOperationalCosts xsi:type="esdl:SingleValue" value="6.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="c52334c9-bc5d-41f4-b93d-10e7b769f281" description="Cost in EUR/MWh" perUnit="WATTHOUR" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </variableOperationalCosts>
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" value="5000.0" id="7a789b95-93bb-415b-abbd-4ecbb6ad60c9">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="88a009ff-0eeb-48b1-9eb3-60dba04b3e79" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
+          </fixedOperationalCosts>
           <investmentCosts xsi:type="esdl:SingleValue" value="100000.0" id="3633cd09-9f87-4d8d-a5f8-0431bab9576d">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="88a009ff-0eeb-48b1-9eb3-60dba04b3e79" description="Cost in EUR/MW" perUnit="WATT" perMultiplier="MEGA" unit="EURO" physicalQuantity="COST"/>
           </investmentCosts>

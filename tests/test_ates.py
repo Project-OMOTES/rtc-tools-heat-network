@@ -24,8 +24,6 @@ class TestAtes(TestCase):
         - cyclic storage behaviour
         - standard energy conservation, etc.
 
-        Missing checks:
-        - should check ates history for artificial energy at t=0
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import (
