@@ -1060,7 +1060,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         constraints.extend(self.__variable_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
-        constraints.extend(self.__investment_cost_constraints(ensemble_member))
+        # constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
 
         if self.heat_network_options()["discounted_annualized_cost"]:
