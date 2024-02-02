@@ -63,7 +63,6 @@ def main_decorator(func):
 
         if func.__module__ == "__main__":
             parser = argparse.ArgumentParser(description="Run ESDL model")
-            parser.add_argument("runinfo_path", type=Path, help="Path to RunInfo.xml file.")
             parser.add_argument(
                 "-l",
                 "--log",
