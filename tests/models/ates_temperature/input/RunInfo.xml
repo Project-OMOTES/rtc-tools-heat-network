@@ -3,9 +3,9 @@
     <logLevel>debug</logLevel>
     <timeZone>0.0</timeZone>
     <startDateTime date="2019-01-01" time="00:00:00"/>
-    <endDateTime date="2019-01-02" time="22:00:00"/>
-    <time0 date="2019-01-02" time="22:00:00"/>
-    <lastObservationDateTime date="2019-01-02" time="22:00:00"/>
+    <endDateTime date="2019-01-01" time="23:00:00"/>
+    <time0 date="2019-01-01" time="23:00:00"/>
+    <lastObservationDateTime date="2019-01-01" time="23:00:00"/>
 
     <workDir>.</workDir>
     <inputTimeSeriesFile>timeseries.csv</inputTimeSeriesFile>

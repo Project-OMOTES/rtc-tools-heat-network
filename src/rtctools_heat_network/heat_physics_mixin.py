@@ -1521,6 +1521,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         constraints = []
         parameters = self.parameters(ensemble_member)
+        bounds = self.bounds()
 
         for b, (
             (hot_pipe, _hot_pipe_orientation),
@@ -1552,7 +1553,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 0.0,
                 np.inf
             ))
-            #need to ensure it does not select the lowest temperature, but the closest temperature
+            #ensures it does not select the lowest temperature, but the closest temperature
             #supplytemperature needs to be reducing in T
             # TODO: this should use ordering strategy
             for temperature in supply_temperatures[:-1]:
@@ -1576,11 +1577,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 big_m = max(supply_temperatures)
                 # Constraints for setting the temperature variable to the chosen temperature
                 constraints.append(
-                    (temperature - ates_temperature_disc + (1.0 - temp_selected) * big_m, 0.0,
+                    ((temperature - ates_temperature_disc + (1.0 - temp_selected) * big_m), 0.0,
                      np.inf)
                 )
                 constraints.append(
-                    (temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m, -np.inf,
+                    ((temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m), -np.inf,
                      0.0)
                 )
             if len(supply_temperatures) > 0:
@@ -1590,7 +1591,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # dt change due to charging should be 0 when discharging. Because minimum bound is 0, ates_dt_charging can not be negative.
             ates_dt_charging = self.state(f"{b}.Temperature_change_charging")
             ates_dt_charging_nominal = self.variable_nominal(f"{b}.Temperature_change_charging")
-            big_m = 1
+            big_m = bounds[f"{b}.Temperature_change_charging"][1]
             # ensures no ates temperature change because of charging when discarging
             constraints.append(((ates_dt_charging - is_buffer_charging * big_m)/ates_dt_charging_nominal, -np.inf, 0.0))
 
@@ -1651,7 +1652,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Tloss/dt = a*stored_heat/heat_max + b
         """
 
-        heat_points = np.linspace(1.0, heat_max, n_lines+1)/heat_max # cannot be 0
+        heat_points = np.linspace(1, heat_max, n_lines+1)/heat_max # cannot be 0
 
         def algebraic_Tloss_ates(heat_factor, heat_max, temperature_ates, temperature_ambient):
             #TODO: function needs to be updated with realistic function
@@ -1680,9 +1681,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         def algebraic_heatloss_ates(heat_points, heat_max, temperature_ates, temperature_ambient):
             #TODO: function needs to be updated with realistic function, woudl normally non convex
-            # heatloss = 1e-9*heat_points * (temperature_ates-temperature_ambient)*np.exp(-heat_points/heat_max)
-            heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
-                heat_points / heat_max)**2
+            heatloss = 1e-10*heat_points * (temperature_ates-temperature_ambient)*np.exp(-heat_points/heat_max)
+            # heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
+            #     heat_points / heat_max)**2
             return heatloss
 
         heatloss_dt_points = np.array([algebraic_heatloss_ates(h, heat_max, temperature_ates, temperature_ambient) for h in heat_points])
@@ -1738,7 +1739,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 constraints.append((ates_dt_loss, 0.0, 0.0))
                 constraints.append((heat_loss, 0.0, 0.0))
             else:
-                big_m_dt = max(supply_temperatures)
+                big_m_dt = bounds[f"{ates}.Temperature_loss"][1] #max(supply_temperatures)
                 big_m_heatloss = 2*heat_loss_nominal
                 for ates_temperature in supply_temperatures:
                     ates_temperature_is_selected = self.state(f"{ates}__temperature_disc_{ates_temperature}")

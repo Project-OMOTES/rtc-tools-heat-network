@@ -40,8 +40,8 @@ class ATES(HeatTwoPort, BaseAsset):
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
         self.add_variable(Variable, "Temperature_ates", nominal=self.T_return)
-        self.add_variable(Variable, "Temperature_loss", nominal=self.T_supply/3600)
-        self.add_variable(Variable, "Temperature_change_charging", min=0, nominal=self.T_supply/3600)
+        self.add_variable(Variable, "Temperature_loss", min=0, max=1, nominal=self.T_supply/3600)
+        self.add_variable(Variable, "Temperature_change_charging", min=0, max=1, nominal=self.T_supply/3600)
 
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan

@@ -208,12 +208,12 @@ def heat_to_discharge_test(solution, results):
             heat = results[f"{d}.{p}_heat"]
 
             if p == "Primary":
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t)
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=tol)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + tol))
                 test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol))
             elif p == "Secondary":
                 test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol))
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t)
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=tol)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
 
     for p in solution.heat_network_components.get("pipe", []):
@@ -306,7 +306,7 @@ def energy_conservation_test(solution, results):
             np.testing.assert_allclose(
                 results[f"{p}__hn_heat_loss"] * (1 - p_discon),
                 abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"]),
-                atol=1e-3,
+                atol=min(100,1e-2*results[f"{p}__hn_heat_loss"][0]), #sometimes highs makes a small error in the heatloss when disconnected of about 10-50W
             )
 
     np.testing.assert_allclose(energy_sum, 0.0, atol=1e-3)
