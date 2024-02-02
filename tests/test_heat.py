@@ -67,15 +67,12 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(Model, base_folder=base_folder)
-
-<<<<<<< HEAD
-        run_optimization_problem(
+        case = run_optimization_problem(
             Model, base_folder=base_folder, esdl_file_name="model.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv"
         )
-=======
+
         results = case.extract_results()
         parameters = case.parameters(0)
 
@@ -86,7 +83,6 @@ class TestHeat(TestCase):
         demand_matching_test(case, results)
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
->>>>>>> master
 
 
 class TestMinMaxPressureOptions(TestCase):
