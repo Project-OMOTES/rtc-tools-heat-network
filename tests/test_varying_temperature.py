@@ -363,7 +363,12 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvar, base_folder=base_folder,
+            esdl_file_name="heat_pump.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)

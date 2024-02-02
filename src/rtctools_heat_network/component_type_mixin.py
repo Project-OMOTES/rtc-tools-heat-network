@@ -19,7 +19,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
         self.__hn_component_types = None
 
     def pre(self):

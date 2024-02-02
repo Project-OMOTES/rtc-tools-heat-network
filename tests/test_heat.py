@@ -29,7 +29,8 @@ class TestHeat(TestCase):
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
         case = run_optimization_problem(
-            SourcePipeSink, base_folder=base_folder, esdl_file_name="absolute_heat.esdl",
+            SourcePipeSink, base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv"
         )
@@ -68,7 +69,8 @@ class TestHeat(TestCase):
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
         case = run_optimization_problem(
-            Model, base_folder=base_folder, esdl_file_name="model.esdl",
+            Model, base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
             esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.csv"
         )
@@ -92,6 +94,8 @@ class TestMinMaxPressureOptions(TestCase):
     base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
     min_pressure = 4.0
     max_pressure = 12.0
+    esdl_file = "sourcesink.esdl"
+    input_time_series_file = "timeseries_import.csv"
 
     class SmallerPipes(SourcePipeSink):
         # We want to force the dynamic pressure in the system to be higher
@@ -147,11 +151,29 @@ class TestMinMaxPressureOptions(TestCase):
         - max pressure
 
         """
-        case_default = run_optimization_problem(self.SmallerPipes, base_folder=self.base_folder)
-        case_min_pressure = run_optimization_problem(self.MinPressure, base_folder=self.base_folder)
-        case_max_pressure = run_optimization_problem(self.MaxPressure, base_folder=self.base_folder)
+        case_default = run_optimization_problem(
+            self.SmallerPipes, base_folder=self.base_folder,
+            esdl_file_name=self.esdl_file,
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file=self.input_time_series_file
+        )
+        case_min_pressure = run_optimization_problem(
+            self.MinPressure, base_folder=self.base_folder,
+            esdl_file_name=self.esdl_file,
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file=self.input_time_series_file
+        )
+        case_max_pressure = run_optimization_problem(
+            self.MaxPressure, base_folder=self.base_folder,
+            esdl_file_name=self.esdl_file,
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file=self.input_time_series_file
+        )
         case_min_max_pressure = run_optimization_problem(
-            self.MinMaxPressure, base_folder=self.base_folder
+            self.MinMaxPressure, base_folder=self.base_folder,
+            esdl_file_name=self.esdl_file,
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file=self.input_time_series_file
         )
 
         def _get_min_max_pressure(case):
@@ -254,12 +276,20 @@ class TestDisconnectablePipe(TestCase):
         - Check that pipe becomes disconnected when flow is forced to zero
 
         """
-        case_connected = run_optimization_problem(self.ModelConnected, base_folder=self.base_folder)
+        case_connected = run_optimization_problem(
+            self.ModelConnected, base_folder=self.base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv"
+        )
         results_connected = case_connected.extract_results()
         q_connected = results_connected["Pipe1.Q"]
 
         case_disconnected = run_optimization_problem(
-            self.ModelDisconnected, base_folder=self.base_folder
+            self.ModelDisconnected, base_folder=self.base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv"
         )
         results_disconnected = case_disconnected.extract_results()
         q_disconnected = results_disconnected["Pipe1.Q"]
@@ -293,12 +323,20 @@ class TestDisconnectablePipe(TestCase):
 
         """
 
-        case_linear = run_optimization_problem(self.ModelDisconnected, base_folder=self.base_folder)
+        case_linear = run_optimization_problem(
+            self.ModelDisconnected, base_folder=self.base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv"
+        )
         results_linear = case_linear.extract_results()
         q_linear = results_linear["Pipe1.Q"]
 
         case_dw = run_optimization_problem(
-            self.ModelDisconnectedDarcyWeisbach, base_folder=self.base_folder
+            self.ModelDisconnectedDarcyWeisbach, base_folder=self.base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv"
         )
         results_dw = case_dw.extract_results()
         q_dw = results_dw["Pipe1.Q"]

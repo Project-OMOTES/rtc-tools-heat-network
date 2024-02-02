@@ -24,18 +24,18 @@ class TestESDL(TestCase):
         from models.basic_source_and_demand.src.heat_comparison import HeatESDL, HeatPython
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
-        old_cwd = os.getcwd()
-        os.chdir(base_folder)
+        input_folder = base_folder / "input"
 
-        case_python = run_optimization_problem(HeatPython, base_folder=base_folder)
+        case_python = run_optimization_problem(
+            HeatPython, base_folder=base_folder,
+            input_folder=input_folder
+        )
         case_esdl = run_optimization_problem(
             HeatESDL, base_folder=base_folder,
             esdl_file_name="model.esdl", esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries.xml"
         )
-
-        os.chdir(old_cwd)
 
         self.assertAlmostEqual(case_python.objective_value, case_esdl.objective_value, 6)
 
