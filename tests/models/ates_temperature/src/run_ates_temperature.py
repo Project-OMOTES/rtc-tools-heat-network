@@ -107,7 +107,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0005#0.0001
+        options["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False #required since we want to disconnect HP & HEX
         return options
 
@@ -160,9 +160,6 @@ class HeatProblem(
             constraints.append((heat_ates[0], 0.0, 0.0))
             ates_temperature = self.state_vector(f"{a}.Temperature_ates")
             constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
-
-            #TODO; temporary temperature at which it should start
-            # constraints.append((ates_temperature[0],40.0,np.inf))
 
         return constraints
 
