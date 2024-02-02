@@ -12,16 +12,15 @@ class _ESDLInputException(Exception):
 
 
 class BaseESDLParser:
-    _global_properties: Dict[str, Dict] = {"carriers": dict()}
-    _assets: Dict[str, Asset] = dict()
-    _energy_system_handler: esdl.esdl_handler.EnergySystemHandler = \
-        esdl.esdl_handler.EnergySystemHandler()
-    _energy_system: Optional[esdl.EnergySystem] = None
-    _esdl_string: Optional[str] = None
-    _esdl_path: Optional[Path] = None
 
     def __init__(self):
-        self._read_esdl()
+        self._global_properties: Dict[str, Dict] = {"carriers": dict()}
+        self._assets: Dict[str, Asset] = dict()
+        self._energy_system_handler: esdl.esdl_handler.EnergySystemHandler = \
+            esdl.esdl_handler.EnergySystemHandler()
+        self._energy_system: Optional[esdl.EnergySystem] = None
+        self._esdl_string: Optional[str] = None
+        self._esdl_path: Optional[Path] = None
 
     def _load_esdl_model(self) -> None:
         """
@@ -30,7 +29,7 @@ class BaseESDLParser:
         """
         raise NotImplementedError
 
-    def _read_esdl(self) -> None:
+    def read_esdl(self) -> None:
         self._load_esdl_model()
         id_to_idnumber_map = {}
 
@@ -130,6 +129,7 @@ class BaseESDLParser:
 class ESDLStringParser(BaseESDLParser):
 
     def __init__(self, **kwargs):
+        super().__init__()
         try:
             esdl_string = kwargs.get("esdl_string")
         except KeyError:
@@ -139,7 +139,6 @@ class ESDLStringParser(BaseESDLParser):
             self._esdl_string = base64.b64decode(esdl_string).decode('utf-8')
         else:
             self._esdl_string = esdl_string
-        super().__init__()
 
     def _load_esdl_model(self) -> None:
         self._energy_system = self._energy_system_handler.load_from_string(self._esdl_string)
@@ -148,13 +147,13 @@ class ESDLStringParser(BaseESDLParser):
 class ESDLFileParser(BaseESDLParser):
 
     def __init__(self, **kwargs):
+        super().__init__()
         try:
             esdl_path = kwargs.get("esdl_path")
         except KeyError:
             raise _ESDLInputException(f"Expected an ESDL path when parsing the system from a "
                                       f"file but none provided")
         self._esdl_path = esdl_path
-        super().__init__()
 
     def _load_esdl_model(self) -> None:
         self._energy_system = self._energy_system_handler.load_file(str(self._esdl_path))

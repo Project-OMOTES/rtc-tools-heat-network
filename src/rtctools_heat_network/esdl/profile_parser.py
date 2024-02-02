@@ -29,10 +29,10 @@ class _ProfileParserException(Exception):
     pass
 
 class BaseProfileReader:
-    _energy_system: esdl.EnergySystem
-    _file_path: Optional[Path]
-    _profiles: Dict[int, Dict[str, np.ndarray]]
-    _reference_datetimes: Optional[pd.DatetimeIndex]
+    # _energy_system: esdl.EnergySystem
+    # _file_path: Optional[Path]
+    # _profiles: Dict[int, Dict[str, np.ndarray]]
+    # _reference_datetimes: Optional[pd.DatetimeIndex]
     component_type_to_var_name_map: dict = {
         "demand": ".target_heat_demand",
         "source": ".target_heat_source",
@@ -43,9 +43,10 @@ class BaseProfileReader:
     }
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
-        self._profiles = defaultdict(dict)
-        self._energy_system = energy_system
-        self._file_path = file_path
+        self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
+        self._energy_system: esdl.EnergySystem = energy_system
+        self._file_path: Optional[Path] = file_path
+        self._reference_datetimes: Optional[pd.DatetimeIndex] = None
 
     def read_profiles(self, io: DataStore, heat_network_components: Dict[str, Set[str]],
                       esdl_asset_id_to_name_map: Dict[str, str],
@@ -403,23 +404,23 @@ class ProfileReaderFromFile(BaseProfileReader):
 
 class _ESDLInputDataConfig:
     ns: dict = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
-    __id_map: Dict[str, str]
-    _sources: Set
-    _demands: Set
-    _electricity_sources: Set
-    _electricity_demands: Set
-    _gas_sources: Set
-    _gas_demands: Set
+    # __id_map: Dict[str, str]
+    # _sources: Set
+    # _demands: Set
+    # _electricity_sources: Set
+    # _electricity_demands: Set
+    # _gas_sources: Set
+    # _gas_demands: Set
 
     def __init__(self, id_map: Dict[str, str], heat_network_components: Dict[str, Set[str]]):
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
-        self.__id_map = id_map
-        self._sources = set(heat_network_components.get("source", []))
-        self._demands = set(heat_network_components.get("demand", []))
-        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
-        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
-        self._gas_sources = set(heat_network_components.get("gas_source", []))
-        self._gas_demands = set(heat_network_components.get("gas_demand", []))
+        self.__id_map: Dict[str, str] = id_map
+        self._sources: Set = set(heat_network_components.get("source", []))
+        self._demands: Set = set(heat_network_components.get("demand", []))
+        self._electricity_sources: Set = set(heat_network_components.get("electricity_source", []))
+        self._electricity_demands: Set = set(heat_network_components.get("electricity_demand", []))
+        self._gas_sources: Set = set(heat_network_components.get("gas_source", []))
+        self._gas_demands: Set = set(heat_network_components.get("gas_demand", []))
 
     def variable(self, pi_header):
         location_id = pi_header.find("pi:locationId", self.ns).text

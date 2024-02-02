@@ -70,13 +70,13 @@ class ESDLMixin(
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
-
-    __profile_reader: BaseProfileReader
-
-    esdl_parser_class: type
-    _esdl_assets: Dict[str, Asset]
-    _esdl_carriers: Dict[str, Dict[str, Any]]
-    __energy_system_handler: esdl.esdl_handler.EnergySystemHandler
+    #
+    # __profile_reader: BaseProfileReader
+    #
+    # esdl_parser_class: type
+    # _esdl_assets: Dict[str, Asset]
+    # _esdl_carriers: Dict[str, Dict[str, Any]]
+    # __energy_system_handler: esdl.esdl_handler.EnergySystemHandler
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -98,7 +98,7 @@ class ESDLMixin(
         kwargs : esdl_string or esdl_file_name must be provided
         """
 
-        self.esdl_parser_class = kwargs.get("esdl_parser", ESDLStringParser)
+        self.esdl_parser_class: type = kwargs.get("esdl_parser", ESDLStringParser)
         esdl_string = kwargs.get("esdl_string", None)
         model_folder = kwargs.get("model_folder")
         esdl_file_name = kwargs.get("esdl_file_name", None)
@@ -109,9 +109,10 @@ class ESDLMixin(
         # TODO: discuss if this is correctly located here and why the reading of profiles is then
         #  in the read function?
         esdl_parser = self.esdl_parser_class(esdl_string=esdl_string, esdl_path=esdl_path)
-        self._esdl_assets = esdl_parser.get_assets()
-        self._esdl_carriers = esdl_parser.get_carrier_properties()
-        self.__energy_system_handler = esdl_parser.get_esh()
+        esdl_parser.read_esdl()
+        self._esdl_assets: Dict[str, Asset] = esdl_parser.get_assets()
+        self._esdl_carriers: Dict[str, Dict[str, Any]] = esdl_parser.get_carrier_properties()
+        self.__energy_system_handler: esdl.esdl_handler.EnergySystemHandler = esdl_parser.get_esh()
 
         profile_reader_class = kwargs.get("profile_reader", InfluxDBProfileReader)
         input_file_name = kwargs.get("input_timeseries_file", None)
@@ -119,7 +120,7 @@ class ESDLMixin(
         input_file_path = None
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
-        self.__profile_reader = profile_reader_class(
+        self.__profile_reader: BaseProfileReader = profile_reader_class(
             energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path)
 
         # This way we allow users to adjust the parsed ESDL assets
