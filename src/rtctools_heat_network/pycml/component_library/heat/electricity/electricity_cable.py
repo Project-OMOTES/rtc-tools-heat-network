@@ -31,13 +31,18 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.nominal_current = nan
         self.nominal_voltage = nan
         self.r = 1.0e-6 * self.length  # TODO: temporary value
+        self.nominal_voltage_loss = (self.nominal_current * self.r * self.nominal_current) ** 0.5
         self.add_variable(Variable, "Power_loss", min=0.0, nominal=self.r * self.max_current**2)
         self.add_variable(Variable, "I", nominal=self.nominal_current)
+        self.add_variable(Variable, "V_loss", nominal=self.nominal_voltage_loss)
 
+        # TODO: if one wants to include the option for cable_voltage_losses to be false as with
+        #  cable_power_losses, then the next equation and V_loss variable instantiation should move
+        #  to electricity_physics_mixin, to ensure proper scaling.
         self.add_equation(
             (
-                (self.ElectricityOut.V - (self.ElectricityIn.V - self.r * self.ElectricityIn.I))
-                / ((self.nominal_current * self.r * self.nominal_current) ** 0.5)
+                (self.ElectricityOut.V - (self.ElectricityIn.V - self.V_loss))
+                / self.nominal_voltage_loss
             )
         )
         self.add_equation(((self.ElectricityIn.I - self.ElectricityOut.I) / self.nominal_current))
@@ -45,7 +50,6 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
         self.add_equation(
             (
                 (self.ElectricityOut.Power - (self.ElectricityIn.Power - self.Power_loss))
-                / (self.nominal_voltage * self.nominal_current * self.r * self.max_current**2)
-                ** 0.5
+                / (self.nominal_voltage * self.nominal_current * self.r * self.max_current) ** 0.5
             )
         )

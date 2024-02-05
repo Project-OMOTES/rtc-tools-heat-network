@@ -2,23 +2,23 @@
 <esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" name="enettopology" version="1" id="fffa60a1-a848-4cb8-bc67-0244ecb08ed7" description="" esdlVersion="v2401">
   <instance xsi:type="esdl:Instance" id="4826ac7c-6a64-4206-a725-84c2bfa07862" name="Untitled instance">
     <area xsi:type="esdl:Area" id="d5b54bf0-0d2a-43a1-9088-3f09075457df" name="Untitled area">
-      <asset xsi:type="esdl:ElectricityDemand" name="demand3" id="f4761a60-b9ee-47de-bab0-a6507728f8cc" power="10000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand3" id="f4761a60-b9ee-47de-bab0-a6507728f8cc" power="1000000.0">
         <port xsi:type="esdl:InPort" id="c43006e7-fc35-42f3-88e8-5b247d025db9" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="9d931928-e054-4799-baee-7e69f40ed443"/>
         <geometry xsi:type="esdl:Point" lon="4.380025863647462" lat="51.9899016054132" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="demand1" id="c43a3eaf-85f4-4738-a84c-085e98442986" power="10000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand1" id="c43a3eaf-85f4-4738-a84c-085e98442986" power="1000000.0">
         <port xsi:type="esdl:InPort" id="cf578b10-bb8a-4514-8020-a0997d7da2ac" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="e16d09c3-6bc4-477e-8528-0e803b575576"/>
         <geometry xsi:type="esdl:Point" lon="4.379918575286866" lat="51.987860051179105" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityDemand" name="demand2" id="4af8944f-50b9-460b-9af0-b55a5f17dbba" power="10000000.0">
+      <asset xsi:type="esdl:ElectricityDemand" name="demand2" id="4af8944f-50b9-460b-9af0-b55a5f17dbba" power="1000000.0">
         <port xsi:type="esdl:InPort" id="7ad4b512-df57-4f06-bbfa-3463732a0080" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="In" connectedTo="d208ce36-eb4c-4a32-9cfa-6670578af79a"/>
         <geometry xsi:type="esdl:Point" lon="4.379768371582032" lat="51.98570607753357" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityProducer" power="10000000.0" id="66fd9050-5d87-43d1-a938-7ce3d22f598e" name="ElectricityProducer_66fd">
+      <asset xsi:type="esdl:ElectricityProducer" power="1000000.0" id="66fd9050-5d87-43d1-a938-7ce3d22f598e" name="ElectricityProducer_66fd" state="OPTIONAL">
         <port xsi:type="esdl:OutPort" id="cba3ab47-04d6-4fc8-abc0-25b16cd6fa37" connectedTo="24623eb7-eb9c-4424-a0bb-29753f69ae98" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="Out"/>
         <geometry xsi:type="esdl:Point" lon="4.3884479999542245" lat="51.9877741585077" CRS="WGS84"/>
       </asset>
-      <asset xsi:type="esdl:ElectricityProducer" power="10000000.0" id="4d65c1cd-533e-4b5d-9ae4-0410d692e917" name="ElectricityProducer_4d65">
+      <asset xsi:type="esdl:ElectricityProducer" power="1000000.0" id="4d65c1cd-533e-4b5d-9ae4-0410d692e917" name="ElectricityProducer_4d65">
         <port xsi:type="esdl:OutPort" id="a87e300c-3633-443a-82a7-08abfa1c9081" connectedTo="c99765c9-ee46-4296-a081-e2f6840598ea" carrier="e3716bdc-b30e-4dbb-ac96-1c8e86c29a79" name="Out"/>
         <geometry xsi:type="esdl:Point" lon="4.375283718109132" lat="51.98784022980801" CRS="WGS84"/>
       </asset>

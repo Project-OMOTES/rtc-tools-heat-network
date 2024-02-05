@@ -310,7 +310,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(resistances),
                 )
                 costs = [c.investment_costs for c in cable_classes]
-                self.__gas_pipe_topo_cost_var_bounds[cost_var_name] = (
+                self.__electricity_cable_topo_cost_var_bounds[cost_var_name] = (
                     min(costs),
                     max(costs),
                 )

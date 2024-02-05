@@ -83,9 +83,9 @@ class MinimizeElectricityCableInvestments(Goal):
         source : string of the source name that is going to be minimized
         """
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e6)
+        self.function_range = (0.0, 1.0e3)
         self.cable = cable
-        # self.function_nominal = 1.0e6
+        self.function_nominal = 1.0
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -103,8 +103,9 @@ class MinimizeElectricityCableInvestments(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.extra_variable(
-            f"{self.cable}__investment_cost", ensemble_member
+        return (
+            optimization_problem.extra_variable(f"{self.cable}__investment_cost", ensemble_member)
+            / 1e3
         )
 
 
@@ -171,7 +172,7 @@ class HeatProblem(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         return options
 
     def heat_network_options(self):
@@ -188,21 +189,22 @@ class HeatProblem(
         options["include_electric_cable_power_loss"] = False
         return options
 
-    # def electricity_cable_classes(self, p):
-    #     return [
-    #         CableClass("None", 0.0, 0.0, 0.0),
-    #         CableClass("DN40", 2.5, 1.5, 1.0),
-    #         CableClass("DN50", 5.0, 1.7, 2.0),
-    #         CableClass("DN65", 7.5, 1.9, 3.0),
-    #         CableClass("DN80", 10.0, 2.2, 4.0),
-    #         CableClass("DN100", 12.5, 2.4, 5.0),
-    #         CableClass("DN125", 15.0, 2.6, 6.0),
-    #         CableClass("DN150", 17.5, 2.8, 7.0),
-    #         CableClass("DN200", 20.0, 3.0, 8.0),
-    #         CableClass("DN250", 22.5, 3.0, 9.0),
-    #         CableClass("DN300", 25.0, 3.0, 10.0),
-    #         CableClass("DN400", 30.0, 3.0, 11.0),
-    #     ]
+    def electricity_cable_classes(self, p):
+        return [
+            CableClass("None", 0.0, 0.0, 0.0),
+            # CableClass("DN40", 2.5, 1.5, 1.0),
+            # CableClass("DN50", 5.0, 1.7, 2.0),
+            # CableClass("DN65", 7.5, 1.9, 3.0),
+            # CableClass("DN80", 10.0, 2.2, 4.0),
+            # CableClass("DN100", 12.5, 2.4, 5.0),
+            # CableClass("DN125", 15.0, 2.6, 6.0),
+            # CableClass("DN150", 17.5, 2.8, 7.0),
+            # CableClass("DN200", 20.0, 3.0, 8.0),
+            # CableClass("DN250", 22.5, 3.0, 9.0),
+            # CableClass("DN300", 25.0, 3.0, 10.0),
+            # CableClass("DN400", 30.0, 3.0, 11.0),
+            CableClass("DN450", 35.0, 3.0, 12.0),
+        ]
 
     def bounds(self):
         bounds = super().bounds()

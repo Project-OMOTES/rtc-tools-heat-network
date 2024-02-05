@@ -971,7 +971,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ElectricityOut=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
-                Power=dict(nominal=max_supply / 2.0),
+                Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
