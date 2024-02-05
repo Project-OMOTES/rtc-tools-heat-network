@@ -82,9 +82,9 @@ class MinimizeGasPipeInvestments(Goal):
         source : string of the source name that is going to be minimized
         """
         self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
+        self.function_range = (0.0, 10e3)
         self.pipe = pipe
-        self.function_nominal = 1.0e6
+        self.function_nominal = 1.0e3
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -102,7 +102,7 @@ class MinimizeGasPipeInvestments(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.extra_variable(f"{self.pipe}__investment_cost", ensemble_member)
+        return optimization_problem.extra_variable(f"{self.pipe}__investment_cost", ensemble_member)/1e3
 
 
 class _GoalsAndOptions:
@@ -168,7 +168,7 @@ class HeatProblem(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
         return options
 
     def path_constraints(self, ensemble_member):

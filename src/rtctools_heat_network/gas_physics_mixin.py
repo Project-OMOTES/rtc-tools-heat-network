@@ -128,6 +128,54 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         return constraints
 
+    def __gas_head_loss_path_constraints(self, ensemble_member):
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for pipe in self.heat_network_components.get("gas_pipe", []):
+            q = self.state(f"{pipe}.Q")
+            dh = self.state(f"{pipe}.dH")
+            r = parameters[f"{pipe}.r"]
+            # v_loss_nom = parameters[f"{cable}.nominal_voltage_loss"]
+            dh_nom = parameters[f"{pipe}.nominal_head_loss"]
+            p_length = parameters[f"{pipe}.length"]
+
+            constraint_nominal = self.variable_nominal(dh)
+
+            # TODO: tobe replaced with proper headlosses relations
+            try:
+                pipe_classes = self._gas_pipe_topo_pipe_class_map[pipe]
+                variables = {
+                    pc.name: self.variable(var_name) for pc, var_name in pipe_classes.items()
+                }
+                resistances = {pc.name: pc.inner_diameter/1e6 for pc in pipe_classes}
+
+                big_m = dh_nom
+
+                for var_size, variable in variables.items():
+                    # excluding size none to ensure that dH is free when pipe is not placed, otherwise pipe needs to exist for the headloss to match at the nodes
+                    # note, no is_disconnected variable needed for gas pipes as there is no other dimension that needs to be covered at separate timesteps like heatloss for ehat pipes
+                    if var_size != "None":
+                        expr = resistances[var_size] * p_length * q
+                        constraints.append(
+                            (
+                                (dh - expr + big_m * (1 - variable)) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (dh - expr - big_m * (1 - variable)) / constraint_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+
+            except KeyError:
+                constraints.append(((dh - r * q) / constraint_nominal, 0.0, 0.0))
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -136,6 +184,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         constraints = super().path_constraints(ensemble_member)
 
+        constraints.extend(self.__gas_head_loss_path_constraints(ensemble_member))
         constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
 
         return constraints
