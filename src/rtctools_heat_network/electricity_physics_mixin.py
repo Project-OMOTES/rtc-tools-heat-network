@@ -240,6 +240,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             # Power loss constraint
             options = self.heat_network_options()
+            #TODO: the max current should be a function of the cable class selection
             if options["include_electric_cable_power_loss"]:
                 constraints.append(
                     ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
@@ -278,7 +279,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraint_nominal = self.variable_nominal(v_loss)
 
             # TODO: still have to check for proper scaling
-            try:
+            if cable in self._electricity_cable_topo_cable_class_map.keys():
                 cable_classes = self._electricity_cable_topo_cable_class_map[cable]
                 variables = {
                     cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
@@ -305,7 +306,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                             )
                         )
 
-            except KeyError:
+            else:
                 constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
 
         return constraints

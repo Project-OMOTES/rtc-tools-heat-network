@@ -143,7 +143,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraint_nominal = self.variable_nominal(dh)
 
             # TODO: tobe replaced with proper headlosses relations
-            try:
+            if pipe in self._gas_pipe_topo_pipe_class_map.keys():
                 pipe_classes = self._gas_pipe_topo_pipe_class_map[pipe]
                 variables = {
                     pc.name: self.variable(var_name) for pc, var_name in pipe_classes.items()
@@ -172,7 +172,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             )
                         )
 
-            except KeyError:
+            else:
                 constraints.append(((dh - r * q) / constraint_nominal, 0.0, 0.0))
         return constraints
 
