@@ -234,17 +234,37 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             v_nom = parameters[f"{cable}.nominal_voltage"]
             v_max = parameters[f"{cable}.max_voltage"]
             # v_loss_nom = parameters[f"{cable}.nominal_voltage_loss"]
+            length = parameters[f"{cable}.length"]
 
             # Ensure that the current is sufficient to transport the power
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             # Power loss constraint
             options = self.heat_network_options()
-            #TODO: the max current should be a function of the cable class selection
             if options["include_electric_cable_power_loss"]:
-                constraints.append(
-                    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
-                )
+                if cable in self._electricity_cable_topo_cable_class_map.keys():
+                    cable_classes = self._electricity_cable_topo_cable_class_map[cable]
+                    max_res = max([cc.resistance for cc in cable_classes])
+                    max_i_max = max([cc.maximum_current for cc in cable_classes])
+                    big_m = max_i_max**2*max_res*length
+                    constraint_nominal = max_i_max * v_nom * max_res * length
+                    for cc_data, cc_name in cable_classes.items():
+                        if cc_name != 'None':
+                            i_max = cc_data.maximum_current
+                            res = cc_data.resistance
+                            exp = current * res * length * i_max
+                            is_selected = self.variable(cc_name)
+                            constraints.append(
+                                ((power_loss - exp + big_m * (1-is_selected)) / constraint_nominal, 0.0, np.inf)
+                            )
+                            constraints.append(
+                                ((power_loss - exp - big_m * (1 - is_selected)) / (
+                                            constraint_nominal), -np.inf, 0.0)
+                            )
+                else:
+                    constraints.append(
+                        ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
+                    )
             else:
                 constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
 
@@ -286,6 +306,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 }
                 resistances = {cc.name: cc.resistance for cc in cable_classes}
 
+                #to be updated for a better value, but it should also cover the gap between two nodes when no cable is placed, so should be able to reach v_max
                 big_m = v_nom
 
                 for var_size, variable in variables.items():

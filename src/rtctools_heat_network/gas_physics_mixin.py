@@ -96,7 +96,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         return bounds
 
-    def __gas_node_heat_mixing_path_constraints(self, ensemble_member):
+    def __gas_node_mixing_path_constraints(self, ensemble_member):
         """
         This function adds constraints for each gas network node/joint to have as much
         flow going in as out. Effectively, it is setting the sum of flow to zero.
@@ -148,13 +148,16 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 variables = {
                     pc.name: self.variable(var_name) for pc, var_name in pipe_classes.items()
                 }
-                resistances = {pc.name: pc.inner_diameter/1e6 for pc in pipe_classes}
+                resistances = {pc.name: pc.inner_diameter / 1e6 for pc in pipe_classes}
 
                 big_m = dh_nom
 
                 for var_size, variable in variables.items():
-                    # excluding size none to ensure that dH is free when pipe is not placed, otherwise pipe needs to exist for the headloss to match at the nodes
-                    # note, no is_disconnected variable needed for gas pipes as there is no other dimension that needs to be covered at separate timesteps like heatloss for ehat pipes
+                    # excluding size none to ensure that dH is free when pipe is not placed,
+                    # otherwise pipe needs to exist for the headloss to match at the nodes
+                    # note, no is_disconnected variable needed for gas pipes as there is no other
+                    # dimension that needs to be covered at separate timesteps like heatloss for
+                    # ehat pipes
                     if var_size != "None":
                         expr = resistances[var_size] * p_length * q
                         constraints.append(
@@ -185,7 +188,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__gas_head_loss_path_constraints(ensemble_member))
-        constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_node_mixing_path_constraints(ensemble_member))
 
         return constraints
 

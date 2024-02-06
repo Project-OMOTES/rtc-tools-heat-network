@@ -102,7 +102,10 @@ class MinimizeGasPipeInvestments(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.extra_variable(f"{self.pipe}__investment_cost", ensemble_member)/1e3
+        return (
+            optimization_problem.extra_variable(f"{self.pipe}__investment_cost", ensemble_member)
+            / 1e3
+        )
 
 
 class _GoalsAndOptions:
