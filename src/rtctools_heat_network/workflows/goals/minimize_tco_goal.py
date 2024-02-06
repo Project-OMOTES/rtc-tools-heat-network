@@ -105,7 +105,7 @@ class MinimizeTCO(Goal):
             for asset in optimization_problem.heat_network_components.get(asset_type, []):
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
-                    # We only want the operational cost for a single year when we use 
+                    # We only want the operational cost for a single year when we use
                     # annualized CAPEX.
                     obj += extra_var
                 elif "operational" in cost_type:
