@@ -83,6 +83,11 @@ class MinimizeTCO(Goal):
     ) -> MX:
         """
         Calculate the cost for given asset types using a specified cost map.
+        When `discounted_annualized_cost` option is True, the discounted annualized costs
+        are computed in the objective function, and the techinical life of each asset
+        is considered in the computation of the annualized _annualized_capex_var.
+        If `discounted_annualized_cost` is not defined or False, the operational and
+        fixed operational costs are multiplied by the number_of_years.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -100,10 +105,13 @@ class MinimizeTCO(Goal):
             for asset in optimization_problem.heat_network_components.get(asset_type, []):
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
+                    # We only want the operational cost for a single year when we use 
+                    # annualized CAPEX.
                     obj += extra_var
                 elif "operational" in cost_type:
                     obj += extra_var * self.number_of_years
                 else:
+                    # These are the CAPEX cost under non-annualized condition
                     obj += extra_var
         return obj
 
