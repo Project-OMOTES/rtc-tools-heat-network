@@ -246,20 +246,29 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     cable_classes = self._electricity_cable_topo_cable_class_map[cable]
                     max_res = max([cc.resistance for cc in cable_classes])
                     max_i_max = max([cc.maximum_current for cc in cable_classes])
-                    big_m = max_i_max**2*max_res*length
+                    big_m = max_i_max**2 * max_res * length
                     constraint_nominal = max_i_max * v_nom * max_res * length
                     for cc_data, cc_name in cable_classes.items():
-                        if cc_name != 'None':
+                        if cc_name != "None":
                             i_max = cc_data.maximum_current
                             res = cc_data.resistance
                             exp = current * res * length * i_max
                             is_selected = self.variable(cc_name)
                             constraints.append(
-                                ((power_loss - exp + big_m * (1-is_selected)) / constraint_nominal, 0.0, np.inf)
+                                (
+                                    (power_loss - exp + big_m * (1 - is_selected))
+                                    / constraint_nominal,
+                                    0.0,
+                                    np.inf,
+                                )
                             )
                             constraints.append(
-                                ((power_loss - exp - big_m * (1 - is_selected)) / (
-                                            constraint_nominal), -np.inf, 0.0)
+                                (
+                                    (power_loss - exp - big_m * (1 - is_selected))
+                                    / (constraint_nominal),
+                                    -np.inf,
+                                    0.0,
+                                )
                             )
                 else:
                     constraints.append(
@@ -306,7 +315,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 }
                 resistances = {cc.name: cc.resistance for cc in cable_classes}
 
-                #to be updated for a better value, but it should also cover the gap between two nodes when no cable is placed, so should be able to reach v_max
+                # to be updated for a better value, but it should also cover the gap between two
+                # nodes when no cable is placed, so should be able to reach v_max
                 big_m = v_nom
 
                 for var_size, variable in variables.items():
