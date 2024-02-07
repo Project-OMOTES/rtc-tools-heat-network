@@ -1,27 +1,19 @@
-import datetime
-
-import esdl
-
 import numpy as np
 
-from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import (
-    CachingQPSol,
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-
-from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 
 
 class TargetDemandGoal(Goal):
@@ -56,10 +48,14 @@ class MinimizeCostHeatGoal(Goal):
         try:
             state = optimization_problem.state(f"{self.source}.Heat_source")
         except KeyError:
-            state = optimization_problem.state(f"{self.source}.Power_elec") #heatpumps are not yet in the variable_operational_costs in financial_mixin
-        return (state
+            state = optimization_problem.state(
+                f"{self.source}.Power_elec"
+            )  # heatpumps are not yet in the variable_operational_costs in financial_mixin
+        return (
+            state
             * optimization_problem.parameters(0)[
-                f"{self.source}.variable_operational_cost_coefficient"]
+                f"{self.source}.variable_operational_cost_coefficient"
+            ]
         )
 
 
@@ -73,8 +69,10 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in [*self.heat_network_components.get("source"),
-                  *self.heat_network_components.get("heat_pump")]:
+        for s in [
+            *self.heat_network_components.get("source"),
+            *self.heat_network_components.get("heat_pump"),
+        ]:
             goals.append(MinimizeCostHeatGoal(s))
         # goals.append(MinimizeTCO)
 
@@ -111,7 +109,9 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
-        options["heat_loss_disconnected_pipe"] = False #required since we want to disconnect HP & HEX
+        options["heat_loss_disconnected_pipe"] = (
+            False  # required since we want to disconnect HP & HEX
+        )
         options["neglect_pipe_heat_losses"] = True
         return options
 
@@ -122,23 +122,26 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = [70.0, 55.0, 50.0, 45.0,44.0,43.0]
+            temperatures = [70.0, 55.0, 50.0, 45.0, 44.0, 43.0]
 
         return temperatures
 
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member)
 
-        #To prevent heat being consumer by hex to upgrade it (add heat) by heatpump to match demand without loading/unloading ates.
+        # To prevent heat being consumer by hex to upgrade it (add heat) by heatpump to match
+        # demand without loading/unloading ates.
         sum_disabled_vars = 0
-        for asset in [*self.heat_network_components.get("heat_pump"),
-            *self.heat_network_components.get("heat_exchanger")]:
+        for asset in [
+            *self.heat_network_components.get("heat_pump"),
+            *self.heat_network_components.get("heat_exchanger"),
+        ]:
             disabled_var = self.state(f"{asset}__disabled")
-            sum_disabled_vars +=disabled_var
+            sum_disabled_vars += disabled_var
 
         constraints.append((sum_disabled_vars, 1.0, 2.0))
 
-        #when using compound asset instead of separate assets, one could still use this constraint
+        # when using compound asset instead of separate assets, one could still use this constraint
         # but potentially add the constraint that if hex is enabled, ates is loading and if hp is
         # enabled ates is unloading (dis_hex-ates_charging, 0.0, 0.0)
 
@@ -158,7 +161,17 @@ class HeatProblem(
         return constraints
 
 
+class HeatProblemMaxFlow(HeatProblem):
+
+    def read(self):
+        super().read()
+
+        demand_timeseries = self.get_timeseries("HeatingDemand_1.target_heat_demand")
+        demand_timeseries.values[2] = demand_timeseries.values[2] * 2
+        self.set_timeseries("HeatingDemand_1.target_heat_demand", demand_timeseries)
+
+
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(HeatProblemMaxFlow)
     results = sol.extract_results()
-    a=1
+    a = 1

@@ -819,11 +819,17 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=min(self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]),
+            Q_nominal=min(
+                self._get_connected_q_nominal(asset),
+                q_max_ates * asset.attributes["aggregationCount"],
+            ),
             Q=dict(
                 min=-q_max_ates * asset.attributes["aggregationCount"],
                 max=q_max_ates * asset.attributes["aggregationCount"],
-                nominal=min(self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]),
+                nominal=min(
+                    self._get_connected_q_nominal(asset),
+                    q_max_ates * asset.attributes["aggregationCount"],
+                ),
             ),
             T_amb=asset.attributes["aquiferMidTemperature"],
             Temperature_ates=dict(

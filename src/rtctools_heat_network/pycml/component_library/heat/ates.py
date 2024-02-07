@@ -39,11 +39,19 @@ class ATES(HeatTwoPort, BaseAsset):
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
 
-        max_temp_change = self.T_supply/(3600*24) #loses full temperature in a day
-        nom_temp_change = max_temp_change/100 #loses full temperature in 100 days.
+        max_temp_change = self.T_supply / (3600 * 24)  # loses full temperature in a day
+        nom_temp_change = max_temp_change / 100  # loses full temperature in 100 days.
         self.add_variable(Variable, "Temperature_ates", nominal=self.T_return)
-        self.add_variable(Variable, "Temperature_loss", min=0,  max=max_temp_change, nominal=nom_temp_change)
-        self.add_variable(Variable, "Temperature_change_charging", min=0, max=max_temp_change, nominal=nom_temp_change)
+        self.add_variable(
+            Variable, "Temperature_loss", min=0, max=max_temp_change, nominal=nom_temp_change
+        )
+        self.add_variable(
+            Variable,
+            "Temperature_change_charging",
+            min=0,
+            max=max_temp_change,
+            nominal=nom_temp_change,
+        )
 
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan
@@ -73,7 +81,7 @@ class ATES(HeatTwoPort, BaseAsset):
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
         # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
-        self._heat_loss_error_to_state_factor = 1#10.0
+        self._heat_loss_error_to_state_factor = 1  # 10.0
         self._nominal_heat_loss = (
             self.Stored_heat.nominal * self.heat_loss_coeff * self._heat_loss_error_to_state_factor
         )
@@ -91,7 +99,14 @@ class ATES(HeatTwoPort, BaseAsset):
         )
 
         self.add_equation(
-            ((self.der(self.Temperature_ates) - self.Temperature_change_charging + self.Temperature_loss)/nom_temp_change)
+            (
+                (
+                    self.der(self.Temperature_ates)
+                    - self.Temperature_change_charging
+                    + self.Temperature_loss
+                )
+                / nom_temp_change
+            )
         )
 
         self.add_equation(
