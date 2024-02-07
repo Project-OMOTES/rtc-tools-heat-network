@@ -1067,6 +1067,26 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     np.inf,
                 )
             )
+            # max_var = self._asset_max_size_map[a]
+            # max_heat = self.extra_variable(max_var, ensemble_member)
+            # flow_ates = self.__state_vector_scaled(f"{a}.Q", ensemble_member)
+            # constraint_nominal = bounds[f"{a}.Heat_ates"][1]
+            #
+            # constraints.append(
+            #     (
+            #         (np.ones(len(self.times())) * max_heat - heat_ates) / constraint_nominal,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(
+            #     (
+            #         (np.ones(len(self.times())) * max_heat + heat_ates) / constraint_nominal,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+
 
         for d in self.heat_network_components.get("electricity_demand", []):
             max_var = self._asset_max_size_map[d]
@@ -1135,6 +1155,29 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __add_optional_asset_path_constraints(self, constraints, asset_name, nominal_value, nominal_var,single_power, state_var):
+        aggregation_count = self.__asset_aggregation_count_var[
+            self._asset_aggregation_count_var_map[asset_name]
+        ]
+        constraint_nominal = (nominal_value * nominal_var) ** 0.5
+
+        constraints.append(
+            (
+                (single_power * aggregation_count - state_var) / constraint_nominal,
+                0.0,
+                np.inf,
+            )
+        )
+        constraints.append(
+            (
+                (-single_power * aggregation_count - state_var) / constraint_nominal,
+                -np.inf,
+                0.0,
+            )
+        )
+        return constraints
+
+
     def __optional_asset_path_constraints(self, ensemble_member):
         """
         This function adds constraints that set the _aggregation_count variable. This variable is
@@ -1160,6 +1203,19 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     *self.heat_network_components.get("geothermal", []),
                     *self.heat_network_components.get("ates", []),
                 ]:
+                    # changing flow bounds as a result of different aggregation count, additional
+                    # step for geothermal and ates as they have subsurface flow limits.
+                    state_var = self.state(f"{asset_name}.Q")
+                    single_flow = bounds[f"{asset_name}.Q"][1] / parameters[
+                        f"{asset_name}.nr_of_doublets"]
+                    nominal_value = 2.0 * bounds[f"{asset_name}.Q"][1]
+                    nominal_var = self.variable_nominal(f"{asset_name}.Q")
+                    constraints = self.__add_optional_asset_path_constraints(constraints,
+                                                                             asset_name,
+                                                                             nominal_value,
+                                                                             nominal_var,
+                                                                             single_flow,
+                                                                             state_var)
                     state_var = self.state(f"{asset_name}.Heat_flow")
                     single_power = parameters[f"{asset_name}.single_doublet_power"]
                     nominal_value = 2.0 * bounds[f"{asset_name}.Heat_flow"][1]
@@ -1178,25 +1234,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     single_power = bounds[f"{asset_name}.Heat_flow"][1]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
-                aggregation_count = self.__asset_aggregation_count_var[
-                    self._asset_aggregation_count_var_map[asset_name]
-                ]
-                constraint_nominal = (nominal_value * nominal_var) ** 0.5
 
-                constraints.append(
-                    (
-                        (single_power * aggregation_count - state_var) / constraint_nominal,
-                        0.0,
-                        np.inf,
-                    )
-                )
-                constraints.append(
-                    (
-                        (-single_power * aggregation_count - state_var) / constraint_nominal,
-                        -np.inf,
-                        0.0,
-                    )
-                )
+                constraints = self.__add_optional_asset_path_constraints(constraints, asset_name,
+                                                                     nominal_value, nominal_var,
+                                                                     single_power,
+                                                                     state_var)
+
             elif parameters[f"{asset_name}.state"] == 1:
                 aggregation_count = self.__asset_aggregation_count_var[
                     self._asset_aggregation_count_var_map[asset_name]

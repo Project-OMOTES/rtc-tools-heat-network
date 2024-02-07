@@ -805,6 +805,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: temporary value for standard dT on which capacity is based, Q in m3/s
         temperatures = self._supply_return_temperature_modifiers(asset)
         dT = temperatures["T_supply"] - temperatures["T_return"]
+        rho = self.rho
+        cp = self.cp
+        q_max_ates = hfr_discharge_max / (cp * rho * dT)
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -816,11 +819,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=min(self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]),
             Q=dict(
-                min=-hfr_discharge_max / (4200 * 998 * dT) * asset.attributes["aggregationCount"],
-                max=hfr_discharge_max / (4200 * 998 * dT) * asset.attributes["aggregationCount"],
-                nominal=self._get_connected_q_nominal(asset) * asset.attributes["aggregationCount"],
+                min=-q_max_ates * asset.attributes["aggregationCount"],
+                max=q_max_ates * asset.attributes["aggregationCount"],
+                nominal=min(self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]),
             ),
             T_amb=asset.attributes["aquiferMidTemperature"],
             Temperature_ates=dict(

@@ -85,9 +85,6 @@ class _GoalsAndOptions:
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.05
-        # options["solver"]="cbc"
-        # cbc_options = options["cbc"] = {}
-        # cbc_options["seconds"] = 300.0
         # options["solver"] = "gurobi"
         # gurobi_options = options["gurobi"] = {}
         # gurobi_options["MIPgap"] = 0.01
@@ -114,7 +111,7 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["minimum_velocity"] = 0.0001
-        # options["heat_loss_disconnected_pipe"] = False #required since we want to disconnect HP & HEX
+        options["heat_loss_disconnected_pipe"] = False #required since we want to disconnect HP & HEX
         options["neglect_pipe_heat_losses"] = True
         return options
 
@@ -125,7 +122,7 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = [70.0, 55.0, 50.0, 45.0]#, 37.5, 35.0]
+            temperatures = [70.0, 55.0, 50.0, 45.0,44.0,43.0]
 
         return temperatures
 
@@ -140,17 +137,7 @@ class HeatProblem(
             sum_disabled_vars +=disabled_var
 
         constraints.append((sum_disabled_vars, 1.0, 2.0))
-        #
-        # sum_disabled_vars = 0
-        # for asset in [*self.heat_network_components.get("heat_pump"),
-        #         *self.heat_network_components.get("heat_exchanger")]:
-        #     disabled_var = self.state(f"{asset}__disabled")
-        #     sum_disabled_vars += disabled_var
-        #
-        # constraints.append((1-sum_disabled_vars, 0.0, 0.0))
 
-        #maybe replace by only required to have one disabled instead of at least one of them
-        # e.g. 1-dis_hp-dis_hex ==0 (actually takes longer assumption because trying to balance heatlosses for which lower minimum velocity is required) instead of 1<=dis_hp+dis_hex<=2
         #when using compound asset instead of separate assets, one could still use this constraint
         # but potentially add the constraint that if hex is enabled, ates is loading and if hp is
         # enabled ates is unloading (dis_hex-ates_charging, 0.0, 0.0)
@@ -166,7 +153,7 @@ class HeatProblem(
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
             constraints.append((heat_ates[0], 0.0, 0.0))
             ates_temperature = self.state_vector(f"{a}.Temperature_ates")
-            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
+            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
 
         return constraints
 
@@ -174,3 +161,4 @@ class HeatProblem(
 if __name__ == "__main__":
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
+    a=1

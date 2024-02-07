@@ -306,7 +306,7 @@ def energy_conservation_test(solution, results):
             np.testing.assert_allclose(
                 results[f"{p}__hn_heat_loss"] * (1 - p_discon),
                 abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"]),
-                atol=min(100,1e-2*results[f"{p}__hn_heat_loss"][0]), #sometimes highs makes a small error in the heatloss when disconnected of about 10-50W
+                atol=1e-6,
             )
 
     np.testing.assert_allclose(energy_sum, 0.0, atol=1e-3)
