@@ -80,12 +80,12 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.05
-        # options["solver"] = "gurobi"
-        # gurobi_options = options["gurobi"] = {}
-        # gurobi_options["MIPgap"] = 0.01
+        # options["solver"] = "highs"
+        # highs_options = options["highs"] = {}
+        # highs_options["mip_rel_gap"] = 0.01
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.01
 
         return options
 
@@ -122,7 +122,7 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = [70.0, 55.0, 50.0, 45.0, 44.0, 43.0]
+            temperatures = np.linspace(40,70, 13).tolist()
 
         return temperatures
 
@@ -172,6 +172,6 @@ class HeatProblemMaxFlow(HeatProblem):
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemMaxFlow)
+    sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
     a = 1

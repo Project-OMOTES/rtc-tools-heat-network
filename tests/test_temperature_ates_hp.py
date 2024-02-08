@@ -19,11 +19,11 @@ class TestAtesTemperature(TestCase):
         check if
         - discrete temperature ates is equal to temperature of pipe at inport during discharging
         - discrete temperature ates is equal or lower then temperature ates
-        - discrete tempearture ates is equal to the set booleans of ates tempearutre
+        - discrete temperature ates is equal to the set booleans of ates temperature
         - temperature change ates continues is equal to the sum of temperature loss and
         temperature change charging
 
-        - only heatpump or heat exchanger is in operation, soly for charging/discharging ates
+        - only heatpump or heat exchanger is in operation, solely for charging/discharging ates
         - if ates is charging (heat_ates>0), hex is enabled. if ates is discharging (heat<0),
         hp is enabled
         - Discharge heat and mass flow is corresponding to the temperature regime (flow rate
@@ -69,13 +69,11 @@ class TestAtesTemperature(TestCase):
         hp_disabled = results["HeatPump_7f2c__disabled"]
 
         geo_source = results["GeothermalSource_4e5b.Heat_source"]
-        objective = solution.objective(0)
+        objective = solution.objective_value
 
         objective_calc = results["GeothermalSource_4e5b__variable_operational_cost"] + sum(
             parameters["HeatPump_7f2c.variable_operational_cost_coefficient"]
             * results["HeatPump_7f2c.Power_elec"][1:]
-            * (times[1:] - times[:-1])
-            / 3600
         )
 
         feasibility = solution.solver_stats["return_status"]

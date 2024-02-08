@@ -1698,7 +1698,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_factor, max_stored_heat, temperature_ates, temperature_ambient
         ):
             # TODO: function needs to be updated with realistic function
-            dTdt = 1e-8 * (temperature_ates - temperature_ambient) * np.exp(-heat_factor)
+            # coefficient currently based on:
+            # 30°C temperature drop over 3 months = 30/(3600*24*30*3)=3.86e-6
+            # assuming temperature ates of 70°C and 17°C ambient throughout
+            # assuming 50% of max stored heat throughout 1e-7
+            dTdt = 7.3e-7 * (temperature_ates - temperature_ambient) * np.exp(-heat_factor)
             return dTdt
 
         Tloss_dt_points = np.array(
@@ -1731,6 +1735,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         def algebraic_Tcharge_ates(heat_ates, max_heat_ates, temperature_ates, temperature_supply):
             # TODO: function needs to be updated with realistic function
+            # This coefficient currently results in about a maximum temperature increase of 25°C over a month during maximum charging
             dTdt = 1e-5 * heat_ates  # 1e-5*(temperature_supply-temperature_ates)*heat_ates
             return dTdt
 
@@ -1765,7 +1770,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             heat_points, heat_stored_max, temperature_ates, temperature_ambient
         ):
             # TODO: function needs to be updated with realistic function, woudl normally non convex
-            heatloss = 1e-10 * heat_points * (temperature_ates - temperature_ambient)
+            # coefficient currently based on:
+            # 30°C temperature drop: 125 MJ / m3
+            # assume over 3 months: 16.2 W/m3 -> xx W/J
+            # max_stored_volume = max_stored_heat/(40 (dT assumed) *ro*cp)= 334e3 m3
+            # nominal_volume = max_stored_volume/2
+            # heatloss = 16.2*max_stored_volume W
+            # heatloss = 16.2 / (70-17) * stored_volume * (T_ates - T_amb)
+            # stored_volume = stored_heat / (40 (dT assumed) *rho*cp)
+
+            heatloss = 1.8e-9 * heat_points * (temperature_ates - temperature_ambient)
             # heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
             #     heat_points / heat_stored_max)**2
             return heatloss
@@ -1782,7 +1796,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return a, b
 
-    def __ates_temperature_charging_path_constraints(self, ensemble_member):
+    def __ates_temperature_changing_path_constraints(self, ensemble_member):
         """
         Contains constraints for the temperature losses and gains in the ates:
         - If there are different temperatures available for the ates;
@@ -2941,7 +2955,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_temperature_charging_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
 
         return constraints
