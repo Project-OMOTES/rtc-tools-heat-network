@@ -510,6 +510,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__ates_temperature_selected_var.values())
         variables.extend(self.__disabled_hex_var.values())
         variables.extend(self.__pipe_heat_loss_path_var.values())
+        variables.extend(self.__ates_disabled_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -525,6 +526,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__carrier_selected_var
             or variable in self.__ates_temperature_selected_var
             or variable in self.__disabled_hex_var
+            or variable in self.__ates_disabled_var
         ):
             return True
         else:
@@ -562,6 +564,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds.update(self.__pipe_head_loss_bounds)
         bounds.update(self.__pipe_head_loss_zero_bounds)
+        bounds.update(self.__ates_disabled_var_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -1603,7 +1606,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         ) in {**self.heat_network_topology.ates}.items():
 
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
-            is_buffer_charging = self.state(flow_dir_var)
+            is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
 
             sup_carrier = parameters[f"{b}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
@@ -1889,6 +1892,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ates_temperature_is_selected = self.state(
                         f"{ates}__temperature_disc_{ates_temperature}"
                     )
+                    disabled = self.state(self._ates_disabled_map[ates])
                     # setting temperature losses to zero when lowest discrete temperature is
                     # selected, to ensure temperature does not further drop and requires
                     # ates_dt_charging to cover the difference
@@ -1922,8 +1926,24 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
                         constraints.append(( (ates_dt_loss -
                                               (0.5/(3600.*24.) * stored_heat / heat_stored_max )
-                                              + big_m * (1 - ates_temperature_is_selected_vec))
+                                              + big_m * (1. - ates_temperature_is_selected_vec + disabled))
                                              / ates_temperature_loss_nominal, 0.0, np.inf))
+                        constraints.append(
+                            (
+                                (ates_dt_loss + big_m * (1. - disabled))
+                                / ates_temperature_loss_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (ates_dt_loss - big_m * (1. - disabled))
+                                / ates_temperature_loss_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
                         # constraints.append(
                         #     (
                         #         (
@@ -1936,6 +1956,20 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         #         np.inf,
                         #     )
                         # )
+
+        return constraints
+
+    def __ates_disabled_path_constraints(self, ensemble_member):
+        constraints = []
+
+        for ates in self.heat_network_components.get("ates", []):
+            disabled = self.state(self._ates_disabled_map[ates])
+            heat_ates = self.state(f"{ates}.Heat_ates")
+            nominal = self.variable_nominal(f"{ates}.Heat_ates")
+            big_m = 2. * self.bounds()[f"{ates}.Heat_ates"][1]
+
+            constraints.append(((heat_ates + (1. - disabled) * big_m) / nominal, 0., np.inf))
+            constraints.append(((heat_ates - (1. - disabled) * big_m) / nominal, -np.inf, 0.))
 
         return constraints
 
@@ -2971,7 +3005,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
-        constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
+        # constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_disabled_path_constraints(ensemble_member))
 
         return constraints
 
