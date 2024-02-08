@@ -110,6 +110,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Dict to write the heat loss in the parameters
         self.__pipe_heat_loss_parameters = []
 
+        self._ates_disabled_map = {}
+        self.__ates_disabled_var = {}
+        self.__ates_disabled_var_bounds = {}
+
         # Part of the physics constraints are inherently linked to the sizing optimization. Since
         # these variables do not exist here, we instead only instantiate the maps to allow the
         # physics mixin to have the logic in place. The creation of the actual variables and filling
@@ -242,6 +246,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in self.heat_network_topology.ates.items():
+            ates_disabled_var_name = f"{ates}__disabled"
+            self._ates_disabled_map[ates] = ates_disabled_var_name
+            self.__ates_disabled_var[ates_disabled_var_name] = ca.MX.sym(ates_disabled_var_name)
+            self.__ates_disabled_var_bounds[ates_disabled_var_name] = (0., 1.)
+
+
             ates_temp_disc_var_name = f"{ates}__temperature_ates_disc"
             self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(
                 ates_temp_disc_var_name
@@ -1632,7 +1642,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 for temperature in supply_temperatures:
                     temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
                     sum += temp_selected
-                    big_m = max(supply_temperatures)
+                    big_m = 2.*max(supply_temperatures)
                     constraints.append(
                         (
                             (temperature - ates_temperature_disc + (1.0 - temp_selected) * big_m),
@@ -1652,7 +1662,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                 # Equality constraint if discharging using big_m;
                 # discr_temp_carrier == discr_temp_ates
-                big_m = max(supply_temperatures)
+                big_m = 2. * max(supply_temperatures)
                 sup_temperature_disc = self.state(f"{sup_carrier}_temperature")
                 constraints.append(
                     (
@@ -1834,14 +1844,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
                 flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
-                is_buffer_charging = self.state(flow_dir_var)
+                is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
                 heat_nominal = parameters[f"{ates}.Heat_nominal"]
                 heat_stored_max = bounds[f"{ates}.Stored_heat"][1]
                 heat_ates_max = bounds[f"{ates}.Heat_ates"][1]
                 heat_ates = self.state(f"{ates}.Heat_ates")
                 stored_heat = self.state(f"{ates}.Stored_heat")
 
-                big_m = max(bounds[f"{ates}.Temperature_change_charging"][1], 1e-5)
+                big_m = 2. * max(bounds[f"{ates}.Temperature_change_charging"][1], 1e-5)
 
                 # ensures no ates temperature change because of charging when discharging
                 constraints.append(
@@ -1865,7 +1875,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     (
                         (
                             ates_dt_charging
-                            - (a * heat_ates / heat_nominal + b)
+                            - (a * heat_ates / heat_ates_max + b)
                             - (1 - is_buffer_charging) * big_m
                         )
                         / ates_dt_charging_nominal,
@@ -1874,7 +1884,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-                big_m = bounds[f"{ates}.Temperature_loss"][1]
+                big_m = 2. * bounds[f"{ates}.Temperature_loss"][1]
                 for ates_temperature in supply_temperatures:
                     ates_temperature_is_selected = self.state(
                         f"{ates}__temperature_disc_{ates_temperature}"
@@ -1910,18 +1920,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         ates_temperature_is_selected_vec = ca.repmat(
                             ates_temperature_is_selected, len(a)
                         )
-                        constraints.append(
-                            (
-                                (
-                                    ates_dt_loss_vec
-                                    - (a * stored_heat_vec / heat_stored_max + b)
-                                    + big_m * (1 - ates_temperature_is_selected_vec)
-                                )
-                                / ates_temperature_loss_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
+                        constraints.append(( (ates_dt_loss -
+                                              (0.5/(3600.*24.) * stored_heat / heat_stored_max )
+                                              + big_m * (1 - ates_temperature_is_selected_vec))
+                                             / ates_temperature_loss_nominal, 0.0, np.inf))
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             ates_dt_loss_vec
+                        #             - (a * stored_heat_vec / heat_stored_max + b)
+                        #             + big_m * (1 - ates_temperature_is_selected_vec)
+                        #         )
+                        #         / ates_temperature_loss_nominal,
+                        #         0.0,
+                        #         np.inf,
+                        #     )
+                        # )
 
         return constraints
 

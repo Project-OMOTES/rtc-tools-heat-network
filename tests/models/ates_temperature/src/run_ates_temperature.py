@@ -15,6 +15,7 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
 class TargetDemandGoal(Goal):
@@ -113,6 +114,7 @@ class HeatProblem(
         options["heat_loss_disconnected_pipe"] = (
             False  # required since we want to disconnect HP & HEX
         )
+        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         return options
 
@@ -123,6 +125,7 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
+            temperatures = np.linspace(50, 70, 9).tolist()[::-1]
             temperatures = np.linspace(40, 70, 13).tolist()[::-1]
 
         return temperatures
