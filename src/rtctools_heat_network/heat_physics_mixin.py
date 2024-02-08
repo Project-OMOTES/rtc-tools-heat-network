@@ -1700,9 +1700,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # TODO: function needs to be updated with realistic function
             # coefficient currently based on:
             # 30°C temperature drop over 3 months = 30/(3600*24*30*3)=3.86e-6
+            # dTloss/dt = c ((Tates-Tamb)/(Tatesmin-Tamb)-1)*e^(-stored_heat_normalised) # Tatesmin currently hardcoded as 40
             # assuming temperature ates of 70°C and 17°C ambient throughout
-            # assuming 50% of max stored heat throughout 1e-7
-            dTdt = 7.3e-7 * (temperature_ates - temperature_ambient) * np.exp(-heat_factor)
+            # assuming 50% of max stored heat throughout 7.3e-7
+            dTdt = 6.13e-6 * ((temperature_ates - temperature_ambient)/(40-temperature_ambient)-1) * np.exp(-heat_factor)
             return dTdt
 
         Tloss_dt_points = np.array(
