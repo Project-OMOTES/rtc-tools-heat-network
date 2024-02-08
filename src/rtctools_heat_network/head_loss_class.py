@@ -5,6 +5,8 @@ from typing import List, Optional, Tuple, Type, Union
 
 import casadi as ca
 
+import esdl
+
 import numpy as np
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
@@ -109,9 +111,10 @@ class _MinimizeHeadLosses(Goal):
 
     priority = 2**31 - 1
 
-    def __init__(self, optimization_problem, *args, **kwargs):
+    def __init__(self, optimization_problem, network_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
+        self.network_type = network_type
         self.function_nominal = len(optimization_problem.times())
 
     def function(self, optimization_problem, ensemble_member):
@@ -136,11 +139,18 @@ class _MinimizeHeadLosses(Goal):
             sum_ += 2 * optimization_problem.state(f"{s}.dH")
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        
+        if self.network_type == "heat_network":
+            for p in optimization_problem.heat_network_components.get("pipe", []):
+                if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
+                    sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
+                    sum_ += optimization_problem.state(sym_name)
+        elif self.network_type == "gas_network":
+            for p in optimization_problem.heat_network_components.get("gas_pipe", []):
+                if not parameters[f"{p}.length"] == 0.0:
+                    sym_name = optimization_problem._hn_gas_pipe__to_head_loss_map[p]
+                    sum_ += optimization_problem.state(sym_name)
 
-        for p in optimization_problem.heat_network_components["pipe"]:
-            if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
-                sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
-                sum_ += optimization_problem.state(sym_name)
 
         return sum_
 
@@ -185,7 +195,10 @@ class HeadLossClass:
     For handling of discharge - head (loss) relationship to the model.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, network_type, *args, **kwargs):
+
+        self.network_type = network_type
+
         self.__pipe_head_bounds = {}
 
         self.__pipe_head_loss_var = {}
@@ -213,7 +226,12 @@ class HeadLossClass:
         head_loss_values = {
             options["head_loss_option"],
         }
-        for p in self.heat_network_components.get("pipe", []):
+
+        pipe_type = "pipe"
+        if len(self.heat_network_components.get("pipe", [])) == 0:
+            pipe_type = "gas_pipe"
+
+        for p in self.heat_network_components.get(pipe_type, []):
             head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
@@ -357,12 +375,25 @@ class HeadLossClass:
         """
         return _MinimizeHydraulicPower
 
-    def initialize_variables_nominals_and_bounds(self, optimization_problem):
+    def initialize_variables_nominals_and_bounds(self, optimization_problem, commodity_type, pipe_name):
         """
         This function computes and sets the bounds and nominals for the head loss of all the pipes
         as well as the minimum and maximum pipe pressure.
         """
         # self.__pipe_head_loss_nominals = AliasDict(self.alias_relation)
+        # pipe_type = "pipe"
+        # commodity = "Heat"
+        # pipe_type = ""
+        commodity = ""
+        if isinstance(commodity_type, esdl.GasCommodity):
+            # pipe_type = "gas_pipe"
+            commodity = "Gas"
+        elif isinstance(commodity_type, esdl.HeatCommodity):
+            # pipe_type = "pipe"
+            commodity = "Heat"
+        # if len(optimization_problem.heat_network_components.get(pipe_type, [])) == 0:
+        #     pipe_type = "gas_pipe"
+        #     commodity = "Gas"
 
         options = optimization_problem.heat_network_options()
         parameters = optimization_problem.parameters(0)
@@ -373,44 +404,51 @@ class HeadLossClass:
             max_pressure > min_pressure
         ), "The global maximum pressure must be larger than the minimum one."
         if np.isfinite(min_pressure) or np.isfinite(max_pressure):
-            for p in optimization_problem.heat_network_components["pipe"]:
-                # No elevation data available yet. Assume 0 mDAT for now.
-                pipe_elevation = 0.0
-                min_head = min_pressure * 10.2 + pipe_elevation
-                max_head = max_pressure * 10.2 + pipe_elevation
-                self.__pipe_head_bounds[f"{p}.HeatIn.H"] = (min_head, max_head)
-                self.__pipe_head_bounds[f"{p}.HeatOut.H"] = (min_head, max_head)
+            # for p in optimization_problem.heat_network_components[pipe_type]:
+            p = pipe_name
+            # No elevation data available yet. Assume 0 mDAT for now.
+            pipe_elevation = 0.0
+            min_head = min_pressure * 10.2 + pipe_elevation
+            max_head = max_pressure * 10.2 + pipe_elevation
+            self.__pipe_head_bounds[f"{p}.{commodity}In.H"] = (min_head, max_head)
+            self.__pipe_head_bounds[f"{p}.{commodity}Out.H"] = (min_head, max_head)
 
         head_loss_option = options["head_loss_option"]
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
-        for p in optimization_problem.heat_network_components.get("pipe", []):
-            length = parameters[f"{p}.length"]
-            if length < 0.0:
-                raise ValueError("Pipe length has to be larger than or equal to zero")
+        # for p in optimization_problem.heat_network_components.get(pipe_type, []):
+        p = pipe_name
+        # if(
+        #     isinstance(
+        #         optimization_problem.esdl_assets[optimization_problem.esdl_asset_name_to_id_map[f"{p}"]].in_ports[0].carrier, esdl.GasCommodity
+        #     ) and commodity == "Gas"
+        # ): 
+        length = parameters[f"{p}.length"]
+        if length < 0.0:
+            raise ValueError("Pipe length has to be larger than or equal to zero")
 
-            if head_loss_option == HeadLossOption.NO_HEADLOSS or (
-                length == 0.0 and not parameters[f"{p}.has_control_valve"]
-            ):
-                self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
-            else:
-                q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
-                head_loss_nominal = self._hn_pipe_head_loss(
-                    p, optimization_problem, options, parameters, q_nominal
-                )
+        if head_loss_option == HeadLossOption.NO_HEADLOSS or (
+            length == 0.0 and not parameters[f"{p}.has_control_valve"]
+        ):
+            self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
+        else:
+            q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
+            head_loss_nominal = self._hn_pipe_head_loss(
+                p, optimization_problem, options, parameters, q_nominal
+            )
 
-                self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
+            self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
 
-                # The .dH is by definition "Out - In". The .__head_loss is by
-                # definition larger than or equal to the absolute value of dH.
-                head_loss_var = f"{p}.__head_loss"
+            # The .dH is by definition "Out - In". The .__head_loss is by
+            # definition larger than or equal to the absolute value of dH.
+            head_loss_var = f"{p}.__head_loss"
 
-                self._hn_pipe_to_head_loss_map[p] = head_loss_var
-                self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
+            self._hn_pipe_to_head_loss_map[p] = head_loss_var
+            self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
 
-                self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
-                self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
+            self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
+            self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
         return (
             self.__pipe_head_bounds,
@@ -515,8 +553,16 @@ class HeadLossClass:
             area = parameters[f"{pipe}.area"]
             maximum_velocity = heat_network_options["maximum_velocity"]
 
-        temperature = parameters[f"{pipe}.temperature"]
-        has_control_valve = parameters[f"{pipe}.has_control_valve"]
+        # kvr still to fix 
+        try:
+            temperature = parameters[f"{pipe}.temperature"]
+        except KeyError:
+            temperature = 20.0
+
+        try:
+            has_control_valve = parameters[f"{pipe}.has_control_valve"]
+        except KeyError:
+            has_control_valve = False
 
         if head_loss_option == HeadLossOption.LINEAR:
             assert not has_control_valve
@@ -919,14 +965,20 @@ class HeadLossClass:
         """
         constraints = []
 
-        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+        pipe_type = "pipe"
+        commodity = "Heat"
+        if len(optimization_problem.heat_network_components.get(pipe_type, [])) == 0:
+            pipe_type = "gas_pipe"
+            commodity = "Gas"
+
+        for pipe in optimization_problem.heat_network_components.get(pipe_type, []):
             dh = optimization_problem.state(f"{pipe}.dH")
-            h_down = optimization_problem.state(f"{pipe}.HeatOut.H")
-            h_up = optimization_problem.state(f"{pipe}.HeatIn.H")
+            h_down = optimization_problem.state(f"{pipe}.{commodity}Out.H")
+            h_up = optimization_problem.state(f"{pipe}.{commodity}In.H")
 
             constraint_nominal = (
                 optimization_problem.variable_nominal(f"{pipe}.dH")
-                * optimization_problem.variable_nominal(f"{pipe}.HeatIn.H")
+                * optimization_problem.variable_nominal(f"{pipe}.{commodity}In.H")
             ) ** 0.5
             constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 

@@ -4,6 +4,8 @@ from typing import List
 
 import casadi as ca
 
+import esdl
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -38,7 +40,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
         """
 
-        self._head_loss_class = HeadLossClass()
+        self._head_loss_class = HeadLossClass("heat_network")
 
         self.__pipe_head_bounds = {}
 
@@ -152,14 +154,31 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds = self.bounds()
 
-        (
-            self.__pipe_head_bounds,
-            self.__pipe_head_loss_zero_bounds,
-            self._hn_pipe_to_head_loss_map,
-            self.__pipe_head_loss_var,
-            self.__pipe_head_loss_nominals,
-            self.__pipe_head_loss_bounds,
-        ) = self._head_loss_class.initialize_variables_nominals_and_bounds(self)
+        for pipe_name in self.heat_network_components.get("pipe", []):
+            if isinstance(
+                self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
+                , esdl.HeatCommodity
+            ):
+                commodity_type = self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
+                (
+                    self.__pipe_head_bounds,
+                    self.__pipe_head_loss_zero_bounds,
+                    self._hn_pipe_to_head_loss_map,
+                    self.__pipe_head_loss_var,
+                    self.__pipe_head_loss_nominals,
+                    self.__pipe_head_loss_bounds,
+                ) = self._head_loss_class.initialize_variables_nominals_and_bounds(
+                    self, commodity_type, pipe_name
+                )
+
+        #### kvr trying stuff
+        # for pipe in self.heat_network_components.get("pipe", []):
+        #     carrier_id = parameters[f"{pipe}.carrier_id"]
+        #     isinstance(
+        #         self.esdl_assets[self.esdl_asset_name_to_id_map[f"Pipe_4abc"]].in_ports[0].carrier
+        #         ,esdl.GasCommodity
+        #     )
+        ###
 
         # Integers for disabling the HEX temperature constraints
         for hex in [
@@ -521,7 +540,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             options["minimize_head_losses"]
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
-            g.append(self._head_loss_class._hn_minimization_goal_class(self))
+            g.append(self._head_loss_class._hn_minimization_goal_class(self, "heat_network"))
 
             if (
                 options["head_loss_option"] == HeadLossOption.LINEAR
@@ -2523,7 +2542,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
-
+        
         return constraints
 
     def constraints(self, ensemble_member):
@@ -2629,7 +2648,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 parameters = self.parameters(ensemble_member)
                 results = self.extract_results(ensemble_member)
 
-                for pipe in components["pipe"]:
+                for pipe in components.get("pipe", []):
                     if parameters[f"{pipe}.has_control_valve"]:
                         continue
 
@@ -2663,14 +2682,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 min_head_loss_target = options["minimum_pressure_far_point"] * 10.2
                 min_head_loss = None
 
-                for demand in components["demand"]:
+                for demand in components.get("demand", []):
                     head_loss = results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
                     if min_head_loss is None:
                         min_head_loss = head_loss
                     else:
                         min_head_loss = np.minimum(min_head_loss, head_loss)
+                
 
-                if not np.allclose(min_head_loss, min_head_loss_target, rtol=rtol, atol=atol):
+
+                if len(components.get("demand", [])) > 0 and not np.allclose(min_head_loss, min_head_loss_target, rtol=rtol, atol=atol):
                     logger.warning("Minimum head at demands is higher than target minimum.")
 
         super().priority_completed(priority)
