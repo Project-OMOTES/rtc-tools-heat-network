@@ -1925,7 +1925,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             ates_temperature_is_selected, len(a)
                         )
                         constraints.append(( (ates_dt_loss -
-                                              (0.5/(3600.*24.) * stored_heat / heat_stored_max )
+                                              (0.5/(3600.*24.) * (1. - stored_heat / heat_stored_max))
                                               + big_m * (1. - ates_temperature_is_selected_vec + disabled))
                                              / ates_temperature_loss_nominal, 0.0, np.inf))
                         constraints.append(
