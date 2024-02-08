@@ -42,7 +42,7 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 10e4)
+        self.function_range = (0.0, 10e6)
         self.source = source
         self.function_nominal = 1e3
 
@@ -125,8 +125,8 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = np.linspace(50, 70, 9).tolist()[::-1]
-            temperatures = np.linspace(40, 70, 13).tolist()[::-1]
+            # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
+            temperatures = np.linspace(40, 50, 11).tolist()[::-1]
 
         return temperatures
 
@@ -185,8 +185,8 @@ class HeatProblem(
             #  that an optimal solution is reached in different network topologies.
             nr_of_days = len(total_demand) // (24 * 5)
             new_date_times = list()
-            for day in range(nr_of_days):
-                new_date_times.append(self.io.datetimes[day * 24])
+            for day in range(0, nr_of_days):
+                new_date_times.append(self.io.datetimes[day * 24 * 5])
             new_date_times = np.asarray(new_date_times)
 
             for demand in demands:
@@ -195,8 +195,8 @@ class HeatProblem(
                     variable=var_name, ensemble_member=ensemble_member
                 ).values
                 new_data = list()
-                for day in range(nr_of_days):
-                    data_for_day = data[day * 24 : (day + 1) * 24]
+                for day in range(0, nr_of_days):
+                    data_for_day = data[day * 24 * 5 : (day + 1) * 24 * 5]
                     new_data.append(np.mean(data_for_day))
                 new_datastore.set_timeseries(
                     variable=var_name,
