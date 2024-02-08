@@ -1,4 +1,5 @@
 import numpy as np
+from rtctools.data.storage import DataStore
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
@@ -122,7 +123,7 @@ class HeatProblem(
         temperatures = []
         if carrier == 41770304791669983859190:
             # supply
-            temperatures = np.linspace(40,70, 13).tolist()
+            temperatures = np.linspace(40, 70, 13).tolist()
 
         return temperatures
 
@@ -159,6 +160,50 @@ class HeatProblem(
             constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
 
         return constraints
+
+    def read(self):
+        """
+        Reads the yearly profile with hourly time steps and adapt to a 5 day averaged profile.
+        """
+        super().read()
+
+        demands = self.heat_network_components.get("demand", [])
+        new_datastore = DataStore(self)
+        new_datastore.reference_datetime = self.io.datetimes[0]
+
+        for ensemble_member in range(self.ensemble_size):
+            total_demand = sum(
+                self.get_timeseries(f"{demand}.target_heat_demand", ensemble_member).values
+                for demand in demands
+            )
+
+            # TODO: the approach of picking one peak day was introduced for a network with a tree
+            #  layout and all big sources situated at the root of the tree. It is not guaranteed
+            #  that an optimal solution is reached in different network topologies.
+            nr_of_days = len(total_demand) // (24 * 5)
+            new_date_times = list()
+            for day in range(nr_of_days):
+                new_date_times.append(self.io.datetimes[day * 24])
+            new_date_times = np.asarray(new_date_times)
+
+            for demand in demands:
+                var_name = f"{demand}.target_heat_demand"
+                data = self.get_timeseries(
+                    variable=var_name, ensemble_member=ensemble_member
+                ).values
+                new_data = list()
+                for day in range(nr_of_days):
+                    data_for_day = data[day * 24 : (day + 1) * 24]
+                    new_data.append(np.mean(data_for_day))
+                new_datastore.set_timeseries(
+                    variable=var_name,
+                    datetimes=new_date_times,
+                    values=np.asarray(new_data) * 2.0,
+                    ensemble_member=ensemble_member,
+                    check_duplicates=True,
+                )
+
+            self.io = new_datastore
 
 
 class HeatProblemMaxFlow(HeatProblem):
