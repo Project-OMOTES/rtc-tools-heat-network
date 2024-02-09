@@ -1967,19 +1967,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
 
                         # under discharge
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #             ates_dt_loss_vec
-                        #             - (a * stored_heat_vec / heat_stored_max + b)
-                        #             + big_m * (1.0 - ates_temperature_is_selected_vec)
-                        #             + big_m * is_buffer_charging_vec
-                        #         )
-                        #         / ates_temperature_loss_nominal,
-                        #         0.0,
-                        #         np.inf,
-                        #     )
-                        # )
+                        constraints.append(
+                            (
+                                (
+                                    ates_dt_loss_vec
+                                    - (a * stored_heat_vec / heat_stored_max + b)
+                                    + big_m * (1.0 - ates_temperature_is_selected_vec)
+                                    + big_m * is_buffer_charging_vec
+                                )
+                                / ates_temperature_loss_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
 
                         # TODO: not sure but this constraint makes it very slow
                         # under charge or rest condition
@@ -3017,7 +3017,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             count += 1
 
         return constraints
-    def __ates_temperature_ordering_path_constraints(self, ensemble_member):
+    def __heat_pump_cop_path_constraints(self, ensemble_member):
 
         constraints = []
 
@@ -3040,7 +3040,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sec_heat = self.state(f"{hp}.Secondary_heat")
             elec = self.state(f"{hp}.Power_elec")
             nominal = self.variable_nominal(f"{hp}.Secondary_heat")
-
+            
             if (
                 len(sec_sup_temps) <= 1
                 and len(sec_ret_temps) <= 1
@@ -3121,7 +3121,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 )
         return constraints
 
-    def __heat_pump_cop_constraints(self, ensemble_member):
+    def __ates_temperature_ordering_path_constraints(self, ensemble_member):
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3199,7 +3199,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
-        constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
+        constraints.extend(self.__heat_pump_cop_path_constraints(ensemble_member))
 
         return constraints
 

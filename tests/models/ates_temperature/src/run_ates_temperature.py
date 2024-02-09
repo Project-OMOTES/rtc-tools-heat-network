@@ -126,7 +126,10 @@ class HeatProblem(
         if carrier == 41770304791669983859190:
             # supply
             # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
-            temperatures = np.linspace(40, 60, 21).tolist()[::-1]
+            temperatures = np.linspace(47.5, 60, 6).tolist()[::-1]
+            temperatures.extend(np.linspace(40, 45, 6).tolist()[::-1])
+
+            temperatures = np.linspace(40, 50, 11).tolist()[::-1]
 
         return temperatures
 
