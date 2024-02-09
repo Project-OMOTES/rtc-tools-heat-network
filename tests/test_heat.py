@@ -7,6 +7,8 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.head_loss_class import HeadLossOption
 
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
 
 class TestHeat(TestCase):
     def test_heat_loss(self):
@@ -15,19 +17,15 @@ class TestHeat(TestCase):
 
         Checks:
         - Check that the produced heat is strictly higher than the consumed heat
-
-        Missing:
-        - The model used seems weird with a parallel pipe, this test should be done with the simple
-        source, pipe, demand and with an esdl model.
-        - We should check for energy conservation in the network
+        - Check for energy conservation in the network
 
         """
-        import models.double_pipe_heat.src.double_pipe_heat as double_pipe_heat
-        from models.double_pipe_heat.src.double_pipe_heat import DoublePipeEqualHeat
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(DoublePipeEqualHeat, base_folder=base_folder)
+        case = run_optimization_problem(SourcePipeSink, base_folder=base_folder)
         results = case.extract_results()
 
         source = results["source.Heat_source"]
@@ -37,45 +35,54 @@ class TestHeat(TestCase):
         # strictly lower than what is produced.
         np.testing.assert_array_less(demand, source)
 
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
+
     def test_zero_heat_loss(self):
         """
         Check the optimiziation function when the zero heat loss is used.
 
         Checks:
-        - ....
-
-        Missing:
         - Should check that produced equals consumed.
         - Should check the heat loss variable being zero
 
         """
-        import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-        from models.basic_source_and_demand.src.heat_comparison import HeatPython
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
-        class Model(HeatPython):
-            def parameters(self, ensemble_member):
-                parameters = super().parameters(ensemble_member)
+        class Model(SourcePipeSink):
+            def heat_network_options(self):
+                options = super().heat_network_options()
+                options["neglect_pipe_heat_losses"] = True
 
-                for pipe in self.heat_network_components["pipe"]:
-                    assert f"{pipe}.Heat_loss" in parameters
-                    parameters[f"{pipe}.Heat_loss"] = 0.0
+                return options
 
-                return parameters
+        base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+        case = run_optimization_problem(Model, base_folder=base_folder)
 
-        run_optimization_problem(Model, base_folder=base_folder)
+        results = case.extract_results()
+        parameters = case.parameters(0)
+
+        for pipe in case.heat_network_components.get("pipe", []):
+            np.testing.assert_allclose(results[f"{pipe}__hn_heat_loss"], 0.0)
+            np.testing.assert_allclose(parameters[f"{pipe}.Heat_loss"], 0.0)
+
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+        heat_to_discharge_test(case, results)
 
 
 class TestMinMaxPressureOptions(TestCase):
-    import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-    from models.basic_source_and_demand.src.heat_comparison import HeatPython
+    import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+    from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
-    base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+    base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
     min_pressure = 4.0
     max_pressure = 12.0
 
-    class SmallerPipes(HeatPython):
+    class SmallerPipes(SourcePipeSink):
         # We want to force the dynamic pressure in the system to be higher
         # than 12 - 4 = 8 bar (typical upper and lower bounds). We make the
         # pipes smaller in diameter/area to accomplish this. We also adjust
@@ -92,6 +99,9 @@ class TestMinMaxPressureOptions(TestCase):
             bounds = super().bounds()
             bounds["source.Heat_source"] = (0.0, 125_000.0)
             return bounds
+
+        def goals(self):
+            return []
 
     class MinPressure(SmallerPipes):
         def heat_network_options(self):
@@ -124,9 +134,6 @@ class TestMinMaxPressureOptions(TestCase):
         - unbounded problem has requires more pressure drop than allowed by the min and max pressure
         - min pressure
         - max pressure
-
-        Missing:
-        - Should use esdl model.
 
         """
         case_default = run_optimization_problem(self.SmallerPipes, base_folder=self.base_folder)
@@ -169,16 +176,20 @@ class TestMinMaxPressureOptions(TestCase):
         min_, max_ = _get_min_max_pressure(case_min_max_pressure)
         self.assertGreater(min_, self.min_pressure * 0.99)
         self.assertLess(max_, self.max_pressure * 1.01)
-        self.assertGreater(case_min_max_pressure.objective_value, base_objective_value * 1.5)
+        target = case_default.get_timeseries("demand.target_heat_demand").values
+        self.assertLess(
+            np.sum((case_default.extract_results()["demand.Heat_demand"] - target) ** 2),
+            np.sum((case_min_max_pressure.extract_results()["demand.Heat_demand"] - target) ** 2),
+        )
 
 
 class TestDisconnectablePipe(TestCase):
-    import models.basic_source_and_demand.src.heat_comparison as heat_comparison
-    from models.basic_source_and_demand.src.heat_comparison import HeatPython
+    import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+    from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
-    base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+    base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-    class ModelConnected(HeatPython):
+    class ModelConnected(SourcePipeSink):
         # We allow the pipe to be disconnectable. We need to be sure that
         # the solution is still feasible (source delivering no heat), so we
         # lower the lower bound.
@@ -202,7 +213,7 @@ class TestDisconnectablePipe(TestCase):
             # is connected. So if we force the discharge to zero, that means we
             # force it to be disconnected.
             times = self.times()
-            q = self.state_at("pipe_hot.Q", times[1], ensemble_member)
+            q = self.state_at("Pipe1.Q", times[1], ensemble_member)
             constraints.append((q, 0.0, 0.0))
 
             return constraints
@@ -229,23 +240,18 @@ class TestDisconnectablePipe(TestCase):
         Checks:
         - Sanity check that min velocity is >0
         - Check that pipe stays connected when flow is not forced to zero
-        - Chekc that pipe becomes disconnected when flow is forced to zero
-
-        Missing:
-        - Should explicitly check the is_disconnected variable. Now we are just checking
-        additionally added constraints.
-        - Should be using an ESDL model
+        - Check that pipe becomes disconnected when flow is forced to zero
 
         """
         case_connected = run_optimization_problem(self.ModelConnected, base_folder=self.base_folder)
         results_connected = case_connected.extract_results()
-        q_connected = results_connected["pipe_hot.Q"]
+        q_connected = results_connected["Pipe1.Q"]
 
         case_disconnected = run_optimization_problem(
             self.ModelDisconnected, base_folder=self.base_folder
         )
         results_disconnected = case_disconnected.extract_results()
-        q_disconnected = results_disconnected["pipe_hot.Q"]
+        q_disconnected = results_disconnected["Pipe1.Q"]
 
         # Sanity check, as we rely on the minimum velocity being strictly
         # larger than zero for the discharge constraint to disconnect the
@@ -254,6 +260,8 @@ class TestDisconnectablePipe(TestCase):
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
+        np.testing.assert_allclose(results_connected["Pipe1__is_disconnected"], 0.0)
+        np.testing.assert_allclose(results_disconnected["Pipe1__is_disconnected"][1], 1.0)
 
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
@@ -269,22 +277,22 @@ class TestDisconnectablePipe(TestCase):
         pipes works with LINEAR as well as LINEARIZED_DW.
 
         Checks:
-        - That the flow is equal for both types of head loss constraint settings
-
-        Missing:
+        - That the flow is equal for both types of head loss constraint settings.
         - Check that is_disconnected is set correctly.
+
         """
 
         case_linear = run_optimization_problem(self.ModelDisconnected, base_folder=self.base_folder)
         results_linear = case_linear.extract_results()
-        q_linear = results_linear["pipe_hot.Q"]
+        q_linear = results_linear["Pipe1.Q"]
 
         case_dw = run_optimization_problem(
             self.ModelDisconnectedDarcyWeisbach, base_folder=self.base_folder
         )
         results_dw = case_dw.extract_results()
-        q_dw = results_dw["pipe_hot.Q"]
+        q_dw = results_dw["Pipe1.Q"]
 
         # Without any constraints on the maximum or minimum head/pressure
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
+        np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)

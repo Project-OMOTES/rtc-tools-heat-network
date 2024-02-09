@@ -645,6 +645,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             COP=cop,
+            efficiency=asset.attributes["efficiency"] if asset.attributes["efficiency"] else 0.5,
             technical_life=self.get_asset_attribute_value(
                 asset,
                 "technicalLifetime",

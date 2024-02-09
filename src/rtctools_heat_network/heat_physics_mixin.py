@@ -3017,8 +3017,111 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             count += 1
 
         return constraints
-
     def __ates_temperature_ordering_path_constraints(self, ensemble_member):
+
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for hp in [
+            *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
+        ]:
+            sec_sup_carrier = parameters[f"{hp}.Secondary.T_supply_id"]
+            sec_ret_carrier = parameters[f"{hp}.Secondary.T_return_id"]
+            prim_sup_carrier = parameters[f"{hp}.Primary.T_supply_id"]
+            prim_ret_carrier = parameters[f"{hp}.Primary.T_return_id"]
+
+            sec_sup_temps = self.temperature_regimes(sec_sup_carrier)
+            sec_ret_temps = self.temperature_regimes(sec_ret_carrier)
+            prim_sup_temps = self.temperature_regimes(prim_sup_carrier)
+            prim_ret_temps = self.temperature_regimes(prim_ret_carrier)
+
+            sec_heat = self.state(f"{hp}.Secondary_heat")
+            elec = self.state(f"{hp}.Power_elec")
+            nominal = self.variable_nominal(f"{hp}.Secondary_heat")
+
+            if (
+                len(sec_sup_temps) <= 1
+                and len(sec_ret_temps) <= 1
+                and len(prim_sup_temps) <= 1
+                and len(prim_ret_temps) <= 1
+            ):
+                cop = parameters[f"{hp}.COP"]
+                constraints.append(((sec_heat - cop * elec) / nominal, 0.0, 0.0))
+            else:
+                big_m = 2.0 * self.bounds()[f"{hp}.Secondary_heat"][1]
+                for sec_sup_temp in (
+                    sec_sup_temps
+                    if len(sec_sup_temps) > 0
+                    else [parameters[f"{hp}.Secondary.T_supply"]]
+                ):
+                    sec_sup_not_selected = (
+                        1.0 - self.state(f"{sec_sup_carrier}_{sec_sup_temp}")
+                        if len(sec_sup_temps) > 0
+                        else 0
+                    )
+                    for sec_ret_temp in (
+                        sec_ret_temps
+                        if len(sec_ret_temps) > 0
+                        else [parameters[f"{hp}.Secondary.T_return"]]
+                    ):
+                        sec_ret_not_selected = (
+                            1.0 - self.state(f"{sec_ret_carrier}_{sec_ret_temp}")
+                            if len(sec_ret_temps) > 0
+                            else 0
+                        )
+                        for prim_sup_temp in (
+                            prim_sup_temps
+                            if len(prim_sup_temps) > 0
+                            else [parameters[f"{hp}.Primary.T_supply"]]
+                        ):
+                            prim_sup_not_selected = (
+                                1.0 - self.state(f"{prim_sup_carrier}_{prim_sup_temp}")
+                                if len(prim_sup_temps) > 0
+                                else 0
+                            )
+                            for prim_ret_temp in (
+                                prim_ret_temps
+                                if len(prim_ret_temps) > 0
+                                else [parameters[f"{hp}.Primary.T_return"]]
+                            ):
+                                prim_ret_not_selected = (
+                                    1.0 - self.state(f"{prim_ret_carrier}_{prim_ret_temp}")
+                                    if len(prim_ret_temps) > 0
+                                    else 0
+                                )
+                                efficiency = parameters[f"{hp}.efficiency"]
+                                t_cond = 273.15 + sec_sup_temp
+                                t_evap = 273.15 + prim_sup_temp
+
+                                cop_carnot = efficiency * t_cond / (t_cond - t_evap)
+                                not_selected = (
+                                    prim_ret_not_selected
+                                    + prim_sup_not_selected
+                                    + sec_ret_not_selected
+                                    + sec_sup_not_selected
+                                )
+
+                                constraints.append(
+                                    (
+                                        (sec_heat - cop_carnot * elec + not_selected * big_m)
+                                        / nominal,
+                                        0.0,
+                                        np.inf,
+                                    )
+                                )
+                                constraints.append(
+                                    (
+                                        (sec_heat - cop_carnot * elec - not_selected * big_m)
+                                        / nominal,
+                                        -np.inf,
+                                        0.0,
+                                    )
+                                )
+        return constraints
+
+    def __heat_pump_cop_constraints(self, ensemble_member):
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -3055,8 +3158,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ((temperature - temperature_var + big_m * ordering_disc_carr), min_dt / 2., np.inf))
                 constraints.append(
                     ((temperature - temperature_var - big_m * (1. - ordering_disc_carr)), -np.inf, 0.))
-
-
 
         return constraints
 
@@ -3098,6 +3199,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
+        constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
 
         return constraints
 

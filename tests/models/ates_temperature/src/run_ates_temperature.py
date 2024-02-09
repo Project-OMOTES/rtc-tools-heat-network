@@ -42,7 +42,7 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.e2)
+        self.function_range = (0.0, 1.e4)
         self.source = source
         self.function_nominal = 1e0
 
@@ -87,7 +87,7 @@ class _GoalsAndOptions:
         # highs_options["mip_rel_gap"] = 0.01
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.01
+        gurobi_options["MIPgap"] = 0.02
 
         return options
 
@@ -126,7 +126,7 @@ class HeatProblem(
         if carrier == 41770304791669983859190:
             # supply
             # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
-            temperatures = np.linspace(40, 50, 11).tolist()[::-1]
+            temperatures = np.linspace(40, 60, 21).tolist()[::-1]
 
         return temperatures
 

@@ -3,6 +3,8 @@ from unittest import TestCase
 
 from rtctools.util import run_optimization_problem
 
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+
 
 class TestMultipleCarriers(TestCase):
     def test_multiple_carriers(self):
@@ -12,10 +14,6 @@ class TestMultipleCarriers(TestCase):
 
         Checks:
         - Heat to discharge relation for both networks are not interferring with each other
-
-        Missing:
-        - This check is based upon the old relative heat formulation should be updated
-        - energy conservation check.
 
         """
         import models.multiple_carriers.src.run_multiple_carriers as run_multiple_carriers
@@ -29,17 +27,8 @@ class TestMultipleCarriers(TestCase):
 
         results = solution.extract_results()
 
-        heat_demand_3222 = results["HeatingDemand_3322.Heat_demand"]
-        heat_demand_18aa = results["HeatingDemand_18aa.Heat_demand"]
-        heat_demand_3222_q = results["HeatingDemand_3322.Q"]
-        heat_demand_18aa_q = results["HeatingDemand_18aa.Q"]
-
-        # Values used in non_storage_component.py
-        cp = 4200.0
-        rho = 988.0
-
         # We check for a system consisting out of 2 hydraulically decoupled networks that the energy
         # balance equations are done with the correct carrier.
-        test = TestCase()
-        test.assertTrue(expr=all(heat_demand_3222 <= heat_demand_3222_q * rho * cp * 30))
-        test.assertTrue(expr=all(heat_demand_18aa <= heat_demand_18aa_q * rho * cp * 40))
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)

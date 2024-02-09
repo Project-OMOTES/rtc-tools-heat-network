@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -20,9 +22,8 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation
         - Check expected supply temperature
         - Check expected return temperature
-
-        Missing:
         - Check on integer variable for selected temperature.
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -41,13 +42,34 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
         # Check that the highest supply temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359}_temperature"], 85.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359}_85.0"], 1.0)
 
         # Check that the lowest return temperature is selected
         np.testing.assert_allclose(results[f"{3625334968694477359000}_temperature"], 60.0)
+        np.testing.assert_allclose(results[f"{3625334968694477359000}_60.0"], 1.0)
 
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            temperature = results[f"{carrier_id}_temperature"]
+            heat_loss_calc = [
+                pipe_heat_loss(
+                    heat_problem,
+                    heat_problem.heat_network_options(),
+                    heat_problem.parameters(0),
+                    pipe,
+                    None,
+                    temp,
+                )
+                for temp in temperature
+            ]
+            np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
     def test_3a_temperature_variation_supply(self):
         """
@@ -58,6 +80,7 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -92,6 +115,26 @@ class TestVaryingTemperature(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 4195016129475469474608:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
+
     def test_3a_temperature_variation_return(self):
         """
         Check varying temperature behoviour for network with storage (tank). In this case we
@@ -102,9 +145,7 @@ class TestVaryingTemperature(TestCase):
         - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
-
-        Missing:
-        - I think there is a double demand mathcing check now...
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -122,13 +163,6 @@ class TestVaryingTemperature(TestCase):
         # and we apply source Q minimization goal
         results = heat_problem.extract_results()
 
-        # Check whehter the heat demand is matched
-        for d in heat_problem.heat_network_components.get("demand", []):
-            target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
-                : len(heat_problem.times())
-            ]
-            np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
-
         # Check that the lowest temperature (30.0) is the outputted temperature
         np.testing.assert_allclose(results[f"{4195016129475469474608000}_temperature"], 30.0)
         # Verify that also the integer is correctly set
@@ -138,6 +172,26 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 4195016129475469474608000:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
     def test_hex_temperature_variation(self):
         """
@@ -178,6 +232,26 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+        parameters = heat_problem.parameters(0)
+
+        for pipe in heat_problem.heat_network_components.get("pipe", []):
+            heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
+            carrier_id = parameters[f"{pipe}.carrier_id"]
+            if carrier_id == 33638164429859421:
+                temperature = results[f"{carrier_id}_temperature"]
+                heat_loss_calc = [
+                    pipe_heat_loss(
+                        heat_problem,
+                        heat_problem.heat_network_options(),
+                        heat_problem.parameters(0),
+                        pipe,
+                        None,
+                        temp,
+                    )
+                    for temp in temperature
+                ]
+                np.testing.assert_allclose(heat_loss_opt, heat_loss_calc, atol=1.0e-6)
 
     def test_hex_temperature_variation_disablehex(self):
         """
@@ -249,6 +323,38 @@ class TestVaryingTemperature(TestCase):
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
+
+    def test_heat_pump_varying_temperature(self):
+        """
+        Check to see if the Heat pump under varying temperature has the expected COP behaviour.
+
+
+        """
+        import models.heatpump.src.run_heat_pump as run_heat_pump
+        from models.heatpump.src.run_heat_pump import HeatProblemTvar
+
+        base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
+
+        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        expected_cop = (
+            parameters["GenericConversion_3d3f.efficiency"]
+            * (273.15 + results[f"{7212673879469902607010}_temperature"])
+            / (results[f"{7212673879469902607010}_temperature"] - 70.0)
+        )
+
+        np.testing.assert_allclose(
+            expected_cop,
+            results["GenericConversion_3d3f.Secondary_heat"]
+            / results["GenericConversion_3d3f.Power_elec"],
+        )
 
     # Note that CBC struggles heavily and tends to crash, therefore excluded from pipeline
     # def test_varying_temperature_with_pipe_sizing(self):
