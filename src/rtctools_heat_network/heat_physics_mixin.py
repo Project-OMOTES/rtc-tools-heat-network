@@ -103,6 +103,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__ates_temperature_selected_var = {}
         self.__ates_temperature_selected_var_bounds = {}
 
+        self.__ates_temperature_ordering_var = {}
+        self.__ates_temperature_ordering_var_bounds = {}
+
+        self.__ates_temperature_disc_ordering_var = {}
+        self.__ates_temperature_disc_ordering_var_bounds = {}
+
         # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
@@ -275,6 +281,18 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     0.0,
                     1.0,
                 )
+
+                ates_temperature_ordering_var_name = f"{ates}__{temperature}_ordering"
+                self.__ates_temperature_ordering_var[ates_temperature_ordering_var_name] = ca.MX.sym(ates_temperature_ordering_var_name)
+                self.__ates_temperature_ordering_var_bounds[ates_temperature_ordering_var_name] = (0., 1.)
+
+                ates_temperature_disc_ordering_var_name = f"{ates}__{temperature}_ordering_disc"
+                self.__ates_temperature_disc_ordering_var[
+                    ates_temperature_disc_ordering_var_name] = ca.MX.sym(
+                    ates_temperature_disc_ordering_var_name)
+                self.__ates_temperature_disc_ordering_var_bounds[ates_temperature_disc_ordering_var_name] = (
+                0., 1.)
+
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -501,6 +519,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__ates_temperature_selected_var.values())
         variables.extend(self.__disabled_hex_var.values())
         variables.extend(self.__pipe_heat_loss_path_var.values())
+        variables.extend(self.__ates_temperature_ordering_var.values())
+        variables.extend(self.__ates_temperature_disc_ordering_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -516,6 +536,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__carrier_selected_var
             or variable in self.__ates_temperature_selected_var
             or variable in self.__disabled_hex_var
+            or variable in self.__ates_temperature_ordering_var
+            or variable in self.__ates_temperature_disc_ordering_var
         ):
             return True
         else:
@@ -553,6 +575,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds.update(self.__pipe_head_loss_bounds)
         bounds.update(self.__pipe_head_loss_zero_bounds)
+        bounds.update(self.__ates_temperature_ordering_var_bounds)
+        bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -1926,19 +1950,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         )
 
                         # under discharge
-                        constraints.append(
-                            (
-                                (
-                                    ates_dt_loss_vec
-                                    - (a * stored_heat_vec / heat_stored_max + b)
-                                    + big_m * (1.0 - ates_temperature_is_selected_vec)
-                                    + big_m * is_buffer_charging_vec
-                                )
-                                / ates_temperature_loss_nominal,
-                                0.0,
-                                np.inf,
-                            )
-                        )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             ates_dt_loss_vec
+                        #             - (a * stored_heat_vec / heat_stored_max + b)
+                        #             + big_m * (1.0 - ates_temperature_is_selected_vec)
+                        #             + big_m * is_buffer_charging_vec
+                        #         )
+                        #         / ates_temperature_loss_nominal,
+                        #         0.0,
+                        #         np.inf,
+                        #     )
+                        # )
 
                         # TODO: not sure but this constraint makes it very slow
                         # under charge or rest condition
@@ -2948,6 +2972,37 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __ates_temperature_ordering_path_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for ates in self.heat_network_components.get("ates", []):
+
+            sup_carrier = parameters[f"{ates}.T_supply_id"]
+            supply_temperatures = self.temperature_regimes(sup_carrier)
+            big_m = 2. * max(supply_temperatures)
+            min_dt = abs(min(np.diff(supply_temperatures)))
+
+            for temperature in supply_temperatures:
+                ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
+                ordering = self.state(f"{ates}__{temperature}_ordering")
+                ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
+                ates_temp = self.state(f"{ates}.Temperature_ates")
+
+                # ordering should be 1. if temperature is larger than temperature selected.
+                constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
+                constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
+
+                constraints.append(
+                    ((temperature - ates_temp + big_m * ordering), 0., np.inf))
+                constraints.append(
+                    ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
+
+                # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -2985,6 +3040,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__ates_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__ates_temperature_changing_path_constraints(ensemble_member))
         constraints.extend(self.__ates_heat_losses_path_constraints(ensemble_member))
+        constraints.extend(self.__ates_temperature_ordering_path_constraints(ensemble_member))
 
         return constraints
 

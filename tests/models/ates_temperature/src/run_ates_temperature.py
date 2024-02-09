@@ -42,9 +42,9 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
+        self.function_range = (0.0, 1.e2)
         self.source = source
-        self.function_nominal = 1e3
+        self.function_nominal = 1e0
 
     def function(self, optimization_problem, ensemble_member):
         try:
@@ -157,10 +157,10 @@ class HeatProblem(
         for a in self.heat_network_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             heat_ates = self.state_vector(f"{a}.Heat_ates")
-            constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
-            constraints.append((heat_ates[0], 0.0, 0.0))
-            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
-            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
+            # constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            # constraints.append((heat_ates[0], 0.0, 0.0))
+            # ates_temperature = self.state_vector(f"{a}.Temperature_ates")
+            # constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
 
         return constraints
 
@@ -220,6 +220,12 @@ class HeatProblemMaxFlow(HeatProblem):
 
 
 if __name__ == "__main__":
+    import time
+    t0 = time.time()
+
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
+    print(f"time: {time.time() - t0}")
     a = 1
+
+
