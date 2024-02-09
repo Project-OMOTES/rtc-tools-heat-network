@@ -1696,6 +1696,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # discr_temp_carrier == discr_temp_ates
                 big_m = 2.0 * max(supply_temperatures)
                 sup_temperature_disc = self.state(f"{sup_carrier}_temperature")
+
+                constraints.append(((max(supply_temperatures) - sup_temperature_disc + big_m * (1. - is_buffer_charging)), 0., np.inf))
+                constraints.append(((max(supply_temperatures) - sup_temperature_disc - big_m * (
+                            1. - is_buffer_charging)), -np.inf, 0.))
+
                 constraints.append(
                     (
                         ates_temperature_disc - sup_temperature_disc + is_buffer_charging * big_m,
