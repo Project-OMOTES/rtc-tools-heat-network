@@ -132,14 +132,14 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         #  in the data
         for source in problem.heat_network_components.get("source", []):
             try:
-                problem.get_timeseries(f"{source}.target_heat_source", ensemble_member)
+                problem.get_timeseries(f"{source}.maximum_heat_source", ensemble_member)
             except KeyError:
                 logger.debug(
                     f"{source} has no production profile, skipping setting the "
                     f"production profile"
                 )
                 continue
-            var_name = f"{source}.target_heat_source"
+            var_name = f"{source}.maximum_heat_source"
             set_data_with_averages_and_peak_day(
                 datastore=new_datastore,
                 variable_name=var_name,

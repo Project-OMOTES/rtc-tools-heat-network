@@ -43,7 +43,7 @@ class TestProducerMaxProfile(TestCase):
         size_producer = results["GeothermalSource_b702__max_size"]
 
         heat_producer_profile_scaled = solution.get_timeseries(
-            "GeothermalSource_b702.target_heat_source"
+            "GeothermalSource_b702.maximum_heat_source"
         ).values
         heat_producer_profile_full = heat_producer_profile_scaled * size_producer
 

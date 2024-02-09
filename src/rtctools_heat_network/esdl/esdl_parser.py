@@ -14,7 +14,9 @@ class _ESDLInputException(Exception):
 class BaseESDLParser:
 
     def __init__(self):
-        self._global_properties: Dict[str, Dict] = {"carriers": dict()}
+        self._global_properties: Dict[str, Dict] = {
+            "carriers": dict(),
+        }
         self._assets: Dict[str, Asset] = dict()
         self._energy_system_handler: esdl.esdl_handler.EnergySystemHandler = \
             esdl.esdl_handler.EnergySystemHandler()
@@ -54,11 +56,21 @@ class BaseESDLParser:
                     id=x.id,
                     id_number_mapping=id_to_idnumber_map[x.id],
                     temperature=temperature,
+                    type="heat"
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
                 self._global_properties["carriers"][x.id] = dict(
                     name=x.name,
                     voltage=x.voltage,
+                    id=x.id,
+                    type="electricity"
+                )
+            elif isinstance(x, esdl.esdl.GasCommodity):
+                self._global_properties["carriers"][x.id] = dict(
+                    name=x.name,
+                    pressure=x.pressure,
+                    id=x.id,
+                    type="gas"
                 )
 
         # Component ids are unique, but we require component names to be unique as well.

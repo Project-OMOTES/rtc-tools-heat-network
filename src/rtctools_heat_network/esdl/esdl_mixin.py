@@ -70,13 +70,6 @@ class ESDLMixin(
 
     # TODO: remove this once ESDL allows specifying a minimum pipe size for an optional pipe.
     __minimum_pipe_size_name: str = "DN150"
-    #
-    # __profile_reader: BaseProfileReader
-    #
-    # esdl_parser_class: type
-    # _esdl_assets: Dict[str, Asset]
-    # _esdl_carriers: Dict[str, Dict[str, Any]]
-    # __energy_system_handler: esdl.esdl_handler.EnergySystemHandler
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -451,15 +444,16 @@ class ESDLMixin(
         -------
         None
         """
-        # TODO: fix this whole function and fix docstring
         super().read()
         heat_network_components = self.heat_network_components
+        esdl_carriers = self.esdl_carriers
         io = self.io
         self.__profile_reader.read_profiles(
             heat_network_components=heat_network_components, io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
+            esdl_assets=self.esdl_assets,
+            carrier_properties=esdl_carriers,
             ensemble_size=self.ensemble_size,
-            esdl_assets=self.esdl_assets
         )
 
     def write(self) -> None:
@@ -563,84 +557,6 @@ class ESDLMixin(
         self.__timeseries_export.write()
 
 
-# class _ESDLInputDataConfig:
-#     def __init__(self, id_map, heat_network_components):
-#         # TODO: change naming source and demand to heat_source and heat_demand throughout code
-#         self.__id_map = id_map
-#         self._sources = set(heat_network_components.get("source", []))
-#         self._demands = set(heat_network_components.get("demand", []))
-#         self._electricity_sources = set(heat_network_components.get("electricity_source", []))
-#         self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
-#         self._gas_sources = set(heat_network_components.get("gas_source", []))
-#         self._gas_demands = set(heat_network_components.get("gas_demand", []))
-#
-#     def variable(self, pi_header):
-#         location_id = pi_header.find("pi:locationId", ns).text
-#
-#         try:
-#             component_name = self.__id_map[location_id]
-#         except KeyError:
-#             parameter_id = pi_header.find("pi:parameterId", ns).text
-#             qualifiers = pi_header.findall("pi:qualifierId", ns)
-#             qualifier_ids = ":".join(q.text for q in qualifiers)
-#             return f"{location_id}:{parameter_id}:{qualifier_ids}"
-#
-#         if component_name in self._demands:
-#             suffix = ".target_heat_demand"
-#         elif component_name in self._sources:
-#             suffix = ".target_heat_source"
-#         elif component_name in self._electricity_demands:
-#             suffix = ".target_electricity_demand"
-#         elif component_name in self._electricity_sources:
-#             suffix = ".target_electricity_source"
-#         elif component_name in self._gas_demands:
-#             suffix = ".target_gas_demand"
-#         elif component_name in self._gas_sources:
-#             suffix = ".target_gas_source"
-#         else:
-#             logger.warning(
-#                 f"Could not identify '{component_name}' as either source or demand. "
-#                 f"Using neutral suffix '.target_heat' for its heat timeseries."
-#             )
-#             suffix = ".target_heat"
-#
-#         # Note that the qualifier id (if any specified) refers to the profile
-#         # element of the respective ESDL asset->in_port. For now we just
-#         # assume that only heat demand timeseries are set in the XML file.
-#         return f"{component_name}{suffix}"
-#
-#     def pi_variable_ids(self, variable):
-#         raise NotImplementedError
-#
-#     def parameter(self, parameter_id, location_id=None, model_id=None):
-#         raise NotImplementedError
-#
-#     def pi_parameter_ids(self, parameter):
-#         raise NotImplementedError
-#
-#
-# class _ESDLOutputDataConfig:
-#     def __init__(self, id_map):
-#         self.__id_map = id_map
-#
-#     def variable(self, pi_header):
-#         location_id = pi_header.find("pi:locationId", ns).text
-#         parameter_id = pi_header.find("pi:parameterId", ns).text
-#
-#         component_name = self.__id_map[location_id]
-#
-#         return f"{component_name}.{parameter_id}"
-#
-#     def pi_variable_ids(self, variable):
-#         raise NotImplementedError
-#
-#     def parameter(self, parameter_id, location_id=None, model_id=None):
-#         raise NotImplementedError
-#
-#     def pi_parameter_ids(self, parameter):
-#         raise NotImplementedError
-#
-#
 class _ESDLInputDataConfig:
     """
     This class is used to specify naming standard for input data, specifically for demand and
@@ -684,15 +600,15 @@ class _ESDLInputDataConfig:
         if component_name in self._demands:
             suffix = ".target_heat_demand"
         elif component_name in self._sources:
-            suffix = ".target_heat_source"
+            suffix = ".maximum_heat_source"
         elif component_name in self._electricity_demands:
             suffix = ".target_electricity_demand"
         elif component_name in self._electricity_sources:
-            suffix = ".target_electricity_source"
+            suffix = ".maximum_electricity_source"
         elif component_name in self._gas_demands:
             suffix = ".target_gas_demand"
         elif component_name in self._gas_sources:
-            suffix = ".target_gas_source"
+            suffix = ".maximum_gas_source"
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "

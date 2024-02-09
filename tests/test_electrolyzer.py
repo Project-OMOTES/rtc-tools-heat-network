@@ -40,27 +40,27 @@ class TestElectrolyzer(TestCase):
 
         results = solution.extract_results()
 
-        price_profile = "GasDemand_0cf3.gas_price"
+        gas_price_profile = "gas.price_profile"
         state = "GasDemand_0cf3.Gas_demand_mass_flow"
         nominal = solution.variable_nominal(state) * np.median(
-            solution.get_timeseries(price_profile).values
+            solution.get_timeseries(gas_price_profile).values
         )
         gas_revenue = (
             np.sum(
-                solution.get_timeseries("GasDemand_0cf3.gas_price").values
+                solution.get_timeseries(gas_price_profile).values
                 * results["GasDemand_0cf3.Gas_demand_mass_flow"]
             )
             / nominal
         )
 
-        price_profile = "ElectricityDemand_9d15.electricity_price"
+        elec_price_profile = "elec.price_profile"
         state = "ElectricityDemand_9d15.ElectricityIn.Power"
         nominal = solution.variable_nominal(state) * np.median(
-            solution.get_timeseries(price_profile).values
+            solution.get_timeseries(elec_price_profile).values
         )
         electricity_revenue = (
             np.sum(
-                solution.get_timeseries("ElectricityDemand_9d15.electricity_price").values
+                solution.get_timeseries(elec_price_profile).values
                 * results["ElectricityDemand_9d15.ElectricityIn.Power"]
             )
             / nominal
@@ -77,7 +77,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_array_less(-results["Electrolyzer_fc66.ElectricityIn.Power"], tol)
 
         # Check that windfarm does not produce more than the specified maximum profile
-        ub = solution.get_timeseries("WindPark_7f14.maximum_production").values
+        ub = solution.get_timeseries("WindPark_7f14.maximum_electricity_source").values
         np.testing.assert_array_less(results["WindPark_7f14.ElectricityOut.Power"], ub + tol)
 
         # Check that the wind farm setpoint matches with the production
@@ -125,8 +125,8 @@ class TestElectrolyzer(TestCase):
             electrical_power_max=solution.bounds()["Electrolyzer_fc66.ElectricityIn.Power"][1],
         )
         # TODO: Add test below once the mass flow is coupled to the volumetric flow rate. Currently
-        # the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
-        # np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
+        #  the gas network is non-limiting (mass flow not coupled to volumetric flow rate)
+        #  np.testing.assert_allclose(results["Electrolyzer_fc66.Gas_mass_flow_out"],
         #                            results["Electrolyzer_fc66.GasOut.Q"] *
         #                            milp_problem.parameters(0)["Electrolyzer_fc66.density"])
         for i in range(len(a)):
@@ -144,8 +144,8 @@ class TestElectrolyzer(TestCase):
         # Check variable opex: transport cost 0.1 euro/kg H2
         gas_tranport_cost = sum(
             (
-                solution.get_timeseries(price_profile).times[1:]
-                - solution.get_timeseries(price_profile).times[0:-1]
+                solution.get_timeseries(elec_price_profile).times[1:]
+                - solution.get_timeseries(elec_price_profile).times[0:-1]
             )
             / 3600.0
             * results["Pipe_6ba6.GasOut.mass_flow"][1:]

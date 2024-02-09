@@ -1,6 +1,5 @@
 import datetime
 import logging
-import sys
 from typing import Dict, Optional, Set
 from collections import defaultdict
 
@@ -29,18 +28,15 @@ class _ProfileParserException(Exception):
     pass
 
 class BaseProfileReader:
-    # _energy_system: esdl.EnergySystem
-    # _file_path: Optional[Path]
-    # _profiles: Dict[int, Dict[str, np.ndarray]]
-    # _reference_datetimes: Optional[pd.DatetimeIndex]
     component_type_to_var_name_map: dict = {
         "demand": ".target_heat_demand",
-        "source": ".target_heat_source",
+        "source": ".maximum_heat_source",
         "electricity_demand": ".target_electricity_demand",
-        "electricity_source": ".target_electricity_source",
+        "electricity_source": ".maximum_electricity_source",
         "gas_demand": ".target_gas_demand",
-        "gas_source": ".target_gas_source",
+        "gas_source": ".maximum_gas_source",
     }
+    carrier_profile_var_name: str = ".price_profile"
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
         self._profiles: Dict[int, Dict[str, np.ndarray]] = defaultdict(dict)
@@ -50,8 +46,9 @@ class BaseProfileReader:
 
     def read_profiles(self, io: DataStore, heat_network_components: Dict[str, Set[str]],
                       esdl_asset_id_to_name_map: Dict[str, str],
-                      ensemble_size: int,
-                      esdl_assets: Dict[str, Asset]) -> None:
+                      esdl_assets: Dict[str, Asset],
+                      carrier_properties: Dict[str, Dict],
+                      ensemble_size: int,) -> None:
         """
         This function takes a datastore and a dictionary of heat network components and loads a
         profile for each demand and source in the provided heat network components into the
@@ -69,10 +66,11 @@ class BaseProfileReader:
                                     needs to be loaded
         esdl_asset_id_to_name_map : Dictionary that maps asset ids to asset names,
                                     this is required when reading from an XML
+        esdl_assets : Dictionary mapping asset IDs to loaded ESDL assets
+        esdl_carriers: Dictionary mapping carrier IDs to its properties
         ensemble_size :     Integer denoting the size of the set of scenarios to
                             optimize. Currently only XML inputs support loading a
                             different profile for different ensemble members
-        esdl_assets : Dictionary mapping asset IDs to loaded ESDL assets
 
         Returns
         -------
@@ -80,6 +78,7 @@ class BaseProfileReader:
         """
         self._load_profiles_from_source(heat_network_components=heat_network_components,
                                         esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
+                                        carrier_properties=carrier_properties,
                                         ensemble_size=ensemble_size)
 
         try:
@@ -108,15 +107,29 @@ class BaseProfileReader:
                         values = np.array([asset_power] * len(self._reference_datetimes))
 
                     io.set_timeseries(
-                        variable = component + var_name,
+                        variable=component + var_name,
                         datetimes=self._reference_datetimes,
-                        values = values,
+                        values=values,
+                        ensemble_member=ensemble_member
+                    )
+            for properties in carrier_properties.values():
+                carrier_name = properties["name"]
+                profile = self._profiles[ensemble_member].get(
+                    carrier_name + self.carrier_profile_var_name, None)
+                if profile is not None:
+                    logger.debug(f"Setting price profile for carrier named {carrier_name} "
+                                 f"to {profile}")
+                    io.set_timeseries(
+                        variable=carrier_name + self.carrier_profile_var_name,
+                        datetimes=self._reference_datetimes,
+                        values=profile,
                         ensemble_member=ensemble_member
                     )
 
 
     def _load_profiles_from_source(self, heat_network_components: Dict[str, Set[str]],
                                    esdl_asset_id_to_name_map: Dict[str, str],
+                                   carrier_properties: Dict[str, Dict],
                                    ensemble_size: int) -> None:
         """
         This function must be implemented by the child. It must load the available
@@ -146,11 +159,11 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     asset_type_to_variable_name_conversion = {
         esdl.esdl.HeatingDemand: ".target_heat_demand",
-        esdl.esdl.HeatProducer: ".target_heat_source",
+        esdl.esdl.HeatProducer: ".maximum_heat_source",
         esdl.esdl.ElectricityDemand: ".target_electricity_demand",
-        esdl.esdl.ElectricityProducer: ".target_electricity_source",
+        esdl.esdl.ElectricityProducer: ".maximum_electricity_source",
         esdl.esdl.GasDemand: ".target_gas_demand",
-        esdl.esdl.GasProducer: ".target_gas.source",
+        esdl.esdl.GasProducer: ".maximum_gas_source",
     }
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
@@ -158,6 +171,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     def _load_profiles_from_source(self, heat_network_components: Dict[str, Set[str]],
                                    esdl_asset_id_to_name_map: Dict[str, str],
+                                   carrier_properties: Dict[str, Dict],
                                    ensemble_size: int) -> None:
         profiles: Dict[str, np.ndarray] = dict()
         logger.info("Reading profiles from InfluxDB")
@@ -328,18 +342,24 @@ class ProfileReaderFromFile(BaseProfileReader):
 
     def _load_profiles_from_source(self, heat_network_components: Dict[str, Set[str]],
                                    esdl_asset_id_to_name_map: Dict[str, str],
+                                   carrier_properties: Dict[str, Dict],
                                    ensemble_size: int) -> None:
         if self._file_path.suffix == ".xml":
+            logger.warning("XML type loading currently does not support loading "
+                           "price profiles for carriers")
             self._load_xml(heat_network_components=heat_network_components,
-                                  esdl_asset_id_to_name_map=esdl_asset_id_to_name_map)
+                           esdl_asset_id_to_name_map=esdl_asset_id_to_name_map)
         elif self._file_path.suffix == ".csv":
             self._load_csv(heat_network_components=heat_network_components,
-                                  ensemble_size=ensemble_size)
+                           carrier_properties=carrier_properties,
+                           ensemble_size=ensemble_size)
         else:
             raise _ProfileParserException(f"Unsupported profile file extension "
                                           f"{self._file_path.suffix}")
 
-    def _load_csv(self, heat_network_components: Dict[str, Set[str]], ensemble_size: int):
+    def _load_csv(self, heat_network_components: Dict[str, Set[str]],
+                  carrier_properties: Dict[str, Dict],
+                  ensemble_size: int) -> None:
         data = pd.read_csv(self._file_path)
         try:
             timeseries_import_times = [
@@ -371,6 +391,15 @@ class ProfileReaderFromFile(BaseProfileReader):
                         pass
                     else:
                         self._profiles[ensemble_member][component_name + var_name] = values
+            for properties in carrier_properties.values():
+                carrier_name = properties.get("name")
+                try:
+                    values = data[carrier_name].to_numpy()
+                except KeyError:
+                    pass
+                else:
+                    self._profiles[ensemble_member][
+                        carrier_name + self.carrier_profile_var_name] = values
 
     def _load_xml(self, heat_network_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem
@@ -404,13 +433,6 @@ class ProfileReaderFromFile(BaseProfileReader):
 
 class _ESDLInputDataConfig:
     ns: dict = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
-    # __id_map: Dict[str, str]
-    # _sources: Set
-    # _demands: Set
-    # _electricity_sources: Set
-    # _electricity_demands: Set
-    # _gas_sources: Set
-    # _gas_demands: Set
 
     def __init__(self, id_map: Dict[str, str], heat_network_components: Dict[str, Set[str]]):
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
@@ -436,15 +458,15 @@ class _ESDLInputDataConfig:
         if component_name in self._demands:
             suffix = ".target_heat_demand"
         elif component_name in self._sources:
-            suffix = ".target_heat_source"
+            suffix = ".maximum_heat_source"
         elif component_name in self._electricity_demands:
             suffix = ".target_electricity_demand"
         elif component_name in self._electricity_sources:
-            suffix = ".target_electricity_source"
+            suffix = ".maximum_electricity_source"
         elif component_name in self._gas_demands:
             suffix = ".target_gas_demand"
         elif component_name in self._gas_sources:
-            suffix = ".target_gas_source"
+            suffix = ".maximum_gas_source"
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "
