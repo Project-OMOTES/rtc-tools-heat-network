@@ -113,6 +113,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
 
+        self.__carrier_temperature_disc_ordering_var = {}
+        self.__carrier_temperature_disc_ordering_var_bounds = {}
+
         # Dict to write the heat loss in the parameters
         self.__pipe_heat_loss_parameters = []
 
@@ -294,6 +297,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 0., 1.)
 
 
+
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
             temp_var_name = carrier_id_number_mapping + "_temperature"
@@ -315,6 +319,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 carrier_selected_var = carrier_id_number_mapping + f"_{temperature_regime}"
                 self.__carrier_selected_var[carrier_selected_var] = ca.MX.sym(carrier_selected_var)
                 self.__carrier_selected_var_bounds[carrier_selected_var] = (0.0, 1.0)
+
+                carrier_temperature_disc_ordering_var_name = f"{carrier_id_number_mapping}__{temperature_regime}_ordering_disc"
+                self.__carrier_temperature_disc_ordering_var[
+                    carrier_temperature_disc_ordering_var_name] = ca.MX.sym(
+                    carrier_temperature_disc_ordering_var_name)
+                self.__carrier_temperature_disc_ordering_var_bounds[
+                    carrier_temperature_disc_ordering_var_name] = (
+                    0., 1.)
+
+
 
         for _ in range(self.ensemble_size):
             self.__pipe_heat_loss_parameters.append({})
@@ -521,6 +535,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__pipe_heat_loss_path_var.values())
         variables.extend(self.__ates_temperature_ordering_var.values())
         variables.extend(self.__ates_temperature_disc_ordering_var.values())
+        variables.extend(self.__carrier_temperature_disc_ordering_var.values())
         return variables
 
     def variable_is_discrete(self, variable):
@@ -538,6 +553,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__disabled_hex_var
             or variable in self.__ates_temperature_ordering_var
             or variable in self.__ates_temperature_disc_ordering_var
+            or variable in self.__carrier_temperature_disc_ordering_var
         ):
             return True
         else:
@@ -577,6 +593,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__pipe_head_loss_zero_bounds)
         bounds.update(self.__ates_temperature_ordering_var_bounds)
         bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
+        bounds.update(self.__carrier_temperature_disc_ordering_var_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -2129,6 +2146,35 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
             else:
+                bounds =  self.bounds()
+                max_discharge = bounds[f"{b}.Q"][1]
+                constraint_nominal = (
+                                             heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
+                                     ) ** 0.5
+                temperature_var = self.state(f"{sup_carrier}_temperature")
+                constraints.append(
+                    (
+                        (
+                                heat_in
+                                - max_discharge * cp * rho * temperature_var
+                        )
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    (
+                        (
+                                heat_in
+                                - max_discharge * cp * rho * temperature_var
+                                - (1- is_buffer_charging) * big_m
+                        )
+                        / constraint_nominal,
+                        -np.inf,
+                        0.0,
+                    )
+                )
                 for supply_temperature in supply_temperatures:
                     sup_temperature_is_selected = self.state(f"{sup_carrier}_{supply_temperature}")
                     constraint_nominal = (
@@ -3000,6 +3046,17 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
 
                 # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
+
+                # sup_temperature_is_selected = self.state(f"{sup_carrier}_{temperature}")
+                temperature_var = self.state(f"{sup_carrier}_temperature")
+                ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
+
+                constraints.append(
+                    ((temperature - temperature_var + big_m * ordering_disc_carr), min_dt / 2., np.inf))
+                constraints.append(
+                    ((temperature - temperature_var - big_m * (1. - ordering_disc_carr)), -np.inf, 0.))
+
+
 
         return constraints
 

@@ -157,10 +157,10 @@ class HeatProblem(
         for a in self.heat_network_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             heat_ates = self.state_vector(f"{a}.Heat_ates")
-            # constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
-            # constraints.append((heat_ates[0], 0.0, 0.0))
-            # ates_temperature = self.state_vector(f"{a}.Temperature_ates")
-            # constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
+            constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            constraints.append((heat_ates[0], 0.0, 0.0))
+            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
+            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
 
         return constraints
 
