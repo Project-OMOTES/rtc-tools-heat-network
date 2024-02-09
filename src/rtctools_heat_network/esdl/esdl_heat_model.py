@@ -804,10 +804,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             efficiency = 0.7
         # TODO: temporary value for standard dT on which capacity is based, Q in m3/s
         temperatures = self._supply_return_temperature_modifiers(asset)
-        dT = temperatures["T_supply"] - temperatures["T_return"]
+        dt = temperatures["T_supply"] - temperatures["T_return"]
         rho = self.rho
         cp = self.cp
-        q_max_ates = hfr_discharge_max / (cp * rho * dT)
+        q_max_ates = hfr_discharge_max / (cp * rho * dt)
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
