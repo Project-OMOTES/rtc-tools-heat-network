@@ -168,6 +168,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     def __init__(self, energy_system: esdl.EnergySystem, file_path: Optional[Path]):
         super().__init__(energy_system=energy_system, file_path=file_path)
+        self._df = pd.DataFrame()
 
     def _load_profiles_from_source(self, heat_network_components: Dict[str, Set[str]],
                                    esdl_asset_id_to_name_map: Dict[str, str],
@@ -207,8 +208,8 @@ class InfluxDBProfileReader(BaseProfileReader):
         for idx in range(ensemble_size):
             self._profiles[idx]= profiles.copy()
 
-    @staticmethod
-    def _load_profile_timeseries_from_database(profile: esdl.InfluxDBProfile) -> pd.Series:
+    # @staticmethod
+    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
         """
         Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
         the asset.
@@ -265,6 +266,8 @@ class InfluxDBProfileReader(BaseProfileReader):
 
         index = pd.DatetimeIndex(data=[x[0] for x in time_series_data.profile_data_list])
         data = [x[1] for x in time_series_data.profile_data_list]
+        series = pd.Series(data=data, index=index)
+        self._df[profile.id] = series
 
         return pd.Series(data=data, index=index)
 

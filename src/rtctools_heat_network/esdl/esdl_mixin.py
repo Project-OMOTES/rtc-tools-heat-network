@@ -1,3 +1,4 @@
+import base64
 import copy
 import datetime
 import logging
@@ -152,6 +153,14 @@ class ESDLMixin(
         self.name_to_esdl_id_map = dict()
 
         super().__init__(*args, **kwargs)
+
+    @property
+    def esdl_bytes_string(self) -> bytes:
+        """
+        Returns a bytes string representation of the ESDL model used.
+        """
+        return base64.b64encode(self.__energy_system_handler.to_string().encode("utf-8"))
+
 
     def pre(self) -> None:
         """
