@@ -12,12 +12,12 @@ from rtctools_heat_network.head_loss_class import HeadLossOption
 
 class TestHeadLoss(TestCase):
     """
-    Test case for a network consisting out of a source, pipes and a sink
+    Test case for a heat network and a gas network consisting out of a source, pipe(s) and a sink
     """
 
-    def test_source_sink(self):
+    def test_heat_network_head_loss(self):
         """
-        Test the piecewise linear inequality constraint of the head loss approximation.
+        Heat network: test the piecewise linear inequality constraint of the head loss approximation.
 
         Checks:
         - That the head_loss() function does return the expected theoretical dH at a data point
@@ -102,11 +102,71 @@ class TestHeadLoss(TestCase):
                     ),
                 )
 
+    def test_gas_network_head_loss(self):
+        """
+        Gas network: Test the head loss approximation.
+
+        Checks:
+        - linear equality constraint
+        """
+
+        import models.unit_cases_gas.source_sink.src.run_source_sink as example
+        from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        class TestSourceSink(GasProblem):
+            def heat_network_options(self):
+                options = super().heat_network_options()
+                options["head_loss_option"] = HeadLossOption.LINEAR
+                options["minimize_head_losses"] = True
+                return options
+
+        solution = run_optimization_problem(TestSourceSink, base_folder=base_folder)
+        results = solution.extract_results()
+
+        # Test linear equality constraint
+        np.testing.assert_allclose(
+            results["Pipe_4abc.GasOut.H"] - results["Pipe_4abc.GasIn.H"],
+            results["Pipe_4abc.dH"]
+        )
+
+        pipes = ["Pipe_4abc"]
+        v_max = solution.heat_network_options()["maximum_velocity"]
+        pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+        pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
+        temperature = 20.0# TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
+        pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+        v_points = [0.0, v_max]
+        v_inspect = results[f"{pipes[0]}.GasOut.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
+        # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+        # dH_manual_linear = a*Q + b
+        # Then use this linear function to calculate the head loss
+        delta_dh_theory = darcy_weisbach.head_loss(
+            v_points[1], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+        ) - darcy_weisbach.head_loss(
+            v_points[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+        )
+
+        delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
+            v_points[0] * np.pi * pipe_diameter**2 / 4.0
+        )
+
+        a = delta_dh_theory / delta_volumetric_flow
+        b = delta_dh_theory - a * delta_volumetric_flow
+        dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+        np.testing.assert_allclose(
+            dh_manual_linear,
+            - results["Pipe_4abc.dH"]
+        )
+
+
 
 if __name__ == "__main__":
     import time
 
     start_time = time.time()
     a = TestHeadLoss()
-    a.test_source_sink()
+    a.test_heat_network_head_loss()
+    a.test_gas_network_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
