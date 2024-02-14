@@ -77,6 +77,12 @@ class ATES(HeatTwoPort, BaseAsset):
             min=0.0,
             nominal=self._nominal_stored_heat,
         )
+        self.add_variable(
+            Variable,
+            "Stored_volume",
+            min=0.0,
+            nominal=self._typical_fill_time * self.Q_nominal,
+        )
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
@@ -96,6 +102,10 @@ class ATES(HeatTwoPort, BaseAsset):
         self.add_equation(
             (self.der(self.Stored_heat) - self.Heat_ates + self.Heat_loss)
             / self._heat_loss_eq_nominal_ates
+        )
+        self.add_equation(
+            (self.der(self.Stored_volume) - self.Q)
+            / self.Q_nominal
         )
 
         self.add_equation(

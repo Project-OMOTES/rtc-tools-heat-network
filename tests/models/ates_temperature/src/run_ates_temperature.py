@@ -9,7 +9,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import (
-    SinglePassGoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin, GoalProgrammingMixin
 )
 from rtctools.util import run_optimization_problem
 
@@ -61,6 +61,23 @@ class MinimizeCostHeatGoal(Goal):
         )
 
 
+class MinimizeATESTemperature(Goal):
+    priority = 3
+
+    order = 1
+
+    def __init__(self, ates):
+        self.target_max = 0.
+        self.function_range = (0., 2.e3)
+        self.ates = ates
+        # self.function_nominal = 1e0
+
+    def function(self, optimization_problem, ensemble_member):
+        # return optimization_problem.state(f"{self.ates}.Temperature_ates") - optimization_problem.state(f"{self.ates}__temperature_ates_disc")
+        return optimization_problem.state(f"{self.ates}__temperature_ates_disc")
+        # return optimization_problem.state(f"{self.ates}.Temperature_ates")
+
+
 class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
@@ -76,7 +93,9 @@ class _GoalsAndOptions:
             *self.heat_network_components.get("heat_pump"),
         ]:
             goals.append(MinimizeCostHeatGoal(s))
-        # goals.append(MinimizeTCO)
+
+        # for ates in self.heat_network_components.get("ates", []):
+        #     goals.append(MinimizeATESTemperature(ates))
 
         return goals
 
@@ -87,7 +106,8 @@ class _GoalsAndOptions:
         # highs_options["mip_rel_gap"] = 0.01
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["MIPgap"] = 0.1
+        # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
 
@@ -96,7 +116,7 @@ class HeatProblem(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
-    SinglePassGoalProgrammingMixin,
+    GoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -126,10 +146,10 @@ class HeatProblem(
         if carrier == 41770304791669983859190:
             # supply
             # temperatures = np.linspace(50, 70, 9).tolist()[::-1]
-            temperatures = np.linspace(47.5, 60, 6).tolist()[::-1]
-            temperatures.extend(np.linspace(40, 45, 6).tolist()[::-1])
+            # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
+            # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(40, 50, 11).tolist()[::-1]
+            temperatures = np.linspace(40, 60, 9).tolist()[::-1]
 
         return temperatures
 
@@ -162,10 +182,25 @@ class HeatProblem(
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
             constraints.append((heat_ates[0], 0.0, 0.0))
-            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
-            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, 0.0))
+            ates_temperature = self.__state_vector_scaled(f"{a}.Temperature_ates", ensemble_member)
+            ates_temperature_disc = self.__state_vector_scaled(f"{a}__temperature_ates_disc", ensemble_member)
+            constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
+            # constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
+            # constraints.append(((ates_temperature_disc[-1] - ates_temperature[-1]), 0.0, 0.0))
+            # constraints.append(((ates_temperature_disc[0] - ates_temperature[0]), 0.0, 0.0))
+
 
         return constraints
+
+    def __state_vector_scaled(self, variable, ensemble_member):
+        """
+        This functions returns the casadi symbols scaled with their nominal for the entire time
+        horizon.
+        """
+        canonical, sign = self.alias_relation.canonical_signed(variable)
+        return (
+            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+        )
 
     def read(self):
         """
@@ -204,7 +239,7 @@ class HeatProblem(
                 new_datastore.set_timeseries(
                     variable=var_name,
                     datetimes=new_date_times,
-                    values=np.asarray(new_data) * 2.0,
+                    values=np.asarray(new_data) * 2.,
                     ensemble_member=ensemble_member,
                     check_duplicates=True,
                 )
@@ -228,6 +263,9 @@ if __name__ == "__main__":
 
     sol = run_optimization_problem(HeatProblem)
     results = sol.extract_results()
+    print("T_ates: ", results["ATES_cb47.Temperature_ates"])
+    print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
+    print("T_ates: ", results["ATES_cb47__temperature_disc_40.0"])
     print(f"time: {time.time() - t0}")
     a = 1
 

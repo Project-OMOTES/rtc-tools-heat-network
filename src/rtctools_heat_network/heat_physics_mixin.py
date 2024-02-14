@@ -1643,7 +1643,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
 
             # discretized tempeature should alwyas be smaller or equal to ATES temperature
-            constraints.append((ates_temperature - ates_temperature_disc, 0.0, np.inf))
+            constraints.append((ates_temperature - ates_temperature_disc, 0., 0.))
 
             # ensures it does not select the lowest temperature, but the closest temperature
             # supplytemperature needs to be reducing
@@ -1651,15 +1651,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             for temperature in supply_temperatures[:-1]:
                 temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
                 next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
-                constraints.append(
-                    (
-                        ates_temperature
-                        - ates_temperature_disc
-                        - temp_selected * (temperature - next_temp),
-                        -np.inf,
-                        0.0,
-                    )
-                )
+                # constraints.append(
+                #     (
+                #         ates_temperature
+                #         - ates_temperature_disc
+                #         - temp_selected * (temperature - next_temp),
+                #         -np.inf,
+                #         0.0,
+                #     )
+                # )
 
             if len(supply_temperatures) == 0:
                 constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
@@ -1682,13 +1682,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             np.inf,
                         )
                     )
-                    constraints.append(
-                        (
-                            (temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m),
-                            -np.inf,
-                            0.0,
-                        )
-                    )
+                    # constraints.append(
+                    #     (
+                    #         (temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m),
+                    #         -np.inf,
+                    #         0.0,
+                    #     )
+                    # )
                 if len(supply_temperatures) > 0:
                     constraints.append((sum, 1.0, 1.0))
 
