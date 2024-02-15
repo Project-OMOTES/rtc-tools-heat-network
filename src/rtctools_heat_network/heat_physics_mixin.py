@@ -3135,34 +3135,35 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            big_m = 2. * max(supply_temperatures)
-            min_dt = abs(min(np.diff(supply_temperatures)))
+            if len(supply_temperatures) != 0:
+                big_m = 2. * max(supply_temperatures)
+                min_dt = abs(min(np.diff(supply_temperatures)))
 
-            for temperature in supply_temperatures:
-                ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
-                ordering = self.state(f"{ates}__{temperature}_ordering")
-                ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
-                ates_temp = self.state(f"{ates}.Temperature_ates")
+                for temperature in supply_temperatures:
+                    ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
+                    ordering = self.state(f"{ates}__{temperature}_ordering")
+                    ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
+                    ates_temp = self.state(f"{ates}.Temperature_ates")
 
-                # ordering should be 1. if temperature is larger than temperature selected.
-                constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
-                constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
+                    # ordering should be 1. if temperature is larger than temperature selected.
+                    constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
+                    constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
 
-                constraints.append(
-                    ((temperature - ates_temp + big_m * ordering), 0., np.inf))
-                constraints.append(
-                    ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
+                    constraints.append(
+                        ((temperature - ates_temp + big_m * ordering), 0., np.inf))
+                    constraints.append(
+                        ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
 
-                # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
+                    # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
 
-                # sup_temperature_is_selected = self.state(f"{sup_carrier}_{temperature}")
-                temperature_var = self.state(f"{sup_carrier}_temperature")
-                ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
+                    # sup_temperature_is_selected = self.state(f"{sup_carrier}_{temperature}")
+                    temperature_var = self.state(f"{sup_carrier}_temperature")
+                    ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
 
-                constraints.append(
-                    ((temperature - temperature_var + big_m * ordering_disc_carr), min_dt / 2., np.inf))
-                constraints.append(
-                    ((temperature - temperature_var - big_m * (1. - ordering_disc_carr)), -np.inf, 0.))
+                    constraints.append(
+                        ((temperature - temperature_var + big_m * ordering_disc_carr), min_dt / 2., np.inf))
+                    constraints.append(
+                        ((temperature - temperature_var - big_m * (1. - ordering_disc_carr)), -np.inf, 0.))
 
         return constraints
 
