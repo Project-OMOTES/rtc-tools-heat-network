@@ -37,6 +37,22 @@ class TestSetpointConstraints(TestCase):
         )
         results_4 = _heat_problem_4.extract_results()
 
+        import models.unit_cases.case_3a_setpoint.src.run_3a as run_3a
+        from models.unit_cases.case_3a_setpoint.src.run_3a import HeatProblem
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+
+        sol_esdl_setpoints = run_optimization_problem(HeatProblem, base_folder=base_folder)
+
+        esdl_results = sol_esdl_setpoints.extract_results()
+        np.testing.assert_array_less(
+            abs(
+                esdl_results["GeothermalSource_b702.Heat_source"][2:]
+                - esdl_results["GeothermalSource_b702.Heat_source"][1:-1]
+            ),
+            1.0e-6,
+        )
+
         # Check that solution has one setpoint change
         a = abs(
             results_3["GeothermalSource_b702.Heat_source"][2:]
