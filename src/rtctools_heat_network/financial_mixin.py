@@ -633,6 +633,25 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
             constraints.append(((variable_operational_cost - sum) / (nominal), 0.0, 0.0))
 
+        for hp in self.heat_network_components.get("heat_pump", []):
+            elec_consumption = self.__state_vector_scaled(f"{hp}.Power_elec", ensemble_member)
+            variable_operational_cost_var = self._asset_variable_operational_cost_map[hp]
+            variable_operational_cost = self.extra_variable(
+                variable_operational_cost_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_operational_cost_var)
+            variable_operational_cost_coefficient = parameters[
+                f"{hp}.variable_operational_cost_coefficient"
+            ]
+            timesteps = np.diff(self.times()) / 3600
+
+            sum = 0.0
+            for i in range(1, len(self.times())):
+                sum += (
+                    variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
+                )
+            constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
+
         for _ in self.heat_network_components.get("buffer", []):
             pass
 
