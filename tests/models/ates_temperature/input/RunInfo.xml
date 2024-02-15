@@ -8,7 +8,7 @@
     <lastObservationDateTime date="2019-01-01" time="23:00:00"/>
 
     <workDir>.</workDir>
-    <inputTimeSeriesFile>Warmte_test.csv</inputTimeSeriesFile>
+    <inputTimeSeriesFile>Warmte_test_2.csv</inputTimeSeriesFile>
     <properties>
         <string key="ESDL_File_Path" value="../model/HP_ATES with return network_1prod.esdl"/>
     </properties>

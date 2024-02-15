@@ -149,7 +149,7 @@ class HeatProblem(
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
             # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(40, 60, 9).tolist()[::-1]
+            temperatures = np.linspace(40, 70, 13).tolist()[::-1]
 
         return temperatures
 
