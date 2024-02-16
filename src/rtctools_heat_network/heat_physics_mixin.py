@@ -4,8 +4,6 @@ from typing import List
 
 import casadi as ca
 
-import esdl
-
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -44,11 +42,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
         }
-        self._test = 2.0
         self._head_loss_class = HeadLossClass()
-
         self.__pipe_head_bounds = {}
-
         self.__pipe_head_loss_var = {}
         self.__pipe_head_loss_bounds = {}
         self.__pipe_head_loss_nominals = {}
@@ -1342,6 +1337,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 pipe,
                                 self,
                                 options,
+                                self.heat_network_settings,
                                 parameters,
                                 discharge,
                                 hydraulic_power,
@@ -1365,6 +1361,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe,
                             self,
                             options,
+                            self.heat_network_settings,
                             parameters,
                             discharge,
                             hydraulic_power,

@@ -115,7 +115,7 @@ class _MinimizeHeadLosses(Goal):
     def __init__(self, optimization_problem, input_network_settings, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
-        self.network_settings = input_network_settings  # kvr ??
+        self.network_settings = input_network_settings
         self.function_nominal = len(optimization_problem.times())
 
     def function(self, optimization_problem, ensemble_member):
@@ -326,7 +326,6 @@ class HeadLossClass:
         options["wall_roughness"] = 2e-4
         options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
-        options["maximum_velocity"] = 2.5
         options["n_linearization_lines"] = 5
         options["minimize_head_losses"] = True
         options["pipe_minimum_pressure"] = -np.inf
@@ -745,6 +744,7 @@ class HeadLossClass:
         pipe: str,
         optimization_problem,
         heat_network_options,
+        network_settings,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
         hydraulic_power: Optional[Union[ca.MX, float, np.ndarray]] = None,
@@ -830,7 +830,7 @@ class HeadLossClass:
         else:
             diameter = parameters[f"{pipe}.diameter"]
             area = parameters[f"{pipe}.area"]
-            maximum_velocity = heat_network_options["maximum_velocity"]
+            maximum_velocity = network_settings["maximum_velocity"]
 
         constraint_nominal = abs(
             parameters[f"{pipe}.rho"]

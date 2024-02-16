@@ -34,12 +34,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             "network_type": NetworkSettings.NETWORK_TYPE_GAS,
             "maximum_velocity": 15.0,
         }
-        self._test = 1.0
-        # self._head_loss_class = HeadLossClass(self.network_setting?s?)
         self._head_loss_class = HeadLossClass()
-
         self.__gas_pipe_head_bounds = {}
-
         self.__gas_pipe_head_loss_var = {}
         self.__gas_pipe_head_loss_bounds = {}
         self.__gas_pipe_head_loss_nominals = {}
@@ -142,12 +138,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         options = self._head_loss_class.head_loss_network_options()
 
-        options["minimum_velocity"] = 0.005
         options["minimum_pressure_far_point"] = 1.0
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
-        # options["maximum_velocity"] = 2.5
-        # options["network_type"] = "gas"
 
         return options
 
@@ -221,10 +214,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         g = super().path_goals().copy()
 
         options = self.heat_network_options()
-        # network_settings = {
-        #     "network_type": "gas",
-        #     "maximum_velocity": 15.15,
-        # }
         if (
             options["minimize_head_losses"]
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
@@ -265,7 +254,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
             for pipe in components.get(pipe_type, []):
                 area = parameters[f"{pipe}.area"]
-                max_discharge = options["maximum_velocity"] * area
+                max_discharge = self.gas_network_settings["maximum_velocity"] * area
                 head_loss += self._head_loss_class._hn_pipe_head_loss(
                     pipe, self, options, self.gas_network_settings, parameters, max_discharge
                 )
@@ -431,7 +420,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 # the diameter parameter being overridden automatically if a
                 # single pipe class is set by the user.
                 area = parameters[f"{pipe}.area"]
-                max_discharge = options["maximum_velocity"] * area
+                max_discharge = self.gas_network_settings["maximum_velocity"] * area
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 

@@ -101,18 +101,18 @@ class TestPipeDiameterSizingExample(TestCase):
                 #  global setting instead of the pipe class specific one
                 pc = problem.get_optimized_pipe_class(pipe)
                 ff = friction_factor(
-                    problem.heat_network_options()["maximum_velocity"],
+                    problem.heat_network_settings["maximum_velocity"],
                     pc.inner_diameter,
                     2.0e-4,
                     parameters[f"{pipe}.temperature"],
                 )
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
-                dh_max = c_v * problem.heat_network_options()["maximum_velocity"] ** 2
+                dh_max = c_v * problem.heat_network_settings["maximum_velocity"] ** 2
                 dh_manual = (
                     dh_max
                     * results[f"{pipe}.Q"][1:]
                     / pc.area
-                    / problem.heat_network_options()["maximum_velocity"]
+                    / problem.heat_network_settings["maximum_velocity"]
                 )
                 np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
 

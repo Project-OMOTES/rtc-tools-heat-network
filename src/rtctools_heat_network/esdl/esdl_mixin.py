@@ -214,7 +214,7 @@ class ESDLMixin(
         -------
         None
         """
-        maximum_velocity = self.heat_network_options()["maximum_velocity"]
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
         pipe_classes = [
@@ -333,7 +333,7 @@ class ESDLMixin(
         """
         heat_network_options = self.heat_network_options()
         v_nominal = heat_network_options["estimated_velocity"]
-        v_max = heat_network_options["maximum_velocity"]
+        v_max = self.heat_network_settings["maximum_velocity"]
         return dict(v_nominal=v_nominal, v_max=v_max)
 
     def esdl_qth_model_options(self) -> Dict:
@@ -348,7 +348,7 @@ class ESDLMixin(
         heat_network_options = self.heat_network_options()
         kwargs = {}
         kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
-        kwargs["v_max"] = heat_network_options["maximum_velocity"]
+        kwargs["v_max"] = self.heat_network_settings["maximum_velocity"]
         if self.__max_supply_temperature is not None:
             kwargs["maximum_temperature"] = self.__max_supply_temperature
         return dict(**kwargs)
