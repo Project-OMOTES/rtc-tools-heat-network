@@ -20,6 +20,7 @@ from .base_component_type_mixin import BaseComponentTypeMixin
 from .constants import GRAVITATIONAL_CONSTANT
 from .demand_insulation_class import DemandInsulationClass
 from .head_loss_class import HeadLossClass, HeadLossOption
+from .network_common import NetworkSettings
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -39,8 +40,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
         """
-
-        self._head_loss_class = HeadLossClass("heat_network")
+        self.heat_network_settings = {
+            "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
+            "maximum_velocity": 2.5,
+        }
+        self._test = 2.0
+        self._head_loss_class = HeadLossClass()
 
         self.__pipe_head_bounds = {}
 
@@ -155,30 +160,28 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds = self.bounds()
 
         for pipe_name in self.heat_network_components.get("pipe", []):
-            if isinstance(
-                self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
-                , esdl.HeatCommodity
-            ):
-                commodity_type = self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
-                (
-                    self.__pipe_head_bounds,
-                    self.__pipe_head_loss_zero_bounds,
-                    self._hn_pipe_to_head_loss_map,
-                    self.__pipe_head_loss_var,
-                    self.__pipe_head_loss_nominals,
-                    self.__pipe_head_loss_bounds,
-                ) = self._head_loss_class.initialize_variables_nominals_and_bounds(
-                    self, commodity_type, pipe_name
-                )
+            head_loss_var = f"{pipe_name}.__head_loss"
+            initialized_vars = self._head_loss_class.initialize_variables_nominals_and_bounds(
+                self, NetworkSettings.NETWORK_TYPE_HEAT, pipe_name, self.heat_network_settings
+            )
+            if initialized_vars[0] != {}:
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"] = initialized_vars[0]
+            if initialized_vars[1] != {}:
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"] = initialized_vars[1]
+            if initialized_vars[2] != {}:
+                self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+            if initialized_vars[3] != {}:
+                self._hn_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+            if initialized_vars[4] != {}:
+                self.__pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+            if initialized_vars[5] != {}:
+                self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+            if initialized_vars[6] != {}:
+                self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+            if initialized_vars[7] != {}:
+                self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
 
-        #### kvr trying stuff
-        # for pipe in self.heat_network_components.get("pipe", []):
-        #     carrier_id = parameters[f"{pipe}.carrier_id"]
-        #     isinstance(
-        #         self.esdl_assets[self.esdl_asset_name_to_id_map[f"Pipe_4abc"]].in_ports[0].carrier
-        #         ,esdl.GasCommodity
-        #     )
-        ###
+        kvr = 123.0
 
         # Integers for disabling the HEX temperature constraints
         for hex in [
@@ -424,6 +427,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
         options["include_demand_insulation_options"] = False
+        options["network_type"] = "heat"
 
         return options
 
@@ -540,7 +544,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             options["minimize_head_losses"]
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
-            g.append(self._head_loss_class._hn_minimization_goal_class(self, "heat_network"))
+            g.append(self._head_loss_class._hn_minimization_goal_class(self, self.heat_network_settings))
 
             if (
                 options["head_loss_option"] == HeadLossOption.LINEAR
@@ -590,9 +594,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             for pipe in components.get("pipe", []):
                 area = parameters[f"{pipe}.area"]
-                max_discharge = options["maximum_velocity"] * area
+                max_discharge = self.heat_network_settings["maximum_velocity"] * area
                 head_loss += self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, parameters, max_discharge
+                    pipe, self, options, self.heat_network_settings, parameters, max_discharge
                 )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -994,8 +998,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
 
-        minimum_velocity = options["minimum_velocity"]
-        maximum_velocity = options["maximum_velocity"]
+        minimum_velocity = options["minimum_velocity"] # ???
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.heat_network_components.get("pipe", []):
@@ -1354,7 +1358,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         * GRAVITATIONAL_CONSTANT
                         * self.__maximum_total_head_loss
                         * parameters[f"{pipe}.area"]
-                        * options["maximum_velocity"]
+                        * self.heat_network_settings["maximum_velocity"]
                     )
                     constraints.extend(
                         self._head_loss_class._hydraulic_power(
@@ -2073,7 +2077,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         continue
 
                     head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, max_discharge, pipe_class=pc
+                        pipe, self, options, self.heat_network_settings, parameters, max_discharge, pipe_class=pc
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -2092,6 +2096,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe,
                             self,
                             options,
+                            self.heat_network_settings,
                             parameters,
                             discharge,
                             head_loss,
@@ -2109,7 +2114,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max_head_loss = max(
                         max_head_loss,
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe, self, options, self.heat_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
                         ),
                     )
             else:
@@ -2117,7 +2122,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # the diameter parameter being overridden automatically if a
                 # single pipe class is set by the user.
                 area = parameters[f"{pipe}.area"]
-                max_discharge = options["maximum_velocity"] * area
+                max_discharge = self.heat_network_settings["maximum_velocity"] * area
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 
@@ -2126,6 +2131,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         pipe,
                         self,
                         options,
+                        self.heat_network_settings,
                         parameters,
                         discharge,
                         head_loss,
@@ -2136,7 +2142,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
                 max_head_loss = self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, parameters, max_discharge
+                    pipe, self, options, self.heat_network_settings, parameters, max_discharge
                 )
 
             # Relate the head loss symbol to the pipe's dH symbol.
@@ -2178,7 +2184,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
 
         all_pipes = set(self.heat_network_components.get("pipe", []))
-        maximum_velocity = options["maximum_velocity"]
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         for v in self.heat_network_components.get("check_valve", []):
             status_var = self.__check_valve_status_map[v]
@@ -2226,7 +2232,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
 
         all_pipes = set(self.heat_network_components.get("pipe", []))
-        maximum_velocity = options["maximum_velocity"]
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         for v in self.heat_network_components.get("control_valve", []):
             flow_dir_var = self.__control_valve_direction_map[v]
@@ -2666,7 +2672,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, q, None
+                        pipe, self, options, self.heat_network_settings, parameters, q, None
                     )
                     if options["head_loss_option"] == HeadLossOption.LINEAR:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])

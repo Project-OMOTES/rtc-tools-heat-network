@@ -29,3 +29,12 @@ class TestAbsoluteHeat(TestCase):
         demand_matching_test(heat_problem, heat_problem.extract_results())
         energy_conservation_test(heat_problem, heat_problem.extract_results())
         heat_to_discharge_test(heat_problem, heat_problem.extract_results())
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestAbsoluteHeat()
+    a.test_absolute_heat()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

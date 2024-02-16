@@ -6,6 +6,7 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.network_common import NetworkSettings
 
 
 class TestHeadLossCalculation(TestCase):
@@ -36,6 +37,11 @@ class TestHeadLossCalculation(TestCase):
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
 
+        heat_network_settings = {
+            "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
+            "maximum_velocity": 2.5,
+        }
+
         for h in [
             HeadLossOption.LINEAR,
             HeadLossOption.CQ2_INEQUALITY,
@@ -46,17 +52,17 @@ class TestHeadLossCalculation(TestCase):
             options = m.heat_network_options()
             parameters = m.parameters(0)
 
-            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", m, options, parameters, 0.1)
+            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", m, options, heat_network_settings, parameters, 0.1)
             self.assertIsInstance(ret, float)
 
             ret = m._head_loss_class._hn_pipe_head_loss(
-                "pipe_hot", m, options, parameters, np.array([0.1])
+                "pipe_hot", m, options, heat_network_settings, parameters, np.array([0.1])
             )
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 1)
 
             ret = m._head_loss_class._hn_pipe_head_loss(
-                "pipe_hot", m, options, parameters, np.array([0.05, 0.1, 0.2])
+                "pipe_hot", m, options, heat_network_settings, parameters, np.array([0.05, 0.1, 0.2])
             )
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 3)
@@ -95,3 +101,11 @@ class TestHeadLossCalculation(TestCase):
 #             Exception, "Mixing .NO_HEADLOSS with other head loss options is not allowed"
 #         ):
 #             run_optimization_problem(Model, base_folder=base_folder)
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestHeadLossCalculation()
+    a.test_scalar_return_type()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

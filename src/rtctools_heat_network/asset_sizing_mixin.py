@@ -170,7 +170,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                max_velocity = self.heat_network_options()["maximum_velocity"]
+                # max_velocity = self.heat_network_options()["maximum_velocity"]
+                max_velocity = self.heat_network_settings["maximum_velocity"]
                 self.__pipe_topo_max_discharge_nominals[pipe] = (
                     parameters[f"{pipe}.area"] * max_velocity
                 )
@@ -693,22 +694,23 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             parameters = self.parameters(ensemble_member)
 
             head_loss = 0.0
-
+            # TODO: asset sizing is currently hard coded to use only the heat network settings
             for pipe in components.get("pipe", []):
                 try:
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe, self, options, self.heat_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
                         )
                         for pc in pipe_classes
                         if pc.maximum_discharge > 0.0
                     )
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
-                    max_discharge = options["maximum_velocity"] * area
+                    # max_discharge = options["maximum_velocity"] * area # maximum velocity issue
+                    max_discharge = self.heat_network_settings["maximum_velocity"] * area # maximum velocity issue
                     head_loss += self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, max_discharge
+                        pipe, self, options, self.heat_network_settings, parameters, max_discharge
                     )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2

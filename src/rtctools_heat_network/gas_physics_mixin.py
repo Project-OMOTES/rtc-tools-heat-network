@@ -10,7 +10,7 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .head_loss_class import HeadLossClass, HeadLossOption
-
+from .network_common import NetworkSettings
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -30,8 +30,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
         """
-
-        self._head_loss_class = HeadLossClass("gas_network")
+        self.gas_network_settings = {
+            "network_type": NetworkSettings.NETWORK_TYPE_GAS,
+            "maximum_velocity": 15.0,
+        }
+        self._test = 1.0
+        # self._head_loss_class = HeadLossClass(self.network_setting?s?)
+        self._head_loss_class = HeadLossClass()
 
         self.__gas_pipe_head_bounds = {}
 
@@ -39,7 +44,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_pipe_head_loss_bounds = {}
         self.__gas_pipe_head_loss_nominals = {}
         self.__gas_pipe_head_loss_zero_bounds = {}
-        self._hn_gas_pipe__to_head_loss_map = {}
+        self._hn_gas_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
         self.__flow_direct_var = {}
@@ -62,22 +67,55 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         bounds = self.bounds()
 
         for pipe_name in self.heat_network_components.get("gas_pipe", []):
-            if isinstance(
-                self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
-                , esdl.GasCommodity
-            ):
-                commodity_type = self.esdl_assets[self.esdl_asset_name_to_id_map[pipe_name]].in_ports[0].carrier
-                (
-                    self.__gas_pipe_head_bounds,
-                    self.__gas_pipe_head_loss_zero_bounds,
-                    self._hn_gas_pipe__to_head_loss_map,
-                    self.__gas_pipe_head_loss_var,
-                    self.__gas_pipe_head_loss_nominals,
-                    self.__gas_pipe_head_loss_bounds,
-                ) = self._head_loss_class.initialize_variables_nominals_and_bounds(
-                        self, commodity_type, pipe_name
-                )
-                temp2 = 12.0
+            head_loss_var = f"{pipe_name}.__head_loss"
+            initialized_vars = self._head_loss_class.initialize_variables_nominals_and_bounds(
+                self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
+            )
+            if initialized_vars[0] != {}:
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}In.H"] = initialized_vars[0]
+            if initialized_vars[1] != {}:
+                self.__gas_pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}Out.H"] = initialized_vars[1]
+            if initialized_vars[2] != {}:
+                self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+            if initialized_vars[3] != {}:
+                self._hn_gas_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+            if initialized_vars[4] != {}:
+                self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4]
+            if initialized_vars[5] != {}:
+                self.__gas_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5]
+            if initialized_vars[6] != {}:
+                self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
+            if initialized_vars[7] != {}:
+                self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+            # if len(initialized_vars[0]) > 0:
+            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[
+            #         0
+            #     ]
+            # if len(initialized_vars[1]) > 0:
+            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[
+            #         1
+            #     ]
+            # if len(initialized_vars[2]) > 0:
+            #     self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
+            # if len(initialized_vars[3]) > 0:
+            #     self._hn_gas_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
+            # if len(initialized_vars[4]) > 0:
+            #     self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4][
+            #         head_loss_var
+            #     ]
+            # if len(initialized_vars[5]) > 0:
+            #     self.__gas_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5][
+            #         f"{pipe_name}.dH"
+            #     ]
+            # if len(initialized_vars[6]) > 0:
+            #     self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6][
+            #         head_loss_var
+            #     ]
+            # if len(initialized_vars[7]) > 0:
+            #     self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7][
+            #         head_loss_var
+            #     ]
+            temp2 = 12.0
 
             temp = 0.0
 
@@ -108,6 +146,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         options["minimum_pressure_far_point"] = 1.0
         options["head_loss_option"] = HeadLossOption.LINEAR
         options["minimize_head_losses"] = False
+        # options["maximum_velocity"] = 2.5
+        # options["network_type"] = "gas"
 
         return options
 
@@ -181,11 +221,15 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         g = super().path_goals().copy()
 
         options = self.heat_network_options()
+        # network_settings = {
+        #     "network_type": "gas",
+        #     "maximum_velocity": 15.15,
+        # }
         if (
             options["minimize_head_losses"]
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
-            g.append(self._head_loss_class._hn_minimization_goal_class(self, "gas_network"))
+            g.append(self._head_loss_class._hn_minimization_goal_class(self, self.gas_network_settings))
 
         return g
 
@@ -223,7 +267,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 area = parameters[f"{pipe}.area"]
                 max_discharge = options["maximum_velocity"] * area
                 head_loss += self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, parameters, max_discharge
+                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
                 )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -313,7 +357,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 # discharge and the head loss/dH.
                 continue
 
-            head_loss_sym = self._hn_gas_pipe__to_head_loss_map[pipe]
+            head_loss_sym = self._hn_gas_pipe_to_head_loss_map[pipe]
 
             dh = self.__state_vector_scaled(f"{pipe}.dH", ensemble_member)
             head_loss = self.__state_vector_scaled(head_loss_sym, ensemble_member)
@@ -342,7 +386,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         continue
 
                     head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, max_discharge, pipe_class=pc
+                        pipe, self, options, self.gas_network_settings, parameters, max_discharge, pipe_class=pc
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -361,6 +405,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             pipe,
                             self,
                             options,
+                            self.gas_network_settings,
                             parameters,
                             discharge,
                             head_loss,
@@ -378,7 +423,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     max_head_loss = max(
                         max_head_loss,
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe, self, options, self.gas_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
                         ),
                     )
             else:
@@ -395,6 +440,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         pipe,
                         self,
                         options,
+                        self.gas_network_settings,
                         parameters,
                         discharge,
                         head_loss,
@@ -405,7 +451,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
 
                 max_head_loss = self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, parameters, max_discharge
+                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
                 )
 
             # Relate the head loss symbol to the pipe's dH symbol.
@@ -540,12 +586,12 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, q, None
+                        pipe, self, options, self.gas_network_settings, parameters, q, None
                     )
                     if options["head_loss_option"] == HeadLossOption.LINEAR:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
-                        head_loss = results[self._hn_gas_pipe__to_head_loss_map[pipe]][inds]
+                        head_loss = results[self._hn_gas_pipe_to_head_loss_map[pipe]][inds]
 
                     if not np.allclose(head_loss, head_loss_target, rtol=rtol, atol=atol):
                         logger.warning(

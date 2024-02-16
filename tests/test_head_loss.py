@@ -37,8 +37,9 @@ class TestHeadLoss(TestCase):
         class SourcePipeSinkDW(SourcePipeSink):
             def heat_network_options(self):
                 options = super().heat_network_options()
-                options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-                options["n_linearization_lines"] = 5
+                # options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                options["head_loss_option"] = HeadLossOption.LINEAR
+                # options["n_linearization_lines"] = 5
                 options["minimize_head_losses"] = True
                 return options
 
@@ -46,7 +47,8 @@ class TestHeadLoss(TestCase):
         results = solution.extract_results()
 
         pipes = ["Pipe1", "Pipe1_ret"]
-        v_max = solution.heat_network_options()["maximum_velocity"]
+        # v_max = solution.heat_network_options()["maximum_velocity"]
+        v_max = solution.heat_network_settings["maximum_velocity"]
         pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
         pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
         temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
@@ -132,7 +134,8 @@ class TestHeadLoss(TestCase):
         )
 
         pipes = ["Pipe_4abc"]
-        v_max = solution.heat_network_options()["maximum_velocity"]
+        # v_max = solution.heat_network_options()["maximum_velocity"]
+        v_max = solution.gas_network_settings["maximum_velocity"]
         pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
         pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
         temperature = 20.0# TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
