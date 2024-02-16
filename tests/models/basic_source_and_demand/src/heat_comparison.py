@@ -71,6 +71,11 @@ class HeatPython(
     def pycml_model(self):
         return self.__model
 
+    def bounds(self):
+        bounds = super().bounds()
+        bounds["source.Heat_source"] = (75000.0, 125000.0)
+        return bounds
+
 
 class HeatESDL(
     _GoalsAndOptions,
@@ -81,7 +86,7 @@ class HeatESDL(
 ):
     def bounds(self):
         bounds = super().bounds()
-        bounds["source.Heat_source"] = (75_000.0, 125_000.0)
+        bounds["source.Heat_source"] = (75000.0, 125000.0)
         return bounds
 
 
