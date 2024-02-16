@@ -62,9 +62,12 @@ class TestInsulation(TestCase):
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
         heat_problem = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="Insulation.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="Insulation.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
 
@@ -139,9 +142,12 @@ class TestInsulation(TestCase):
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
         heat_problem = run_optimization_problem(
-            HeatProblemB, base_folder=base_folder, esdl_file_name="Insulation.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            HeatProblemB,
+            base_folder=base_folder,
+            esdl_file_name="Insulation.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
 

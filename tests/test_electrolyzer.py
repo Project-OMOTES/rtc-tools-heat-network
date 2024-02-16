@@ -32,10 +32,12 @@ class TestElectrolyzer(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            MILPProblem, base_folder=base_folder,
-            esdl_file_name="h2.esdl", esdl_parser=ESDLFileParser,
+            MILPProblem,
+            base_folder=base_folder,
+            esdl_file_name="h2.esdl",
+            esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            input_timeseries_file="timeseries.csv",
         )
 
         results = solution.extract_results()
@@ -96,9 +98,9 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
 
         for cable in solution.heat_network_components.get("electricity_cable", []):
-            ub = solution.esdl_assets[
-                solution.esdl_asset_name_to_id_map[f"{cable}"]
-            ].attributes["capacity"]
+            ub = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]].attributes[
+                "capacity"
+            ]
             np.testing.assert_array_less(results[f"{cable}.ElectricityOut.Power"], ub + tol)
             lb = (
                 solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]]

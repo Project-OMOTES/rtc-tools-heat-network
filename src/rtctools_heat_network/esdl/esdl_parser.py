@@ -12,14 +12,14 @@ class _ESDLInputException(Exception):
 
 
 class BaseESDLParser:
-
     def __init__(self):
         self._global_properties: Dict[str, Dict] = {
             "carriers": dict(),
         }
         self._assets: Dict[str, Asset] = dict()
-        self._energy_system_handler: esdl.esdl_handler.EnergySystemHandler = \
+        self._energy_system_handler: esdl.esdl_handler.EnergySystemHandler = (
             esdl.esdl_handler.EnergySystemHandler()
+        )
         self._energy_system: Optional[esdl.EnergySystem] = None
         self._esdl_string: Optional[str] = None
         self._esdl_path: Optional[Path] = None
@@ -56,21 +56,15 @@ class BaseESDLParser:
                     id=x.id,
                     id_number_mapping=id_to_idnumber_map[x.id],
                     temperature=temperature,
-                    type="heat"
+                    type="heat",
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name,
-                    voltage=x.voltage,
-                    id=x.id,
-                    type="electricity"
+                    name=x.name, voltage=x.voltage, id=x.id, type="electricity"
                 )
             elif isinstance(x, esdl.esdl.GasCommodity):
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name,
-                    pressure=x.pressure,
-                    id=x.id,
-                    type="gas"
+                    name=x.name, pressure=x.pressure, id=x.id, type="gas"
                 )
 
         # Component ids are unique, but we require component names to be unique as well.
@@ -139,16 +133,17 @@ class BaseESDLParser:
 
 
 class ESDLStringParser(BaseESDLParser):
-
     def __init__(self, **kwargs):
         super().__init__()
         try:
             esdl_string = kwargs.get("esdl_string")
         except KeyError:
-            raise _ESDLInputException(f"Expected an ESDL string when parsing the system from a "
-                                      f"string, but none provided")
+            raise _ESDLInputException(
+                "Expected an ESDL string when parsing the system from a "
+                "string, but none provided"
+            )
         if isinstance(esdl_string, bytes):
-            self._esdl_string = base64.b64decode(esdl_string).decode('utf-8')
+            self._esdl_string = base64.b64decode(esdl_string).decode("utf-8")
         else:
             self._esdl_string = esdl_string
 
@@ -157,14 +152,14 @@ class ESDLStringParser(BaseESDLParser):
 
 
 class ESDLFileParser(BaseESDLParser):
-
     def __init__(self, **kwargs):
         super().__init__()
         try:
             esdl_path = kwargs.get("esdl_path")
         except KeyError:
-            raise _ESDLInputException(f"Expected an ESDL path when parsing the system from a "
-                                      f"file but none provided")
+            raise _ESDLInputException(
+                "Expected an ESDL path when parsing the system from a file but none provided"
+            )
         self._esdl_path = esdl_path
 
     def _load_esdl_model(self) -> None:

@@ -126,9 +126,11 @@ class QTHProblem(
 
 if __name__ == "__main__":
     sol = run_optimization_problem(
-        HeatProblemTvar, esdl_file_name="1a.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml"
+        HeatProblemTvar,
+        esdl_file_name="1a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
     )
     results = sol.extract_results()
     a = 1

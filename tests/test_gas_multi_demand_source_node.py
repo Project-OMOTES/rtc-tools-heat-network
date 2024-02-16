@@ -29,9 +29,12 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_optimization_problem(
-            GasProblem, base_folder=base_folder, esdl_file_name="test.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="test.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         )
         results = heat_problem.extract_results()
 

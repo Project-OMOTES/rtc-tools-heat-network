@@ -1,5 +1,5 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -22,28 +22,31 @@ class TestESDLParsing(unittest.TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution_from_file = run_optimization_problem(
-            MILPProblem, base_folder=base_folder,
-            esdl_file_name="h2.esdl", esdl_parser=ESDLFileParser,
+            MILPProblem,
+            base_folder=base_folder,
+            esdl_file_name="h2.esdl",
+            esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            input_timeseries_file="timeseries.csv",
         )
         results_from_file = solution_from_file.extract_results()
         results_from_file_as_dict = dict(results_from_file)
 
         esdl_string = solution_from_file.esdl_bytes_string
         solution_from_string = run_optimization_problem(
-            MILPProblem, base_folder=base_folder,
-            esdl_string=esdl_string, esdl_parser=ESDLStringParser,
+            MILPProblem,
+            base_folder=base_folder,
+            esdl_string=esdl_string,
+            esdl_parser=ESDLStringParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            input_timeseries_file="timeseries.csv",
         )
         results_from_string = solution_from_string.extract_results()
         results_from_string_as_dict = dict(results_from_string)
         # We need dict conversion since the returned AliasDict checks if they
         # are exactly the same object
-        np.testing.assert_equal(results_from_file_as_dict,
-                             results_from_string_as_dict)
+        np.testing.assert_equal(results_from_file_as_dict, results_from_string_as_dict)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -189,8 +189,12 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(HeatProblem, esdl_file_name="absolute_heat.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv")
+    elect = run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="absolute_heat.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     results = elect.extract_results()
     a = 1

@@ -292,7 +292,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 )
             )
 
-    def _write_updated_esdl(self, energy_system, optimizer_sim: bool=True):
+    def _write_updated_esdl(self, energy_system, optimizer_sim: bool = True):
         from esdl.esdl_handler import EnergySystemHandler
 
         results = self.extract_results()
@@ -1153,8 +1153,9 @@ class ScenarioOutput(TechnoEconomicMixin):
             extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
             file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
             self.save_energy_system_to_file(energy_system, file_path=file_path)
-        self.optimized_esdl_string = \
-            self.convert_energy_system_to_string(energy_system=energy_system)
+        self.optimized_esdl_string = self.convert_energy_system_to_string(
+            energy_system=energy_system
+        )
         # self.__optimized_energy_system_handler = esh
         # self.optimized_esdl_string = esh.to_string()
         #

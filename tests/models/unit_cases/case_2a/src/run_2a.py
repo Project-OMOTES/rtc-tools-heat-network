@@ -123,7 +123,11 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem, esdl_file_name="2a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml",)
+    run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="2a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     # run_heat_network_optimization(HeatProblem, QTHProblem)

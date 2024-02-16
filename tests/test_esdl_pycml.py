@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from unittest import TestCase
 
@@ -27,14 +26,15 @@ class TestESDL(TestCase):
         input_folder = base_folder / "input"
 
         case_python = run_optimization_problem(
-            HeatPython, base_folder=base_folder,
-            input_folder=input_folder
+            HeatPython, base_folder=base_folder, input_folder=input_folder
         )
         case_esdl = run_optimization_problem(
-            HeatESDL, base_folder=base_folder,
-            esdl_file_name="model.esdl", esdl_parser=ESDLFileParser,
+            HeatESDL,
+            base_folder=base_folder,
+            esdl_file_name="model.esdl",
+            esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.xml"
+            input_timeseries_file="timeseries.xml",
         )
 
         self.assertAlmostEqual(case_python.objective_value, case_esdl.objective_value, 6)

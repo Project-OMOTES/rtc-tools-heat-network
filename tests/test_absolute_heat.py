@@ -3,10 +3,10 @@ from unittest import TestCase
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestAbsoluteHeat(TestCase):
@@ -28,9 +28,12 @@ class TestAbsoluteHeat(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         heat_problem = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="absolute_heat.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="absolute_heat.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         )
 
         demand_matching_test(heat_problem, heat_problem.extract_results())

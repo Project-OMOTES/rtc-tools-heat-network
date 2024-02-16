@@ -177,9 +177,11 @@ if __name__ == "__main__":
     start_time = time.time()
 
     heat_problem = run_optimization_problem(
-        PipeDiameterSizingProblem, esdl_file_name="2a.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml"
+        PipeDiameterSizingProblem,
+        esdl_file_name="2a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
     )
     results = heat_problem.extract_results()
     print("Q: ", results["Pipe_2927_ret.HeatIn.Q"])

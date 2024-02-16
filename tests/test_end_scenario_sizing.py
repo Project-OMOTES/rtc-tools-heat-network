@@ -10,7 +10,6 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import (
     EndScenarioSizingDiscountedHIGHS,
     EndScenarioSizingHIGHS,
-    run_end_scenario_sizing_no_heat_losses,
 )
 
 
@@ -47,11 +46,12 @@ class TestEndScenarioSizing(TestCase):
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(
-            TestEndScenarioSizingHIGHS, base_folder=base_folder,
+            TestEndScenarioSizingHIGHS,
+            base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            input_timeseries_file="Warmte_test.csv",
         )
 
         results = solution.extract_results()
@@ -128,11 +128,12 @@ class TestEndScenarioSizing(TestCase):
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(
-            TestEndScenarioSizingDiscountedHIGHS, base_folder=base_folder,
+            TestEndScenarioSizingDiscountedHIGHS,
+            base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            input_timeseries_file="Warmte_test.csv",
         )
 
         results = solution.extract_results()

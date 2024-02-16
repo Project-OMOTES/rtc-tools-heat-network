@@ -40,9 +40,12 @@ class TestMILPbus(TestCase):
 
         # Run the problem
         solution = run_optimization_problem(
-            ElectricityProblem, base_folder=base_folder, esdl_file_name="Electric_bus3.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="Electric_bus3.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         )
         results = solution.extract_results()
         v1 = results["Bus_f262.ElectricityConn[1].V"]

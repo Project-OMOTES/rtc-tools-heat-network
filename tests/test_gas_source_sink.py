@@ -26,9 +26,12 @@ class TestMILPGasSourceSink(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         results = run_optimization_problem(
-            GasProblem, base_folder=base_folder, esdl_file_name="source_sink.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="source_sink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         ).extract_results()
 
         # Test if mass conserved

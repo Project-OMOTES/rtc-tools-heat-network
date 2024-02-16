@@ -23,7 +23,7 @@ class Model(_Model):
         self.add_variable(
             Source,
             "source",
-            Heat_source=dict(min=0.e5, max=1.8e5, nominal=0.9e5),
+            Heat_source=dict(min=0.0e5, max=1.8e5, nominal=0.9e5),
             HeatOut=dict(Heat=dict(max=5e5)),
             **supply_return_modifiers,
         )

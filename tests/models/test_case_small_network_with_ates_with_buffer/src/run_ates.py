@@ -185,9 +185,11 @@ if __name__ == "__main__":
 
     base_folder = Path(__file__).resolve().parent.parent
     solution = run_optimization_problem(
-        HeatProblem, base_folder=base_folder,
+        HeatProblem,
+        base_folder=base_folder,
         esdl_file_name="test_case_small_network_with_ates_with_buffer.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="Warmte_test.csv"
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv",
     )
     results = solution.extract_results()

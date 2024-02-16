@@ -9,7 +9,6 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
-
 class TestMultipleCarriers(TestCase):
     def test_multiple_carriers(self):
         """
@@ -28,9 +27,12 @@ class TestMultipleCarriers(TestCase):
         base_folder = Path(run_multiple_carriers.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="MultipleCarrierTest.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="MultipleCarrierTest.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
 
         results = solution.extract_results()

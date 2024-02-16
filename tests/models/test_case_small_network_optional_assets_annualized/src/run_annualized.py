@@ -169,8 +169,9 @@ if __name__ == "__main__":
     solution = run_optimization_problem(
         HeatProblemDiscAnnualizedCostModifiedParam,
         esdl_file_name="annualized_test_case_discount5.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="Warmte_test.csv"
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv",
     )
     results = solution.extract_results()
     print("\n HeatProblemAnnualized Completed \n \n")

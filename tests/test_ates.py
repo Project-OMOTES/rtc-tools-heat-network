@@ -5,10 +5,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestAtes(TestCase):
@@ -34,10 +34,12 @@ class TestAtes(TestCase):
 
         # This is an optimization done over a full year with 365 day timesteps
         solution = run_optimization_problem(
-            HeatProblem, base_folder=base_folder,
+            HeatProblem,
+            base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         results = solution.extract_results()

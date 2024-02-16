@@ -118,7 +118,6 @@ class HeatProblem(
 
 
 class HeatProblemTvar(HeatProblem):
-
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
@@ -140,8 +139,10 @@ class HeatProblemTvar(HeatProblem):
 
 if __name__ == "__main__":
     solution = run_optimization_problem(
-        HeatProblemTvar, esdl_file_name="heat_pump.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml"
+        HeatProblemTvar,
+        esdl_file_name="heat_pump.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
     )
     results = solution.extract_results()

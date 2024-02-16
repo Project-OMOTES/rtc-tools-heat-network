@@ -8,6 +8,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
+
 class TestEndScenarioSizingAnnualized(TestCase):
     """
     Tests for end scenario sizing with annualized costs in a small network with optional assets.
@@ -39,38 +40,46 @@ class TestEndScenarioSizingAnnualized(TestCase):
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
         solution_run_ates = run_optimization_problem(
-            HeatProblem, base_folder=base_folder,
+            HeatProblem,
+            base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         # Solution of model with annualized cost, considering a discount rate > 0
         # and a technical life > 1
         solution_annualized_cost = run_optimization_problem(
-            HeatProblemDiscAnnualizedCost, base_folder=base_folder,
+            HeatProblemDiscAnnualizedCost,
+            base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         # Solution of model with annualized cost, with discount rate = 0 and
         # technical life = 1 year. This model is used to compare the objective value
         # of the annualized model with the objective value of the non-discounted model.
         solution__annualized_modified_param = run_optimization_problem(
-            HeatProblemDiscAnnualizedCostModifiedParam, base_folder=base_folder,
+            HeatProblemDiscAnnualizedCostModifiedParam,
+            base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         # Solution of model with annualized cost, with discount rate = 0.
         # This model is used to test the effect of the discount rate on the objective value.
         solution__annualized_modified_discount = run_optimization_problem(
-            HeatProblemDiscAnnualizedCostModifiedDiscountRate, base_folder=base_folder,
+            HeatProblemDiscAnnualizedCostModifiedDiscountRate,
+            base_folder=base_folder,
             esdl_file_name="annualized_test_case_discount5.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         # # Assertion 1: Model for annualized objective value with discount=0 and

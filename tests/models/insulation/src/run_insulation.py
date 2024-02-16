@@ -280,8 +280,10 @@ if __name__ == "__main__":
 
     start_time = time.time()
     heat_problem = run_optimization_problem(
-        HeatProblemB, esdl_file_name="Insulation.esdl",
-        esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_import.xml"
+        HeatProblemB,
+        esdl_file_name="Insulation.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
     )
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

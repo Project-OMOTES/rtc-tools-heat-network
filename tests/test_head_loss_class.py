@@ -43,8 +43,7 @@ class TestHeadLossCalculation(TestCase):
             HeadLossOption.LINEARIZED_DW,
         ]:
             m = run_optimization_problem(
-                Model, head_loss_option=h, base_folder=base_folder,
-                input_folder=input_folder
+                Model, head_loss_option=h, base_folder=base_folder, input_folder=input_folder
             )
 
             options = m.heat_network_options()

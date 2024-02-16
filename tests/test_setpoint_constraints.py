@@ -30,7 +30,8 @@ class TestSetpointConstraints(TestCase):
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
         )
@@ -40,7 +41,8 @@ class TestSetpointConstraints(TestCase):
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
         )
@@ -84,7 +86,8 @@ class TestSetpointConstraints(TestCase):
             HeatProblemSetPoints,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
         )
@@ -118,7 +121,8 @@ class TestSetpointConstraints(TestCase):
             HeatProblemSetPoints,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
         )
@@ -152,7 +156,8 @@ class TestSetpointConstraints(TestCase):
                 HeatProblemSetPoints,
                 base_folder=base_folder,
                 esdl_file_name="test_case_small_network_with_ates.esdl",
-                esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="Warmte_test.csv",
                 **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
             )

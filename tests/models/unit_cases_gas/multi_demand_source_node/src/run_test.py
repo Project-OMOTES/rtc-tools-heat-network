@@ -84,8 +84,12 @@ class GasProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(GasProblem, esdl_file_name="test.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv")
+    elect = run_optimization_problem(
+        GasProblem,
+        esdl_file_name="test.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     r = elect.extract_results()
     a = 1

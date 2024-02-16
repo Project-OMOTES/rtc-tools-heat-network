@@ -1,18 +1,15 @@
 import base64
 import copy
-import datetime
 import logging
 import xml.etree.ElementTree as ET  # noqa: N817
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional
 
 import esdl.esdl_handler
 from esdl.resources.xmlresource import XMLResource
 
 import numpy as np
-
-import pandas as pd
 
 import rtctools.data.pi as pi
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -23,11 +20,10 @@ from rtctools.optimization.io_mixin import IOMixin
 from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
-from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
-from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
 from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
-from rtctools_heat_network.influxdb.profile import parse_esdl_profiles
+from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
+from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
@@ -115,7 +111,8 @@ class ESDLMixin(
         if input_file_name is not None:
             input_file_path = Path(input_folder) / input_file_name
         self.__profile_reader: BaseProfileReader = profile_reader_class(
-            energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path)
+            energy_system=self.__energy_system_handler.energy_system, file_path=input_file_path
+        )
 
         # This way we allow users to adjust the parsed ESDL assets
         assets = self.esdl_assets
@@ -160,7 +157,6 @@ class ESDLMixin(
         Returns a bytes string representation of the ESDL model used.
         """
         return base64.b64encode(self.__energy_system_handler.to_string().encode("utf-8"))
-
 
     def pre(self) -> None:
         """
@@ -285,12 +281,11 @@ class ESDLMixin(
         An XML string representing the energy system
         """
         esh = esdl.esdl_handler.EnergySystemHandler(energy_system=energy_system)
-        esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI('to_string.esdl'))
+        esh.resource = XMLResource(uri=esdl.esdl_handler.StringURI("to_string.esdl"))
         return esh.to_string()
 
     @staticmethod
-    def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem,
-                                   file_path: Path) -> None:
+    def save_energy_system_to_file(energy_system: esdl.esdl.EnergySystem, file_path: Path) -> None:
         """
         Method to save a given energy system to file (using the standard ESDL XML schema, using the
         energy system handler available within this class
@@ -458,7 +453,8 @@ class ESDLMixin(
         esdl_carriers = self.esdl_carriers
         io = self.io
         self.__profile_reader.read_profiles(
-            heat_network_components=heat_network_components, io=io,
+            heat_network_components=heat_network_components,
+            io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
             carrier_properties=esdl_carriers,

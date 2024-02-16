@@ -5,10 +5,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestWarmingUpUnitCases(TestCase):
@@ -35,8 +35,11 @@ class TestWarmingUpUnitCases(TestCase):
 
         # Just a "problem is not infeasible"
         heat_problem = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="1a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="1a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
         )
 
@@ -101,8 +104,11 @@ class TestWarmingUpUnitCases(TestCase):
 
         # Just a "problem is not infeasible"
         heat_problem = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="2a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
         )
 
@@ -134,8 +140,11 @@ class TestWarmingUpUnitCases(TestCase):
 
         # Just a "problem is not infeasible"
         heat_problem = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="3a.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
         )
 

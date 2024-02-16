@@ -37,10 +37,12 @@ class TestAssetIsRealized(TestCase):
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
         solution = run_optimization_problem(
-            HeatProblemPlacingOverTime, base_folder=base_folder,
+            HeatProblemPlacingOverTime,
+            base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="Warmte_test.csv"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
         )
 
         results = solution.extract_results()

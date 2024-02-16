@@ -6,10 +6,10 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
-
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
+from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestMultiCommodityHeatPump(TestCase):
@@ -35,9 +35,12 @@ class TestMultiCommodityHeatPump(TestCase):
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            HeatProblem2, base_folder=base_folder, esdl_file_name="heat_pump_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            HeatProblem2,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
 
@@ -102,9 +105,12 @@ class TestMultiCommodityHeatPump(TestCase):
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            HeatProblem, base_folder=base_folder, esdl_file_name="heat_pump_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
 
@@ -171,10 +177,12 @@ class TestMultiCommodityHeatPump(TestCase):
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            ElectricityProblem, base_folder=base_folder,
+            ElectricityProblem,
+            base_folder=base_folder,
             esdl_file_name="heat_pump_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
 

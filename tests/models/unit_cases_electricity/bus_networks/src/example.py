@@ -72,9 +72,13 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(ElectricityProblem, esdl_file_name="Electric_bus3.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv")
+    elect = run_optimization_problem(
+        ElectricityProblem,
+        esdl_file_name="Electric_bus3.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     r = elect.extract_results()
     print(r["ElectricityDemand_e527.Electricity_demand"])
     print(r["ElectricityDemand_e527.ElectricityIn.Power"])

@@ -53,7 +53,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-
     # __temperature_options = {}
 
     def solver_options(self):

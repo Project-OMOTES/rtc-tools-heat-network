@@ -37,9 +37,12 @@ class TestMILPElectricSourceSink(TestCase):
         tol = 1e-10
 
         solution = run_optimization_problem(
-            ElectricityProblem, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
@@ -121,9 +124,12 @@ class TestMILPElectricSourceSink(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         solution = run_optimization_problem(
-            ElectricityProblemMaxCurr, base_folder=base_folder, esdl_file_name="case1_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv"
+            ElectricityProblemMaxCurr,
+            base_folder=base_folder,
+            esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)

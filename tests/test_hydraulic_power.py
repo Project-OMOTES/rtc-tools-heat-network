@@ -7,10 +7,9 @@ import pandas as pd
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.head_loss_class import HeadLossOption
-
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
 class TestHydraulicPower(TestCase):
@@ -102,9 +101,12 @@ class TestHydraulicPower(TestCase):
                 "pipe_length"
             ][val]
             run_optimization_problem(
-                HeatProblem, base_folder=base_folder, esdl_file_name="test_simple.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.xml"
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name="test_simple.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.xml",
             )
 
         hydraulic_power_post_process_dw_1 = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][0] * abs(
@@ -145,9 +147,12 @@ class TestHydraulicPower(TestCase):
                 "pipe_length"
             ][val]
             run_optimization_problem(
-                HeatProblem, base_folder=base_folder, esdl_file_name="test_simple.esdl",
-                esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-                input_timeseries_file="timeseries_import.xml"
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name="test_simple.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.xml",
             )
 
         hydraulic_power_post_process_linear = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][
@@ -191,9 +196,12 @@ class TestHydraulicPower(TestCase):
                 "pipe_length"
             ][val]
             run_optimization_problem(
-                HeatProblem, base_folder=base_folder, esdl_file_name="test_simple.esdl",
-                esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-                input_timeseries_file="timeseries_import.xml"
+                HeatProblem,
+                base_folder=base_folder,
+                esdl_file_name="test_simple.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.xml",
             )
 
         hydraulic_power_post_process_dw = run_hydraulic_power.df_MILP["Pipe1_supply_Q"][0] * abs(

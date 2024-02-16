@@ -131,9 +131,13 @@ class ElectricityProblemMaxCurr(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(ElectricityProblem, esdl_file_name="case1_elec.esdl",
-            esdl_parser=ESDLFileParser, profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries.csv")
+    elect = run_optimization_problem(
+        ElectricityProblem,
+        esdl_file_name="case1_elec.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     r = elect.extract_results()
     print(r["ElectricityDemand_2af6.Electricity_demand"])
     print(r["ElectricityDemand_2af6.ElectricityIn.Power"])
