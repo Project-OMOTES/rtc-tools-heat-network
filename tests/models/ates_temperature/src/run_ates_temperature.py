@@ -1,3 +1,7 @@
+import json
+import os
+from pathlib import Path
+
 import esdl
 import numpy as np
 
@@ -18,6 +22,13 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
+
+import xml.etree.ElementTree as ET
+
+ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
+
+WATT_TO_MEGA_WATT = 1.0e6
+WATT_TO_KILO_WATT = 1.0e3
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -107,7 +118,7 @@ class _GoalsAndOptions:
         # highs_options["mip_rel_gap"] = 0.01
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["MIPgap"] = 0.01
         # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
@@ -247,6 +258,71 @@ class HeatProblem(
                 )
 
             self.io = new_datastore
+
+    def _get_runinfo_path_root(self):
+        runinfo_path = Path(self.esdl_run_info_path).resolve()
+        tree = ET.parse(runinfo_path)
+        return tree.getroot()
+    def post(self):
+        root = self._get_runinfo_path_root()
+        workdir = os.path.join(os.path.dirname(os.getcwd()), 'output')
+        super().post()
+        results = self.extract_results()
+        parameters = self.parameters(0)
+        bounds = self.bounds()
+        parameters_dict = dict()
+
+        parameter_path = os.path.join(workdir, "parameters.json")
+        for key, value in parameters.items():
+            new_value = value  # [x for x in value]
+            parameters_dict[key] = new_value
+        if parameter_path is None:
+            workdir = root.findtext("pi:workDir", namespaces=ns)
+            parameter_path = os.path.join(workdir, "parameters.json")
+            if not Path(workdir).is_absolute():
+                parameter_path = Path(workdir).resolve().parent
+                parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
+        with open(parameter_path, "w") as file:
+            json.dump(parameters_dict, fp=file)
+
+        root = self._get_runinfo_path_root()
+        bounds_dict = dict()
+        bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        bounds_path = os.path.join(workdir, "bounds.json")
+        for key, value in bounds.items():
+            if "Stored_heat" not in key:
+                new_value = value  # [x for x in value]
+                # if len(new_value) == 1:
+                #     new_value = new_value[0]
+                bounds_dict[key] = new_value
+        if bounds_path is None:
+            workdir = root.findtext("pi:workDir", namespaces=ns)
+            bounds_path = os.path.join(workdir, "bounds.json")
+            if not Path(workdir).is_absolute():
+                bounds_path = Path(workdir).resolve().parent
+                bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
+        with open(bounds_path, "w") as file:
+            json.dump(bounds_dict, fp=file)
+
+        root = self._get_runinfo_path_root()
+        results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        results_dict = dict()
+
+        for key, values in results.items():
+            new_value = values.tolist()
+            if len(new_value) == 1:
+                new_value = new_value[0]
+            results_dict[key] = new_value
+
+        results_path = os.path.join(workdir, "results.json")
+        if results_path is None:
+            workdir = root.findtext("pi:workDir", namespaces=ns)
+            results_path = os.path.join(workdir, "results.json")
+            if not Path(workdir).is_absolute():
+                results_path = Path(workdir).resolve().parent
+                results_path = os.path.join(results_path.__str__() + "results.json")
+        with open(results_path, "w") as file:
+            json.dump(results_dict, fp=file)
 
 
 class HeatProblemMaxFlow(HeatProblem):

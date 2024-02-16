@@ -1840,7 +1840,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # heatloss = 16.2 / (70-17) * stored_volume * (T_ates - T_amb)
             # stored_volume = stored_heat / (40 (dT assumed) *rho*cp)
             # multiplied coefficient with 1e-1
-            heatloss = 1.6e-10 * heat_points * (temperature_ates - temperature_ambient)
+            heatloss = 1.4e-10 * heat_points * (temperature_ates - temperature_ambient)
             # heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
             #     heat_points / heat_stored_max)**2
             return heatloss
