@@ -36,22 +36,20 @@ class TestProfileLoading(unittest.TestCase):
             model_folder=model_folder,
             input_folder=input_folder,
             esdl_file_name="1a_with_influx_profiles.esdl",
-            # profile_reader=MockInfluxDBProfileReader,
-            # input_timeseries_file="influx_mock.csv"
+            profile_reader=MockInfluxDBProfileReader,
+            input_timeseries_file="influx_mock.csv"
         )
         problem.pre()
 
-        expected_array = np.array([1.0e8] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries(
-            "WindPark_7f14.maximum_electricity_source").values)
+        # the three demands in the test ESDL
+        for demand_name in ["HeatingDemand_2ab9", "HeatingDemand_6662", "HeatingDemand_506c"]:
+            profile_values = problem.get_timeseries(f"{demand_name}.target_heat_demand").values
+            self.assertEqual(profile_values[0], 0.0)
+            self.assertEqual(len(profile_values), 26)
 
-        expected_array = np.array([1.0] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries(
-            "elec.price_profile").values)
-
-        expected_array = np.array([1.0e6] * 3)
-        np.testing.assert_equal(expected_array, problem.get_timeseries(
-            "gas.price_profile").values)
+        heat_price_profile = problem.get_timeseries("Heat.price_profile").values
+        self.assertEqual(heat_price_profile[0], 0.0)
+        self.assertLess(max(heat_price_profile), 1.0)
 
     def test_loading_from_csv(self):
         import models.unit_cases_electricity.electrolyzer.src.example as example

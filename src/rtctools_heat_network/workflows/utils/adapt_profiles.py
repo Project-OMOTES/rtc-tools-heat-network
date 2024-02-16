@@ -5,6 +5,7 @@ import numpy as np
 
 from rtctools.data.storage import DataStore
 
+
 logger = logging.getLogger("WarmingUP-MPC")
 logger.setLevel(logging.INFO)
 
@@ -56,7 +57,7 @@ def set_data_with_averages_and_peak_day(
     )
 
 
-def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, problem_day_steps):
+def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem: "EndScenarioSizing", problem_day_steps: int):
     """
     Adapt yearly porifle with hourly time steps to a common profile (daily averaged profile except
     for the day with the peak demand).
@@ -71,8 +72,6 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
     new_datastore.reference_datetime = problem.io.datetimes[0]
 
     for ensemble_member in range(problem.ensemble_size):
-        problem_indx_max_peak = -1.0
-        day_steps = -1.0
         parameters = problem.parameters(ensemble_member)
         total_demand = None
         heat_demand_nominal = dict()
@@ -131,15 +130,16 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         # TODO: this has not been tested but is required if a production profile is included
         #  in the data
         for source in problem.heat_network_components.get("source", []):
+            var_name = f"{source}.maximum_heat_source"
             try:
-                problem.get_timeseries(f"{source}.maximum_heat_source", ensemble_member)
+                problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
             except KeyError:
                 logger.debug(
-                    f"{source} has no production profile, skipping setting the "
-                    f"production profile"
+                    f"Source {source} has no production profile, thus it also will "
+                    f"not be adapted to a different time scales."
                 )
                 continue
-            var_name = f"{source}.maximum_heat_source"
+
             set_data_with_averages_and_peak_day(
                 datastore=new_datastore,
                 variable_name=var_name,
@@ -147,6 +147,25 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
                 new_date_times=new_date_times,
                 problem=problem,
             )
+
+        for carrier_properties in problem.esdl_carriers.values():
+            carrier_name = carrier_properties["name"]
+            var_name = f"{carrier_name}.price_profile"
+            try:
+                problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)
+            except KeyError:
+                logger.debug(
+                    f"Carrier {carrier_name} has no price profile, thus it also will "
+                    f"not be adapted to different time scales."
+                )
+            set_data_with_averages_and_peak_day(
+                datastore=new_datastore,
+                variable_name=var_name,
+                ensemble_member=ensemble_member,
+                new_date_times=new_date_times,
+                problem=problem,
+            )
+
 
     problem.io = new_datastore
 

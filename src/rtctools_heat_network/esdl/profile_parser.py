@@ -196,14 +196,23 @@ class InfluxDBProfileReader(BaseProfileReader):
             converted_dataframe = self._convert_profile_to_correct_unit(
                 profile_time_series=series, profile=profile)
 
-            asset = profile.eContainer().energyasset
-            try:
-                variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
-            except KeyError:
-                raise RuntimeError(f"The asset {profile.field} is of type {type(asset)} which is "
-                                   f"currently not supported to have a profile to be loaded "
-                                   f"from the database.")
-            profiles[asset.name + variable_suffix] = converted_dataframe * profile.multiplier
+            container = profile.eContainer()
+            if isinstance(container, esdl.Commodity):
+                variable_suffix = self.carrier_profile_var_name
+                var_base_name = container.name
+            elif isinstance(container, esdl.Port):
+                asset = container.energyasset
+                var_base_name = asset.name
+                try:
+                    variable_suffix = self.asset_type_to_variable_name_conversion[type(asset)]
+                except KeyError:
+                    raise RuntimeError(f"The asset {profile.field} is of type {type(asset)} which is "
+                                       f"currently not supported to have a profile to be loaded "
+                                       f"from the database.")
+            else:
+                raise RuntimeError(f"Got a profile for a {container}. Currently only profiles "
+                                   f"for assets and commodities are supported")
+            profiles[var_base_name + variable_suffix] = converted_dataframe * profile.multiplier
 
         for idx in range(ensemble_size):
             self._profiles[idx]= profiles.copy()
@@ -222,6 +231,9 @@ class InfluxDBProfileReader(BaseProfileReader):
         -------
         A pandas Series of the profile for the asset.
         """
+        if profile.id in self._df:
+            return self._df[profile.id]
+
         profile_host = profile.host
 
         ssl_setting = False
@@ -269,7 +281,7 @@ class InfluxDBProfileReader(BaseProfileReader):
         series = pd.Series(data=data, index=index)
         self._df[profile.id] = series
 
-        return pd.Series(data=data, index=index)
+        return series
 
     @staticmethod
     def _check_profile_time_series(profile_time_series: pd.Series,
@@ -308,8 +320,8 @@ class InfluxDBProfileReader(BaseProfileReader):
                     f"exactly 1 hour"
                 )
 
-    @staticmethod
-    def _convert_profile_to_correct_unit(profile_time_series: pd.Series, profile) -> pd.Series:
+    def _convert_profile_to_correct_unit(self, profile_time_series: pd.Series,
+                                         profile: esdl.InfluxDBProfile) -> pd.Series:
         """
         Conversion function to change the values in the provided series to the correct unit
 
@@ -323,20 +335,33 @@ class InfluxDBProfileReader(BaseProfileReader):
         A pandas Series with the same index as the provided profile_time_series and with all values
         converted to either Watt or Joules, depending on the quantity used in the profile.
         """
-        profile_quantity = profile.profileQuantityAndUnit.reference.physicalQuantity
-        if profile_quantity == esdl.PhysicalQuantityEnum.POWER:
+        profile_quantity_and_unit = self._get_profile_quantity_and_unit(profile=profile)
+        if profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.POWER:
             target_unit = POWER_IN_W
-        elif profile_quantity == esdl.PhysicalQuantityEnum.ENERGY:
+        elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.ENERGY:
             target_unit = ENERGY_IN_J
+        elif profile_quantity_and_unit.physicalQuantity == esdl.PhysicalQuantityEnum.COST:
+            if not (profile_quantity_and_unit.unit == esdl.UnitEnum.EURO and
+                    profile_quantity_and_unit.perUnit == esdl.UnitEnum.WATTHOUR):
+                raise RuntimeError(f"For price profiles currently only profiles "
+                                   f"specified in euros per watt-hour are accepted,"
+                                   f"{profile} doesn't follow this convention.")
+            return profile_time_series
         else:
             raise RuntimeError(
                 f"The user input profile currently only supports loading profiles containing "
-                f"either power or energy values, not {profile_quantity}."
+                f"either power, energy values or euros per Wh, not {profile_quantity_and_unit.physicalQuantity}."
             )
         return profile_time_series.apply(func=lambda x: convert_to_unit(
-            value=x, source_unit=profile.profileQuantityAndUnit, target_unit=target_unit
+            value=x, source_unit=profile_quantity_and_unit, target_unit=target_unit
         ))
 
+    @staticmethod
+    def _get_profile_quantity_and_unit(profile: esdl.InfluxDBProfile):
+        try:
+            return profile.profileQuantityAndUnit.reference
+        except AttributeError:
+            return profile.profileQuantityAndUnit
 
 class ProfileReaderFromFile(BaseProfileReader):
 
