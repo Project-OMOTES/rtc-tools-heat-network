@@ -107,7 +107,7 @@ class _GoalsAndOptions:
         # highs_options["mip_rel_gap"] = 0.01
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.1
+        gurobi_options["MIPgap"] = 0.02
         # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
@@ -151,7 +151,7 @@ class HeatProblem(
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
             # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(50, 70, 9).tolist()[::-1]
+            temperatures = np.linspace(40, 70, 13).tolist()[::-1]
 
         return temperatures
 
