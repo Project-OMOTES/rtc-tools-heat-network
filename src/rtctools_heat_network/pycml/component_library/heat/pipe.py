@@ -60,6 +60,11 @@ class Pipe(_NonStorageComponent):
             Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
         )  # [W]
 
+        self.add_equation(
+            (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
+            / self.Hydraulic_power_nominal
+        )
+
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 
         # Note: Heat loss is added in the mixin, because it depends on the flow direction

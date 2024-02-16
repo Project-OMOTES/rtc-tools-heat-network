@@ -33,6 +33,7 @@ class Buffer(HeatTwoPort, BaseAsset):
         self.cp = 4200.0
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
+        self.nominal_pressure = 16.0e5
 
         self.heat_transfer_coeff = 1.0
         self.height = 5.0
@@ -90,6 +91,11 @@ class Buffer(HeatTwoPort, BaseAsset):
 
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
         self.add_equation(self.Q - self.HeatOut.Q)
+
+        self.add_equation(
+            (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power)
+            / (self.Q_nominal * self.nominal_pressure)
+        )
 
         # Heat stored in the buffer
         self.add_equation(

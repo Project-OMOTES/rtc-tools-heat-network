@@ -850,6 +850,28 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __node_hydraulic_power_mixing_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to ensure that the incoming hydraulic power equals the
+        outgoing hydraulic power. We assume constant density throughout a hydraulically coupled
+        system and thus these constraints are needed for mass conservation.
+        """
+        constraints = []
+
+        for node, connected_pipes in self.heat_network_topology.nodes.items():
+            q_sum = 0.0
+            q_nominals = []
+
+            for i_conn, (_pipe, orientation) in connected_pipes.items():
+                q_conn = f"{node}.HeatConn[{i_conn + 1}].Hydraulic_power"
+                q_sum += orientation * self.state(q_conn)
+                q_nominals.append(self.variable_nominal(q_conn))
+
+            q_nominal = np.median(q_nominals)
+            constraints.append((q_sum / q_nominal, 0.0, 0.0))
+
+        return constraints
+
     def __heat_loss_path_constraints(self, ensemble_member):
         """
         This function adds the constraints to subtract the heat losses from the thermal power that
@@ -2510,6 +2532,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__pipe_hydraulic_power_path_constraints(ensemble_member))
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
         constraints.extend(self.__node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__node_hydraulic_power_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))

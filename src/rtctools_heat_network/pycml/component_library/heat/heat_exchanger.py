@@ -50,7 +50,18 @@ class HeatExchanger(HeatFourPort, BaseAsset):
 
         # Hydraulically decoupled so Heads remain the same
         self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))
+        self.add_equation(
+            (self.Secondary.HeatOut.Hydraulic_power - self.Secondary.HeatIn.Hydraulic_power)
+            / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
+        )
         self.add_equation(self.dH_sec - (self.Secondary.HeatOut.H - self.Secondary.HeatIn.H))
+        self.add_equation(
+            (
+                self.Secondary.Pump_power
+                - (self.Secondary.HeatOut.Hydraulic_power - self.Secondary.HeatIn.Hydraulic_power)
+            )
+            / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
+        )
 
         self.add_equation(
             ((self.Primary_heat * self.efficiency - self.Secondary_heat) / self.nominal)

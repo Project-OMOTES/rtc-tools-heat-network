@@ -37,6 +37,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.cp = 4200.0
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
+        self.nominal_pressure = 16.0e5
 
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan
@@ -76,6 +77,11 @@ class ATES(HeatTwoPort, BaseAsset):
 
         self.add_equation(self.HeatIn.Q - self.HeatOut.Q)
         self.add_equation(self.Q - self.HeatOut.Q)
+
+        self.add_equation(
+            (self.HeatOut.Hydraulic_power - self.HeatIn.Hydraulic_power)
+            / (self.Q_nominal * self.nominal_pressure)
+        )
 
         # # Heat stored in the ates
         self.add_equation(
