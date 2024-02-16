@@ -50,6 +50,9 @@
           <fixedOperationalCosts xsi:type="esdl:SingleValue" value="900.0">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" perUnit="WATT" id="9dd51278-62a3-46d3-be1b-d9f352eca327" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA"/>
           </fixedOperationalCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" value="500.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Cost in EUR/MWh" perMultiplier="MEGA" perUnit="WATTHOUR" id="9dd51278-62a3-46d3-be1b-d9f352eca328" unit="EURO"/>
+          </variableOperationalCosts>
         </costInformation>
       </asset>
       <asset xsi:type="esdl:HeatExchange" capacity="10000000.0" id="32ba35b1-7274-4285-8a72-0e050e579557" name="HeatExchange_32ba" heatTransferCoefficient="100000">
@@ -154,7 +157,7 @@
           </fixedOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatingDemand" id="4b650b45-9b1c-4d0c-9e6c-24357d296241" power="10000000.0" name="HeatingDemand_1">
+      <asset xsi:type="esdl:HeatingDemand" id="4b650b45-9b1c-4d0c-9e6c-24357d296241" power="14000000.0" name="HeatingDemand_1">
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="In" connectedTo="fdf307cb-449b-48a9-9113-27dda4b491b8" id="f712c29a-d586-4016-81a2-dd5a1f489936"/>
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="Out" id="67ccc3c0-c1f7-4bfc-b635-565c7949951f" connectedTo="31ea31da-facb-4d11-ba25-9908489a0655"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.03778770180885" lon="4.3174495400080035"/>

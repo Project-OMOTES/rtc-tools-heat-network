@@ -1,3 +1,4 @@
+import esdl
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -16,7 +17,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-
+from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -113,6 +114,7 @@ class _GoalsAndOptions:
 
 
 class HeatProblem(
+    ScenarioOutput,
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -149,7 +151,7 @@ class HeatProblem(
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
             # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(40, 70, 13).tolist()[::-1]
+            temperatures = np.linspace(50, 70, 9).tolist()[::-1]
 
         return temperatures
 
@@ -262,11 +264,11 @@ if __name__ == "__main__":
     t0 = time.time()
 
     sol = run_optimization_problem(HeatProblem)
+    sol._write_updated_esdl()
     results = sol.extract_results()
     print("T_ates: ", results["ATES_cb47.Temperature_ates"])
     print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
     print("T_ates: ", results["ATES_cb47__temperature_disc_40.0"])
     print(f"time: {time.time() - t0}")
     a = 1
-
 
