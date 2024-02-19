@@ -8,8 +8,8 @@ import pytest
 from rtctools.util import run_optimization_problem
 
 
-@pytest.mark.last
 class TestSetpointConstraints(TestCase):
+    @pytest.mark.first
     def test_setpoint_constraints(self):
         """
         his function checks the working of the setpoint constraints for a few cases to ensure the
@@ -56,6 +56,7 @@ class TestSetpointConstraints(TestCase):
             1.0e-6,
         )
 
+    @pytest.mark.second
     def test_run_small_ates_timed_setpoints_2_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
@@ -87,6 +88,7 @@ class TestSetpointConstraints(TestCase):
         # than 2 switches
         np.testing.assert_array_less((check >= 1.0).sum(), 3.0)
 
+    @pytest.mark.third
     def test_run_small_ates_timed_setpoints_0_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
@@ -116,6 +118,7 @@ class TestSetpointConstraints(TestCase):
         )
         np.testing.assert_array_less(check, 1.0e-6)
 
+    @pytest.mark.fourth
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
