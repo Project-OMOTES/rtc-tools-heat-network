@@ -59,7 +59,7 @@ class HeatExchanger(HeatFourPort, BaseAsset):
         self.add_equation(self.dH_sec - (self.Secondary.HeatOut.H - self.Secondary.HeatIn.H))
         self.add_equation(
             (
-                self.Secondary.Pump_power
+                self.Pump_power_sec
                 - (self.Secondary.HeatOut.Hydraulic_power - self.Secondary.HeatIn.Hydraulic_power)
             )
             / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)

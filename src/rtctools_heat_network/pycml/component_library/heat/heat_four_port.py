@@ -22,5 +22,8 @@ class HeatFourPort(HeatComponent):
         self.add_variable(_NonStorageComponent, "Primary", **modifiers["Primary"])
         self.add_variable(_NonStorageComponent, "Secondary", **modifiers["Secondary"])
         self.add_variable(
-            Variable, "Pump_power_sec", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
+            Variable,
+            "Pump_power_sec",
+            min=0.0,
+            nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
         )
