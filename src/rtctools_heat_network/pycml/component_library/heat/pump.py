@@ -19,6 +19,8 @@ class Pump(_NonStorageComponent):
 
         self.component_type = "pump"
 
+        self.pump_efficiency = 0.5
+
         self.add_variable(Variable, "dH", min=0.0)
         self.add_variable(
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure

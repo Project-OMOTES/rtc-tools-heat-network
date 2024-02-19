@@ -363,7 +363,7 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblemProdProfile)
+    sol = run_optimization_problem(HeatProblem)
     # sol = run_optimization_problem(
     #     HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
     # )

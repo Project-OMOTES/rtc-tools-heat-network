@@ -2510,6 +2510,60 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __storage_hydrualic_power_path_constraints(self, ensemble_member):
+        constraints = []
+
+        parameters = self.parameters(ensemble_member)
+
+        for b, (
+            (hot_pipe, hot_pipe_orientation),
+            (_cold_pipe, _cold_pipe_orientation),
+        ) in {**self.heat_network_topology.buffers, **self.heat_network_topology.ates}.items():
+
+            discharge = self.state(f"{b}.HeatIn.Q")
+            hp_in = self.state(f"{b}.HeatIn.Hydraulic_power")
+            hp_out = self.state(f"{b}.HeatOut.Hydraulic_power")
+            min_dp = parameters[f"{b}.minimum_pressure_drop"]
+
+            flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
+            is_buffer_charging = self.state(flow_dir_var) * hot_pipe_orientation
+
+            big_m = (
+                2.0
+                * self.bounds()[f"{b}.HeatIn.Q"][1]
+                * self.__maximum_total_head_loss
+                * 10.2
+                * 1.0e3
+            )
+
+            # During charging we want a minimum pressure drop like a demand
+            constraints.append(
+                (
+                    (min_dp * discharge - (hp_in - hp_out) + (1.0 - is_buffer_charging) * big_m)
+                    / big_m,
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(
+                (
+                    (min_dp * discharge - (hp_in - hp_out) - (1.0 - is_buffer_charging) * big_m)
+                    / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            pump_power = self.state(f"{b}.Pump_power")
+
+            constraints.append(
+                ((pump_power - (hp_out - hp_in) + is_buffer_charging * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((pump_power - (hp_out - hp_in) - is_buffer_charging * big_m) / big_m, -np.inf, 0.0)
+            )
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -2546,6 +2600,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
+        constraints.extend(self.__storage_hydrualic_power_path_constraints(ensemble_member))
 
         return constraints
 
