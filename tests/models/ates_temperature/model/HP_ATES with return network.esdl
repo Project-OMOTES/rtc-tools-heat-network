@@ -13,7 +13,7 @@
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" name="Untitled instance" id="48f91767-4fbf-4c24-b064-beaa162e6a7a">
     <area xsi:type="esdl:Area" name="Untitled area" id="1e226d40-25eb-41c4-9a35-ce0b28e61844">
-      <asset xsi:type="esdl:ATES" maxDischargeRate="3610000.0" aquiferAnisotropy="4.0" name="ATES_cb47" wellDistance="150.0" aquiferThickness="45.0" maxChargeRate="3610000.0" aquiferPorosity="0.3" salinity="10000.0" aquiferMidTemperature="17.0" aquiferPermeability="10000.0" id="cb47e1d6-8d04-4f8c-9a84-6acd2fbadba4" wellCasingSize="13.0" aquiferTopDepth="300.0" aquiferNetToGross="1.0">
+      <asset xsi:type="esdl:ATES" maxDischargeRate="4010000.0" aquiferAnisotropy="4.0" name="ATES_cb47" wellDistance="150.0" aquiferThickness="45.0" maxChargeRate="4010000.0" aquiferPorosity="0.3" salinity="10000.0" aquiferMidTemperature="17.0" aquiferPermeability="10000.0" id="cb47e1d6-8d04-4f8c-9a84-6acd2fbadba4" wellCasingSize="13.0" aquiferTopDepth="300.0" aquiferNetToGross="1.0">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.04248556477125" lon="4.3048756292178325"/>
         <costInformation xsi:type="esdl:CostInformation">
           <installationCosts xsi:type="esdl:SingleValue" id="d38ded19-6eba-41d3-9bbd-990119f0f332" value="100000.0">
@@ -55,7 +55,7 @@
           </variableOperationalCosts>
         </costInformation>
       </asset>
-      <asset xsi:type="esdl:HeatExchange" capacity="10000000.0" id="32ba35b1-7274-4285-8a72-0e050e579557" name="HeatExchange_32ba" heatTransferCoefficient="100000">
+      <asset xsi:type="esdl:HeatExchange" capacity="10000000.0" id="32ba35b1-7274-4285-8a72-0e050e579557" name="HeatExchange_32ba" heatTransferCoefficient="200000">
         <port xsi:type="esdl:InPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059" name="PrimIn" connectedTo="81fa0613-5da6-497c-a375-c16de6ae887f" id="ca8fec66-c5e4-410c-91c3-39d36720f8af"/>
         <port xsi:type="esdl:OutPort" carrier="f518c023-f81b-440f-93b2-a8cde23eb059_ret" name="PrimOut" id="958d560d-15b9-4e68-9ac5-e8ee573ea409" connectedTo="ee159cb7-91b2-4cfc-96bf-b63cc0087819"/>
         <port xsi:type="esdl:OutPort" carrier="c41e7703-dee0-4dc7-9166-a99838591a90" name="SecOut" id="861d1cf7-3107-4fd4-8172-6377893f38fc" connectedTo="0d14b582-a17a-4db0-aba6-c682b26015df"/>

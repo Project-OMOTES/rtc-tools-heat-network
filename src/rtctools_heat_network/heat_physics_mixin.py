@@ -1999,6 +1999,30 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             )
                         )
 
+                        # #under charge dt_loss=0
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #                 ates_dt_loss_vec
+                        #                 + big_m * (1.0*np.ones(len(a))-is_buffer_charging_vec)
+                        #         )
+                        #         / ates_temperature_loss_nominal,
+                        #         0.0,
+                        #         np.inf,
+                        #     )
+                        # )
+                        constraints.append(
+                            (
+                                (
+                                        ates_dt_loss_vec
+                                        - big_m * (1.0 * np.ones(len(a)) - is_buffer_charging_vec)
+                                )
+                                / ates_temperature_loss_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+
                         # TODO: not sure but this constraint makes it very slow
                         # under charge or rest condition
                         # c = 1. / 15. / (3600. * 24.)
