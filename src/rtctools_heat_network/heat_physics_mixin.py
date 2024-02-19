@@ -2519,10 +2519,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             (hot_pipe, hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.heat_network_topology.buffers, **self.heat_network_topology.ates}.items():
-
             discharge = self.state(f"{b}.HeatIn.Q")
             hp_in = self.state(f"{b}.HeatIn.Hydraulic_power")
             hp_out = self.state(f"{b}.HeatOut.Hydraulic_power")
+            pump_power = self.state(f"{b}.Pump_power")
             min_dp = parameters[f"{b}.minimum_pressure_drop"]
 
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
@@ -2535,32 +2535,51 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 * 10.2
                 * 1.0e3
             )
+            if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
 
-            # During charging we want a minimum pressure drop like a demand
-            constraints.append(
-                (
-                    (min_dp * discharge - (hp_in - hp_out) + (1.0 - is_buffer_charging) * big_m)
-                    / big_m,
-                    0.0,
-                    np.inf,
+                # During charging we want a minimum pressure drop like a demand
+                constraints.append(
+                    (
+                        (min_dp * discharge - (hp_in - hp_out) + (1.0 - is_buffer_charging) * big_m)
+                        / big_m,
+                        0.0,
+                        np.inf,
+                    )
                 )
-            )
-            constraints.append(
-                (
-                    (min_dp * discharge - (hp_in - hp_out) - (1.0 - is_buffer_charging) * big_m)
-                    / big_m,
-                    -np.inf,
-                    0.0,
+                constraints.append(
+                    (
+                        (min_dp * discharge - (hp_in - hp_out) - (1.0 - is_buffer_charging) * big_m)
+                        / big_m,
+                        -np.inf,
+                        0.0,
+                    )
                 )
-            )
-            pump_power = self.state(f"{b}.Pump_power")
 
-            constraints.append(
-                ((pump_power - (hp_out - hp_in) + is_buffer_charging * big_m) / big_m, 0.0, np.inf)
-            )
-            constraints.append(
-                ((pump_power - (hp_out - hp_in) - is_buffer_charging * big_m) / big_m, -np.inf, 0.0)
-            )
+                constraints.append(
+                    (
+                        (pump_power - (hp_out - hp_in) + is_buffer_charging * big_m) / big_m,
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (pump_power - (hp_out - hp_in) - is_buffer_charging * big_m) / big_m,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+            else:
+                constraints.append(
+                    (
+                        (hp_out - hp_in) / self.variable_nominal(f"{b}.HeatIn.Hydraulic_power"),
+                        0.0,
+                        0.0,
+                    )
+                )
+                constraints.append(
+                    (pump_power / self.variable_nominal(f"{b}.Pump_power"), 0.0, 0.0)
+                )
 
         return constraints
 
