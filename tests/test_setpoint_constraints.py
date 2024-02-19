@@ -8,6 +8,7 @@ import pytest
 from rtctools.util import run_optimization_problem
 
 
+@pytest.mark.last
 class TestSetpointConstraints(TestCase):
     def test_setpoint_constraints(self):
         """

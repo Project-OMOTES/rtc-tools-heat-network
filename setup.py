@@ -63,6 +63,7 @@ setup(
         "pandas >= 1.3.1, < 2.0",
         "casadi == 3.6.3",
         "StrEnum == 0.4.15",
+        "pytest-ordering" == "0.6",
     ],
     tests_require=["pytest", "pytest-runner", "numpy"],
     include_package_data=True,
