@@ -109,6 +109,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__ates_temperature_disc_ordering_var = {}
         self.__ates_temperature_disc_ordering_var_bounds = {}
 
+        self.__ates_max_stored_heat_var = {}
+        self.__ates_max_stored_heat_bounds = {}
+        self.__ates_max_stored_heat_nominals = {}
+
         # Integer variable whether discrete temperature option has been selected
         self.__carrier_selected_var = {}
         self.__carrier_selected_var_bounds = {}
@@ -296,6 +300,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self.__ates_temperature_disc_ordering_var_bounds[ates_temperature_disc_ordering_var_name] = (
                 0., 1.)
 
+            max_heat = bounds[f"{ates}.Stored_heat"][1]
+            ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
+            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(ates_max_stored_heat_var_name)
+            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0,max_heat)
+            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat/2
 
 
         for _carrier, temperatures in self.temperature_carriers().items():
@@ -511,6 +520,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         variables = super().extra_variables.copy()
         variables.extend(self.__pipe_heat_loss_var.values())
+        variables.extend(self.__ates_max_stored_heat_var.values())
         return variables
 
     @property
@@ -567,6 +577,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             return self._pipe_heat_loss_nominals[variable]
         elif variable in self.__pipe_head_loss_nominals:
             return self.__pipe_head_loss_nominals[variable]
+        elif variable in self.__ates_max_stored_heat_nominals:
+            return self.__ates_max_stored_heat_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -594,6 +606,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__ates_temperature_ordering_var_bounds)
         bounds.update(self.__ates_temperature_disc_ordering_var_bounds)
         bounds.update(self.__carrier_temperature_disc_ordering_var_bounds)
+        bounds.update(self.__ates_max_stored_heat_bounds)
 
         for k, v in self.__pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -2172,12 +2185,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     (
                         (
                                 heat_in
-                                - max_discharge * cp * rho * temperature_var
-                                - (1- is_buffer_charging) * big_m
+                                + max_discharge * cp * rho * temperature_var
                         )
                         / constraint_nominal,
-                        -np.inf,
                         0.0,
+                        np.inf,
                     )
                 )
                 for supply_temperature in supply_temperatures:
@@ -3022,6 +3034,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             count += 1
 
         return constraints
+
+    def __ates_max_stored_heat_constriants(self, ensemble_member):
+        constraints = []
+
+        for ates in self.heat_network_components.get("ates", []):
+            max_var_name = f"{ates}__max_stored_heat"
+            max_var = self.extra_variable(max_var_name, ensemble_member)
+            stored_heat = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
+            nominal = self.variable_nominal(max_var_name)
+
+            constraints.append(((stored_heat-np.ones(len(self.times()))*max_var)/nominal, -np.inf, 0.0))
+
+        return constraints
     def __heat_pump_cop_path_constraints(self, ensemble_member):
 
         constraints = []
@@ -3229,6 +3254,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if self.heat_network_options()["include_demand_insulation_options"]:
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
+        constraints.extend(self.__ates_max_stored_heat_constriants(ensemble_member))
         return constraints
 
     def history(self, ensemble_member):

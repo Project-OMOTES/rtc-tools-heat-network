@@ -89,6 +89,23 @@ class MinimizeATESTemperature(Goal):
         return optimization_problem.state(f"{self.ates}__temperature_ates_disc")
         # return optimization_problem.state(f"{self.ates}.Temperature_ates")
 
+class MinimizeATESStored_heat(Goal):
+    priority = 3
+
+    order = 1
+
+    def __init__(self, ates):
+        self.target_max = 0.
+        self.function_range = (0., 1e2)
+        self.ates = ates
+        # self.function_nominal = 1e0
+
+    def function(self, optimization_problem, ensemble_member):
+        # return optimization_problem.state(f"{self.ates}.Stored_heat")/optimization_problem.variable_nominal(f"{self.ates}.Stored_heat")
+        return optimization_problem.extra_variable(
+            f"{self.ates}__max_stored_heat") / optimization_problem.variable_nominal(
+            f"{self.ates}__max_stored_heat")
+
 
 class _GoalsAndOptions:
     def path_goals(self):
@@ -107,7 +124,15 @@ class _GoalsAndOptions:
             goals.append(MinimizeCostHeatGoal(s))
 
         # for ates in self.heat_network_components.get("ates", []):
-        #     goals.append(MinimizeATESTemperature(ates))
+        #     goals.append(MinimizeATESStored_heat(ates))
+
+        return goals
+
+    def goals(self):
+        goals = super().goals().copy()
+
+        # for ates in self.heat_network_components.get("ates", []):
+        #     goals.append(MinimizeATESStored_heat(ates))
 
         return goals
 
