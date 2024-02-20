@@ -18,6 +18,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
+
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
@@ -286,7 +287,7 @@ class HeatProblemSetPoints(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -297,12 +298,16 @@ class HeatProblemSetPoints(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
+        options["minimum_velocity"] = 0.0
         return options
 
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+        highs_options["mip_abs_gap"] = 0.01
+
         return options
 
     def constraints(self, ensemble_member):
@@ -447,5 +452,5 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemPlacingOverTime)
+    sol = run_optimization_problem(HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}})
     results = sol.extract_results()
