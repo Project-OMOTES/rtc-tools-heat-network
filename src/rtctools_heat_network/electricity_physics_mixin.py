@@ -38,6 +38,8 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         self.__windpark_upper_bounds = {}
 
+        self._electricity_cable_topo_cable_class_map = {}
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.
@@ -178,7 +180,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
-    def __electricity_node_heat_mixing_path_constraints(self, ensemble_member):
+    def __electricity_node_mixing_path_constraints(self, ensemble_member):
         """
         This function adds constraints for power/energy and current conservation at nodes/busses.
         """
@@ -191,11 +193,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             i_nominal = []
 
             for i_conn, (_cable, orientation) in connected_cables.items():
-                heat_conn = f"{bus}.ElectricityConn[{i_conn + 1}].Power"
+                power_con = f"{bus}.ElectricityConn[{i_conn + 1}].Power"
                 i_port = f"{bus}.ElectricityConn[{i_conn + 1}].I"
-                power_sum += orientation * self.state(heat_conn)
+                power_sum += orientation * self.state(power_con)
                 i_sum += orientation * self.state(i_port)
-                power_nominal.append(self.variable_nominal(heat_conn))
+                power_nominal.append(self.variable_nominal(power_con))
                 i_nominal.append(self.variable_nominal(i_port))
 
             power_nominal = np.median(power_nominal)
@@ -206,7 +208,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return constraints
 
-    def __electricity_cable_heat_mixing_path_constraints(self, ensemble_member):
+    def __electricity_cable_mixing_path_constraints(self, ensemble_member):
         """
         This function adds constraints relating the electrical power to the current flowing through
         the cable. The power through the cable is limited by the maximum voltage and the actual
@@ -227,10 +229,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             power_in = self.state(f"{cable}.ElectricityIn.Power")
             power_out = self.state(f"{cable}.ElectricityOut.Power")
             power_loss = self.state(f"{cable}.Power_loss")
+            # v_loss = self.state(f"{cable}.V_loss")
             r = parameters[f"{cable}.r"]
             i_max = parameters[f"{cable}.max_current"]
             v_nom = parameters[f"{cable}.nominal_voltage"]
             v_max = parameters[f"{cable}.max_voltage"]
+            # v_loss_nom = parameters[f"{cable}.nominal_voltage_loss"]
+            length = parameters[f"{cable}.length"]
 
             # Ensure that the current is sufficient to transport the power
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
@@ -238,11 +243,103 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             # Power loss constraint
             options = self.heat_network_options()
             if options["include_electric_cable_power_loss"]:
-                constraints.append(
-                    ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
-                )
+                if cable in self._electricity_cable_topo_cable_class_map.keys():
+                    cable_classes = self._electricity_cable_topo_cable_class_map[cable]
+                    max_res = max([cc.resistance for cc in cable_classes])
+                    max_i_max = max([cc.maximum_current for cc in cable_classes])
+                    big_m = max_i_max**2 * max_res * length
+                    constraint_nominal = max_i_max * v_nom * max_res * length
+                    for cc_data, cc_name in cable_classes.items():
+                        if cc_name != "None":
+                            i_max = cc_data.maximum_current
+                            res = cc_data.resistance
+                            exp = current * res * length * i_max
+                            is_selected = self.variable(cc_name)
+                            constraints.append(
+                                (
+                                    (power_loss - exp + big_m * (1 - is_selected))
+                                    / constraint_nominal,
+                                    0.0,
+                                    np.inf,
+                                )
+                            )
+                            constraints.append(
+                                (
+                                    (power_loss - exp - big_m * (1 - is_selected))
+                                    / (constraint_nominal),
+                                    -np.inf,
+                                    0.0,
+                                )
+                            )
+                else:
+                    constraints.append(
+                        ((power_loss - current * r * i_max) / (i_max * v_nom * r), 0.0, 0.0)
+                    )
             else:
                 constraints.append(((power_loss) / (i_max * v_nom * r), 0.0, 0.0))
+
+        return constraints
+
+    def __voltage_loss_path_constraints(self, ensemble_member):
+        """
+        Furthermore, the voltage_loss symbol is set, as it depends on the chosen pipe
+        class, e.g. the related resistance and the current through the cable.
+
+        Parameters
+        ----------
+        ensemble_member : The ensemble of the optimization
+
+        Returns
+        -------
+        list of the added constraints
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for cable in self.heat_network_components.get("electricity_cable", []):
+            cable_classes = []
+
+            current = self.state(f"{cable}.ElectricityIn.I")
+            v_loss = self.state(f"{cable}.V_loss")
+            r = parameters[f"{cable}.r"]
+            # v_loss_nom = parameters[f"{cable}.nominal_voltage_loss"]
+            v_nom = parameters[f"{cable}.nominal_voltage"]
+            c_length = parameters[f"{cable}.length"]
+
+            constraint_nominal = self.variable_nominal(v_loss)
+
+            # TODO: still have to check for proper scaling
+            if cable in self._electricity_cable_topo_cable_class_map.keys():
+                cable_classes = self._electricity_cable_topo_cable_class_map[cable]
+                variables = {
+                    cc.name: self.variable(var_name) for cc, var_name in cable_classes.items()
+                }
+                resistances = {cc.name: cc.resistance for cc in cable_classes}
+
+                # to be updated for a better value, but it should also cover the gap between two
+                # nodes when no cable is placed, so should be able to reach v_max
+                big_m = v_nom
+
+                for var_size, variable in variables.items():
+                    if var_size != "None":
+                        expr = resistances[var_size] * c_length * current
+                        constraints.append(
+                            (
+                                (v_loss - expr + big_m * (1 - variable)) / constraint_nominal,
+                                0.0,
+                                np.inf,
+                            )
+                        )
+                        constraints.append(
+                            (
+                                (v_loss - expr - big_m * (1 - variable)) / constraint_nominal,
+                                -np.inf,
+                                0.0,
+                            )
+                        )
+
+            else:
+                constraints.append(((v_loss - r * current) / constraint_nominal, 0.0, 0.0))
 
         return constraints
 
@@ -424,8 +521,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__electricity_demand_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_node_heat_mixing_path_constraints(ensemble_member))
-        constraints.extend(self.__electricity_cable_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_node_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_cable_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__voltage_loss_path_constraints(ensemble_member))
         constraints.extend(self.__electrolyzer_path_constaint(ensemble_member))
 
         return constraints

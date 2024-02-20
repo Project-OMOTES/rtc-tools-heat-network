@@ -58,6 +58,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         super().__init__(*args, **kwargs)
 
+        self._gas_pipe_topo_pipe_class_map = {}
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
@@ -156,6 +158,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         options = self._head_loss_class.head_loss_network_options()
 
         options["minimum_pressure_far_point"] = 1.0
+
+        options["gas_maximum_velocity"] = 15.0
 
         return options
 
@@ -285,7 +289,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         return min(max_sum_dh_pipes, max_dh_network_options)
 
-    def __gas_node_heat_mixing_path_constraints(self, ensemble_member):
+    def __gas_node_mixing_path_constraints(self, ensemble_member):
         """
         This function adds constraints for each gas network node/joint to have as much
         flow going in as out. Effectively, it is setting the sum of flow to zero.
@@ -596,7 +600,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         options = self.heat_network_options()
 
-        constraints.extend(self.__gas_node_heat_mixing_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_node_mixing_path_constraints(ensemble_member))
 
         # Add source/demand head loss constrains only if head loss is non-zero
         if self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
