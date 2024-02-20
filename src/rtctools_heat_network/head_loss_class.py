@@ -568,7 +568,6 @@ class HeadLossClass:
             assert big_m != 0.0
 
         wall_roughness = heat_network_options["wall_roughness"]
-        # why is maximum_velocity not used in the code below? Jim ?
         if pipe_class is not None:
             diameter = pipe_class.inner_diameter
             area = pipe_class.area
@@ -593,20 +592,20 @@ class HeadLossClass:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
-                network_settings["maximum_velocity"], diameter, wall_roughness, temperature
+                maximum_velocity, diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
-            linearization_velocity = network_settings["maximum_velocity"]
+            linearization_velocity = maximum_velocity
             linearization_head_loss = c_v * linearization_velocity**2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                constraint_nominal = c_v * network_settings["maximum_velocity"] ** 2
+                constraint_nominal = c_v * maximum_velocity ** 2
                 # Interior point solvers, like IPOPT, do not like linearly dependent
                 # tight inequality constraints. For this reason, we split the
                 # constraints depending whether the Big-M formulation is used or not.
