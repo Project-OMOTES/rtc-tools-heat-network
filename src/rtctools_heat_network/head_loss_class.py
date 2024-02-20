@@ -125,7 +125,6 @@ class _MinimizeHeadLosses(Goal):
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
-        options = optimization_problem.heat_network_options()
 
         pumps = optimization_problem.heat_network_components.get("pump", [])
         sources = optimization_problem.heat_network_components.get("source", [])
@@ -139,7 +138,7 @@ class _MinimizeHeadLosses(Goal):
         for s in sources:
             sum_ += 2 * optimization_problem.state(f"{s}.dH")
 
-        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
             for p in optimization_problem.heat_network_components.get("pipe", []):
@@ -166,11 +165,13 @@ class _MinimizeHydraulicPower(Goal):
     def __init__(
         self,
         optimization_problem,
+        input_network_settings,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
+        self.network_settings = input_network_settings
 
     def function(self, optimization_problem, ensemble_member):
         """
@@ -179,9 +180,8 @@ class _MinimizeHydraulicPower(Goal):
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
-        options = optimization_problem.heat_network_options()
 
-        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         for pipe in optimization_problem.heat_network_components.get("pipe", []):
             if (
@@ -198,9 +198,7 @@ class HeadLossClass:
     For handling of discharge - head (loss) relationship to the model.
     """
 
-    def __init__(self, *args, **kwargs):
-
-        # self.network_type = network_type
+    def __init__(self, input_network_settings, *args, **kwargs):
 
         self.__pipe_head_bounds = {}
 
@@ -212,6 +210,8 @@ class HeadLossClass:
 
         self.__priority = None
 
+        self.network_settings = input_network_settings
+
     def pre(self):
         """
         Some checks to avoid that different pipes have different head_loss options in case one
@@ -221,13 +221,12 @@ class HeadLossClass:
 
         self.__initialize_nominals_and_bounds()
 
-        options = self.heat_network_options()
         parameters = self.parameters(0)
 
         # It is not allowed to mix NO_HEADLOSS with other head loss options as
         # that just leads to weird and undefined behavior.
         head_loss_values = {
-            options["head_loss_option"],
+            self.network_settings["head_loss_option"],
         }
 
         pipe_type = "pipe"
@@ -235,7 +234,9 @@ class HeadLossClass:
             pipe_type = "gas_pipe"
 
         for p in self.heat_network_components.get(pipe_type, []):
-            head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
+            head_loss_values.add(self._hn_get_pipe_head_loss_option(
+                p, self.network_settings, parameters)
+            )
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
             raise Exception(
@@ -324,19 +325,14 @@ class HeadLossClass:
 
         options["minimum_pressure_far_point"] = 1.0
         options["wall_roughness"] = 2e-4
-        options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
         # Do not specify options["maximum_velocity"] here. Use the heat/gas_network_settings[]
-        options["n_linearization_lines"] = 5
-        options["minimize_head_losses"] = True
-        options["pipe_minimum_pressure"] = -np.inf
-        options["pipe_maximum_pressure"] = np.inf
 
         return options
 
     @abstractmethod
     def _hn_get_pipe_head_loss_option(
-        self, pipe, heat_network_options, parameters, **kwargs
+        self, pipe, network_settings, parameters, **kwargs
     ) -> HeadLossOption:
         """
         The global user head loss option is not necessarily the same as the
@@ -388,8 +384,8 @@ class HeadLossClass:
         options = optimization_problem.heat_network_options()
         parameters = optimization_problem.parameters(0)
 
-        min_pressure = options["pipe_minimum_pressure"]
-        max_pressure = options["pipe_maximum_pressure"]
+        min_pressure = network_settings["pipe_minimum_pressure"]
+        max_pressure = network_settings["pipe_maximum_pressure"]
         assert (
             max_pressure > min_pressure
         ), "The global maximum pressure must be larger than the minimum one."
@@ -401,7 +397,7 @@ class HeadLossClass:
             self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"] = (min_head, max_head)
             self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}Out.H"] = (min_head, max_head)
 
-        head_loss_option = options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
@@ -532,7 +528,7 @@ class HeadLossClass:
         else:
             symbolic = True
 
-        head_loss_option = heat_network_options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         assert (
             head_loss_option != HeadLossOption.NO_HEADLOSS
         ), "This method should be skipped when NO_HEADLOSS is set."
@@ -681,7 +677,7 @@ class HeadLossClass:
                 return expr
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            n_lines = heat_network_options["n_linearization_lines"]
+            n_lines = network_settings["n_linearization_lines"]
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,
@@ -786,7 +782,7 @@ class HeadLossClass:
         else:
             symbolic = True
 
-        head_loss_option = heat_network_options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         assert (
             head_loss_option != HeadLossOption.NO_HEADLOSS
         ), "This method should be skipped when NO_HEADLOSS is set."
@@ -914,7 +910,7 @@ class HeadLossClass:
                 return abs(hydraulic_power_linearized)
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            n_lines = heat_network_options["n_linearization_lines"]
+            n_lines = network_settings["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
                 diameter,

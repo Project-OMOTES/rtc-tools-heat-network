@@ -30,8 +30,8 @@ class TestElectrolyzer(TestCase):
         class MILPProblemSolve(MILPProblem):
             def heat_network_options(self):
                 options = super().heat_network_options()
-                options["pipe_maximum_pressure"] = 100.0  # [bar]
-                options["pipe_minimum_pressure"] = 0.0
+                self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
         milp_problem = run_optimization_problem(MILPProblemSolve, base_folder=base_folder)

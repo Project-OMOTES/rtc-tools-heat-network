@@ -28,7 +28,14 @@ class TestHeadLossCalculation(TestCase):
                 self.__head_loss_option = head_loss_option
                 super().__init__(*args, **kwargs)
 
-            def _hn_get_pipe_head_loss_option(self, *args, **kwargs):
+            heat_network_settings = {
+                "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
+                "maximum_velocity": 2.5,
+                "minimum_velocity": 0.005,
+                "head_loss_option": HeadLossOption.LINEAR,
+            }
+
+            def _hn_get_pipe_head_loss_option(self, heat_network_settings, *args, **kwargs):
                 return self.__head_loss_option
 
             def optimize(self):
@@ -40,6 +47,9 @@ class TestHeadLossCalculation(TestCase):
         heat_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
+            "minimum_velocity": 0.005,
+            "minimize_head_losses": True,
+            "n_linearization_lines": 5,
         }
 
         for h in [
@@ -51,8 +61,11 @@ class TestHeadLossCalculation(TestCase):
 
             options = m.heat_network_options()
             parameters = m.parameters(0)
+            heat_network_settings["head_loss_option"] = h
 
-            ret = m._head_loss_class._hn_pipe_head_loss("pipe_hot", m, options, heat_network_settings, parameters, 0.1)
+            ret = m._head_loss_class._hn_pipe_head_loss(
+                "pipe_hot", m, options, heat_network_settings, parameters, 0.1
+            )
             self.assertIsInstance(ret, float)
 
             ret = m._head_loss_class._hn_pipe_head_loss(

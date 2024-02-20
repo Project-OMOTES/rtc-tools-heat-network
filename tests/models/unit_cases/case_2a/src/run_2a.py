@@ -93,7 +93,7 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["heat_loss_disconnected_pipe"] = True
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
 
         return options
 

@@ -37,9 +37,9 @@ class TestHeadLoss(TestCase):
         class SourcePipeSinkDW(SourcePipeSink):
             def heat_network_options(self):
                 options = super().heat_network_options()
-                options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-                options["n_linearization_lines"] = 5
-                options["minimize_head_losses"] = True
+                self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                self.heat_network_settings["n_linearization_lines"] = 5
+                self.heat_network_settings["minimize_head_losses"] = True
 
                 return options
 
@@ -52,7 +52,7 @@ class TestHeadLoss(TestCase):
         pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
         temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
         pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
-        v_points = [0.0, v_max / solution.heat_network_options()["n_linearization_lines"]]
+        v_points = [0.0, v_max / solution.heat_network_settings["n_linearization_lines"]]
         v_inspect = v_points[0] + (v_points[1] - v_points[0]) / 2.0
 
         # Theoretical head loss calc, dH =
@@ -127,17 +127,17 @@ class TestHeadLoss(TestCase):
             class TestSourceSink(GasProblem):
                 def heat_network_options(self):
                     options = super().heat_network_options()
-                    options["minimize_head_losses"] = True
+                    self.gas_network_settings["minimize_head_losses"] = True
 
                     if head_loss_option_setting == HeadLossOption.LINEAR:
-                        options["head_loss_option"] = HeadLossOption.LINEAR
-                        options["n_linearization_lines"] = 1
+                        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
+                        self.gas_network_settings["n_linearization_lines"] = 1
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_DW:
-                        options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-                        options["n_linearization_lines"] = 2
+                        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                        self.gas_network_settings["n_linearization_lines"] = 2
 
-                    options["pipe_maximum_pressure"] = 100.0  # [bar]
-                    options["pipe_minimum_pressure"] = 10.0
+                    self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                    self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
             solution = run_optimization_problem(TestSourceSink, base_folder=base_folder)
@@ -156,7 +156,7 @@ class TestHeadLoss(TestCase):
             # TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
             temperature = 20.0
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
-            v_points = [0.0, v_max / solution.heat_network_options()["n_linearization_lines"]]
+            v_points = [0.0, v_max / solution.gas_network_settings["n_linearization_lines"]]
             v_inspect = results[f"{pipes[0]}.GasOut.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
 
             # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
@@ -195,6 +195,6 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHeadLoss()
-    # a.test_heat_network_head_loss() # temp
+    a.test_heat_network_head_loss()
     a.test_gas_network_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

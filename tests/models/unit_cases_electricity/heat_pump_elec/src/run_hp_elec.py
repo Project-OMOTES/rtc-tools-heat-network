@@ -49,7 +49,7 @@ class _GoalsAndOptions:
     def heat_network_options(self):
         options = super().heat_network_options()
         # options["heat_loss_disconnected_pipe"] = False
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["include_electric_cable_power_loss"] = True
 
         return options
@@ -117,7 +117,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
@@ -187,7 +187,7 @@ class HeatProblem2(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -252,7 +252,7 @@ class ElectricityProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
         return options

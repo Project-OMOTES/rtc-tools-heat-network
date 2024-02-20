@@ -28,15 +28,15 @@ class TestMILPGasSourceSink(TestCase):
         class TestSourceSink(GasProblem):
             def heat_network_options(self):
                 options = super().heat_network_options()
-                # options["head_loss_option"] = HeadLossOption.LINEAR
-                options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                # self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEAR
+                self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
 
-                options["n_linearization_lines"] = 1
-                # options["n_linearization_lines"] = 5
-                options["minimize_head_losses"] = True
+                self.heat_network_settings["n_linearization_lines"] = 1
+                # self.heat_network_settings["n_linearization_lines"] = 5
+                self.heat_network_settings["minimize_head_losses"] = True
 
-                options["pipe_maximum_pressure"] = 100.0  # [bar]
-                options["pipe_minimum_pressure"] = 0.0
+                self.heat_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                self.heat_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
         soltion = run_optimization_problem(TestSourceSink, base_folder=base_folder)

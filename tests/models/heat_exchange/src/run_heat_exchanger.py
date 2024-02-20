@@ -82,7 +82,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
+        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = False
 
         return options
@@ -114,9 +114,9 @@ class HeatProblemTvarSecondary(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
         return options
 
@@ -171,7 +171,7 @@ class HeatProblemTvar(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
         return options
 
@@ -215,7 +215,7 @@ class HeatProblemTvarDisableHEX(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
         return options
 

@@ -41,8 +41,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.heat_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
+            "minimum_velocity": 0.005,
+            "head_loss_option": HeadLossOption.LINEAR,
+            "minimize_head_losses": False,
+            "n_linearization_lines": 5,
+            "pipe_minimum_pressure": -np.inf,
+            "pipe_maximum_pressure": np.inf,
         }
-        self._head_loss_class = HeadLossClass()
+        self._head_loss_class = HeadLossClass(self.heat_network_settings)
         self.__pipe_head_bounds = {}
         self.__pipe_head_loss_var = {}
         self.__pipe_head_loss_bounds = {}
@@ -160,9 +166,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self, NetworkSettings.NETWORK_TYPE_HEAT, pipe_name, self.heat_network_settings
             )
             if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"] = initialized_vars[0]
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"] = (
+                    initialized_vars[0]
+                )
             if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"] = initialized_vars[1]
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"] = (
+                    initialized_vars[1]
+                )
             if initialized_vars[2] != {}:
                 self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:
@@ -176,25 +186,23 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if initialized_vars[7] != {}:
                 self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
 
-        # for p in self.heat_network_components.get("pipe", []):
-            p = pipe_name
-            neighbour = self.has_related_pipe(p)
-            if neighbour and p not in self.hot_pipes:
-                flow_dir_var = f"{self.cold_to_hot_pipe(p)}__flow_direct_var"
+            neighbour = self.has_related_pipe(pipe_name)
+            if neighbour and pipe_name not in self.hot_pipes:
+                flow_dir_var = f"{self.cold_to_hot_pipe(pipe_name)}__flow_direct_var"
             else:
-                flow_dir_var = f"{p}__flow_direct_var"
+                flow_dir_var = f"{pipe_name}__flow_direct_var"
 
-            self._pipe_to_flow_direct_map[p] = flow_dir_var
+            self._pipe_to_flow_direct_map[pipe_name] = flow_dir_var
             self.__flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
             # Fix the directions that are already implied by the bounds on heat
             # Nonnegative heat implies that flow direction Boolean is equal to one.
             # Nonpositive heat implies that flow direction Boolean is equal to zero.
 
-            heat_in_lb = _get_min_bound(bounds[f"{p}.HeatIn.Heat"][0])
-            heat_in_ub = _get_max_bound(bounds[f"{p}.HeatIn.Heat"][1])
-            heat_out_lb = _get_min_bound(bounds[f"{p}.HeatOut.Heat"][0])
-            heat_out_ub = _get_max_bound(bounds[f"{p}.HeatOut.Heat"][1])
+            heat_in_lb = _get_min_bound(bounds[f"{pipe_name}.HeatIn.Heat"][0])
+            heat_in_ub = _get_max_bound(bounds[f"{pipe_name}.HeatIn.Heat"][1])
+            heat_out_lb = _get_min_bound(bounds[f"{pipe_name}.HeatOut.Heat"][0])
+            heat_out_ub = _get_max_bound(bounds[f"{pipe_name}.HeatOut.Heat"][1])
 
             if (heat_in_lb >= 0.0 and heat_in_ub >= 0.0) or (
                 heat_out_lb >= 0.0 and heat_out_ub >= 0.0
@@ -207,19 +215,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             else:
                 self.__flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
-            if parameters[f"{p}.disconnectable"]:
-                neighbour = self.has_related_pipe(p)
-                if neighbour and p not in self.hot_pipes:
-                    disconnected_var = f"{self.cold_to_hot_pipe(p)}__is_disconnected"
+            if parameters[f"{pipe_name}.disconnectable"]:
+                neighbour = self.has_related_pipe(pipe_name)
+                if neighbour and pipe_name not in self.hot_pipes:
+                    disconnected_var = f"{self.cold_to_hot_pipe(pipe_name)}__is_disconnected"
                 else:
-                    disconnected_var = f"{p}__is_disconnected"
+                    disconnected_var = f"{pipe_name}__is_disconnected"
 
-                self._pipe_disconnect_map[p] = disconnected_var
+                self._pipe_disconnect_map[pipe_name] = disconnected_var
                 self.__pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
                 self.__pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
-                raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
+                raise Exception(f"Heat flow rate in/out of pipe '{pipe_name}' cannot be zero.")
 
         # Integers for disabling the HEX temperature constraints
         for hex in [
@@ -417,11 +425,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["maximum_flow_der"] = np.inf
         options["neglect_pipe_heat_losses"] = False
         options["heat_loss_disconnected_pipe"] = True
-        options["minimum_velocity"] = 0.005
-        options["head_loss_option"] = HeadLossOption.LINEAR
-        options["minimize_head_losses"] = False
         options["include_demand_insulation_options"] = False
-        options["network_type"] = "heat"
 
         return options
 
@@ -533,18 +537,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         g = super().path_goals().copy()
 
-        options = self.heat_network_options()
         if (
-            options["minimize_head_losses"]
-            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"]
+            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
-            g.append(self._head_loss_class._hn_minimization_goal_class(self, self.heat_network_settings))
+            g.append(
+                self._head_loss_class._hn_minimization_goal_class(self, self.heat_network_settings)
+            )
 
             if (
-                options["head_loss_option"] == HeadLossOption.LINEAR
-                or options["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+                self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR
+                or self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEARIZED_DW
             ):
-                g.append(self._head_loss_class._hpwr_minimization_goal_class(self))
+                g.append(self._head_loss_class._hpwr_minimization_goal_class(
+                    self,
+                    self.heat_network_settings,)
+                )
 
         return g
 
@@ -573,7 +581,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
         components = self.heat_network_components
 
-        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -600,7 +608,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            options["pipe_maximum_pressure"] - options["pipe_minimum_pressure"]
+            self.heat_network_settings["pipe_maximum_pressure"] - self.heat_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -989,10 +997,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
         """
         constraints = []
-        options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
 
-        minimum_velocity = options["minimum_velocity"] # ??? Jim ???
+        minimum_velocity = self.heat_network_settings["minimum_velocity"]
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         # Also ensure that the discharge has the same sign as the heat.
@@ -1278,7 +1285,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         options = self.heat_network_options()
 
-        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             parameters = self.parameters(ensemble_member)
             components = self.heat_network_components
 
@@ -1290,7 +1297,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # discharge and the hydraulic_power.
                     continue
 
-                head_loss_option = self._hn_get_pipe_head_loss_option(pipe, options, parameters)
+                head_loss_option = self._hn_get_pipe_head_loss_option(
+                    pipe, self.heat_network_settings, parameters
+                )
                 assert (
                     head_loss_option != HeadLossOption.NO_HEADLOSS
                 ), "This method should be skipped when NO_HEADLOSS is set."
@@ -1997,12 +2006,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         return area * heat_network_options["estimated_velocity"]
 
     @staticmethod
-    def _hn_get_pipe_head_loss_option(pipe, heat_network_options, parameters):
+    def _hn_get_pipe_head_loss_option(pipe, heat_network_settings, parameters):
         """
         This function returns the head loss option for a pipe. Note that we assume that we can use
         the more accurate DW linearized approximation when a pipe has a control valve.
         """
-        head_loss_option = heat_network_options["head_loss_option"]
+        head_loss_option = heat_network_settings["head_loss_option"]
 
         if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
             # If there is a control valve present, we use the more accurate
@@ -2213,7 +2222,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # Note that the Q >= 0 and dH >= 0 constraints are part of the bounds.
             constraints.append((q - status * maximum_discharge, -np.inf, 0.0))
 
-            if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append((dh - (1 - status) * maximum_head_loss, -np.inf, 0.0))
 
         return constraints
@@ -2262,7 +2271,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraints.append((q + (1 - flow_dir) * maximum_discharge, 0.0, np.inf))
             constraints.append((q - flow_dir * maximum_discharge, -np.inf, 0.0))
 
-            if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
                 constraints.append((-dh + (1 - flow_dir) * maximum_head_loss, 0.0, np.inf))
                 constraints.append((-dh - flow_dir * maximum_head_loss, -np.inf, 0.0))
 
@@ -2517,10 +2526,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         constraints = super().path_constraints(ensemble_member)
 
-        options = self.heat_network_options()
-
         # Add source/demand head loss constrains only if head loss is non-zero
-        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(
                 self._head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
@@ -2556,9 +2563,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = super().constraints(ensemble_member)
 
-        options = self.heat_network_options()
-
-        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(self._hn_pipe_head_loss_constraints(ensemble_member))
 
         constraints.extend(self.__heat_loss_variable_constraints(ensemble_member))
@@ -2637,8 +2642,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
 
         if (
-            options["minimize_head_losses"]
-            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"]
+            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._head_loss_class._hn_minimization_goal_class.priority
         ):
             components = self.heat_network_components
@@ -2670,7 +2675,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     head_loss_target = self._head_loss_class._hn_pipe_head_loss(
                         pipe, self, options, self.heat_network_settings, parameters, q, None
                     )
-                    if options["head_loss_option"] == HeadLossOption.LINEAR:
+                    if self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
@@ -2720,7 +2725,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if np.any(heat_in > 1.0) or np.any(heat_out > 1.0):
                 logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
 
-        if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             for p in self.heat_network_components.get("pipe", []):
                 head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
                 if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
@@ -2741,7 +2746,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if not options["heat_loss_disconnected_pipe"]:
                         assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
-        minimum_velocity = options["minimum_velocity"]
+        minimum_velocity = self.heat_network_settings["minimum_velocity"]
         for p in self.heat_network_components.get("pipe", []):
             area = parameters[f"{p}.area"]
 

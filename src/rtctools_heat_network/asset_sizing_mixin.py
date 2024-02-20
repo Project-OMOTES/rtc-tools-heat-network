@@ -682,7 +682,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
         components = self.heat_network_components
 
-        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -720,7 +720,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            options["pipe_maximum_pressure"] - options["pipe_minimum_pressure"]
+            self.heat_network_settings["pipe_maximum_pressure"] - self.heat_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -1334,8 +1334,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # that we're sort of done minimizing/choosing the pipe diameter, and
         # that we can set the parameters to the optimized values.
         if (
-            options["minimize_head_losses"]
-            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"]
+            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()
