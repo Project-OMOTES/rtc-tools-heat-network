@@ -176,20 +176,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if initialized_vars[7] != {}:
                 self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
 
-        kvr = 123.0
-
-        # Integers for disabling the HEX temperature constraints
-        for hex in [
-            *self.heat_network_components.get("heat_exchanger", []),
-            *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
-        ]:
-            disabeld_hex_var = f"{hex}__disabled"
-            self.__disabled_hex_map[hex] = disabeld_hex_var
-            self.__disabled_hex_var[disabeld_hex_var] = ca.MX.sym(disabeld_hex_var)
-            self.__disabled_hex_var_bounds[disabeld_hex_var] = (0, 1.0)
-
-        for p in self.heat_network_components.get("pipe", []):
+        # for p in self.heat_network_components.get("pipe", []):
+            p = pipe_name
             neighbour = self.has_related_pipe(p)
             if neighbour and p not in self.hot_pipes:
                 flow_dir_var = f"{self.cold_to_hot_pipe(p)}__flow_direct_var"
@@ -232,6 +220,17 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             if heat_in_ub <= 0.0 and heat_out_lb >= 0.0:
                 raise Exception(f"Heat flow rate in/out of pipe '{p}' cannot be zero.")
+
+        # Integers for disabling the HEX temperature constraints
+        for hex in [
+            *self.heat_network_components.get("heat_exchanger", []),
+            *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
+        ]:
+            disabeld_hex_var = f"{hex}__disabled"
+            self.__disabled_hex_map[hex] = disabeld_hex_var
+            self.__disabled_hex_var[disabeld_hex_var] = ca.MX.sym(disabeld_hex_var)
+            self.__disabled_hex_var_bounds[disabeld_hex_var] = (0, 1.0)
 
         for v in self.heat_network_components.get("check_valve", []):
             status_var = f"{v}__status_var"
@@ -993,7 +992,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
 
-        minimum_velocity = options["minimum_velocity"] # ???
+        minimum_velocity = options["minimum_velocity"] # ??? Jim ???
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         # Also ensure that the discharge has the same sign as the heat.

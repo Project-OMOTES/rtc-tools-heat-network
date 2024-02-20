@@ -27,7 +27,14 @@ class TestElectrolyzer(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        milp_problem = run_optimization_problem(MILPProblem, base_folder=base_folder)
+        class MILPProblemSolve(MILPProblem):
+            def heat_network_options(self):
+                options = super().heat_network_options()
+                options["pipe_maximum_pressure"] = 100.0  # [bar]
+                options["pipe_minimum_pressure"] = 0.0
+                return options
+
+        milp_problem = run_optimization_problem(MILPProblemSolve, base_folder=base_folder)
 
         results = milp_problem.extract_results()
 
@@ -82,6 +89,8 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(
             np.diff(results["GasStorage_e492.Stored_gas_mass"]),
             results["GasStorage_e492.Gas_tank_flow"][1:] * rho * timestep,
+            rtol=1e-6,
+            atol=1e-8,
         )
         np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.0)
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)

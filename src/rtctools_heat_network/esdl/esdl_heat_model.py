@@ -392,7 +392,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
-            modifiers = dict(length=length, diameter=diameter)
+            modifiers = dict(
+                length=length,
+                diameter=diameter,
+                GasIn=dict(Q=dict(min=-q_max, max=q_max),),
+                GasOut=dict(Q=dict(min=-q_max, max=q_max),),
+            )
 
             return GasPipe, modifiers
 

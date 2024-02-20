@@ -326,6 +326,7 @@ class HeadLossClass:
         options["wall_roughness"] = 2e-4
         options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
+        # Do not specify options["maximum_velocity"] here. Use the heat/gas_network_settings[]
         options["n_linearization_lines"] = 5
         options["minimize_head_losses"] = True
         options["pipe_minimum_pressure"] = -np.inf
@@ -567,7 +568,7 @@ class HeadLossClass:
             assert big_m != 0.0
 
         wall_roughness = heat_network_options["wall_roughness"]
-        # why is maximum_velocity not used in the code below?
+        # why is maximum_velocity not used in the code below? Jim ?
         if pipe_class is not None:
             diameter = pipe_class.inner_diameter
             area = pipe_class.area

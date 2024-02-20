@@ -28,13 +28,19 @@ class TestMILPGasSourceSink(TestCase):
         class TestSourceSink(GasProblem):
             def heat_network_options(self):
                 options = super().heat_network_options()
-                options["head_loss_option"] = HeadLossOption.LINEAR
-                # options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                # options["head_loss_option"] = HeadLossOption.LINEAR
+                options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+
+                options["n_linearization_lines"] = 1
                 # options["n_linearization_lines"] = 5
                 options["minimize_head_losses"] = True
+
+                options["pipe_maximum_pressure"] = 100.0  # [bar]
+                options["pipe_minimum_pressure"] = 0.0
                 return options
 
-        results = run_optimization_problem(TestSourceSink, base_folder=base_folder).extract_results()
+        soltion = run_optimization_problem(TestSourceSink, base_folder=base_folder)
+        results = soltion.extract_results()
 
         # Test if mass conserved
         np.testing.assert_allclose(

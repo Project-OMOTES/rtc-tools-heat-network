@@ -1,12 +1,15 @@
 import logging
+import math
 
-import esdl
+import casadi as ca
+
 
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
+from rtctools.optimization.timeseries import Timeseries
 
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .head_loss_class import HeadLossClass, HeadLossOption
@@ -43,9 +46,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self._hn_gas_pipe_to_head_loss_map = {}
 
         # Boolean path-variable for the direction of the flow, inport to outport is positive flow.
-        self.__flow_direct_var = {}
-        self.__flow_direct_bounds = {}
-        self._pipe_to_flow_direct_map = {}
+        self.__gas_flow_direct_var = {}
+        self.__gas_flow_direct_bounds = {}
+        self._gas_pipe_to_flow_direct_map = {}
 
         super().__init__(*args, **kwargs)
 
@@ -57,8 +60,21 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         super().pre()
 
-        options = self.heat_network_options()
-        parameters = self.parameters(0)
+        def _get_max_bound(bound):
+            if isinstance(bound, np.ndarray):
+                return max(bound)
+            elif isinstance(bound, Timeseries):
+                return max(bound.values)
+            else:
+                return bound
+
+        def _get_min_bound(bound):
+            if isinstance(bound, np.ndarray):
+                return min(bound)
+            elif isinstance(bound, Timeseries):
+                return min(bound.values)
+            else:
+                return bound
 
         bounds = self.bounds()
 
@@ -83,37 +99,32 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
             if initialized_vars[7] != {}:
                 self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
-            # if len(initialized_vars[0]) > 0:
-            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}In.H"] = initialized_vars[
-            #         0
-            #     ]
-            # if len(initialized_vars[1]) > 0:
-            #     self.__gas_pipe_head_bounds[f"{pipe_name}.{commodity}Out.H"] = initialized_vars[
-            #         1
-            #     ]
-            # if len(initialized_vars[2]) > 0:
-            #     self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
-            # if len(initialized_vars[3]) > 0:
-            #     self._hn_gas_pipe_to_head_loss_map[pipe_name] = initialized_vars[3]
-            # if len(initialized_vars[4]) > 0:
-            #     self.__gas_pipe_head_loss_var[head_loss_var] = initialized_vars[4][
-            #         head_loss_var
-            #     ]
-            # if len(initialized_vars[5]) > 0:
-            #     self.__gas_pipe_head_loss_nominals[f"{pipe_name}.dH"] = initialized_vars[5][
-            #         f"{pipe_name}.dH"
-            #     ]
-            # if len(initialized_vars[6]) > 0:
-            #     self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6][
-            #         head_loss_var
-            #     ]
-            # if len(initialized_vars[7]) > 0:
-            #     self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7][
-            #         head_loss_var
-            #     ]
-            temp2 = 12.0
 
-            temp = 0.0
+            # Integer variables
+            flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
+
+            self._gas_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
+            self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
+
+            # Fix the directions that are already implied by the bounds on heat
+            # Nonnegative heat implies that flow direction Boolean is equal to one.
+            # Nonpositive heat implies that flow direction Boolean is equal to zero.
+
+            q_in_lb = _get_min_bound(bounds[f"{pipe_name}.GasIn.Q"][0])
+            q_in_ub = _get_max_bound(bounds[f"{pipe_name}.GasIn.Q"][1])
+            q_out_lb = _get_min_bound(bounds[f"{pipe_name}.GasOut.Q"][0])
+            q_out_ub = _get_max_bound(bounds[f"{pipe_name}.GasOut.Q"][1])
+
+            if (q_in_lb >= 0.0 and q_in_ub >= 0.0) or (
+                q_out_lb >= 0.0 and q_out_ub >= 0.0
+            ):
+                self.__gas_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
+            elif (q_in_lb <= 0.0 and q_in_ub <= 0.0) or (
+                q_out_lb <= 0.0 and q_out_ub <= 0.0
+            ):
+                self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
+            else:
+                self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
@@ -163,6 +174,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         variables = super().path_variables.copy()
         variables.extend(self.__gas_pipe_head_loss_var.values())
+        variables.extend(self.__gas_flow_direct_var.values())
 
         return variables
 
@@ -170,15 +182,12 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         All variables that only can take integer values should be added to this function.
         """
-        # some binary var still to be added for equality constraints
-        # if (
-        #     or variable in self.__demand_insulation_class_var
-        # ):
-        #     return True
-        # else:
-        #     return super().variable_is_discrete(variable)
-
-        return super().variable_is_discrete(variable)
+        if (
+            variable in self.__gas_flow_direct_var
+        ):
+            return True
+        else:
+            return super().variable_is_discrete(variable)
 
     def variable_nominal(self, variable):
         """
@@ -218,7 +227,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             options["minimize_head_losses"]
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
-            g.append(self._head_loss_class._hn_minimization_goal_class(self, self.gas_network_settings))
+            g.append(
+                self._head_loss_class._hn_minimization_goal_class(self, self.gas_network_settings)
+            )
 
         return g
 
@@ -313,7 +324,111 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    def _hn_gas_pipe__head_loss_constraints(self, ensemble_member):
+    def __flow_direction_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to set the direction in pipes and determine whether a pipe
+        is utilized at all (is_disconnected variable).
+
+        Whether a pipe is connected is based upon whether flow passes through that pipe.
+
+        The directions are set based upon the directions of how thermal power propegates. This is
+        done based upon the sign of the Heat variable. Where positive Heat means a positive
+        direction and negative heat means a negative direction. By default, positive is defined from
+        HeatIn to HeatOut.
+
+        Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
+        """
+        constraints = []
+        options = self.heat_network_options()
+        parameters = self.parameters(ensemble_member)
+
+        minimum_velocity = options["minimum_velocity"] # ??? Jim ???
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
+
+        # Also ensure that the discharge has the same sign as the heat.
+        for p in self.heat_network_components.get("gas_pipe", []):
+            flow_dir_var = self._gas_pipe_to_flow_direct_map[p]
+            flow_dir = self.state(flow_dir_var)
+
+            # Hard-coded value for now. Pipe utilization stil to be added
+            is_disconnected_var = None
+
+            if is_disconnected_var is None:
+                is_disconnected = 0.0
+            else:
+                is_disconnected = self.state(is_disconnected_var)
+
+            q_in = self.state(f"{p}.GasIn.Q")
+
+            try:
+                pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
+                maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
+                var_names = self._pipe_topo_pipe_class_map[p].values()
+                dn_none = 0.0
+                for i, pc in enumerate(pipe_classes):
+                    if pc.inner_diameter == 0.0:
+                        dn_none = self.variable(list(var_names)[i])
+                minimum_discharge = min(
+                    [c.area * minimum_velocity for c in pipe_classes if c.area > 0.0]
+                )
+            except KeyError:
+                maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
+
+                if math.isfinite(minimum_velocity) and minimum_velocity > 0.0:
+                    minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
+                else:
+                    minimum_discharge = 0.0
+                dn_none = 0.0
+
+            if maximum_discharge == 0.0:
+                maximum_discharge = 1.0
+            big_m = 2.0 * (maximum_discharge + minimum_discharge)
+
+            if minimum_discharge > 0.0:
+                constraint_nominal = (minimum_discharge * big_m) ** 0.5
+            else:
+                constraint_nominal = big_m
+
+            big_m = 2.0 * np.max(
+                np.abs(
+                    (
+                        *self.bounds()[f"{p}.GasIn.Q"],
+                        *self.bounds()[f"{p}.GasOut.Q"],
+                    )
+                )
+            )
+
+            # Note we only need one on the heat as the desired behaviour is propegated by the
+            # constraints heat_in - heat_out - heat_loss == 0.
+            constraints.append(
+                (
+                    (q_in - big_m * flow_dir) / big_m,
+                    -np.inf,
+                    0.0,
+                )
+            )
+            constraints.append(
+                (
+                    (q_in + big_m * (1 - flow_dir)) / big_m,
+                    0.0,
+                    np.inf,
+                )
+            )
+
+        # Pipes that are connected in series should have the same heat direction.
+        for pipes in self.heat_network_topology.pipe_series:
+            if len(pipes) <= 1:
+                continue
+
+            base_flow_dir_var = self.state(self._gas_pipe_to_flow_direct_map[pipes[0]])
+
+            for p in pipes[1:]:
+                flow_dir_var = self.state(self._gas_pipe_to_flow_direct_map[p])
+                constraints.append((base_flow_dir_var - flow_dir_var, 0.0, 0.0))
+
+        return constraints
+
+    def _hn_gas_pipe_head_loss_constraints(self, ensemble_member):
         """
         This function adds the head loss constraints for pipes. There are two options namely with
         and without pipe class optimization. In both cases we assume that disconnected pipes, pipes
@@ -447,27 +562,25 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
             # their own integers as well.
-            # kvr still to add
-            # flow_dir = self.__state_vector_scaled(
-            #     self._pipe_to_flow_direct_map[pipe], ensemble_member
-            # )
-            # flow_dir = 1.0
+            flow_dir = self.__state_vector_scaled(
+                self._gas_pipe_to_flow_direct_map[pipe], ensemble_member
+            )
 
             # Note that the Big-M should _at least_ cover the maximum
             # distance between `head_loss` and `dh`. If `head_loss` can be at
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
             # least double (i.e. >= 2.0). And because we do not want Big-Ms to
             # be overly tight, we include an additional factor of 2.
-            # big_m = 2 * 2 * max_head_loss
-
-            # constraints.append(
-            #     (
-            #         (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            # constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
+            big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
+            # big_m = 2.0 * 2.0 * max_head_loss
+            constraints.append(
+                (
+                    (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
+                    0.0,
+                    np.inf,
+                )
+            )
+            constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
 
         return constraints
 
@@ -489,6 +602,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self._head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
 
+        constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
+
         return constraints
 
     def constraints(self, ensemble_member):
@@ -503,7 +618,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         options = self.heat_network_options()
 
         if options["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-            constraints.extend(self._hn_gas_pipe__head_loss_constraints(ensemble_member))
+            constraints.extend(self._hn_gas_pipe_head_loss_constraints(ensemble_member))
 
         return constraints
 
