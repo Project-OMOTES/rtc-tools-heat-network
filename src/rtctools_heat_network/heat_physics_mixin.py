@@ -542,16 +542,21 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
             g.append(
-                self._head_loss_class._hn_minimization_goal_class(self, self.heat_network_settings)
+                self._head_loss_class._hn_minimization_goal_class(
+                    self,
+                    self.heat_network_settings,
+                )
             )
 
             if (
                 self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR
                 or self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEARIZED_DW
             ):
-                g.append(self._head_loss_class._hpwr_minimization_goal_class(
-                    self,
-                    self.heat_network_settings,)
+                g.append(
+                    self._head_loss_class._hpwr_minimization_goal_class(
+                        self,
+                        self.heat_network_settings,
+                    )
                 )
 
         return g
@@ -608,7 +613,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.heat_network_settings["pipe_maximum_pressure"] - self.heat_network_settings["pipe_minimum_pressure"]
+            self.heat_network_settings["pipe_maximum_pressure"]
+            - self.heat_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -2082,7 +2088,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         continue
 
                     head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.heat_network_settings, parameters, max_discharge, pipe_class=pc
+                        pipe,
+                        self,
+                        options,
+                        self.heat_network_settings,
+                        parameters,
+                        max_discharge,
+                        pipe_class=pc,
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -2119,7 +2131,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max_head_loss = max(
                         max_head_loss,
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, self.heat_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe,
+                            self,
+                            options,
+                            self.heat_network_settings,
+                            parameters,
+                            pc.maximum_discharge,
+                            pipe_class=pc,
                         ),
                     )
             else:
@@ -2186,7 +2204,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
-        options = self.heat_network_options()
 
         all_pipes = set(self.heat_network_components.get("pipe", []))
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
@@ -2234,7 +2251,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
-        options = self.heat_network_options()
 
         all_pipes = set(self.heat_network_components.get("pipe", []))
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
@@ -2551,7 +2567,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
-        
+
         return constraints
 
     def constraints(self, ensemble_member):
@@ -2695,10 +2711,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         min_head_loss = head_loss
                     else:
                         min_head_loss = np.minimum(min_head_loss, head_loss)
-                
 
-
-                if len(components.get("demand", [])) > 0 and not np.allclose(min_head_loss, min_head_loss_target, rtol=rtol, atol=atol):
+                if len(components.get("demand", [])) > 0 and not np.allclose(
+                    min_head_loss, min_head_loss_target, rtol=rtol, atol=atol
+                ):
                     logger.warning("Minimum head at demands is higher than target minimum.")
 
         super().priority_completed(priority)

@@ -1148,15 +1148,20 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, self.heat_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe,
+                            self,
+                            options,
+                            self.heat_network_settings,
+                            parameters,
+                            pc.maximum_discharge,
+                            pipe_class=pc,
                         )
                         for pc in pipe_classes
                         if pc.maximum_discharge > 0.0
                     )
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
-                    # max_discharge = options["maximum_velocity"] * area # maximum velocity issue
-                    max_discharge = self.heat_network_settings["maximum_velocity"] * area # maximum velocity issue
+                    max_discharge = self.heat_network_settings["maximum_velocity"] * area
                     head_loss += self._head_loss_class._hn_pipe_head_loss(
                         pipe, self, options, self.heat_network_settings, parameters, max_discharge
                     )
@@ -1168,7 +1173,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.heat_network_settings["pipe_maximum_pressure"] - self.heat_network_settings["pipe_minimum_pressure"]
+            self.heat_network_settings["pipe_maximum_pressure"]
+            - self.heat_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -2108,7 +2114,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
 
         self.__pipe_class_to_results()
 

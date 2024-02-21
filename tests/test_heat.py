@@ -107,7 +107,9 @@ class TestMinMaxPressureOptions(TestCase):
         def heat_network_options(self):
             options = super().heat_network_options()
             assert "pipe_minimum_pressure" in self.heat_network_settings
-            self.heat_network_settings["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
+            self.heat_network_settings["pipe_minimum_pressure"] = (
+                TestMinMaxPressureOptions.min_pressure
+            )
             return options
 
     class MaxPressure(SmallerPipes):
@@ -120,8 +122,12 @@ class TestMinMaxPressureOptions(TestCase):
     class MinMaxPressure(SmallerPipes):
         def heat_network_options(self):
             options = super().heat_network_options()
-            self.heat_network_settings["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
-            self.heat_network_settings["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
+            self.heat_network_settings["pipe_minimum_pressure"] = (
+                TestMinMaxPressureOptions.min_pressure
+            )
+            self.heat_network_settings["pipe_maximum_pressure"] = (
+                TestMinMaxPressureOptions.max_pressure
+            )
             return options
 
     def test_min_max_pressure_options(self):
@@ -296,11 +302,3 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
-
-if __name__ == "__main__":
-    import time
-
-    start_time = time.time()
-    a = TestMinMaxPressureOptions()
-    a.test_min_max_pressure_options()
-    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

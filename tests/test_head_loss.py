@@ -17,7 +17,8 @@ class TestHeadLoss(TestCase):
 
     def test_heat_network_head_loss(self):
         """
-        Heat network: test the piecewise linear inequality constraint of the head loss approximation.
+        Heat network: test the piecewise linear inequality constraint of the head loss
+        approximation.
 
         Checks:
         - That the head_loss() function does return the expected theoretical dH at a data point
@@ -124,10 +125,14 @@ class TestHeadLoss(TestCase):
             HeadLossOption.LINEAR,
             HeadLossOption.LINEARIZED_DW,
         ]:
+
             class TestSourceSink(GasProblem):
                 def heat_network_options(self):
                     options = super().heat_network_options()
                     self.gas_network_settings["minimize_head_losses"] = True
+
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
 
                     if head_loss_option_setting == HeadLossOption.LINEAR:
                         self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
@@ -146,7 +151,7 @@ class TestHeadLoss(TestCase):
             # Check the head loss variable
             np.testing.assert_allclose(
                 results["Pipe_4abc.GasOut.H"] - results["Pipe_4abc.GasIn.H"],
-                results["Pipe_4abc.dH"]
+                results["Pipe_4abc.dH"],
             )
 
             pipes = ["Pipe_4abc"]
@@ -177,10 +182,7 @@ class TestHeadLoss(TestCase):
             dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
 
             # Check that the aproximated head loss matches the maunally calculated value
-            np.testing.assert_allclose(
-                dh_manual_linear,
-                - results["Pipe_4abc.dH"]
-            )
+            np.testing.assert_allclose(dh_manual_linear, -results["Pipe_4abc.dH"])
 
             # Check that the head loss approximation with 2 linear lines (inequality constraints
             # is < than the linear equality head loss constraint

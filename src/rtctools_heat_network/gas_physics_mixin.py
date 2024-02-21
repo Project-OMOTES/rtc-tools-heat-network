@@ -1,5 +1,4 @@
 import logging
-import math
 
 import casadi as ca
 
@@ -92,9 +91,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
             )
             if initialized_vars[0] != {}:
-                self.__gas_pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}In.H"] = initialized_vars[0]
+                self.__gas_pipe_head_bounds[
+                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}In.H"
+                ] = initialized_vars[0]
             if initialized_vars[1] != {}:
-                self.__gas_pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}Out.H"] = initialized_vars[1]
+                self.__gas_pipe_head_bounds[
+                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_GAS}Out.H"
+                ] = initialized_vars[1]
             if initialized_vars[2] != {}:
                 self.__gas_pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:
@@ -123,13 +126,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             q_out_lb = _get_min_bound(bounds[f"{pipe_name}.GasOut.Q"][0])
             q_out_ub = _get_max_bound(bounds[f"{pipe_name}.GasOut.Q"][1])
 
-            if (q_in_lb >= 0.0 and q_in_ub >= 0.0) or (
-                q_out_lb >= 0.0 and q_out_ub >= 0.0
-            ):
+            if (q_in_lb >= 0.0 and q_in_ub >= 0.0) or (q_out_lb >= 0.0 and q_out_ub >= 0.0):
                 self.__gas_flow_direct_bounds[flow_dir_var] = (1.0, 1.0)
-            elif (q_in_lb <= 0.0 and q_in_ub <= 0.0) or (
-                q_out_lb <= 0.0 and q_out_ub <= 0.0
-            ):
+            elif (q_in_lb <= 0.0 and q_in_ub <= 0.0) or (q_out_lb <= 0.0 and q_out_ub <= 0.0):
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 0.0)
             else:
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
@@ -190,9 +189,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         All variables that only can take integer values should be added to this function.
         """
-        if (
-            variable in self.__gas_flow_direct_var
-        ):
+        if variable in self.__gas_flow_direct_var:
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -284,7 +281,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            self.gas_network_settings["pipe_maximum_pressure"] - self.gas_network_settings["pipe_minimum_pressure"]
+            self.gas_network_settings["pipe_maximum_pressure"]
+            - self.gas_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -346,54 +344,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
         """
         constraints = []
-        parameters = self.parameters(ensemble_member)
-
-        minimum_velocity = self.gas_network_settings["minimum_velocity"]
-        maximum_velocity = self.gas_network_settings["maximum_velocity"]
 
         # Also ensure that the discharge has the same sign as the heat.
         for p in self.heat_network_components.get("gas_pipe", []):
             flow_dir_var = self._gas_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
-            # Hard-coded value for now. Pipe utilization stil to be added
-            is_disconnected_var = None
-
-            if is_disconnected_var is None:
-                is_disconnected = 0.0
-            else:
-                is_disconnected = self.state(is_disconnected_var)
-
             q_in = self.state(f"{p}.GasIn.Q")
-
-            try:
-                pipe_classes = self._pipe_topo_pipe_class_map[p].keys()
-                maximum_discharge = max([c.maximum_discharge for c in pipe_classes])
-                var_names = self._pipe_topo_pipe_class_map[p].values()
-                dn_none = 0.0
-                for i, pc in enumerate(pipe_classes):
-                    if pc.inner_diameter == 0.0:
-                        dn_none = self.variable(list(var_names)[i])
-                minimum_discharge = min(
-                    [c.area * minimum_velocity for c in pipe_classes if c.area > 0.0]
-                )
-            except KeyError:
-                maximum_discharge = maximum_velocity * parameters[f"{p}.area"]
-
-                if math.isfinite(minimum_velocity) and minimum_velocity > 0.0:
-                    minimum_discharge = minimum_velocity * parameters[f"{p}.area"]
-                else:
-                    minimum_discharge = 0.0
-                dn_none = 0.0
-
-            if maximum_discharge == 0.0:
-                maximum_discharge = 1.0
-            big_m = 2.0 * (maximum_discharge + minimum_discharge)
-
-            if minimum_discharge > 0.0:
-                constraint_nominal = (minimum_discharge * big_m) ** 0.5
-            else:
-                constraint_nominal = big_m
 
             big_m = 2.0 * np.max(
                 np.abs(
@@ -496,7 +453,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         continue
 
                     head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.gas_network_settings, parameters, max_discharge, pipe_class=pc
+                        pipe,
+                        self,
+                        options,
+                        self.gas_network_settings,
+                        parameters,
+                        max_discharge,
+                        pipe_class=pc,
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -533,7 +496,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     max_head_loss = max(
                         max_head_loss,
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, self.gas_network_settings, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe,
+                            self,
+                            options,
+                            self.gas_network_settings,
+                            parameters,
+                            pc.maximum_discharge,
+                            pipe_class=pc,
                         ),
                     )
             else:
@@ -598,8 +567,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         constraints = super().path_constraints(ensemble_member)
 
-        options = self.heat_network_options()
-
         constraints.extend(self.__gas_node_mixing_path_constraints(ensemble_member))
 
         # Add source/demand head loss constrains only if head loss is non-zero
@@ -620,8 +587,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         are indexed within the constraint formulation.
         """
         constraints = super().constraints(ensemble_member)
-
-        options = self.heat_network_options()
 
         if self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(self._hn_gas_pipe_head_loss_constraints(ensemble_member))

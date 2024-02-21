@@ -5,8 +5,6 @@ from typing import List, Optional, Tuple, Type, Union
 
 import casadi as ca
 
-import esdl
-
 import numpy as np
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
@@ -234,8 +232,8 @@ class HeadLossClass:
             pipe_type = "gas_pipe"
 
         for p in self.heat_network_components.get(pipe_type, []):
-            head_loss_values.add(self._hn_get_pipe_head_loss_option(
-                p, self.network_settings, parameters)
+            head_loss_values.add(
+                self._hn_get_pipe_head_loss_option(p, self.network_settings, parameters)
             )
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
@@ -375,7 +373,7 @@ class HeadLossClass:
         return _MinimizeHydraulicPower
 
     def initialize_variables_nominals_and_bounds(
-            self, optimization_problem, commodity_type, pipe_name, network_settings
+        self, optimization_problem, commodity_type, pipe_name, network_settings
     ):
         """
         This function computes and sets the bounds and nominals for the head loss of all the pipes
@@ -431,50 +429,42 @@ class HeadLossClass:
         return (
             (
                 self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"]
-                # if hasattr(self, "__pipe_head_bounds")
-                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}In.H") != None
+                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}In.H") is not None
                 else self.__pipe_head_bounds
             ),
             (
                 self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}Out.H"]
-                # if hasattr(self, "__pipe_head_bounds")
-                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}Out.H") != None
+                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}Out.H") is not None
                 else self.__pipe_head_bounds
             ),
             (
                 self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"]
-                # if hasattr(self, "__pipe_head_loss_zero_bounds")
-                if self.__pipe_head_loss_zero_bounds.get(f"{pipe_name}.dH") != None
+                if self.__pipe_head_loss_zero_bounds.get(f"{pipe_name}.dH") is not None
                 else self.__pipe_head_loss_zero_bounds
             ),
             (
                 self._hn_pipe_to_head_loss_map[pipe_name]
-                # if hasattr(self, "_hn_pipe_to_head_loss_map")
-                if self._hn_pipe_to_head_loss_map.get(pipe_name) != None
+                if self._hn_pipe_to_head_loss_map.get(pipe_name) is not None
                 else self._hn_pipe_to_head_loss_map
             ),
             (
                 self.__pipe_head_loss_var[head_loss_var]
-                # if hasattr(self, "__pipe_head_loss_var")
-                if self.__pipe_head_loss_var.get(head_loss_var) != None
+                if self.__pipe_head_loss_var.get(head_loss_var) is not None
                 else self.__pipe_head_loss_var
             ),
             (
                 self.__pipe_head_loss_nominals[f"{pipe_name}.dH"]
-                # if hasattr(self, "__pipe_head_loss_nominals")
-                if self.__pipe_head_loss_nominals.get(f"{pipe_name}.dH") != None
+                if self.__pipe_head_loss_nominals.get(f"{pipe_name}.dH") is not None
                 else self.__pipe_head_loss_nominals
             ),
             (
                 self.__pipe_head_loss_nominals[head_loss_var]
-                # if hasattr(self, "__pipe_head_loss_nominals")
-                if self.__pipe_head_loss_nominals.get(head_loss_var) != None
+                if self.__pipe_head_loss_nominals.get(head_loss_var) is not None
                 else self.__pipe_head_loss_nominals
             ),
             (
                 self.__pipe_head_loss_bounds[head_loss_var]
-                # if hasattr(self, "__pipe_head_loss_bounds")
-                if self.__pipe_head_loss_bounds.get(head_loss_var) != None
+                if self.__pipe_head_loss_bounds.get(head_loss_var) is not None
                 else self.__pipe_head_loss_bounds
             ),
         )
@@ -601,7 +591,7 @@ class HeadLossClass:
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                constraint_nominal = c_v * maximum_velocity ** 2
+                constraint_nominal = c_v * maximum_velocity**2
                 # Interior point solvers, like IPOPT, do not like linearly dependent
                 # tight inequality constraints. For this reason, we split the
                 # constraints depending whether the Big-M formulation is used or not.

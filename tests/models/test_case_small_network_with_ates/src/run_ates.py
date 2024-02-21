@@ -8,7 +8,7 @@ from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
@@ -452,5 +452,7 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}})
+    sol = run_optimization_problem(
+        HeatProblemSetPoints, **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}}
+    )
     results = sol.extract_results()

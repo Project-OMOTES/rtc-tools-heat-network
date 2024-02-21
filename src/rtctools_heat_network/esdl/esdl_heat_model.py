@@ -395,8 +395,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers = dict(
                 length=length,
                 diameter=diameter,
-                GasIn=dict(Q=dict(min=-q_max, max=q_max),),
-                GasOut=dict(Q=dict(min=-q_max, max=q_max),),
+                GasIn=dict(
+                    Q=dict(min=-q_max, max=q_max),
+                ),
+                GasOut=dict(
+                    Q=dict(min=-q_max, max=q_max),
+                ),
                 state=self.get_state(asset),
                 **self._get_cost_figure_modifiers(asset),
             )
