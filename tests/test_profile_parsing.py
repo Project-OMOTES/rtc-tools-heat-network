@@ -24,6 +24,15 @@ class MockInfluxDBProfileReader(InfluxDBProfileReader):
 
 class TestProfileLoading(unittest.TestCase):
     def test_loading_from_influx(self):
+        """
+        This test checks if loading an ESDL with influxDB profiles works. Since
+        the test environment doesn't always have access to an influxDB server,
+        a connection is mocked and profiles are instead loaded from the file
+        "influx_mock.csv" in the models/unit_cases/case_1a/input folder.
+        EndScenarioSizing is called thus the checks done are on profile lenghts
+        and some values. This is because this scenario should also do aggragation
+        of the profiles for non-peak days.
+        """
         import models.unit_cases.case_1a.src.run_1a as run_1a
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
@@ -51,6 +60,10 @@ class TestProfileLoading(unittest.TestCase):
         self.assertLess(max(heat_price_profile), 1.0)
 
     def test_loading_from_csv(self):
+        """
+        This test constructs a problem with input profiles read from a CSV file.
+        The test checks if the profiles read match the profiles from the CVS file.
+        """
         import models.unit_cases_electricity.electrolyzer.src.example as example
         from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
 
@@ -81,6 +94,10 @@ class TestProfileLoading(unittest.TestCase):
         np.testing.assert_equal(expected_array, problem.get_timeseries("gas.price_profile").values)
 
     def test_loading_from_xml(self):
+        """
+        This test loads a simple problem using an XML file for input profiles.
+        The test checks if the load profiles match those specified in the XML file.
+        """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison
         from models.basic_source_and_demand.src.heat_comparison import HeatESDL
 
@@ -104,6 +121,13 @@ class TestProfileLoading(unittest.TestCase):
         )
 
     def test_loading_from_csv_with_influx_profiles_given(self):
+        """
+        This test loads a problem using an ESDL file which has influxDB profiles
+        specified. Furthermore, the problem is given a csv file to load profiles
+        from. This test thus checks if the ESDL_mixin correctly loads the profiles
+        from the csv instead of trying to get them from influxDB. The test check
+        if the loaded profiles match those specified in the csv.
+        """
         import models.unit_cases_electricity.electrolyzer.src.example as example
         from models.unit_cases_electricity.electrolyzer.src.example import MILPProblem
 
