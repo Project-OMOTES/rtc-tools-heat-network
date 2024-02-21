@@ -6,6 +6,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 # TODO: still have to make test where elecitricity direction is switched:
 # e.g. 2 nodes, with at each node a producer and consumer, first one node medium demand, second
 # small demand and then increase the demand of the second node such that direction changes
@@ -33,7 +36,14 @@ class TestMILPElectricSourceSink(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
         tol = 1e-10
 
-        solution = run_optimization_problem(ElectricityProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
         results = solution.extract_results()
         parameters = solution.parameters(0)
 
@@ -113,7 +123,14 @@ class TestMILPElectricSourceSink(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(ElectricityProblemMaxCurr, base_folder=base_folder)
+        solution = run_optimization_problem(
+            ElectricityProblemMaxCurr,
+            base_folder=base_folder,
+            esdl_file_name="case1_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
         results = solution.extract_results()
         parameters = solution.parameters(0)
 

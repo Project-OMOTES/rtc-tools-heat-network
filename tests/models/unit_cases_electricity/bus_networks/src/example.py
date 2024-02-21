@@ -12,6 +12,8 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -70,7 +72,13 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(ElectricityProblem)
+    elect = run_optimization_problem(
+        ElectricityProblem,
+        esdl_file_name="Electric_bus3.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     r = elect.extract_results()
     print(r["ElectricityDemand_e527.Electricity_demand"])
     print(r["ElectricityDemand_e527.ElectricityIn.Power"])

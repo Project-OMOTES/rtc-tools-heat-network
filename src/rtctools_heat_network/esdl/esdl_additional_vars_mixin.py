@@ -8,7 +8,6 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
 
 
 class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
-
     __temperature_options = {}
 
     def pipe_classes(self, p):
@@ -21,7 +20,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         return options
 
     def temperature_regimes(self, carrier):
-
         temperature_options = []
         temperature_step = 2.5
 

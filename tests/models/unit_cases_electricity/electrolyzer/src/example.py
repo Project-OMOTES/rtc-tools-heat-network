@@ -11,6 +11,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -62,12 +64,11 @@ class _GoalsAndOptions:
 
         # TODO: these goals should incorperate the timestep
         for demand in self.heat_network_components.get("electricity_demand", []):
-            # Code below: When profile is assigned to carrier instead of using .csv file
-            # carrier_name = (
-            #     self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            # )
-            # price_profile = f"{carrier_name}.price_profile"
-            price_profile = f"{demand}.electricity_price"
+            carrier_name = (
+                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+            )
+            price_profile = f"{carrier_name}.price_profile"
+            # price_profile = f"{demand}.electricity_price"
             state = f"{demand}.Electricity_demand"
             nominal = self.variable_nominal(state) * np.median(
                 self.get_timeseries(price_profile).values
@@ -77,11 +78,11 @@ class _GoalsAndOptions:
 
         for demand in self.heat_network_components.get("gas_demand", []):
             # Code below: When profile is assigned to carrier instead of using .csv file
-            # carrier_name = (
-            #     self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            # )
-            # price_profile = f"{carrier_name}.price_profile"
-            price_profile = f"{demand}.gas_price"
+            carrier_name = (
+                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+            )
+            price_profile = f"{carrier_name}.price_profile"
+            # price_profile = f"{demand}.gas_price"
             state = f"{demand}.Gas_demand_mass_flow"
             nominal = self.variable_nominal(state) * np.median(
                 self.get_timeseries(price_profile).values
@@ -136,7 +137,13 @@ class MILPProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(MILPProblem)
+    elect = run_optimization_problem(
+        MILPProblem,
+        esdl_file_name="h2.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     r = elect.extract_results()
 
     print(r["Electrolyzer_fc66.ElectricityIn.Power"])
