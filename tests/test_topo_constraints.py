@@ -9,6 +9,8 @@ import numpy.testing
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.pipe_class import PipeClass
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
@@ -41,7 +43,14 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        cls.problem = run_optimization_problem(PipeDiameterSizingProblem, base_folder=base_folder)
+        cls.problem = run_optimization_problem(
+            PipeDiameterSizingProblem,
+            base_folder=base_folder,
+            esdl_file_name="2a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
         cls.results = cls.problem.extract_results()
 
     def test_pipe_class_var(self):

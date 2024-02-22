@@ -6,6 +6,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestMILPGasSourceSink(TestCase):
     def test_source_sink(self):
@@ -22,7 +25,14 @@ class TestMILPGasSourceSink(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        results = run_optimization_problem(GasProblem, base_folder=base_folder).extract_results()
+        results = run_optimization_problem(
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="source_sink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        ).extract_results()
 
         # Test if mass conserved
         np.testing.assert_allclose(

@@ -308,7 +308,7 @@ class HeatProblemProdProfile(
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
             new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
-            self.set_timeseries(f"{s}.target_heat_source", new_timeseries)
+            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
     def heat_network_options(self):
         options = super().heat_network_options()

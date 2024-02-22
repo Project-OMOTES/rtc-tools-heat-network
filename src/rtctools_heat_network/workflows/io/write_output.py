@@ -11,14 +11,13 @@ from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.profiles.profilemanager import ProfileManager
 
-# from esdl.profiles.excelprofilemanager import ExcelProfileManager
-
 import numpy as np
 
 import pandas as pd
 
 import pytz
 
+import rtctools_heat_network.esdl.esdl_parser
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
@@ -33,6 +32,8 @@ class ScenarioOutput(TechnoEconomicMixin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.model_folder = kwargs.get("model_folder")
+        self.esdl_file_name = kwargs.get("esdl_file_name", "ESDL_file.esdl")
         # Settings for influxdb when writing out result profile data to it
         # Default settings
         self.write_result_db_profiles = False
@@ -291,19 +292,11 @@ class ScenarioOutput(TechnoEconomicMixin):
                 )
             )
 
-    def _write_updated_esdl(self, optimizer_sim=True):
+    def _write_updated_esdl(self, energy_system, optimizer_sim: bool = True):
         from esdl.esdl_handler import EnergySystemHandler
-        from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
         results = self.extract_results()
         parameters = self.parameters(0)
-
-        esh = EnergySystemHandler()
-        if self.esdl_string is None:
-            run_info = _RunInfoReader(self.esdl_run_info_path)
-            energy_system = esh.load_file(str(run_info.esdl_file))
-        else:
-            energy_system = esh.load_from_string(self.esdl_string)
 
         input_energy_system_id = energy_system.id
         energy_system.id = str(uuid.uuid4())
@@ -1156,16 +1149,23 @@ class ScenarioOutput(TechnoEconomicMixin):
         # ------------------------------------------------------------------------------------------
         # Save esdl file
 
-        self.__optimized_energy_system_handler = esh
-        self.optimized_esdl_string = esh.to_string()
-
-        if self.esdl_string is None:
-            if optimizer_sim:
-                filename = run_info.esdl_file.with_name(
-                    f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
-                )
-            else:
-                filename = run_info.esdl_file.with_name(
-                    f"{run_info.esdl_file.stem}_Simulation.esdl"
-                )
-            esh.save(str(filename))
+        if self.esdl_parser_class == rtctools_heat_network.esdl.esdl_parser.ESDLFileParser:
+            extension = "_Simulation.esdl" if optimizer_sim else "_GrowOptimized.esdl"
+            file_path = Path(self.model_folder) / (Path(self.esdl_file_name).stem + extension)
+            self.save_energy_system_to_file(energy_system, file_path=file_path)
+        self.optimized_esdl_string = self.convert_energy_system_to_string(
+            energy_system=energy_system
+        )
+        # self.__optimized_energy_system_handler = esh
+        # self.optimized_esdl_string = esh.to_string()
+        #
+        # if self.esdl_string is None:
+        #     if optimizer_sim:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_Simulation.esdl"
+        #         )
+        #     else:
+        #         filename = run_info.esdl_file.with_name(
+        #             f"{run_info.esdl_file.stem}_GrowOptimized.esdl"
+        #         )
+        #     esh.save(str(filename))

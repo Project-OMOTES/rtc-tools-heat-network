@@ -12,6 +12,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
@@ -259,7 +261,13 @@ class ElectricityProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem2)
+    sol = run_optimization_problem(
+        HeatProblem2,
+        esdl_file_name="heat_pump_elec.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     results = sol.extract_results()
     print(results["GenericConversion_3d3f.Power_elec"])
     print(results["ResidualHeatSource_aec9.Heat_source"])

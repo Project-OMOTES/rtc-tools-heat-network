@@ -10,6 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -150,22 +152,17 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    from pathlib import Path
-
-    # from rtctools.util import run_optimization_problem
-
-    # from rtctools_heat_network.workflows import EndScenarioSizingHIGHS
     import time
     from rtctools_heat_network.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
     start_time = time.time()
-    base_folder = Path(__file__).resolve().parent.parent
 
-    # results = solution.extract_results()
-    solution = run_end_scenario_sizing(EndScenarioSizingStaged)
-
-    # print(results["Pipe_352c__hn_diameter"])
-    # print(results["Pipe_352c__hn_pipe_class_None"])
-    a = 1
+    solution = run_end_scenario_sizing(
+        EndScenarioSizingStaged,
+        esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv",
+    )
 
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

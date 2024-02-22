@@ -5,6 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestESDL(TestCase):
     def test_basic_source_and_demand_heat(self):
@@ -20,9 +23,19 @@ class TestESDL(TestCase):
         from models.basic_source_and_demand.src.heat_comparison import HeatESDL, HeatPython
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+        input_folder = base_folder / "input"
 
-        case_python = run_optimization_problem(HeatPython, base_folder=base_folder)
-        case_esdl = run_optimization_problem(HeatESDL, base_folder=base_folder)
+        case_python = run_optimization_problem(
+            HeatPython, base_folder=base_folder, input_folder=input_folder
+        )
+        case_esdl = run_optimization_problem(
+            HeatESDL,
+            base_folder=base_folder,
+            esdl_file_name="model.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.xml",
+        )
 
         self.assertAlmostEqual(case_python.objective_value, case_esdl.objective_value, 6)
 
