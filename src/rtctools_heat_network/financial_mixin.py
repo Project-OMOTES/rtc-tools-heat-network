@@ -729,9 +729,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             # We assume that only one electricity carrier is specified, to compute the cost with.
             # Otherwise we need to link the electricity carrier somehow to the source and pump asset
             # which is lots of extra effort for the user.
-            assert len(self.get_electricity_carriers.keys()) <= 1
+            assert len(self.get_electricity_carriers().keys()) <= 1
 
-            if len(self.get_electricity_carriers.keys()) == 1:
+            if len(self.get_electricity_carriers().keys()) == 1:
                 price_profile = self.get_timeseries(
                     f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
                 )
