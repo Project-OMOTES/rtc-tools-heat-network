@@ -35,6 +35,7 @@ class Buffer(HeatTwoPort, BaseAsset):
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
         self.nominal_pressure = 16.0e5
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+        self.pump_efficiency = 0.5
 
         self.heat_transfer_coeff = 1.0
         self.height = 5.0

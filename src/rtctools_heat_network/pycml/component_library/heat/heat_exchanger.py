@@ -40,6 +40,7 @@ class HeatExchanger(HeatFourPort, BaseAsset):
 
         self.price = nan
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+        self.pump_efficiency = 0.5
 
         # Assumption: heat in/out and added is nonnegative
 

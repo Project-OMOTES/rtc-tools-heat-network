@@ -39,6 +39,7 @@ class ATES(HeatTwoPort, BaseAsset):
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
         self.nominal_pressure = 16.0e5
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+        self.pump_efficiency = 0.5
 
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan

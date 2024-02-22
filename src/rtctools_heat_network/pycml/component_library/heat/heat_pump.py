@@ -33,6 +33,7 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
         )
+        self.pump_efficiency = 0.5
         self.elec_power_nominal = self.nominal / self.COP
 
         # Assumption: heat in/out and added is nonnegative
