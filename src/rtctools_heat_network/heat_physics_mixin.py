@@ -119,7 +119,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def temperature_regimes(self, carrier):
         """
-        This funciton returns a list of temperatures that can be selected for a certain carrier.
+        This function returns a list of temperatures that can be selected for a certain carrier.
         """
         return []
 

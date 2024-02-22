@@ -59,6 +59,12 @@ class TechnoEconomicMixin(
     def get_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
         return self.extra_variable(self._pipe_topo_cost_map[asset_name], ensemble_member)
 
+    def get_electricity_carriers(self):
+        return self.temperature_carriers()
+
+    def get_heat_carriers(self):
+        return self.electricity_carriers()
+
     def heat_network_options(self):
         r"""
         Returns a dictionary of heat network specific options.

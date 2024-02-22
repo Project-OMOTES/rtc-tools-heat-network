@@ -13,7 +13,6 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -59,16 +58,6 @@ class HeatProblem(
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
-        return options
-
-
-class HeatProblemHydraulic(HeatProblem):
-
-    def heat_network_options(self):
-        options = super().heat_network_options()
-        options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-        options["minimize_head_losses"] = True
-
         return options
 
 
@@ -136,9 +125,9 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemHydraulic)
+    sol = run_optimization_problem(HeatProblemTvar)
     sol = run_optimization_problem(
-        HeatProblemHydraulic,
+        HeatProblem,
         esdl_file_name="1a.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
