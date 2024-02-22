@@ -653,6 +653,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             nominal = self.variable_nominal(variable_operational_cost_var)
 
             pump_power = self.__state_vector_scaled(f"{asset}.Pump_power", ensemble_member)
+            eff = parameters[f"{asset}.pump_efficiency"]
 
             # We assume that only one electricity carrier is specified, to compute the cost with.
             # Otherwise we need to link the electricity carrier somehow to the source and pump asset
@@ -670,7 +671,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             sum = 0.0
             for i in range(1, len(self.times())):
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1]
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
@@ -687,6 +688,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             timesteps = np.diff(self.times()) / 3600.0
 
             pump_power = self.__state_vector_scaled(f"{s}.Pump_power", ensemble_member)
+            eff = parameters[f"{s}.pump_efficiency"]
 
             # We assume that only one electricity carrier is specified, to compute the cost with.
             # Otherwise we need to link the electricity carrier somehow to the source and pump asset
@@ -703,7 +705,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += variable_operational_cost_coefficient * heat_source[i] * timesteps[i - 1]
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1]
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
@@ -722,6 +724,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             ]
             timesteps = np.diff(self.times()) / 3600
             pump_power = self.__state_vector_scaled(f"{hp}.Pump_power", ensemble_member)
+            eff = parameters[f"{hp}.pump_efficiency"]
 
             # We assume that only one electricity carrier is specified, to compute the cost with.
             # Otherwise we need to link the electricity carrier somehow to the source and pump asset
@@ -740,7 +743,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += (
                     variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
                 )
-                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1]
+                sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 

@@ -77,6 +77,7 @@ class TargetHeatGoal(Goal):
 
 class EndScenarioSizingDiscounted(
     ScenarioOutput,
+    ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -125,9 +126,6 @@ class EndScenarioSizingDiscounted(
         parameters["time_step_days"] = self.__day_steps
         parameters["number_of_years"] = self._number_of_years
         return parameters
-
-    def pipe_classes(self, p):
-        return self._override_pipe_classes.get(p, [])
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -188,12 +186,6 @@ class EndScenarioSizingDiscounted(
         options["heat_loss_disconnected_pipe"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
-        return options
-
-    def esdl_heat_model_options(self):
-        """Overwrites the fraction of the minimum tank volume"""
-        options = super().esdl_heat_model_options()
-        options["min_fraction_tank_volume"] = 0.0
         return options
 
     def path_goals(self):
