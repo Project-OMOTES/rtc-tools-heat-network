@@ -665,7 +665,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
                 )
             else:
-                price_profile = np.zeros(len(self.times()))
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
             timesteps = np.diff(self.times()) / 3600.0
 
@@ -700,7 +700,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
                 )
             else:
-                price_profile = np.zeros(len(self.times()))
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
             sum = 0.0
             for i in range(1, len(self.times())):
@@ -736,7 +736,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     f"{list(self.get_electricity_carriers().values())[0]['name']}.price_profile"
                 )
             else:
-                price_profile = np.zeros(len(self.times()))
+                price_profile = Timeseries(self.times(), np.zeros(len(self.times())))
 
             sum = 0.0
             for i in range(1, len(self.times())):
