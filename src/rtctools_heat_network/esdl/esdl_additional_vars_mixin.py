@@ -19,6 +19,12 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         options["min_fraction_tank_volume"] = 0.0
         return options
 
+    def temperature_carriers(self):
+        return self.esdl_carriers_typed(type="heat")
+
+    def electricity_carriers(self):
+        return self.esdl_carriers_typed(type="electricity")
+
     def temperature_regimes(self, carrier):
         temperature_options = []
         temperature_step = 2.5

@@ -8,6 +8,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
@@ -56,7 +57,7 @@ class SourcePipeSink(
         super().post()
 
 
-class HeatProblemHydraulic(SourcePipeSink):
+class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
 
     def heat_network_options(self):
         options = super().heat_network_options()
@@ -64,9 +65,6 @@ class HeatProblemHydraulic(SourcePipeSink):
         options["minimize_head_losses"] = True
 
         return options
-
-    def electricity_carriers(self):
-        return self.esdl_carriers_typed("electricity")
 
 
 if __name__ == "__main__":

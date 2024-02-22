@@ -24,6 +24,7 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
@@ -418,6 +419,7 @@ class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
 
 class EndScenarioSizing(
     ScenarioOutput,
+    ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -465,9 +467,6 @@ class EndScenarioSizing(
         parameters["time_step_days"] = self.__day_steps
         parameters["number_of_years"] = self._number_of_years
         return parameters
-
-    def pipe_classes(self, p):
-        return self._override_pipe_classes.get(p, [])
 
     def pre(self):
         self._qpsol = CachingQPSol()
@@ -528,12 +527,6 @@ class EndScenarioSizing(
         options["heat_loss_disconnected_pipe"] = True
         options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
-        return options
-
-    def esdl_heat_model_options(self):
-        """Overwrites the fraction of the minimum tank volume"""
-        options = super().esdl_heat_model_options()
-        options["min_fraction_tank_volume"] = 0.0
         return options
 
     def path_goals(self):
