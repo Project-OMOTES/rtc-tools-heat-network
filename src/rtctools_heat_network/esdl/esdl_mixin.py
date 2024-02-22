@@ -278,7 +278,7 @@ class ESDLMixin(
         -------
         None
         """
-        maximum_velocity = self.heat_network_options()["gas_maximum_velocity"]
+        maximum_velocity = self.gas_network_settings["maximum_velocity"]
 
         no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
         pipe_classes = [

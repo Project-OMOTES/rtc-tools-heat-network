@@ -2,6 +2,7 @@ import logging
 
 import casadi as ca
 
+import math
 
 import numpy as np
 
@@ -55,6 +56,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_flow_direct_bounds = {}
         self._gas_pipe_to_flow_direct_map = {}
 
+        # Boolean path-variable to determine whether flow is going through a pipe.
+        # self.__gas_pipe_disconnect_var = {}
+        # self.__gas_pipe_disconnect_var_bounds = {}
+        # self._gas_pipe_disconnect_map = {}
+
         super().__init__(*args, **kwargs)
 
         self._gas_pipe_topo_pipe_class_map = {}
@@ -66,6 +72,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         retrieving of the variables.
         """
         super().pre()
+
+        parameters = self.parameters(0)
 
         def _get_max_bound(bound):
             if isinstance(bound, np.ndarray):
@@ -133,6 +141,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             else:
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
+            # if parameters[f"{pipe_name}.disconnectable"]:
+            #     disconnected_var = f"{pipe_name}__is_disconnected"
+
+            #     self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
+            #     self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
+            #     self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
+
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
     def heat_network_options(self):
@@ -158,8 +173,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         options["minimum_pressure_far_point"] = 1.0
 
-        options["gas_maximum_velocity"] = 15.0
-
         return options
 
     @property
@@ -182,6 +195,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         variables = super().path_variables.copy()
         variables.extend(self.__gas_pipe_head_loss_var.values())
         variables.extend(self.__gas_flow_direct_var.values())
+        # variables.extend(self.__gas_pipe_disconnect_var.values())
 
         return variables
 
@@ -189,6 +203,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         All variables that only can take integer values should be added to this function.
         """
+        # if (variable in self.__gas_flow_direct_var or variable in self.__gas_pipe_disconnect_var):
         if variable in self.__gas_flow_direct_var:
             return True
         else:
@@ -211,6 +226,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         bounds = super().bounds()
 
+        # bounds.update(self.__gas_flow_direct_bounds)
+        # bounds.update(self.__gas_pipe_disconnect_var_bounds)
         bounds.update(self.__gas_pipe_head_loss_bounds)
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
 
@@ -263,11 +280,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
             head_loss = 0.0
 
-            pipe_type = "pipe"
-            if len(components.get("pipe", [])) == 0:
-                pipe_type = "gas_pipe"
-
-            for pipe in components.get(pipe_type, []):
+            for pipe in components.get("gas_pipe", []):
                 area = parameters[f"{pipe}.area"]
                 max_discharge = self.gas_network_settings["maximum_velocity"] * area
                 head_loss += self._head_loss_class._hn_pipe_head_loss(
@@ -433,7 +446,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # We need to make sure the dH is decoupled from the discharge when
             # the pipe is disconnected. Simply put, this means making the
             # below constraints trivial.
-            is_disconnected_var = self._pipe_disconnect_map.get(pipe)
+
+            # Still to be implemented
+            # is_disconnected_var = self._gas_pipe_disconnect_map.get(pipe)
+            is_disconnected_var = None
 
             if is_disconnected_var is None:
                 is_disconnected = 0.0
@@ -443,9 +459,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             max_discharge = None
             max_head_loss = -np.inf
 
-            if pipe in self._pipe_topo_pipe_class_map:
+            if pipe in self._gas_pipe_topo_pipe_class_map:
                 # Multiple diameter options for this pipe
-                pipe_classes = self._pipe_topo_pipe_class_map[pipe]
+                pipe_classes = self._gas_pipe_topo_pipe_class_map[pipe]
                 max_discharge = max(c.maximum_discharge for c in pipe_classes)
 
                 for pc, pc_var_name in pipe_classes.items():

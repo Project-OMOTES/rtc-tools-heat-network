@@ -393,7 +393,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                max_velocity = self.heat_network_options()["gas_maximum_velocity"]
+                max_velocity = self.gas_network_settings["maximum_velocity"]
                 self.__gas_pipe_topo_max_discharge_nominals[pipe] = (
                     parameters[f"{pipe}.area"] * max_velocity
                 )
@@ -525,7 +525,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                # max_velocity = self.heat_network_options()["maximum_velocity"]
                 max_velocity = self.heat_network_settings["maximum_velocity"]
                 self.__pipe_topo_max_discharge_nominals[pipe] = (
                     parameters[f"{pipe}.area"] * max_velocity
@@ -752,7 +751,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     "When optimizing pipe diameters, "
                     "the `maximum_temperature_der` or `maximum_flow_der` should be infinite."
                 )
-
+        # still to delete because it is not used
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size

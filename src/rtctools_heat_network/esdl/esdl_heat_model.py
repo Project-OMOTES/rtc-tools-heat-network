@@ -395,6 +395,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             modifiers = dict(
                 length=length,
                 diameter=diameter,
+                # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
                 GasIn=dict(
                     Q=dict(min=-q_max, max=q_max),
                 ),

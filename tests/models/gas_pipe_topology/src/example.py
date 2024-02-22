@@ -171,18 +171,8 @@ class HeatProblem(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        # options["solver"] = "gurobi"  # for temp usage
         return options
-
-    def path_constraints(self, ensemble_member):
-        constraints = super().path_constraints(ensemble_member)
-
-        var = self.state("GasProducer_17aa.Gas_source_mass_flow")
-        nom = self.variable_nominal("GasProducer_17aa.Gas_source_mass_flow")
-
-        constraints.append((var / nom, 0.0, 0.0))
-
-        return constraints
 
     def heat_network_options(self):
         """
@@ -193,7 +183,7 @@ class HeatProblem(
         Options dict for the physics modelling
         """
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0
+        self.gas_network_settings["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
@@ -203,6 +193,6 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(HeatProblem)
-    results = elect.extract_results()
+    gas_ntwk = run_optimization_problem(HeatProblem)
+    results = gas_ntwk.extract_results()
     a = 1
