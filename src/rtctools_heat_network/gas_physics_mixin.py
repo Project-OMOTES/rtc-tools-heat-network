@@ -2,8 +2,6 @@ import logging
 
 import casadi as ca
 
-import math
-
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -30,8 +28,70 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
     """
 
     def __init__(self, *args, **kwargs):
-        """
+        r"""
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
+
+        Gas network specific settings:
+
+        The ``network_type`` is the network type identifier.
+
+        The ``maximum_velocity`` is the maximum absolute value of the velocity in every pipe. This
+        velocity is also used in the head loss / hydraulic power to calculate the maximum discharge
+        if no maximum velocity per pipe class is not specified.
+
+        The ``minimum_velocity`` is the minimum absolute value of the velocity
+        in every pipe. It is mostly an option to improve the stability of the
+        solver in a possibly subsequent QTH problem: the default value of
+        `0.005` m/s helps the solver by avoiding the difficult case where
+        discharges get close to zero.
+
+        To model the head loss in pipes, the ``head_loss_option`` refers to
+        one of the ways this can be done. See :class:`HeadLossOption` for more
+        explanation on what each option entails. Note that some options model
+        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
+        others model it as an equality.
+
+        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
+        \cdot Q^2`.
+
+        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
+        relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
+        will then be linearized using ``n_linearization`` lines.
+
+        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q`. For pipes that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+
+        When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q^2`. Note that this formulation is non-convex. At `theta < 1` we
+        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+
+        When ``minimize_head_losses`` is set to True (default), a last
+        priority is inserted where the head losses and hydraulic power in the system are
+        minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
+        This is related to the assumption that control valves are
+        present in the system to steer water in the right direction the case
+        of multiple routes. If such control valves are not present, enabling
+        this option will give warnings in case the found solution is not
+        feasible. In case the option is False, both the minimization and
+        checks are skipped.
+
+        Note that the inherited options ``head_loss_option`` and
+        ``minimize_head_losses`` are changed from their default values to
+        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+
+        The ``n_linearization_lines`` is the number of lines used when a curve is approximated by
+        multiple linear lines.
+
+        The ``pipe_minimum_pressure`` is the global minimum pressured allowed
+        in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
+        one.
         """
         self.gas_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_GAS,
@@ -72,8 +132,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         retrieving of the variables.
         """
         super().pre()
-
-        parameters = self.parameters(0)
 
         def _get_max_bound(bound):
             if isinstance(bound, np.ndarray):
@@ -141,9 +199,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             else:
                 self.__gas_flow_direct_bounds[flow_dir_var] = (0.0, 1.0)
 
+            # Still to be added in the future
             # if parameters[f"{pipe_name}.disconnectable"]:
             #     disconnected_var = f"{pipe_name}__is_disconnected"
-
             #     self._gas_pipe_disconnect_map[pipe_name] = disconnected_var
             #     self.__gas_pipe_disconnect_var[disconnected_var] = ca.MX.sym(disconnected_var)
             #     self.__gas_pipe_disconnect_var_bounds[disconnected_var] = (0.0, 1.0)
@@ -154,19 +212,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         r"""
         Returns a dictionary of heat network specific options.
 
-        +--------------------------------------+-----------+-----------------------------+
-        | Option                               | Type      | Default value               |
-        +======================================+===========+=============================+
-        | ``minimum_pressure_far_point``       | ``float`` | ``1.0`` bar                 |
-        +--------------------------------------+-----------+-----------------------------+
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
-        ....
         """
 
         options = self._head_loss_class.head_loss_network_options()

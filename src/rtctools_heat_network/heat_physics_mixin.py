@@ -35,8 +35,70 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     """
 
     def __init__(self, *args, **kwargs):
-        """
+        r"""
         In this __init__ we prepare the dicts for the variables added by the HeatMixin class
+
+        Heat network specific settings:
+
+        The ``network_type`` is the network type identifier.
+
+        The ``maximum_velocity`` is the maximum absolute value of the velocity in every pipe. This
+        velocity is also used in the head loss / hydraulic power to calculate the maximum discharge
+        if no maximum velocity per pipe class is not specified.
+
+        The ``minimum_velocity`` is the minimum absolute value of the velocity
+        in every pipe. It is mostly an option to improve the stability of the
+        solver in a possibly subsequent QTH problem: the default value of
+        `0.005` m/s helps the solver by avoiding the difficult case where
+        discharges get close to zero.
+
+        To model the head loss in pipes, the ``head_loss_option`` refers to
+        one of the ways this can be done. See :class:`HeadLossOption` for more
+        explanation on what each option entails. Note that some options model
+        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
+        others model it as an equality.
+
+        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
+        \cdot Q^2`.
+
+        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
+        relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
+        will then be linearized using ``n_linearization`` lines.
+
+        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q`. For pipes that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+
+        When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
+        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
+        Q^2`. Note that this formulation is non-convex. At `theta < 1` we
+        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        that contain a control valve, the formulation of
+        ``HeadLossOption.CQ2_INEQUALITY`` is used.
+
+        When ``minimize_head_losses`` is set to True (default), a last
+        priority is inserted where the head losses and hydraulic power in the system are
+        minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
+        This is related to the assumption that control valves are
+        present in the system to steer water in the right direction the case
+        of multiple routes. If such control valves are not present, enabling
+        this option will give warnings in case the found solution is not
+        feasible. In case the option is False, both the minimization and
+        checks are skipped.
+
+        Note that the inherited options ``head_loss_option`` and
+        ``minimize_head_losses`` are changed from their default values to
+        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+
+        The ``n_linearization_lines`` is the number of lines used when a curve is approximated by
+        multiple linear lines.
+
+        The ``pipe_minimum_pressure`` is the global minimum pressured allowed
+        in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
+        one.
         """
         self.heat_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
@@ -374,12 +436,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         +--------------------------------------+-----------+-----------------------------+
         | ``heat_loss_disconnected_pipe``      | ``bool``  | ``True``                    |
         +--------------------------------------+-----------+-----------------------------+
-        | ``minimum_velocity``                 | ``float`` | ``0.005`` m/s               |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``head_loss_option`` (inherited)     | ``enum``  | ``HeadLossOption.LINEAR``   |
-        +--------------------------------------+-----------+-----------------------------+
-        | ``minimize_head_losses`` (inherited) | ``bool``  | ``False``                   |
-        +--------------------------------------+-----------+-----------------------------+
         | ``include_demand_insulation_options``| ``bool``  | ``False``                   |
         +--------------------------------------+-----------+-----------------------------+
 
@@ -402,16 +458,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         The ``neglect_pipe_heat_losses`` option sets the heat loss in pipes to
         zero. This can be useful when the insulation properties are unknown.
         Note that other components can still have heat loss, e.g. a buffer.
-
-        The ``minimum_velocity`` is the minimum absolute value of the velocity
-        in every pipe. It is mostly an option to improve the stability of the
-        solver in a possibly subsequent QTH problem: the default value of
-        `0.005` m/s helps the solver by avoiding the difficult case where
-        discharges get close to zero.
-
-        Note that the inherited options ``head_loss_option`` and
-        ``minimize_head_losses`` are changed from their default values to
-        ``HeadLossOption.LINEAR`` and ``False`` respectively.
 
         The ``include_demand_insulation_options`` options is used, when insulations options per
         demand is specificied, to include heat demand and supply matching via constraints for all

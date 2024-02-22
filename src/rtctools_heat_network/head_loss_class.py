@@ -254,19 +254,7 @@ class HeadLossClass:
         +--------------------------------+-----------+-----------------------------------+
         | ``wall_roughness``             | ``float`` | ``0.0002`` m                      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
-        +--------------------------------+-----------+-----------------------------------+
         | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s (LINEARIZED_DW)       |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``n_linearization_lines``      | ``int``   | ``5`` (LINEARIZED_DW)             |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``minimize_head_losses``       | ``bool``  | ``True``                          |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``pipe_minimum_pressure``      | ``float`` | ``-np.inf``                       |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``pipe_maximum_pressure``      | ``float`` | ``np.inf``                        |
         +--------------------------------+-----------+-----------------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
@@ -275,48 +263,6 @@ class HeadLossClass:
 
         The ``wall_roughness`` of the pipes plays a role in determining the
         resistance of the pipes.
-
-        To model the head loss in pipes, the ``head_loss_option`` refers to
-        one of the ways this can be done. See :class:`HeadLossOption` for more
-        explanation on what each option entails. Note that some options model
-        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
-        others model it as an equality.
-
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
-        \cdot Q^2`.
-
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
-        ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
-        relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
-        will then be linearized using ``n_linearization`` lines.
-
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
-        Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
-
-        When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
-        Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
-        that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
-
-
-        When ``minimize_head_losses`` is set to True (default), a last
-        priority is inserted where the head losses and hydraulic power in the system are
-        minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
-        This is related to the assumption that control valves are
-        present in the system to steer water in the right direction the case
-        of multiple routes. If such control valves are not present, enabling
-        this option will give warnings in case the found solution is not
-        feasible. In case the option is False, both the minimization and
-        checks are skipped.
-
-        The ``pipe_minimum_pressure`` is the global minimum pressured allowed
-        in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
-        one.
         """
 
         options = {}
@@ -324,7 +270,6 @@ class HeadLossClass:
         options["minimum_pressure_far_point"] = 1.0
         options["wall_roughness"] = 2e-4
         options["estimated_velocity"] = 1.0
-        # Do not specify options["maximum_velocity"] here. Use the heat/gas_network_settings[]
 
         return options
 
