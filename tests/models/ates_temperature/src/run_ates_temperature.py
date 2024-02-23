@@ -138,12 +138,12 @@ class _GoalsAndOptions:
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["mip_rel_gap"] = 0.01
-        options["solver"] = "gurobi"
-        gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.01
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.01
+        # options["solver"] = "gurobi"
+        # gurobi_options = options["gurobi"] = {}
+        # gurobi_options["MIPgap"] = 0.01
         # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
@@ -187,7 +187,7 @@ class HeatProblem(
             # temperatures = np.linspace(52.5, 65, 6).tolist()[::-1]
             # temperatures.extend(np.linspace(45, 50, 6).tolist()[::-1])
 
-            temperatures = np.linspace(40, 70, 13).tolist()[::-1]
+            temperatures = np.linspace(40, 70, 7).tolist()[::-1]
 
         return temperatures
 
@@ -256,13 +256,15 @@ class HeatProblem(
                 for demand in demands
             )
 
+            day_step = 28
+
             # TODO: the approach of picking one peak day was introduced for a network with a tree
             #  layout and all big sources situated at the root of the tree. It is not guaranteed
             #  that an optimal solution is reached in different network topologies.
-            nr_of_days = len(total_demand) // (24 * 5)
+            nr_of_days = len(total_demand) // (24 * day_step)
             new_date_times = list()
             for day in range(0, nr_of_days):
-                new_date_times.append(self.io.datetimes[day * 24 * 5])
+                new_date_times.append(self.io.datetimes[day * 24 * day_step])
             new_date_times = np.asarray(new_date_times)
 
             for demand in demands:
@@ -272,7 +274,7 @@ class HeatProblem(
                 ).values
                 new_data = list()
                 for day in range(0, nr_of_days):
-                    data_for_day = data[day * 24 * 5 : (day + 1) * 24 * 5]
+                    data_for_day = data[day * 24 * day_step : (day + 1) * 24 * day_step]
                     new_data.append(np.mean(data_for_day))
                 new_datastore.set_timeseries(
                     variable=var_name,

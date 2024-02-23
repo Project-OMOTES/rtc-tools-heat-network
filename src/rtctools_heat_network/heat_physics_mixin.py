@@ -1853,7 +1853,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # heatloss = 16.2 / (70-17) * stored_volume * (T_ates - T_amb)
             # stored_volume = stored_heat / (40 (dT assumed) *rho*cp)
             # multiplied coefficient with 1e-1
-            heatloss = 1.4e-10 * heat_points * (temperature_ates - temperature_ambient)
+            heatloss = 1.5e-10 * heat_points * (temperature_ates - temperature_ambient)
             # heatloss = 1e4 * (temperature_ates - temperature_ambient) * (
             #     heat_points / heat_stored_max)**2
             return heatloss
@@ -3195,13 +3195,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ates_temp = self.state(f"{ates}.Temperature_ates")
 
                     # ordering should be 1. if temperature is larger than temperature selected.
-                    constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
-                    constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
-
-                    constraints.append(
-                        ((temperature - ates_temp + big_m * ordering), 0., np.inf))
-                    constraints.append(
-                        ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
+                    # constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
+                    # constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
+                    #
+                    # constraints.append(
+                    #     ((temperature - ates_temp + big_m * ordering), 0., np.inf))
+                    # constraints.append(
+                    #     ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
 
                     # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
 
