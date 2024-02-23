@@ -157,7 +157,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         t = self.times()
         for wp in self.heat_network_components.get("wind_park", []):
             lb = Timeseries(t, np.zeros(len(self.times())))
-            ub = self.get_timeseries(f"{wp}.maximum_production")
+            ub = self.get_timeseries(f"{wp}.maximum_electricity_source")
             self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
 
     def __wind_park_set_point_constraints(self, ensemble_member):

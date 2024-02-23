@@ -5,6 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestInsulation(TestCase):
     """
@@ -58,7 +61,14 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblem
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="Insulation.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
         results = heat_problem.extract_results()
 
         test = TestCase()
@@ -131,7 +141,14 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblemB
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(HeatProblemB, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemB,
+            base_folder=base_folder,
+            esdl_file_name="Insulation.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
         results = heat_problem.extract_results()
 
         test = TestCase()

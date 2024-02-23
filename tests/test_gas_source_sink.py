@@ -6,6 +6,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
@@ -39,7 +41,14 @@ class TestMILPGasSourceSink(TestCase):
                 self.heat_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
-        soltion = run_optimization_problem(TestSourceSink, base_folder=base_folder)
+        soltion = run_optimization_problem(
+            GasProblem,
+            base_folder=base_folder,
+            esdl_file_name="source_sink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
         results = soltion.extract_results()
 
         # Test if mass conserved

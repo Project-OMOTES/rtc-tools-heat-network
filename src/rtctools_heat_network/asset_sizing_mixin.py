@@ -1777,7 +1777,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             try:
-                profile = self.get_timeseries(f"{s}.target_heat_source").values
+                profile = self.get_timeseries(f"{s}.maximum_heat_source").values
                 profile_scaled = profile / max(profile)
                 for i in range(0, len(self.times())):
                     constraints.append(

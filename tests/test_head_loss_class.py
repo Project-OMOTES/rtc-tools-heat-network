@@ -43,6 +43,7 @@ class TestHeadLossCalculation(TestCase):
                 self.pre()
 
         base_folder = Path(heat_comparison.__file__).resolve().parent.parent
+        input_folder = base_folder / "input"
 
         heat_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
@@ -57,7 +58,9 @@ class TestHeadLossCalculation(TestCase):
             HeadLossOption.CQ2_INEQUALITY,
             HeadLossOption.LINEARIZED_DW,
         ]:
-            m = run_optimization_problem(Model, head_loss_option=h, base_folder=base_folder)
+            m = run_optimization_problem(
+                Model, head_loss_option=h, base_folder=base_folder, input_folder=input_folder
+            )
 
             options = m.heat_network_options()
             parameters = m.parameters(0)
