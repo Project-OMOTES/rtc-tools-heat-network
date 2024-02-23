@@ -290,66 +290,66 @@ class HeatProblem(
         runinfo_path = Path(self.esdl_run_info_path).resolve()
         tree = ET.parse(runinfo_path)
         return tree.getroot()
-    def post(self):
-        root = self._get_runinfo_path_root()
-        workdir = os.path.join(os.path.dirname(os.getcwd()), 'output')
-        super().post()
-        results = self.extract_results()
-        parameters = self.parameters(0)
-        bounds = self.bounds()
-        parameters_dict = dict()
-
-        parameter_path = os.path.join(workdir, "parameters.json")
-        for key, value in parameters.items():
-            new_value = value  # [x for x in value]
-            parameters_dict[key] = new_value
-        if parameter_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            parameter_path = os.path.join(workdir, "parameters.json")
-            if not Path(workdir).is_absolute():
-                parameter_path = Path(workdir).resolve().parent
-                parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
-        with open(parameter_path, "w") as file:
-            json.dump(parameters_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        bounds_dict = dict()
-        bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        bounds_path = os.path.join(workdir, "bounds.json")
-        for key, value in bounds.items():
-            if "Stored_heat" not in key:
-                new_value = value  # [x for x in value]
-                # if len(new_value) == 1:
-                #     new_value = new_value[0]
-                bounds_dict[key] = new_value
-        if bounds_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            bounds_path = os.path.join(workdir, "bounds.json")
-            if not Path(workdir).is_absolute():
-                bounds_path = Path(workdir).resolve().parent
-                bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-        with open(bounds_path, "w") as file:
-            json.dump(bounds_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        results_dict = dict()
-
-        for key, values in results.items():
-            new_value = values.tolist()
-            if len(new_value) == 1:
-                new_value = new_value[0]
-            results_dict[key] = new_value
-
-        results_path = os.path.join(workdir, "results.json")
-        if results_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            results_path = os.path.join(workdir, "results.json")
-            if not Path(workdir).is_absolute():
-                results_path = Path(workdir).resolve().parent
-                results_path = os.path.join(results_path.__str__() + "results.json")
-        with open(results_path, "w") as file:
-            json.dump(results_dict, fp=file)
+     # def post(self):
+     #    root = self._get_runinfo_path_root()
+     #    workdir = os.path.join(os.path.dirname(os.getcwd()), 'output')
+     #    super().post()
+     #    results = self.extract_results()
+     #    parameters = self.parameters(0)
+     #    bounds = self.bounds()
+     #    parameters_dict = dict()
+     #
+     #    parameter_path = os.path.join(workdir, "parameters.json")
+     #    for key, value in parameters.items():
+     #        new_value = value  # [x for x in value]
+     #        parameters_dict[key] = new_value
+     #    if parameter_path is None:
+     #        workdir = root.findtext("pi:workDir", namespaces=ns)
+     #        parameter_path = os.path.join(workdir, "parameters.json")
+     #        if not Path(workdir).is_absolute():
+     #            parameter_path = Path(workdir).resolve().parent
+     #            parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
+     #    with open(parameter_path, "w") as file:
+     #        json.dump(parameters_dict, fp=file)
+     #
+     #    root = self._get_runinfo_path_root()
+     #    bounds_dict = dict()
+     #    bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+     #    bounds_path = os.path.join(workdir, "bounds.json")
+     #    for key, value in bounds.items():
+     #        if "Stored_heat" not in key:
+     #            new_value = value  # [x for x in value]
+     #            # if len(new_value) == 1:
+     #            #     new_value = new_value[0]
+     #            bounds_dict[key] = new_value
+     #    if bounds_path is None:
+     #        workdir = root.findtext("pi:workDir", namespaces=ns)
+     #        bounds_path = os.path.join(workdir, "bounds.json")
+     #        if not Path(workdir).is_absolute():
+     #            bounds_path = Path(workdir).resolve().parent
+     #            bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
+     #    with open(bounds_path, "w") as file:
+     #        json.dump(bounds_dict, fp=file)
+     #
+     #    root = self._get_runinfo_path_root()
+     #    results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+     #    results_dict = dict()
+     #
+     #    for key, values in results.items():
+     #        new_value = values.tolist()
+     #        if len(new_value) == 1:
+     #            new_value = new_value[0]
+     #        results_dict[key] = new_value
+     #
+     #    results_path = os.path.join(workdir, "results.json")
+     #    if results_path is None:
+     #        workdir = root.findtext("pi:workDir", namespaces=ns)
+     #        results_path = os.path.join(workdir, "results.json")
+     #        if not Path(workdir).is_absolute():
+     #            results_path = Path(workdir).resolve().parent
+     #            results_path = os.path.join(results_path.__str__() + "results.json")
+     #    with open(results_path, "w") as file:
+     #        json.dump(results_dict, fp=file)
 
 
 class HeatProblemMaxFlow(HeatProblem):
