@@ -1082,9 +1082,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id]["id_number_mapping"]
 
+        hydrogen_specfic_energy = 20. / 1.e6
+
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             id_mapping_carrier=id_mapping,
+            Gas_demand_mass_flow=dict(min=0., max=asset.attributes["power"]*hydrogen_specfic_energy),
             GasIn=dict(
                 Q=dict(
                     min=0.0,
@@ -1203,12 +1206,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasStorage"}
 
-        hydrogen_specific_energy = 20. * 1.e6  # kg/Wh
+        hydrogen_specific_energy = 20. / 1.e6  # kg/Wh
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             volume=asset.attributes["workingVolume"],
-            # Gas_mass_flow=dict(min=asset.attributes["maxDischargeRate"]/hydrogen_specific_energy, max=asset.attributes["maxChargeRate"] / hydrogen_specific_energy)
+            Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"], max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
             # Gas_tank_flow=dict(
