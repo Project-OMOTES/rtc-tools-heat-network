@@ -22,6 +22,8 @@ class GasDemand(GasComponent, BaseAsset):
 
         self.density = 2.5  # H2 density [kg/m3] at 30bar
 
+        self.id_mapping_carrier = -1
+
         self.add_variable(GasPort, "GasIn")
         self.add_variable(
             Variable, "Gas_demand_mass_flow", min=0.0, nominal=self.Q_nominal * self.density

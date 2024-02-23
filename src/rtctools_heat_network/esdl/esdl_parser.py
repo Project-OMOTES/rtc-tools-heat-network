@@ -59,12 +59,26 @@ class BaseESDLParser:
                     type="heat",
                 )
             elif isinstance(x, esdl.esdl.ElectricityCommodity):
+                if x.id not in id_to_idnumber_map:
+                    number_list = [int(s) for s in x.id if s.isdigit()]
+                    number = ""
+                    for nr in number_list:
+                        number = number + str(nr)
+                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name, voltage=x.voltage, id=x.id, type="electricity"
+                    name=x.name, voltage=x.voltage, id=x.id, type="electricity",
+                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
             elif isinstance(x, esdl.esdl.GasCommodity):
+                if x.id not in id_to_idnumber_map:
+                    number_list = [int(s) for s in x.id if s.isdigit()]
+                    number = ""
+                    for nr in number_list:
+                        number = number + str(nr)
+                    id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name, pressure=x.pressure, id=x.id, type="gas"
+                    name=x.name, pressure=x.pressure, id=x.id, type="gas",
+                    id_number_mapping=id_to_idnumber_map[x.id],
                 )
 
         # Component ids are unique, but we require component names to be unique as well.
