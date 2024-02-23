@@ -7,6 +7,8 @@ from rtctools.util import run_optimization_problem
 
 import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
@@ -44,7 +46,14 @@ class TestHeadLoss(TestCase):
 
                 return options
 
-        solution = run_optimization_problem(SourcePipeSinkDW, base_folder=base_folder)
+        solution = run_optimization_problem(
+            SourcePipeSinkDW,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
         results = solution.extract_results()
 
         pipes = ["Pipe1", "Pipe1_ret"]
@@ -145,7 +154,14 @@ class TestHeadLoss(TestCase):
                     self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
-            solution = run_optimization_problem(TestSourceSink, base_folder=base_folder)
+            solution = run_optimization_problem(
+                TestSourceSink,
+                base_folder=base_folder,
+                esdl_file_name="source_sink.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.csv",
+            )
             results = solution.extract_results()
 
             # Check the head loss variable

@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
@@ -32,7 +34,14 @@ class TestGasNetwork(TestCase):
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
 
-        solution = run_optimization_problem(GasNetworkProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            GasNetworkProblem,
+            base_folder=base_folder,
+            esdl_file_name="2a_gas.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
 
         results = solution.extract_results()
 
