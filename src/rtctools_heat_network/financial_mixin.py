@@ -75,6 +75,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__annualized_capex_var_bounds = {}
         self.__annualized_capex_var_nominals = {}
 
+        # Variable for realized revenue
+        self._asset_revenue_map = {}
+        self.__asset_revenue_var = {}
+        self.__asset_revenue_nominals = {}
+        self.__asset_revenue_bounds = {}
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
@@ -240,15 +246,15 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 if asset_name in self.get_pipe_class_map().keys():
                     pipe_classes = self.get_pipe_class_map()[asset_name]
                     max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * max([c.investment_costs for c in pipe_classes.keys()])
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * max([c.investment_costs for c in pipe_classes.keys()])
                     )
                 else:
                     max_cost = (
-                        2.0
-                        * parameters[f"{asset_name}.length"]
-                        * parameters[f"{asset_name}.investment_cost_coefficient"]
+                            2.0
+                            * parameters[f"{asset_name}.length"]
+                            * parameters[f"{asset_name}.investment_cost_coefficient"]
                     )
             else:
                 max_cost = (
@@ -256,7 +262,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     * parameters[f"{asset_name}.investment_cost_coefficient"]
                     if isinstance(bounds[f"{asset_name}__max_size"][1], Timeseries)
                     else bounds[f"{asset_name}__max_size"][1]
-                    * parameters[f"{asset_name}.investment_cost_coefficient"]
+                         * parameters[f"{asset_name}.investment_cost_coefficient"]
                 )
             self.__asset_investment_cost_bounds[asset_investment_cost_var] = (0.0, max_cost)
             self.__asset_investment_cost_nominals[asset_investment_cost_var] = (
@@ -267,6 +273,29 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 if nominal_investment is not None
                 else 1.0e2
             )
+
+            # Realized revenue
+            if (asset_name) in [*self.heat_network_components.get("electricity_demand", []),
+                                *self.heat_network_components.get("gas_demand", [])]:
+                carrier_name = self._asset_carrier_map[asset_name]
+                asset_revenue_var = f"{asset_name}__revenue"
+                self._asset_revenue_map[asset_name] = asset_revenue_var
+                self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(
+                    asset_revenue_var
+                )
+                self.__asset_revenue_bounds[asset_revenue_var] = (
+                    0.0,
+                    np.inf,
+                )
+                self.__asset_revenue_nominals[asset_revenue_var] = (
+                    max(
+                        np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values())
+                        * nominal_fixed_operational,
+                        1.0e2,
+                    )
+                    if nominal_fixed_operational is not None
+                    else 1.0e2
+                )
 
         for asset in [
             *self.heat_network_components.get("source", []),
@@ -305,8 +334,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 self.__cumulative_investments_made_in_eur_map[asset] = var_name
                 self.__cumulative_investments_made_in_eur_var[var_name] = ca.MX.sym(var_name)
                 self.__cumulative_investments_made_in_eur_nominals[var_name] = (
-                    self.variable_nominal(f"{asset}__investment_cost")
-                    + self.variable_nominal(f"{asset}__installation_cost")
+                        self.variable_nominal(f"{asset}__investment_cost")
+                        + self.variable_nominal(f"{asset}__installation_cost")
                 )
                 self.__cumulative_investments_made_in_eur_bounds[var_name] = (0.0, np.inf)
 
@@ -413,6 +442,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         variables.extend(self.__asset_installation_cost_var.values())
         variables.extend(self.__asset_variable_operational_cost_var.values())
         variables.extend(self.__annualized_capex_var.values())
+        variables.extend(self.__asset_revenue_var.values())
         return variables
 
     @property
@@ -452,6 +482,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             return self.__cumulative_investments_made_in_eur_nominals[variable]
         elif variable in self.__annualized_capex_var_nominals:
             return self.__annualized_capex_var_nominals[variable]
+        elif variable in self.__asset_revenue_nominals:
+            return self.__asset_revenue_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -468,6 +500,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         bounds.update(self.__asset_is_realized_bounds)
         bounds.update(self.__cumulative_investments_made_in_eur_bounds)
         bounds.update(self.__annualized_capex_var_bounds)
+        bounds.update(self.__asset_revenue_bounds)
         return bounds
 
     @staticmethod
@@ -495,7 +528,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         canonical, sign = self.alias_relation.canonical_signed(variable)
         return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
+                self.state_vector(canonical, ensemble_member) * self.variable_nominal(
+            canonical) * sign
         )
 
     def __investment_cost_constraints(self, ensemble_member):
@@ -648,7 +682,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             sum = 0.0
             for i in range(1, len(self.times())):
                 sum += (
-                    variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
+                        variable_operational_cost_coefficient * elec_consumption[i] * timesteps[
+                    i - 1]
                 )
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
@@ -718,9 +753,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             timesteps = np.diff(self.times()) / 3600.0
             for i in range(1, len(self.times())):
                 sum += (
-                    variable_operational_cost_coefficient
-                    * power_consumer[i]
-                    * timesteps[i - 1]  # gas_mass_flow unit is kg/hr
+                        variable_operational_cost_coefficient
+                        * power_consumer[i]
+                        * timesteps[i - 1]  # gas_mass_flow unit is kg/hr
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
@@ -833,13 +868,13 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 #         insulation_class_cost
                 #         investment_cost_sym += insulation_class_active * insulation_class_cost
                 big_m = (
-                    1.5
-                    * max(
-                        self.bounds()[f"{asset}__investment_cost"][1]
-                        + self.bounds()[f"{asset}__installation_cost"][1],
-                        1.0,
-                    )
-                    / max(self.get_aggregation_count_max(asset), 1.0)
+                        1.5
+                        * max(
+                    self.bounds()[f"{asset}__investment_cost"][1]
+                    + self.bounds()[f"{asset}__installation_cost"][1],
+                    1.0,
+                )
+                        / max(self.get_aggregation_count_max(asset), 1.0)
                 )
 
                 # Asset can be realized once the investments made equal the installation and
@@ -853,9 +888,9 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 constraints.append(
                     (
                         (
-                            cumulative_investments_made
-                            - capex_sym
-                            + (1.0 - asset_is_realized) * big_m
+                                cumulative_investments_made
+                                - capex_sym
+                                + (1.0 - asset_is_realized) * big_m
                         )
                         / nominal,
                         0.0,
@@ -867,28 +902,28 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 heat_flow = self.state(f"{asset}.Heat_flow")
                 if not np.isinf(self.bounds()[f"{asset}.Heat_flow"][1]):
                     big_m = (
-                        1.5
-                        * self.bounds()[f"{asset}.Heat_flow"][1]
-                        / max(self.get_aggregation_count_max(asset), 1.0)
+                            1.5
+                            * self.bounds()[f"{asset}.Heat_flow"][1]
+                            / max(self.get_aggregation_count_max(asset), 1.0)
                     )
                 else:
                     try:
                         big_m = (
-                            1.5
-                            * max(
-                                self.bounds()[f"{asset}.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.HeatIn.Heat"][1],
-                            )
-                            / max(self.get_aggregation_count_max(asset), 1.0)
+                                1.5
+                                * max(
+                            self.bounds()[f"{asset}.HeatOut.Heat"][1],
+                            self.bounds()[f"{asset}.HeatIn.Heat"][1],
+                        )
+                                / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                     except KeyError:
                         big_m = (
-                            1.5
-                            * max(
-                                self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
-                                self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
-                            )
-                            / max(self.get_aggregation_count_max(asset), 1.0)
+                                1.5
+                                * max(
+                            self.bounds()[f"{asset}.Primary.HeatOut.Heat"][1],
+                            self.bounds()[f"{asset}.Primary.HeatIn.Heat"][1],
+                        )
+                                / max(self.get_aggregation_count_max(asset), 1.0)
                         )
                 constraints.append(((heat_flow + asset_is_realized * big_m) / big_m, 0.0, np.inf))
                 constraints.append(((heat_flow - asset_is_realized * big_m) / big_m, -np.inf, 0.0))
@@ -962,6 +997,47 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return constraints
 
+    def __revenue_constraints(self, ensemble_member):
+
+        """
+        TODO: Description revenue constraints
+        """
+        constraints = []
+
+        # TODO: add fixed price default from ESDL in case no price profile is defined.
+        # parameters = self.parameters(ensemble_member)
+
+        for demand in [*self.heat_network_components.get("gas_demand", []),
+                       *self.heat_network_components.get("electricity_demand", [])]:
+
+            carrier_name = self._asset_carrier_map[demand]
+            price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values()
+
+            if demand in self.heat_network_components.get("gas_demand", []):
+                energy_flow = self.__state_vector_scaled(
+                    f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                )
+
+            elif demand in self.heat_network_components.get("electricity_demand", []):
+                energy_flow = self.__state_vector_scaled(
+                    f"{demand}.Electricity_demand", ensemble_member
+                )
+
+            variable_revenue_var = self._asset_revenue_map[demand]
+            variable_revenue = self.extra_variable(
+                variable_revenue_var, ensemble_member
+            )
+            nominal = self.variable_nominal(variable_revenue_var)
+
+            sum = 0.0
+            timesteps = np.diff(self.times()) / 3600.0
+            for i in range(1, len(self.times())):
+                sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
+
+            constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -989,6 +1065,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__revenue_constraints(ensemble_member))
 
         if self.heat_network_options()["discounted_annualized_cost"]:
             constraints.extend(self.__annualized_capex_constraints(ensemble_member))
