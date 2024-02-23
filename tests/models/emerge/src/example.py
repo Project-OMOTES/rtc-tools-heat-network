@@ -57,7 +57,7 @@ class MaxHydrogenProduction(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
+        return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
 
 class EmergeTest(
