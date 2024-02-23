@@ -177,7 +177,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             electricity_source = self.__state_vector_scaled(
                 f"{wp}.Electricity_source", ensemble_member
             )
-            max = self.bounds()[f"{wp}.Electricity_source"][1].values
+            max = self.bounds()[f"{wp}.Electricity_source"][1].values[:len(self.times())]
             nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
 
             constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))

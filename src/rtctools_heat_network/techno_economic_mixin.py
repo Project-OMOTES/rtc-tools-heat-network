@@ -62,6 +62,9 @@ class TechnoEconomicMixin(
     def get_electricity_carriers(self):
         return self.electricity_carriers()
 
+    def get_gas_carriers(self):
+        return self.gas_carriers()
+
     def get_heat_carriers(self):
         return self.temperature_carriers()
 

@@ -15,63 +15,18 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
-class TargetDemandGoal(Goal):
-    """
-    Goal class for matching a timeseries of values, we use it to match the time series of a demand
-    profile. We use order 2 to match the profile at every time-step. We set the target in the
-    constructor and function() method will return the state which should match the target.
-    """
-
-    priority = 1
-
-    order = 2
-
-    def __init__(self, state: str, target: Timeseries):
-        """
-        The constructor for the class where we pass the name of the state that should be matched to
-        the target.
-
-        Parameters
-        ----------
-        state : string for the name of the state.
-        target : Timeseries to match with the state.
-        """
-        self.state = state
-
-        self.target_min = target
-        self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values))
-        self.function_nominal = np.median(target.values)
-
-    def function(
-        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
-    ) -> ca.MX:
-        """
-        This function returns the state to which will be tried to match to the target.
-
-        Parameters
-        ----------
-        optimization_problem : The optimization class containing the variables'
-        ensemble_member : the ensemble member
-
-        Returns
-        -------
-        The optimization problem state, the Heat_demand, which should be matched to the time-series
-        """
-        return optimization_problem.state(self.state)
-
-
-class MinimizeSourcesHeatGoal(Goal):
+class MaxHydrogenProduction(Goal):
     """
     A minimization goal for source heat production. We use order 1 here as we want to minimize heat
     over the full horizon and not per time-step.
     """
 
-    priority = 3
+    priority = 1
 
     order = 1
 
@@ -83,10 +38,7 @@ class MinimizeSourcesHeatGoal(Goal):
         ----------
         source : string of the source name that is going to be minimized
         """
-        self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
         self.source = source
-        self.function_nominal = 1e6
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -104,35 +56,11 @@ class MinimizeSourcesHeatGoal(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.state(f"{self.source}.Heat_source")
-
-
-class _GoalsAndOptions:
-    """
-    A goals class that we often use if we specify multiple problem classes.
-    """
-
-    def path_goals(self):
-        """
-        In this method we add the goals for matching the demand.
-
-        Returns
-        -------
-        The appended goals list of goals
-        """
-        goals = super().path_goals().copy()
-
-        for demand in self.heat_network_components.get("demand", []):
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
-
-            goals.append(TargetDemandGoal(state, target))
-
-        return goals
+        return optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
 
 class EmergeTest(
-    _GoalsAndOptions,
+    ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -146,6 +74,12 @@ class EmergeTest(
     representative result.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+
+
     def path_goals(self):
         """
         This function adds the minimization goal for minimizing the heat production.
@@ -156,8 +90,8 @@ class EmergeTest(
         """
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
-            goals.append(MinimizeSourcesHeatGoal(s))
+        for s in self.heat_network_components["electrolyzer"]:
+            goals.append(MaxHydrogenProduction(s))
 
         return goals
 
@@ -173,6 +107,9 @@ class EmergeTest(
         options["solver"] = "highs"
         return options
 
+    def times(self, variable=None):
+        return super().times(variable)[:25]
+
     def heat_network_options(self):
         """
         This function does not add anything at the moment but during debugging we use this.
@@ -185,6 +122,7 @@ class EmergeTest(
         options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
+        options["include_asset_is_switched_on"] = True
         return options
 
 

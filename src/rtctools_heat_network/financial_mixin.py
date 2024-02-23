@@ -277,7 +277,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             # Realized revenue
             if (asset_name) in [*self.heat_network_components.get("electricity_demand", []),
                                 *self.heat_network_components.get("gas_demand", [])]:
-                carrier_name = self._asset_carrier_map[asset_name]
+
+                carrier_name = None
+                for id, attr in self.get_electricity_carriers().items():
+                    if attr["id_number_mapping"]==parameters[f"{asset_name}.id_mapping_carrier"]:
+                        carrier_name = attr["name"]
+                for id, attr in self.get_gas_carriers().items():
+                    if attr["id_number_mapping"]==parameters[f"{asset_name}.id_mapping_carrier"]:
+                        carrier_name = attr["name"]
+                assert carrier_name is not None
+
                 asset_revenue_var = f"{asset_name}__revenue"
                 self._asset_revenue_map[asset_name] = asset_revenue_var
                 self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(
@@ -289,7 +298,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 self.__asset_revenue_nominals[asset_revenue_var] = (
                     max(
-                        np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values())
+                        np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
                         * nominal_fixed_operational,
                         1.0e2,
                     )
@@ -432,6 +441,18 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
     @abstractmethod
     def get_electricity_carriers(self, type=None):
+        """
+        This function should return the mapping between the pipe and all the possible pipe classes
+        available for that pipe.
+
+        Returns
+        -------
+
+        """
+        return NotImplementedError
+
+    @abstractmethod
+    def get_gas_carriers(self, type=None):
         """
         This function should return the mapping between the pipe and all the possible pipe classes
         available for that pipe.
@@ -1100,13 +1121,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints = []
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
-        # parameters = self.parameters(ensemble_member)
+        parameters = self.parameters(ensemble_member)
 
         for demand in [*self.heat_network_components.get("gas_demand", []),
                        *self.heat_network_components.get("electricity_demand", [])]:
 
-            carrier_name = self._asset_carrier_map[demand]
-            price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values()
+            carrier_name = None
+            for id, attr in self.get_electricity_carriers().items():
+                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                    carrier_name = attr["name"]
+            for id, attr in self.get_gas_carriers().items():
+                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                    carrier_name = attr["name"]
+            assert carrier_name is not None
+            price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
             if demand in self.heat_network_components.get("gas_demand", []):
                 energy_flow = self.__state_vector_scaled(

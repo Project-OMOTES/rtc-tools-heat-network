@@ -25,6 +25,9 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
     def electricity_carriers(self):
         return self.esdl_carriers_typed(type="electricity")
 
+    def gas_carriers(self):
+        return self.esdl_carriers_typed(type="gas")
+
     def temperature_regimes(self, carrier):
         temperature_options = []
         temperature_step = 2.5
