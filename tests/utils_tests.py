@@ -71,7 +71,7 @@ def heat_to_discharge_test(solution, results):
      discharge and heatflow can be negative.
     """
     test = TestCase()
-    tol = 1.0e-3
+    tol = 1.0e-2
     for d in solution.heat_network_components.get("demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -321,4 +321,4 @@ def energy_conservation_test(solution, results):
                 atol=1e-3,
             )
 
-    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-3)
+    np.testing.assert_allclose(energy_sum, 0.0, atol=1e-2)

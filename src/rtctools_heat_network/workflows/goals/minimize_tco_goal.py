@@ -21,6 +21,10 @@ class MinimizeTCO(Goal):
             *optimization_problem.heat_network_components.get("source", []),
             *optimization_problem.heat_network_components.get("ates", []),
             *optimization_problem.heat_network_components.get("heat_pump", []),
+            *optimization_problem.heat_network_components.get("heat_pump_elec", []),
+            *optimization_problem.heat_network_components.get("pump", []),
+            *optimization_problem.heat_network_components.get("heat_exchanger", []),
+            *optimization_problem.heat_network_components.get("buffer", []),
         ]:
             obj += (
                 optimization_problem.extra_variable(
@@ -35,6 +39,8 @@ class MinimizeTCO(Goal):
             *optimization_problem.heat_network_components.get("buffer", []),
             *optimization_problem.heat_network_components.get("heat_pump", []),
             *optimization_problem.heat_network_components.get("heat_exchanger", []),
+            *optimization_problem.heat_network_components.get("heat_exchanger_elec", []),
+            *optimization_problem.heat_network_components.get("pump", []),
         ]:
             obj += (
                 optimization_problem.extra_variable(
@@ -51,6 +57,8 @@ class MinimizeTCO(Goal):
             *optimization_problem.heat_network_components.get("heat_exchanger", []),
             *optimization_problem.heat_network_components.get("heat_pump", []),
             *optimization_problem.heat_network_components.get("pipe", []),
+            *optimization_problem.heat_network_components.get("heat_exchanger_elec", []),
+            *optimization_problem.heat_network_components.get("pump", []),
         ]:
             obj += optimization_problem.extra_variable(
                 optimization_problem._asset_investment_cost_map[asset]
@@ -64,6 +72,8 @@ class MinimizeTCO(Goal):
             *optimization_problem.heat_network_components.get("heat_exchanger", []),
             *optimization_problem.heat_network_components.get("heat_pump", []),
             *optimization_problem.heat_network_components.get("pipe", []),
+            *optimization_problem.heat_network_components.get("heat_exchanger_elec", []),
+            *optimization_problem.heat_network_components.get("pump", []),
         ]:
             obj += optimization_problem.extra_variable(
                 optimization_problem._asset_installation_cost_map[asset]

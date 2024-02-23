@@ -24,6 +24,7 @@ class _NonStorageComponent(HeatTwoPort, BaseAsset):
         self.dT = self.T_supply - self.T_return
         self.cp = 4200.0
         self.rho = 988.0
+        self.nominal_pressure = 16.0e5
 
         # NOTE: We move a factor of 100.0 of the heat to the state entry, to
         # reduce the coefficient in front of the heat variables. This

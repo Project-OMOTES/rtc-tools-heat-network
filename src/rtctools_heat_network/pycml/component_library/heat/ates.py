@@ -37,6 +37,9 @@ class ATES(HeatTwoPort, BaseAsset):
         self.cp = 4200.0
         self.rho = 988.0
         self.Heat_nominal = self.cp * self.rho * self.dT * self.Q_nominal
+        self.nominal_pressure = 16.0e5
+        self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+        self.pump_efficiency = 0.5
 
         self.heat_loss_coeff = 0.005 / (24.0 * 3600.0)
         self.single_doublet_power = nan
@@ -63,6 +66,9 @@ class ATES(HeatTwoPort, BaseAsset):
             nominal=self._nominal_stored_heat,
         )
         self.add_variable(Variable, "Q", nominal=self.Q_nominal)
+        self.add_variable(
+            Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
+        )
         # For nicer constraint coefficient scaling, we shift a bit more error into
         # the state vector entry of `Heat_loss`. In other words, with a factor of
         # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
