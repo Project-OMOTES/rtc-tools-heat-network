@@ -9,7 +9,7 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
-class TestAbsoluteHeat(TestCase):
+class TestElectricityTopo(TestCase):
     def test_electricity_network_topology(self):
         """
         This test checks the functioning of topology optimization of electricity cables. It uses
