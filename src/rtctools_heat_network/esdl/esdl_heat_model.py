@@ -1196,9 +1196,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasStorage"}
 
+        hydrogen_specific_energy = 20. * 1.e6  # kg/Wh
+
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             volume=asset.attributes["workingVolume"],
+            Gas_mass_flow=dict(min=asset.attributes["maxDischargeRate"]/hydrogen_specific_energy, max=asset.attributes["maxChargeRate"] / hydrogen_specific_energy)
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
             # Gas_tank_flow=dict(
