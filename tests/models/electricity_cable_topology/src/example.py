@@ -16,6 +16,7 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from rtctools_heat_network.pipe_class import CableClass
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -65,7 +66,7 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class MinimizeSourcesHeatGoal(Goal):
+class MinimizeElectricityCableInvestments(Goal):
     """
     A minimization goal for source heat production. We use order 1 here as we want to minimize heat
     over the full horizon and not per time-step.
@@ -75,7 +76,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     order = 1
 
-    def __init__(self, source: str):
+    def __init__(self, cable: str):
         """
         The constructor of the goal.
 
@@ -84,9 +85,9 @@ class MinimizeSourcesHeatGoal(Goal):
         source : string of the source name that is going to be minimized
         """
         self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
-        self.source = source
-        self.function_nominal = 1e6
+        self.function_range = (0.0, 1.0e3)
+        self.cable = cable
+        self.function_nominal = 1.0
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -104,7 +105,10 @@ class MinimizeSourcesHeatGoal(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.state(f"{self.source}.Heat_source")
+        return (
+            optimization_problem.extra_variable(f"{self.cable}__investment_cost", ensemble_member)
+            / 1e3
+        )
 
 
 class _GoalsAndOptions:
@@ -122,9 +126,9 @@ class _GoalsAndOptions:
         """
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components.get("demand", []):
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
+        for demand in self.heat_network_components.get("electricity_demand", []):
+            target = self.get_timeseries(f"{demand}.target_electricity_demand")
+            state = f"{demand}.Electricity_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
@@ -146,7 +150,7 @@ class HeatProblem(
     representative result.
     """
 
-    def path_goals(self):
+    def goals(self):
         """
         This function adds the minimization goal for minimizing the heat production.
 
@@ -154,10 +158,10 @@ class HeatProblem(
         -------
         The appended list of goals
         """
-        goals = super().path_goals().copy()
+        goals = super().goals().copy()
 
-        for s in self.heat_network_components["source"]:
-            goals.append(MinimizeSourcesHeatGoal(s))
+        for c in self.heat_network_components.get("electricity_cable", []):
+            goals.append(MinimizeElectricityCableInvestments(c))
 
         return goals
 
@@ -182,16 +186,40 @@ class HeatProblem(
         Options dict for the physics modelling
         """
         options = super().heat_network_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
+        options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
-        options["neglect_pipe_heat_losses"] = False
+        options["include_electric_cable_power_loss"] = False
         return options
+
+    def electricity_cable_classes(self, p):
+        return [
+            CableClass("None", 0.0, 0.0, 0.0),
+            CableClass("DN40", 2.5, 1.5, 1.0),
+            CableClass("DN50", 5.0, 1.7, 2.0),
+            CableClass("DN65", 7.5, 1.9, 3.0),
+            CableClass("DN80", 10.0, 2.2, 4.0),
+            CableClass("DN100", 12.5, 2.4, 5.0),
+            CableClass("DN125", 15.0, 2.6, 6.0),
+            CableClass("DN150", 17.5, 2.8, 7.0),
+            CableClass("DN200", 20.0, 3.0, 8.0),
+            CableClass("DN250", 22.5, 3.0, 9.0),
+            CableClass("DN300", 25.0, 3.0, 10.0),
+            CableClass("DN400", 30.0, 3.0, 11.0),
+            CableClass("DN450", 35.0, 3.0, 12.0),
+        ]
+
+    def bounds(self):
+        bounds = super().bounds()
+        for c in self.heat_network_components.get("electricity_cable", []):
+            bounds.update({f"{c}__investment_cost": (0.0, np.inf)})
+
+        return bounds
 
 
 if __name__ == "__main__":
     elect = run_optimization_problem(
         HeatProblem,
-        esdl_file_name="absolute_heat.esdl",
+        esdl_file_name="enettopology.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

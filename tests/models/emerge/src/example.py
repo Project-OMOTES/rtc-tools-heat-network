@@ -17,6 +17,7 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -77,7 +78,7 @@ class EmergeTest(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-
+        self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
 
     def path_goals(self):
@@ -123,6 +124,7 @@ class EmergeTest(
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         options["include_asset_is_switched_on"] = True
+        options["include_electric_cable_power_loss"] = False
         return options
 
 

@@ -179,12 +179,12 @@ class EndScenarioSizingDiscounted(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
-        options["maximum_velocity"] = 3.0
+        self.heat_network_settings["minimum_velocity"] = 0.001
+        self.heat_network_settings["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
         options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
 
@@ -512,12 +512,12 @@ class EndScenarioSizing(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
-        options["maximum_velocity"] = 3.0
+        self.heat_network_settings["minimum_velocity"] = 0.001
+        self.heat_network_settings["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
         # options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = True
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
 
@@ -777,7 +777,7 @@ class EndScenarioSizingStaged(EndScenarioSizing):
         options = super().heat_network_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            options["minimum_velocity"] = 0.0
+            self.heat_network_settings["minimum_velocity"] = 0.0
 
         return options
 

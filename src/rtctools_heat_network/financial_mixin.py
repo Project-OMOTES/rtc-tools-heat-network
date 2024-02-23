@@ -107,10 +107,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
                 *self.heat_network_components.get("control_valve", []),
-                *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
                 *self.heat_network_components.get("gas_node", []),
-                *self.heat_network_components.get("gas_pipe", []),
             ]:
                 continue
             elif asset_name in [*self.heat_network_components.get("ates", [])]:
@@ -130,6 +128,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             elif asset_name in [*self.heat_network_components.get("pipe", [])]:
+                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("electricity_cable", [])]:
+                nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.heat_network_components.get("gas_pipe", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
@@ -255,6 +261,34 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                             2.0
                             * parameters[f"{asset_name}.length"]
                             * parameters[f"{asset_name}.investment_cost_coefficient"]
+                    )
+            elif asset_name in self.heat_network_components.get("gas_pipe", []):
+                if asset_name in self.get_gas_pipe_class_map().keys():
+                    pipe_classes = self.get_gas_pipe_class_map()[asset_name]
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * max([c.investment_costs for c in pipe_classes.keys()])
+                    )
+                else:
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * parameters[f"{asset_name}.investment_cost_coefficient"]
+                    )
+            elif asset_name in self.heat_network_components.get("electricity_cable", []):
+                if asset_name in self.get_electricity_cable_class_map().keys():
+                    cable_classes = self.get_electricity_cable_class_map()[asset_name]
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * max([c.investment_costs for c in cable_classes.keys()])
+                    )
+                else:
+                    max_cost = (
+                        2.0
+                        * parameters[f"{asset_name}.length"]
+                        * parameters[f"{asset_name}.investment_cost_coefficient"]
                     )
             else:
                 max_cost = (
@@ -428,6 +462,28 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         raise NotImplementedError
 
     @abstractmethod
+    def get_gas_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
+        """
+        This function should return the gas_pipe investment cost coefficient variable.
+
+        Returns
+        -------
+        Casadi symbol for the investment cost coefficient of the pipe.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_electricity_cable_investment_cost_coefficient(self, asset_name, ensemble_member):
+        """
+        This function should return the electricity cable investment cost coefficient variable.
+
+        Returns
+        -------
+        Casadi symbol for the investment cost coefficient of the cable.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def get_pipe_class_map(self):
         """
         This function should return the mapping between the pipe and all the possible pipe classes
@@ -441,6 +497,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
     @abstractmethod
     def get_electricity_carriers(self, type=None):
+        """
+        This function should return the mapping between the pipe and all the possible pipe classes
+        available for that pipe.
+
+        Returns
+        -------
+
+        """
+        return NotImplementedError
+    def get_gas_pipe_class_map(self):
         """
         This function should return the mapping between the pipe and all the possible pipe classes
         available for that pipe.
@@ -468,6 +534,16 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         This function should return the mapping between the pipe and all the possible pipe classes
         available for that pipe.
+
+        Returns
+        -------
+
+        """
+        return NotImplementedError
+    def get_electricity_cable_class_map(self):
+        """
+        This function should return the mapping between the cable and all the possible cable classes
+        available for that cable.
 
         Returns
         -------
@@ -603,9 +679,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 *self.heat_network_components.get("node", []),
                 *self.heat_network_components.get("pump", []),
                 *self.heat_network_components.get("check_valve", []),
-                *self.heat_network_components.get("electricity_cable", []),
                 *self.heat_network_components.get("electricity_node", []),
-                *self.heat_network_components.get("gas_pipe", []),
                 *self.heat_network_components.get("gas_node", []),
                 *self.heat_network_components.get("gas_tank_storage", []),
             ]:
@@ -621,6 +695,20 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 # We do the pipe seperately as their coefficients are specified per meter.
                 investment_cost_coefficient = self.get_pipe_investment_cost_coefficient(
                     asset_name, ensemble_member
+                )
+                asset_size = parameters[f"{asset_name}.length"]
+            elif asset_name in [*self.heat_network_components.get("gas_pipe", [])]:
+                # We do the pipe seperately as their coefficients are specified per meter.
+                investment_cost_coefficient = self.get_gas_pipe_investment_cost_coefficient(
+                    asset_name, ensemble_member
+                )
+                asset_size = parameters[f"{asset_name}.length"]
+            elif asset_name in [*self.heat_network_components.get("electricity_cable", [])]:
+                # We do the pipe seperately as their coefficients are specified per meter.
+                investment_cost_coefficient = (
+                    self.get_electricity_cable_investment_cost_coefficient(
+                        asset_name, ensemble_member
+                    )
                 )
                 asset_size = parameters[f"{asset_name}.length"]
             else:
