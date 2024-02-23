@@ -5,9 +5,12 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestAbsoluteHeat(TestCase):
-    def test_absolute_heat(self):
+    def test_electricity_network_topology(self):
         """
         This test checks the functioning of topology optimization of electricity cables. It uses
         a symmetrical network where the left side should stay in as those cables are shorter.
@@ -22,7 +25,14 @@ class TestAbsoluteHeat(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="enettopology.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
 
         results = heat_problem.extract_results()
 
