@@ -277,14 +277,15 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{elec_demand}.ElectricityIn.I")
             power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
             current_in = self.state(f"{elec_demand}.ElectricityIn.I")
-            constraints.append(
-                (
-                    (power_in - min_voltage * current_in)
-                    / (power_nom * curr_nom * min_voltage) ** 0.5,
-                    0,
-                    0,
+            if self.heat_network_options()["include_electric_cable_power_loss"]:
+                constraints.append(
+                    (
+                        (power_in - min_voltage * current_in)
+                        / (power_nom * curr_nom * min_voltage) ** 0.5,
+                        0,
+                        0,
+                    )
                 )
-            )
 
         return constraints
 
