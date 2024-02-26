@@ -107,10 +107,10 @@ class TestHeadLoss(TestCase):
             velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             for ii in range(len(results[f"{pipe}.dH"])):
                 np.testing.assert_array_less(
-                    results[f"{pipe}.dH"][ii],
                     darcy_weisbach.head_loss(
                         velocities[ii], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
                     ),
+                    abs(results[f"{pipe}.dH"][ii]),
                 )
 
     def test_gas_network_head_loss(self):
