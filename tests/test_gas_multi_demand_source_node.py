@@ -28,6 +28,13 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        class TestGasProblem(GasProblem):
+            def heat_network_options(self):
+                options = super().heat_network_options()
+                self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                self.gas_network_settings["pipe_minimum_pressure"] = 0.0
+                return options
+
         heat_problem = run_optimization_problem(
             GasProblem,
             base_folder=base_folder,

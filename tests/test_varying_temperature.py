@@ -441,3 +441,18 @@ class TestVaryingTemperature(TestCase):
     #     # # Check that the lowest return temperature is selected
     #     # np.testing.assert_allclose(
     #     results[f"{761602374459208051248000}__return_temperature"], 30.0)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestVaryingTemperature()
+    a.test_1a_temperature_variation()
+    a.test_3a_temperature_variation_supply()
+    a.test_3a_temperature_variation_return()
+    a.test_hex_temperature_variation()
+    a.test_hex_temperature_variation_disablehex()
+    a.test_hex_temperature_variation_secondary()
+    a.test_heat_pump_varying_temperature()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

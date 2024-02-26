@@ -226,8 +226,8 @@ class NetworkSimulator(
     def heat_network_options(self):
         options = super().heat_network_options()
 
-        options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-        options["minimize_head_losses"] = True
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+        self.heat_network_settings["minimize_head_losses"] = True
 
         return options
 
