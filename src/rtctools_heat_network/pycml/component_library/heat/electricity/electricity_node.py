@@ -26,7 +26,7 @@ class ElectricityNode(ElectricityComponent, BaseAsset):
         assert self.n >= 2
 
         self.add_variable(ElectricityPort, "ElectricityConn", self.n)
-        self.add_variable(Variable, "V", min=0.0)
+        self.add_variable(Variable, "V", min=0.0, nominal=self.voltage_nominal)
 
         for i in range(1, self.n + 1):
             self.add_equation((self.ElectricityConn[i].V - self.V) / self.voltage_nominal)

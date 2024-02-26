@@ -66,7 +66,7 @@ class HeatProblemTvar(HeatProblem):
         options = super().heat_network_options()
         # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
         # this is to avoid specifying a new demand profile
-        options["maximum_velocity"] = 0.25
+        self.heat_network_settings["maximum_velocity"] = 0.25
         return options
 
     def temperature_carriers(self):

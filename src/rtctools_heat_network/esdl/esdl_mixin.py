@@ -21,11 +21,11 @@ from rtctools_heat_network.component_type_mixin import (
     ModelicaComponentTypeMixin,
 )
 from rtctools_heat_network.esdl.asset_to_component_base import _AssetToComponentBase
-from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
+from rtctools_heat_network.esdl.edr_pipe_class import EDRGasPipeClass, EDRPipeClass
 from rtctools_heat_network.esdl.esdl_parser import ESDLStringParser
 from rtctools_heat_network.esdl.profile_parser import BaseProfileReader, InfluxDBProfileReader
 from rtctools_heat_network.physics_mixin import PhysicsMixin
-from rtctools_heat_network.pipe_class import PipeClass
+from rtctools_heat_network.pipe_class import GasPipeClass, PipeClass
 from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -146,6 +146,8 @@ class ESDLMixin(
 
         self._override_pipe_classes = dict()
         self.override_pipe_classes()
+        self._override_gas_pipe_classes = dict()
+        self.override_gas_pipe_classes()
 
         self.name_to_esdl_id_map = dict()
 
@@ -189,7 +191,7 @@ class ESDLMixin(
         -------
         None
         """
-        maximum_velocity = self.heat_network_options()["maximum_velocity"]
+        maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         no_pipe_class = PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0)
         pipe_classes = [
@@ -201,7 +203,9 @@ class ESDLMixin(
         assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
 
         for asset in self.esdl_assets.values():
-            if asset.asset_type == "Pipe":
+            if asset.asset_type == "Pipe" and isinstance(
+                asset.in_ports[0].carrier, esdl.HeatCommodity
+            ):
                 p = asset.name
 
                 if asset.attributes["state"].name == "OPTIONAL":
@@ -235,6 +239,68 @@ class ESDLMixin(
                         c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
                 elif asset.attributes["state"].name == "DISABLED":
                     c = self._override_pipe_classes[p] = []
+                    c.append(no_pipe_class)
+
+    def override_gas_pipe_classes(self) -> None:
+        """
+        In this method we populate the _override_gas_pipe_classes dict, which gives a list of
+        possible pipe classes for every pipe. We do this only when a pipe has the state OPTIONAL.
+        We use the EDR pipe classes. We assume that it is possible to remove a pipe PipeClass None,
+        but also that there is a minimum layed pipe size of DN150 to limit the search space. This
+        seems reasonable as we focus upon regional and primary networks.
+
+        Returns
+        -------
+        None
+        """
+        maximum_velocity = self.gas_network_settings["maximum_velocity"]
+
+        no_pipe_class = GasPipeClass("None", 0.0, 0.0, 0.0)
+        pipe_classes = [
+            EDRGasPipeClass.from_edr_class(name, edr_class_name, maximum_velocity)
+            for name, edr_class_name in _AssetToComponentBase.STEEL_S1_PIPE_EDR_ASSETS.items()
+        ]
+
+        # We assert the pipe classes are monotonically increasing in size
+        assert np.all(np.diff([pc.inner_diameter for pc in pipe_classes]) > 0)
+
+        for asset in self.esdl_assets.values():
+            if asset.asset_type == "Pipe" and isinstance(
+                asset.in_ports[0].carrier, esdl.GasCommodity
+            ):
+                p = asset.name
+
+                if asset.attributes["state"].name == "OPTIONAL":
+                    c = self._override_gas_pipe_classes[p] = []
+                    c.append(no_pipe_class)
+
+                    min_size = self.__minimum_pipe_size_name
+                    min_size_idx = [
+                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == min_size
+                    ]
+                    assert len(min_size_idx) == 1
+                    min_size_idx = min_size_idx[0]
+
+                    max_size = asset.attributes["diameter"].name
+
+                    max_size_idx = [
+                        idx for idx, pipe in enumerate(pipe_classes) if pipe.name == max_size
+                    ]
+                    assert len(max_size_idx) == 1
+                    max_size_idx = max_size_idx[0]
+
+                    if max_size_idx < min_size_idx:
+                        logger.warning(
+                            f"{p} has an upper DN size smaller than the used minimum size "
+                            f"of {self.__minimum_pipe_size_name}, choose at least "
+                            f"{self.__minimum_pipe_size_name}"
+                        )
+                    elif min_size_idx == max_size_idx:
+                        c.append(pipe_classes[min_size_idx])
+                    else:
+                        c.extend(pipe_classes[min_size_idx : max_size_idx + 1])
+                elif asset.attributes["state"].name == "DISABLED":
+                    c = self._override_gas_pipe_classes[p] = []
                     c.append(no_pipe_class)
 
     @property
@@ -346,7 +412,7 @@ class ESDLMixin(
         """
         heat_network_options = self.heat_network_options()
         v_nominal = heat_network_options["estimated_velocity"]
-        v_max = heat_network_options["maximum_velocity"]
+        v_max = self.heat_network_settings["maximum_velocity"]
         return dict(v_nominal=v_nominal, v_max=v_max)
 
     def esdl_qth_model_options(self) -> Dict:
@@ -361,7 +427,7 @@ class ESDLMixin(
         heat_network_options = self.heat_network_options()
         kwargs = {}
         kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
-        kwargs["v_max"] = heat_network_options["maximum_velocity"]
+        kwargs["v_max"] = self.heat_network_settings["maximum_velocity"]
         if self.__max_supply_temperature is not None:
             kwargs["maximum_temperature"] = self.__max_supply_temperature
         return dict(**kwargs)

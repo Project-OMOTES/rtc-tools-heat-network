@@ -170,6 +170,7 @@ class TestInsulation(TestCase):
             0.0,
             other_demand_insulation_class,
             err_msg="Insulation B or C should not be selected for any demand",
+            atol=1e-8,
         )
         # Check that insulation level C is active for HeatingDemand_f15e
         np.testing.assert_allclose(

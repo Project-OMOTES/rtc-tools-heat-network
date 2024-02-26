@@ -122,7 +122,7 @@ class _GoalsAndOptions:
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         # options["neglect_pipe_heat_losses"] = False
         return options
@@ -155,7 +155,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
         return options
@@ -356,7 +356,7 @@ class QTHProblem(
         options = super().heat_network_options()
         from rtctools_heat_network.head_loss_class import HeadLossOption
 
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options
 
 

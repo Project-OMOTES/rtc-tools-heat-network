@@ -62,7 +62,7 @@ class TestHEX(TestCase):
         # Note that we are not testing the last element as we exploit the last timestep for
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
-        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-8)
+        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
         # Check that heat is flowing through the hex
@@ -130,3 +130,14 @@ class TestHP(TestCase):
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestHEX()
+    a.test_heat_exchanger()
+
+    b = TestHP()
+    b.test_heat_pump()

@@ -130,7 +130,7 @@ class QTHLoopMixin(QTHMixin):
         """
 
         options = super().heat_network_options()
-        options["head_loss_option"] = HeadLossOption.CQ2_EQUALITY
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.CQ2_EQUALITY
         options["max_t_der_bidirect_pipe"] = False
         return options
 

@@ -124,22 +124,28 @@ class TestMinMaxPressureOptions(TestCase):
     class MinPressure(SmallerPipes):
         def heat_network_options(self):
             options = super().heat_network_options()
-            assert "pipe_minimum_pressure" in options
-            options["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
+            assert "pipe_minimum_pressure" in self.heat_network_settings
+            self.heat_network_settings["pipe_minimum_pressure"] = (
+                TestMinMaxPressureOptions.min_pressure
+            )
             return options
 
     class MaxPressure(SmallerPipes):
         def heat_network_options(self):
             options = super().heat_network_options()
-            assert "pipe_maximum_pressure" in options
+            assert "pipe_maximum_pressure" in self.heat_network_settings
             options["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
             return options
 
     class MinMaxPressure(SmallerPipes):
         def heat_network_options(self):
             options = super().heat_network_options()
-            options["pipe_minimum_pressure"] = TestMinMaxPressureOptions.min_pressure
-            options["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
+            self.heat_network_settings["pipe_minimum_pressure"] = (
+                TestMinMaxPressureOptions.min_pressure
+            )
+            self.heat_network_settings["pipe_maximum_pressure"] = (
+                TestMinMaxPressureOptions.max_pressure
+            )
             return options
 
     def test_min_max_pressure_options(self):
@@ -312,7 +318,7 @@ class TestDisconnectablePipe(TestCase):
         # Sanity check, as we rely on the minimum velocity being strictly
         # larger than zero for the discharge constraint to disconnect the
         # pipe.
-        self.assertGreater(case_connected.heat_network_options()["minimum_velocity"], 0.0)
+        self.assertGreater(case_connected.heat_network_settings["minimum_velocity"], 0.0)
 
         self.assertLess(q_disconnected[1], q_connected[1])
         self.assertAlmostEqual(q_disconnected[1], 0.0, 5)
@@ -324,7 +330,7 @@ class TestDisconnectablePipe(TestCase):
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
         def heat_network_options(self):
             options = super().heat_network_options()
-            options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+            self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
             return options
 
     def test_disconnected_pipe_darcy_weisbach(self):

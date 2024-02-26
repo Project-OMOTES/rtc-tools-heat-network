@@ -14,8 +14,6 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -65,7 +63,7 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class MinimizeSourcesHeatGoal(Goal):
+class MinimizeGasPipeInvestments(Goal):
     """
     A minimization goal for source heat production. We use order 1 here as we want to minimize heat
     over the full horizon and not per time-step.
@@ -75,7 +73,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     order = 1
 
-    def __init__(self, source: str):
+    def __init__(self, pipe: str):
         """
         The constructor of the goal.
 
@@ -84,9 +82,9 @@ class MinimizeSourcesHeatGoal(Goal):
         source : string of the source name that is going to be minimized
         """
         self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
-        self.source = source
-        self.function_nominal = 1e6
+        self.function_range = (0.0, 10e3)
+        self.pipe = pipe
+        self.function_nominal = 1.0e3
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -104,7 +102,10 @@ class MinimizeSourcesHeatGoal(Goal):
         -------
         The Heat_source state of the optimization problem.
         """
-        return optimization_problem.state(f"{self.source}.Heat_source")
+        return (
+            optimization_problem.extra_variable(f"{self.pipe}__investment_cost", ensemble_member)
+            / 1e3
+        )
 
 
 class _GoalsAndOptions:
@@ -122,9 +123,9 @@ class _GoalsAndOptions:
         """
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components.get("demand", []):
-            target = self.get_timeseries(f"{demand}.target_heat_demand")
-            state = f"{demand}.Heat_demand"
+        for demand in self.heat_network_components.get("gas_demand", []):
+            target = self.get_timeseries(f"{demand}.target_gas_demand")
+            state = f"{demand}.Gas_demand_mass_flow"
 
             goals.append(TargetDemandGoal(state, target))
 
@@ -146,7 +147,7 @@ class HeatProblem(
     representative result.
     """
 
-    def path_goals(self):
+    def goals(self):
         """
         This function adds the minimization goal for minimizing the heat production.
 
@@ -154,10 +155,10 @@ class HeatProblem(
         -------
         The appended list of goals
         """
-        goals = super().path_goals().copy()
+        goals = super().goals().copy()
 
-        for s in self.heat_network_components["source"]:
-            goals.append(MinimizeSourcesHeatGoal(s))
+        for p in self.heat_network_components.get("gas_pipe", []):
+            goals.append(MinimizeGasPipeInvestments(p))
 
         return goals
 
@@ -170,7 +171,7 @@ class HeatProblem(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "highs"
+        # options["solver"] = "gurobi"  # for temp usage
         return options
 
     def heat_network_options(self):
@@ -182,19 +183,16 @@ class HeatProblem(
         Options dict for the physics modelling
         """
         options = super().heat_network_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
+        self.gas_network_settings["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
         return options
 
+    def gas_pipe_classes(self, p):
+        return self._override_gas_pipe_classes.get(p, [])
+
 
 if __name__ == "__main__":
-    elect = run_optimization_problem(
-        HeatProblem,
-        esdl_file_name="absolute_heat.esdl",
-        esdl_parser=ESDLFileParser,
-        profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
-    )
-    results = elect.extract_results()
+    gas_ntwk = run_optimization_problem(HeatProblem)
+    results = gas_ntwk.extract_results()
     a = 1
