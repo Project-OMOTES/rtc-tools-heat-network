@@ -1,8 +1,3 @@
-import json
-import os
-from pathlib import Path
-
-import esdl
 import numpy as np
 
 from rtctools.data.storage import DataStore
@@ -14,7 +9,7 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import (
-    SinglePassGoalProgrammingMixin, GoalProgrammingMixin
+    GoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
 
@@ -23,12 +18,11 @@ from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 
-import xml.etree.ElementTree as ET
-
 ns = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
 WATT_TO_MEGA_WATT = 1.0e6
 WATT_TO_KILO_WATT = 1.0e3
+
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -54,7 +48,7 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.e4)
+        self.function_range = (0.0, 1.0e4)
         self.source = source
         self.function_nominal = 1e0
 
@@ -65,46 +59,29 @@ class MinimizeCostHeatGoal(Goal):
             state = optimization_problem.state(
                 f"{self.source}.Power_elec"
             )  # heatpumps are not yet in the variable_operational_costs in financial_mixin
-        return (
-            state
-            * optimization_problem.parameters(0)[
-                f"{self.source}.variable_operational_cost_coefficient"
-            ]
-        )
+        var_costs = optimization_problem.parameters(0)[
+            f"{self.source}.variable_operational_cost_coefficient"
+        ]
+        return state * var_costs
 
 
-class MinimizeATESTemperature(Goal):
+class MinimizeATESStoredHeat(Goal):
     priority = 3
 
     order = 1
 
     def __init__(self, ates):
-        self.target_max = 0.
-        self.function_range = (0., 2.e3)
+        self.target_max = 0.0
+        self.function_range = (0.0, 1e2)
         self.ates = ates
         # self.function_nominal = 1e0
 
     def function(self, optimization_problem, ensemble_member):
-        # return optimization_problem.state(f"{self.ates}.Temperature_ates") - optimization_problem.state(f"{self.ates}__temperature_ates_disc")
-        return optimization_problem.state(f"{self.ates}__temperature_ates_disc")
-        # return optimization_problem.state(f"{self.ates}.Temperature_ates")
-
-class MinimizeATESStored_heat(Goal):
-    priority = 3
-
-    order = 1
-
-    def __init__(self, ates):
-        self.target_max = 0.
-        self.function_range = (0., 1e2)
-        self.ates = ates
-        # self.function_nominal = 1e0
-
-    def function(self, optimization_problem, ensemble_member):
-        # return optimization_problem.state(f"{self.ates}.Stored_heat")/optimization_problem.variable_nominal(f"{self.ates}.Stored_heat")
+        # return optimization_problem.state(f"{self.ates}.Stored_heat")/
+        # optimization_problem.variable_nominal(f"{self.ates}.Stored_heat")
         return optimization_problem.extra_variable(
-            f"{self.ates}__max_stored_heat") / optimization_problem.variable_nominal(
-            f"{self.ates}__max_stored_heat")
+            f"{self.ates}__max_stored_heat"
+        ) / optimization_problem.variable_nominal(f"{self.ates}__max_stored_heat")
 
 
 class _GoalsAndOptions:
@@ -220,13 +197,10 @@ class HeatProblem(
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
             constraints.append((heat_ates[0], 0.0, 0.0))
-            ates_temperature = self.__state_vector_scaled(f"{a}.Temperature_ates", ensemble_member)
-            ates_temperature_disc = self.__state_vector_scaled(f"{a}__temperature_ates_disc", ensemble_member)
+            ates_temperature_disc = self.__state_vector_scaled(
+                f"{a}__temperature_ates_disc", ensemble_member
+            )
             constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
-            # constraints.append(((ates_temperature_disc[-1] - ates_temperature_disc[0]), 0.0, 0.0))
-            # constraints.append(((ates_temperature_disc[-1] - ates_temperature[-1]), 0.0, 0.0))
-            # constraints.append(((ates_temperature_disc[0] - ates_temperature[0]), 0.0, 0.0))
-
 
         return constraints
 
@@ -279,77 +253,78 @@ class HeatProblem(
                 new_datastore.set_timeseries(
                     variable=var_name,
                     datetimes=new_date_times,
-                    values=np.asarray(new_data) * 2.,
+                    values=np.asarray(new_data) * 2.0,
                     ensemble_member=ensemble_member,
                     check_duplicates=True,
                 )
 
             self.io = new_datastore
 
-    def _get_runinfo_path_root(self):
-        runinfo_path = Path(self.esdl_run_info_path).resolve()
-        tree = ET.parse(runinfo_path)
-        return tree.getroot()
-     # def post(self):
-     #    root = self._get_runinfo_path_root()
-     #    workdir = os.path.join(os.path.dirname(os.getcwd()), 'output')
-     #    super().post()
-     #    results = self.extract_results()
-     #    parameters = self.parameters(0)
-     #    bounds = self.bounds()
-     #    parameters_dict = dict()
-     #
-     #    parameter_path = os.path.join(workdir, "parameters.json")
-     #    for key, value in parameters.items():
-     #        new_value = value  # [x for x in value]
-     #        parameters_dict[key] = new_value
-     #    if parameter_path is None:
-     #        workdir = root.findtext("pi:workDir", namespaces=ns)
-     #        parameter_path = os.path.join(workdir, "parameters.json")
-     #        if not Path(workdir).is_absolute():
-     #            parameter_path = Path(workdir).resolve().parent
-     #            parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
-     #    with open(parameter_path, "w") as file:
-     #        json.dump(parameters_dict, fp=file)
-     #
-     #    root = self._get_runinfo_path_root()
-     #    bounds_dict = dict()
-     #    bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-     #    bounds_path = os.path.join(workdir, "bounds.json")
-     #    for key, value in bounds.items():
-     #        if "Stored_heat" not in key:
-     #            new_value = value  # [x for x in value]
-     #            # if len(new_value) == 1:
-     #            #     new_value = new_value[0]
-     #            bounds_dict[key] = new_value
-     #    if bounds_path is None:
-     #        workdir = root.findtext("pi:workDir", namespaces=ns)
-     #        bounds_path = os.path.join(workdir, "bounds.json")
-     #        if not Path(workdir).is_absolute():
-     #            bounds_path = Path(workdir).resolve().parent
-     #            bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-     #    with open(bounds_path, "w") as file:
-     #        json.dump(bounds_dict, fp=file)
-     #
-     #    root = self._get_runinfo_path_root()
-     #    results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-     #    results_dict = dict()
-     #
-     #    for key, values in results.items():
-     #        new_value = values.tolist()
-     #        if len(new_value) == 1:
-     #            new_value = new_value[0]
-     #        results_dict[key] = new_value
-     #
-     #    results_path = os.path.join(workdir, "results.json")
-     #    if results_path is None:
-     #        workdir = root.findtext("pi:workDir", namespaces=ns)
-     #        results_path = os.path.join(workdir, "results.json")
-     #        if not Path(workdir).is_absolute():
-     #            results_path = Path(workdir).resolve().parent
-     #            results_path = os.path.join(results_path.__str__() + "results.json")
-     #    with open(results_path, "w") as file:
-     #        json.dump(results_dict, fp=file)
+    # def _get_runinfo_path_root(self):
+    #     runinfo_path = Path(self.esdl_run_info_path).resolve()
+    #     tree = ET.parse(runinfo_path)
+    #     return tree.getroot()
+
+    # def post(self):
+    #    root = self._get_runinfo_path_root()
+    #    workdir = os.path.join(os.path.dirname(os.getcwd()), 'output')
+    #    super().post()
+    #    results = self.extract_results()
+    #    parameters = self.parameters(0)
+    #    bounds = self.bounds()
+    #    parameters_dict = dict()
+    #
+    #    parameter_path = os.path.join(workdir, "parameters.json")
+    #    for key, value in parameters.items():
+    #        new_value = value  # [x for x in value]
+    #        parameters_dict[key] = new_value
+    #    if parameter_path is None:
+    #        workdir = root.findtext("pi:workDir", namespaces=ns)
+    #        parameter_path = os.path.join(workdir, "parameters.json")
+    #        if not Path(workdir).is_absolute():
+    #            parameter_path = Path(workdir).resolve().parent
+    #            parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
+    #    with open(parameter_path, "w") as file:
+    #        json.dump(parameters_dict, fp=file)
+    #
+    #    root = self._get_runinfo_path_root()
+    #    bounds_dict = dict()
+    #    bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+    #    bounds_path = os.path.join(workdir, "bounds.json")
+    #    for key, value in bounds.items():
+    #        if "Stored_heat" not in key:
+    #            new_value = value  # [x for x in value]
+    #            # if len(new_value) == 1:
+    #            #     new_value = new_value[0]
+    #            bounds_dict[key] = new_value
+    #    if bounds_path is None:
+    #        workdir = root.findtext("pi:workDir", namespaces=ns)
+    #        bounds_path = os.path.join(workdir, "bounds.json")
+    #        if not Path(workdir).is_absolute():
+    #            bounds_path = Path(workdir).resolve().parent
+    #            bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
+    #    with open(bounds_path, "w") as file:
+    #        json.dump(bounds_dict, fp=file)
+    #
+    #    root = self._get_runinfo_path_root()
+    #    results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+    #    results_dict = dict()
+    #
+    #    for key, values in results.items():
+    #        new_value = values.tolist()
+    #        if len(new_value) == 1:
+    #            new_value = new_value[0]
+    #        results_dict[key] = new_value
+    #
+    #    results_path = os.path.join(workdir, "results.json")
+    #    if results_path is None:
+    #        workdir = root.findtext("pi:workDir", namespaces=ns)
+    #        results_path = os.path.join(workdir, "results.json")
+    #        if not Path(workdir).is_absolute():
+    #            results_path = Path(workdir).resolve().parent
+    #            results_path = os.path.join(results_path.__str__() + "results.json")
+    #    with open(results_path, "w") as file:
+    #        json.dump(results_dict, fp=file)
 
 
 class HeatProblemMaxFlow(HeatProblem):
@@ -364,6 +339,7 @@ class HeatProblemMaxFlow(HeatProblem):
 
 if __name__ == "__main__":
     import time
+
     t0 = time.time()
 
     sol = run_optimization_problem(HeatProblem)
@@ -374,4 +350,3 @@ if __name__ == "__main__":
     print("T_ates: ", results["ATES_cb47__temperature_disc_40.0"])
     print(f"time: {time.time() - t0}")
     a = 1
-

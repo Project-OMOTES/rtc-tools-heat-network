@@ -545,12 +545,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 / 2.0
             )
 
-        max_heat_transport = (params_t["Primary"]["T_supply"]*max_power/
-                              (params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"]))
+        max_heat_transport = (
+            params_t["Primary"]["T_supply"]
+            * max_power
+            / (params_t["Primary"]["T_supply"] - params_t["Primary"]["T_return"])
+        )
 
         prim_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)
+            ),
             Q_nominal=max_power
             / (
                 2
@@ -560,8 +567,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0)
+            ),
             Q_nominal=max_power
             / (
                 2

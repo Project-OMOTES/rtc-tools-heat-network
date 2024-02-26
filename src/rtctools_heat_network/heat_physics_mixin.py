@@ -290,22 +290,29 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
                 ates_temperature_ordering_var_name = f"{ates}__{temperature}_ordering"
-                self.__ates_temperature_ordering_var[ates_temperature_ordering_var_name] = ca.MX.sym(ates_temperature_ordering_var_name)
-                self.__ates_temperature_ordering_var_bounds[ates_temperature_ordering_var_name] = (0., 1.)
+                self.__ates_temperature_ordering_var[ates_temperature_ordering_var_name] = (
+                    ca.MX.sym(ates_temperature_ordering_var_name)
+                )
+                self.__ates_temperature_ordering_var_bounds[ates_temperature_ordering_var_name] = (
+                    0.0,
+                    1.0,
+                )
 
                 ates_temperature_disc_ordering_var_name = f"{ates}__{temperature}_ordering_disc"
                 self.__ates_temperature_disc_ordering_var[
-                    ates_temperature_disc_ordering_var_name] = ca.MX.sym(
-                    ates_temperature_disc_ordering_var_name)
-                self.__ates_temperature_disc_ordering_var_bounds[ates_temperature_disc_ordering_var_name] = (
-                0., 1.)
+                    ates_temperature_disc_ordering_var_name
+                ] = ca.MX.sym(ates_temperature_disc_ordering_var_name)
+                self.__ates_temperature_disc_ordering_var_bounds[
+                    ates_temperature_disc_ordering_var_name
+                ] = (0.0, 1.0)
 
             max_heat = bounds[f"{ates}.Stored_heat"][1]
             ates_max_stored_heat_var_name = f"{ates}__max_stored_heat"
-            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(ates_max_stored_heat_var_name)
-            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0,max_heat)
-            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat/2
-
+            self.__ates_max_stored_heat_var[ates_max_stored_heat_var_name] = ca.MX.sym(
+                ates_max_stored_heat_var_name
+            )
+            self.__ates_max_stored_heat_bounds[ates_max_stored_heat_var_name] = (0, max_heat)
+            self.__ates_max_stored_heat_nominals[ates_max_stored_heat_var_name] = max_heat / 2
 
         for _carrier, temperatures in self.temperature_carriers().items():
             carrier_id_number_mapping = str(temperatures["id_number_mapping"])
@@ -329,15 +336,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self.__carrier_selected_var[carrier_selected_var] = ca.MX.sym(carrier_selected_var)
                 self.__carrier_selected_var_bounds[carrier_selected_var] = (0.0, 1.0)
 
-                carrier_temperature_disc_ordering_var_name = f"{carrier_id_number_mapping}__{temperature_regime}_ordering_disc"
+                carrier_temperature_disc_ordering_var_name = (
+                    f"{carrier_id_number_mapping}__{temperature_regime}_ordering_disc"
+                )
                 self.__carrier_temperature_disc_ordering_var[
-                    carrier_temperature_disc_ordering_var_name] = ca.MX.sym(
-                    carrier_temperature_disc_ordering_var_name)
+                    carrier_temperature_disc_ordering_var_name
+                ] = ca.MX.sym(carrier_temperature_disc_ordering_var_name)
                 self.__carrier_temperature_disc_ordering_var_bounds[
-                    carrier_temperature_disc_ordering_var_name] = (
-                    0., 1.)
-
-
+                    carrier_temperature_disc_ordering_var_name
+                ] = (0.0, 1.0)
 
         for _ in range(self.ensemble_size):
             self.__pipe_heat_loss_parameters.append({})
@@ -1501,7 +1508,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # in a rather hard yes/no constraint as far as feasibility on e.g.
             # a single source system is concerned. Use a factor of 2 to give
             # some slack.
-            # big_m = 2 * sum_heat_losses * heat_to_discharge_fac
             big_m = 2.0 * np.max(
                 np.abs((*self.bounds()[f"{p}.HeatIn.Heat"], *self.bounds()[f"{p}.HeatOut.Heat"]))
             )
@@ -1656,23 +1662,23 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
 
             # discretized tempeature should alwyas be smaller or equal to ATES temperature
-            constraints.append((ates_temperature - ates_temperature_disc, 0., 0.))
+            constraints.append((ates_temperature - ates_temperature_disc, 0.0, 0.0))
 
             # ensures it does not select the lowest temperature, but the closest temperature
             # supplytemperature needs to be reducing
             # TODO: this could use ordering strategy
-            for temperature in supply_temperatures[:-1]:
-                temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
-                next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
-                # constraints.append(
-                #     (
-                #         ates_temperature
-                #         - ates_temperature_disc
-                #         - temp_selected * (temperature - next_temp),
-                #         -np.inf,
-                #         0.0,
-                #     )
-                # )
+            # for temperature in supply_temperatures[:-1]:
+            #     temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
+            #     next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
+            #     constraints.append(
+            #         (
+            #             ates_temperature
+            #             - ates_temperature_disc
+            #             - temp_selected * (temperature - next_temp),
+            #             -np.inf,
+            #             0.0,
+            #         )
+            #     )
 
             if len(supply_temperatures) == 0:
                 constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
@@ -1710,9 +1716,28 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 big_m = 2.0 * max(supply_temperatures)
                 sup_temperature_disc = self.state(f"{sup_carrier}_temperature")
 
-                constraints.append(((max(supply_temperatures) - sup_temperature_disc + big_m * (1. - is_buffer_charging)), 0., np.inf))
-                constraints.append(((max(supply_temperatures) - sup_temperature_disc - big_m * (
-                            1. - is_buffer_charging)), -np.inf, 0.))
+                constraints.append(
+                    (
+                        (
+                            max(supply_temperatures)
+                            - sup_temperature_disc
+                            + big_m * (1.0 - is_buffer_charging)
+                        ),
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (
+                            max(supply_temperatures)
+                            - sup_temperature_disc
+                            - big_m * (1.0 - is_buffer_charging)
+                        ),
+                        -np.inf,
+                        0.0,
+                    )
+                )
 
                 constraints.append(
                     (
@@ -2014,24 +2039,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         constraints.append(
                             (
                                 (
-                                        ates_dt_loss_vec
-                                        - big_m * (1.0 * np.ones(len(a)) - is_buffer_charging_vec)
+                                    ates_dt_loss_vec
+                                    - big_m * (1.0 * np.ones(len(a)) - is_buffer_charging_vec)
                                 )
                                 / ates_temperature_loss_nominal,
                                 -np.inf,
                                 0.0,
                             )
                         )
-
-                        # TODO: not sure but this constraint makes it very slow
-                        # under charge or rest condition
-                        # c = 1. / 15. / (3600. * 24.)
-                        # constraints.append(((ates_dt_loss -
-                        #                      c +
-                        #                      big_m * (1. - ates_temperature_is_selected) +
-                        #                      big_m * (1. - is_buffer_charging)) /
-                        #                     (ates_temperature_loss_nominal * c) ** 0.5,
-                        #                     0., np.inf))
 
         return constraints
 
@@ -2188,30 +2203,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
             else:
-                bounds =  self.bounds()
+                bounds = self.bounds()
                 max_discharge = bounds[f"{b}.Q"][1]
                 constraint_nominal = (
-                                             heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
-                                     ) ** 0.5
+                    heat_nominal * cp * rho * max(supply_temperatures) * q_nominal
+                ) ** 0.5
                 temperature_var = self.state(f"{sup_carrier}_temperature")
                 constraints.append(
                     (
-                        (
-                                heat_in
-                                - max_discharge * cp * rho * temperature_var
-                        )
-                        / constraint_nominal,
+                        (heat_in - max_discharge * cp * rho * temperature_var) / constraint_nominal,
                         -np.inf,
                         0.0,
                     )
                 )
                 constraints.append(
                     (
-                        (
-                                heat_in
-                                + max_discharge * cp * rho * temperature_var
-                        )
-                        / constraint_nominal,
+                        (heat_in + max_discharge * cp * rho * temperature_var) / constraint_nominal,
                         0.0,
                         np.inf,
                     )
@@ -3068,9 +3075,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             stored_heat = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
             nominal = self.variable_nominal(max_var_name)
 
-            constraints.append(((stored_heat-np.ones(len(self.times()))*max_var)/nominal, -np.inf, 0.0))
+            constraints.append(
+                ((stored_heat - np.ones(len(self.times())) * max_var) / nominal, -np.inf, 0.0)
+            )
 
         return constraints
+
     def __heat_pump_cop_path_constraints(self, ensemble_member):
 
         constraints = []
@@ -3094,7 +3104,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sec_heat = self.state(f"{hp}.Secondary_heat")
             elec = self.state(f"{hp}.Power_elec")
             nominal = self.variable_nominal(f"{hp}.Secondary_heat")
-            
+
             if (
                 len(sec_sup_temps) <= 1
                 and len(sec_ret_temps) <= 1
@@ -3185,18 +3195,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
             if len(supply_temperatures) != 0:
-                big_m = 2. * max(supply_temperatures)
+                big_m = 2.0 * max(supply_temperatures)
                 min_dt = abs(min(np.diff(supply_temperatures)))
 
                 for temperature in supply_temperatures:
-                    ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
-                    ordering = self.state(f"{ates}__{temperature}_ordering")
-                    ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
-                    ates_temp = self.state(f"{ates}.Temperature_ates")
+                    #TODO: fix the ordering of the ates temperatures
+
+                    # ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
+                    # ordering = self.state(f"{ates}__{temperature}_ordering")
+                    # ates_temp_disc = self.state(f"{ates}__temperature_ates_disc")
+                    # ates_temp = self.state(f"{ates}.Temperature_ates")
 
                     # ordering should be 1. if temperature is larger than temperature selected.
-                    # constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc), min_dt / 2., np.inf))
-                    # constraints.append(((temperature - ates_temp_disc - big_m * (1. - ordering_disc)), -np.inf, 0.))
+                    # constraints.append(((temperature - ates_temp_disc + big_m * ordering_disc),
+                    # min_dt / 2., np.inf))
+                    # constraints.append(((temperature - ates_temp_disc - big_m * (
+                    # 1. - ordering_disc)), -np.inf, 0.))
                     #
                     # constraints.append(
                     #     ((temperature - ates_temp + big_m * ordering), 0., np.inf))
@@ -3210,9 +3224,19 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
 
                     constraints.append(
-                        ((temperature - temperature_var + big_m * ordering_disc_carr), min_dt / 2., np.inf))
+                        (
+                            (temperature - temperature_var + big_m * ordering_disc_carr),
+                            min_dt / 2.0,
+                            np.inf,
+                        )
+                    )
                     constraints.append(
-                        ((temperature - temperature_var - big_m * (1. - ordering_disc_carr)), -np.inf, 0.))
+                        (
+                            (temperature - temperature_var - big_m * (1.0 - ordering_disc_carr)),
+                            -np.inf,
+                            0.0,
+                        )
+                    )
 
         return constraints
 

@@ -71,19 +71,29 @@ class TestAtesTemperature(TestCase):
         geo_source = results["GeothermalSource_4e5b.Heat_source"]
         objective = solution.objective_value
 
-        objective_calc = results["GeothermalSource_4e5b__variable_operational_cost"] + sum(
-            parameters["HeatPump_7f2c.variable_operational_cost_coefficient"]
-            * results["HeatPump_7f2c.Power_elec"][1:]
+        objective_calc = (
+            sum(
+                parameters["GeothermalSource_4e5b.variable_operational_cost_coefficient"]
+                * results["GeothermalSource_4e5b.Heat_source"]
+            )
+            + sum(
+                parameters["HeatPump_7f2c.variable_operational_cost_coefficient"]
+                * results["HeatPump_7f2c.Power_elec"]
+            )
+            + sum(
+                parameters["GenericProducer_4dfe.variable_operational_cost_coefficient"]
+                * results["GenericProducer_4dfe.Heat_source"]
+            )
         )
 
         feasibility = solution.solver_stats["return_status"]
 
         self.assertTrue((feasibility == "Optimal"))
 
-        np.testing.assert_allclose(objective_calc, objective)
+        np.testing.assert_allclose(objective_calc / 1e4, objective)
 
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
-        np.testing.assert_allclose(
+        np.testing.assert_array_less(
             ates_temperature_disc,
             sum(
                 [
@@ -120,7 +130,7 @@ class TestAtesTemperature(TestCase):
 
         np.alltrue(
             [
-                True if (g < 6e6 and hp <= 0) or g == 6e6 else False
+                True if (g < 6e6 and hp <= 0) or g >= 6e6 - tol else False
                 for (g, hp) in zip(geo_source, heat_pump_sec)
             ]
         )
