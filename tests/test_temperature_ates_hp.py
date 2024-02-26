@@ -5,6 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -39,7 +42,14 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(HeatProblem, base_folder=basefolder)
+        solution = run_optimization_problem(
+            HeatProblem,
+            base_folder=basefolder,
+            esdl_file_name="HP_ATES with return network.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test_3.csv",
+        )
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
