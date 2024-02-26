@@ -23,8 +23,8 @@ from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 class MaxHydrogenProduction(Goal):
     """
-    A minimization goal for source heat production. We use order 1 here as we want to minimize heat
-    over the full horizon and not per time-step.
+    A maximization goal for the hydrogen production, note that we minimize the negative hydrogen
+    production to achieve this.
     """
 
     priority = 1
@@ -45,8 +45,7 @@ class MaxHydrogenProduction(Goal):
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
     ) -> ca.MX:
         """
-        This function returns the state variable to which should to be matched to the target
-        specified in the __init__.
+        This function returns the state variable to be minimized.
 
         Parameters
         ----------
@@ -55,7 +54,7 @@ class MaxHydrogenProduction(Goal):
 
         Returns
         -------
-        The Heat_source state of the optimization problem.
+        The negative hydrogen production state of the optimization problem.
         """
         return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
