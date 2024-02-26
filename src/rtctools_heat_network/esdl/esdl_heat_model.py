@@ -392,7 +392,19 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
-            modifiers = dict(length=length, diameter=diameter)
+            modifiers = dict(
+                length=length,
+                diameter=diameter,
+                # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
+                GasIn=dict(
+                    Q=dict(min=-q_max, max=q_max),
+                ),
+                GasOut=dict(
+                    Q=dict(min=-q_max, max=q_max),
+                ),
+                state=self.get_state(asset),
+                **self._get_cost_figure_modifiers(asset),
+            )
 
             return GasPipe, modifiers
 
@@ -1003,7 +1015,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ElectricityOut=dict(
                 V=dict(min=v_min, nominal=v_min),
                 I=dict(min=0.0, max=i_max, nominal=i_nom),
-                Power=dict(nominal=max_supply / 2.0),
+                Power=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             ),
             **self._get_cost_figure_modifiers(asset),
         )

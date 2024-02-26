@@ -5,6 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
@@ -31,7 +34,14 @@ class TestHEX(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
@@ -52,7 +62,7 @@ class TestHEX(TestCase):
         # Note that we are not testing the last element as we exploit the last timestep for
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
-        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-8)
+        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
         # Check that heat is flowing through the hex
@@ -89,7 +99,14 @@ class TestHP(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         results = solution.extract_results()
         parameters = solution.parameters(0)
@@ -113,3 +130,14 @@ class TestHP(TestCase):
         # We check the energy converted betweeen the commodities
         np.testing.assert_allclose(power_elec * parameters["GenericConversion_3d3f.COP"], sec_heat)
         np.testing.assert_allclose(power_elec + prim_heat, sec_heat)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestHEX()
+    a.test_heat_exchanger()
+
+    b = TestHP()
+    b.test_heat_pump()

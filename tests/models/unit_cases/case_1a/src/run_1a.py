@@ -11,6 +11,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -64,7 +66,7 @@ class HeatProblemTvar(HeatProblem):
         options = super().heat_network_options()
         # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
         # this is to avoid specifying a new demand profile
-        options["maximum_velocity"] = 0.25
+        self.heat_network_settings["maximum_velocity"] = 0.25
         return options
 
     def temperature_carriers(self):
@@ -123,6 +125,12 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemTvar)
+    sol = run_optimization_problem(
+        HeatProblemTvar,
+        esdl_file_name="1a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     results = sol.extract_results()
     a = 1

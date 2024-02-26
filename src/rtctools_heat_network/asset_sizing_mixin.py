@@ -17,7 +17,7 @@ from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
 from .base_component_type_mixin import BaseComponentTypeMixin
 from .demand_insulation_class import DemandInsulationClass
 from .head_loss_class import HeadLossOption
-from .pipe_class import PipeClass
+from .pipe_class import CableClass, GasPipeClass, PipeClass
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -88,6 +88,80 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__pipe_topo_diameter_area_parameters = []
         self.__pipe_topo_heat_loss_parameters = []
 
+        # Gas
+        # Variable for the maximum discharge under pipe class optimization
+        self.__gas_pipe_topo_max_discharge_var = {}
+        self._gas_pipe_topo_max_discharge_map = {}
+        self.__gas_pipe_topo_max_discharge_nominals = {}
+        self.__gas_pipe_topo_max_discharge_var_bounds = {}
+
+        # Variable for the diameter of a pipe during pipe-class optimization
+        self.__gas_pipe_topo_diameter_var = {}
+        self.__gas_pipe_topo_diameter_var_bounds = {}
+        self._gas_pipe_topo_diameter_map = {}
+        self.__gas_pipe_topo_diameter_nominals = {}
+
+        # Variable for the investmentcost in eur/m during pipe-class optimization
+        self.__gas_pipe_topo_cost_var = {}
+        self.__gas_pipe_topo_cost_var_bounds = {}
+        self._gas_pipe_topo_cost_map = {}
+        self.__gas_pipe_topo_cost_nominals = {}
+
+        # Boolean variables for the various pipe class options per pipe
+        # The self._pipe_topo_pipe_class_map is already initiated in the HeatPhysicsMixin
+        self.__gas_pipe_topo_pipe_class_var = {}
+        self.__gas_pipe_topo_pipe_class_var_bounds = {}
+        self.__gas_pipe_topo_pipe_class_result = {}
+
+        self.__gas_pipe_topo_pipe_class_discharge_ordering_var = {}
+        self.__gas_pipe_topo_pipe_class_discharge_ordering_var_bounds = {}
+        self.__gas_pipe_topo_pipe_class_discharge_ordering_map = {}
+
+        self.__gas_pipe_topo_pipe_class_cost_ordering_map = {}
+        self.__gas_pipe_topo_pipe_class_cost_ordering_var = {}
+        self.__gas_pipe_topo_pipe_class_cost_ordering_var_bounds = {}
+
+        self.__gas_pipe_topo_global_pipe_class_count_var = {}
+        self.__gas_pipe_topo_global_pipe_class_count_map = {}
+        self.__gas_pipe_topo_global_pipe_class_count_var_bounds = {}
+
+        # Electricity Cable
+        # Variable for the maximum current under pipe class optimization
+        self.__electricity_cable_topo_max_current_var = {}
+        self._electricity_cable_topo_max_current_map = {}
+        self.__electricity_cable_topo_max_current_nominals = {}
+        self.__electricity_cable_topo_max_current_var_bounds = {}
+
+        # Variable for the resistance under cable class optimization
+        self.__electricity_cable_topo_resistance_var = {}
+        self._electricity_cable_topo_resistance_map = {}
+        self.__electricity_cable_topo_resistance_nominals = {}
+        self.__electricity_cable_topo_resistance_var_bounds = {}
+
+        # Variable for the investmentcost in eur/m during pipe-class optimization
+        self.__electricity_cable_topo_cost_var = {}
+        self.__electricity_cable_topo_cost_var_bounds = {}
+        self._electricity_cable_topo_cost_map = {}
+        self.__electricity_cable_topo_cost_nominals = {}
+
+        # Boolean variables for the various pipe class options per pipe
+        # The self._pipe_topo_pipe_class_map is already initiated in the HeatPhysicsMixin
+        self.__electricity_cable_topo_cable_class_var = {}
+        self.__electricity_cable_topo_cable_class_var_bounds = {}
+        self.__electricity_cable_topo_cable_class_result = {}
+
+        self.__electricity_cable_topo_cable_class_current_ordering_var = {}
+        self.__electricity_cable_topo_cable_class_current_ordering_var_bounds = {}
+        self.__electricity_cable_topo_cable_class_current_ordering_map = {}
+
+        self.__electricity_cable_topo_cable_class_cost_ordering_map = {}
+        self.__electricity_cable_topo_cable_class_cost_ordering_var = {}
+        self.__electricity_cable_topo_cable_class_cost_ordering_var_bounds = {}
+
+        self.__electricity_cable_topo_global_cable_class_count_var = {}
+        self.__electricity_cable_topo_global_cable_class_count_map = {}
+        self.__electricity_cable_topo_global_cable_class_count_var_bounds = {}
+
         # Variable for the maximum size of an asset
         self._asset_max_size_map = {}
         self.__asset_max_size_var = {}
@@ -134,6 +208,287 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 len(self.heat_network_components.get("pipe", [])),
             )
 
+        unique_pipe_classes = self.get_unique_gas_pipe_classes()
+        for pc in unique_pipe_classes:
+            pipe_class_count = f"{pc.name}__global_gas_pipe_class_count"
+            self.__gas_pipe_topo_global_pipe_class_count_var[pipe_class_count] = ca.MX.sym(
+                pipe_class_count
+            )
+            self.__gas_pipe_topo_global_pipe_class_count_map[f"{pc.name}"] = pipe_class_count
+            self.__gas_pipe_topo_global_pipe_class_count_var_bounds[pipe_class_count] = (
+                0.0,
+                len(self.heat_network_components.get("gas_pipe", [])),
+            )
+
+        unique_cable_classes = self.get_unique_cable_classes()
+        for cc in unique_cable_classes:
+            cable_class_count = f"{cc.name}__global_cable_class_count"
+            self.__electricity_cable_topo_global_cable_class_count_var[cable_class_count] = (
+                ca.MX.sym(cable_class_count)
+            )
+            self.__electricity_cable_topo_global_cable_class_count_map[f"{cc.name}"] = (
+                cable_class_count
+            )
+            self.__electricity_cable_topo_global_cable_class_count_var_bounds[cable_class_count] = (
+                0.0,
+                len(self.heat_network_components.get("electricity_cable", [])),
+            )
+
+        for cable in self.heat_network_components.get("electricity_cable", []):
+            cable_classes = self.electricity_cable_classes(cable)
+
+            res_var_name = f"{cable}__en_resistance"
+            self.__electricity_cable_topo_resistance_var[res_var_name] = ca.MX.sym(res_var_name)
+            self._electricity_cable_topo_resistance_map[cable] = res_var_name
+
+            cost_var_name = f"{cable}__en_cost"
+            self.__electricity_cable_topo_cost_var[cost_var_name] = ca.MX.sym(cost_var_name)
+            self._electricity_cable_topo_cost_map[cable] = cost_var_name
+
+            max_current_var_name = f"{cable}__en_max_current"
+            max_currents = [c.maximum_current for c in cable_classes]
+            self.__electricity_cable_topo_max_current_var[max_current_var_name] = ca.MX.sym(
+                max_current_var_name
+            )
+            self._electricity_cable_topo_max_current_map[cable] = max_current_var_name
+
+            if len(cable_classes) > 0:
+                self.__electricity_cable_topo_max_current_nominals[cable] = np.median(max_currents)
+                self.__electricity_cable_topo_max_current_var_bounds[cable] = (
+                    -max(max_currents),
+                    max(max_currents),
+                )
+            else:
+                self.__electricity_cable_topo_max_current_nominals[cable] = parameters[
+                    f"{cable}.max_current"
+                ]
+                self.__electricity_cable_topo_max_current_var_bounds[cable] = (
+                    -parameters[f"{cable}.max_current"],
+                    parameters[f"{cable}.max_current"],
+                )
+
+            if not cable_classes:
+                # No pipe class decision to make for this pipe w.r.t. diameter
+                resistance = parameters[f"{cable}.r"]
+                investment_cost = parameters[f"{cable}.investment_cost_coefficient"]
+                self.__electricity_cable_topo_resistance_var_bounds[res_var_name] = (
+                    resistance,
+                    resistance,
+                )
+                self.__electricity_cable_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
+                if resistance > 0.0:
+                    self.__electricity_cable_topo_resistance_nominals[res_var_name] = resistance
+                    self.__electricity_cable_topo_cost_nominals[cost_var_name] = max(
+                        investment_cost, 1.0
+                    )
+            elif len(cable_classes) == 1:
+                # No pipe class decision to make for this pipe w.r.t. diameter
+                resistance = cable_classes[0].resistance
+                investment_cost = cable_classes[0].investment_costs
+                self.__electricity_cable_topo_resistance_var_bounds[res_var_name] = (
+                    resistance,
+                    resistance,
+                )
+                self.__electricity_cable_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
+                if resistance > 0.0:
+                    self.__electricity_cable_topo_resistance_nominals[res_var_name] = resistance
+                    self.__electricity_cable_topo_cost_nominals[cost_var_name] = max(
+                        investment_cost, 1.0
+                    )
+                    if investment_cost == 0.0:
+                        RuntimeWarning(f"{cable} has an investment cost of 0. €/m")
+            else:
+                resistances = [c.resistance for c in cable_classes]
+                self.__electricity_cable_topo_resistance_var_bounds[res_var_name] = (
+                    min(resistances),
+                    max(resistances),
+                )
+                costs = [c.investment_costs for c in cable_classes]
+                self.__electricity_cable_topo_cost_var_bounds[cost_var_name] = (
+                    min(costs),
+                    max(costs),
+                )
+                self.__electricity_cable_topo_cost_nominals[cost_var_name] = np.median(costs)
+
+                self.__electricity_cable_topo_resistance_nominals[res_var_name] = min(
+                    x for x in resistances if x > 0.0
+                )
+
+                # Pipe class variables.
+                if not cable_classes or len(cable_classes) == 1:
+                    # No pipe class decision to make for this pipe
+                    pass
+                else:
+                    self._electricity_cable_topo_cable_class_map[cable] = {}
+                    self.__electricity_cable_topo_cable_class_current_ordering_map[cable] = {}
+                    self.__electricity_cable_topo_cable_class_cost_ordering_map[cable] = {}
+
+                    for c in cable_classes:
+                        cable_class_var_name = f"{cable}__en_cable_class_{c.name}"
+                        cable_class_ordering_name = (
+                            f"{cable}__en_cable_class_{c.name}_current_ordering"
+                        )
+                        cable_class_cost_ordering_name = (
+                            f"{cable}__en_cable_class_{c.name}_cost_ordering"
+                        )
+
+                        self._electricity_cable_topo_cable_class_map[cable][
+                            c
+                        ] = cable_class_var_name
+                        self.__electricity_cable_topo_cable_class_var[cable_class_var_name] = (
+                            ca.MX.sym(cable_class_var_name)
+                        )
+                        self.__electricity_cable_topo_cable_class_var_bounds[
+                            cable_class_var_name
+                        ] = (0.0, 1.0)
+
+                        self.__electricity_cable_topo_cable_class_current_ordering_map[cable][
+                            c
+                        ] = cable_class_ordering_name
+                        self.__electricity_cable_topo_cable_class_current_ordering_var[
+                            cable_class_ordering_name
+                        ] = ca.MX.sym(cable_class_ordering_name)
+                        self.__electricity_cable_topo_cable_class_current_ordering_var_bounds[
+                            cable_class_ordering_name
+                        ] = (0.0, 1.0)
+
+                        self.__electricity_cable_topo_cable_class_cost_ordering_map[cable][
+                            c
+                        ] = cable_class_cost_ordering_name
+                        self.__electricity_cable_topo_cable_class_cost_ordering_var[
+                            cable_class_cost_ordering_name
+                        ] = ca.MX.sym(cable_class_cost_ordering_name)
+                        self.__electricity_cable_topo_cable_class_cost_ordering_var_bounds[
+                            cable_class_cost_ordering_name
+                        ] = (0.0, 1.0)
+
+        for pipe in self.heat_network_components.get("gas_pipe", []):
+            pipe_classes = self.gas_pipe_classes(pipe)
+
+            diam_var_name = f"{pipe}__gn_diameter"
+            self.__gas_pipe_topo_diameter_var[diam_var_name] = ca.MX.sym(diam_var_name)
+            self._gas_pipe_topo_diameter_map[pipe] = diam_var_name
+
+            cost_var_name = f"{pipe}__gn_cost"
+            self.__gas_pipe_topo_cost_var[cost_var_name] = ca.MX.sym(cost_var_name)
+            self._gas_pipe_topo_cost_map[pipe] = cost_var_name
+
+            max_discharge_var_name = f"{pipe}__gn_max_discharge"
+            max_discharges = [c.maximum_discharge for c in pipe_classes]
+            self.__gas_pipe_topo_max_discharge_var[max_discharge_var_name] = ca.MX.sym(
+                max_discharge_var_name
+            )
+            self._gas_pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
+
+            if len(pipe_classes) > 0:
+                self.__gas_pipe_topo_max_discharge_nominals[pipe] = np.median(max_discharges)
+                self.__gas_pipe_topo_max_discharge_var_bounds[pipe] = (
+                    -max(max_discharges),
+                    max(max_discharges),
+                )
+            else:
+                max_velocity = self.gas_network_settings["maximum_velocity"]
+                self.__gas_pipe_topo_max_discharge_nominals[pipe] = (
+                    parameters[f"{pipe}.area"] * max_velocity
+                )
+                self.__gas_pipe_topo_max_discharge_var_bounds[pipe] = (
+                    -parameters[f"{pipe}.area"] * max_velocity,
+                    parameters[f"{pipe}.area"] * max_velocity,
+                )
+
+            if not pipe_classes:
+                # No pipe class decision to make for this pipe w.r.t. diameter
+                diameter = parameters[f"{pipe}.diameter"]
+                investment_cost = parameters[f"{pipe}.investment_cost_coefficient"]
+                self.__gas_pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                self.__gas_pipe_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
+                if diameter > 0.0:
+                    self.__gas_pipe_topo_diameter_nominals[diam_var_name] = diameter
+                    self.__gas_pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
+            elif len(pipe_classes) == 1:
+                # No pipe class decision to make for this pipe w.r.t. diameter
+                diameter = pipe_classes[0].inner_diameter
+                investment_cost = pipe_classes[0].investment_costs
+                self.__gas_pipe_topo_diameter_var_bounds[diam_var_name] = (diameter, diameter)
+                self.__gas_pipe_topo_cost_var_bounds[cost_var_name] = (
+                    investment_cost,
+                    investment_cost,
+                )
+                if diameter > 0.0:
+                    self.__gas_pipe_topo_diameter_nominals[diam_var_name] = diameter
+                    self.__gas_pipe_topo_cost_nominals[cost_var_name] = max(investment_cost, 1.0)
+                    if investment_cost == 0.0:
+                        RuntimeWarning(f"{pipe} has an investment cost of 0. €/m")
+            else:
+                diameters = [c.inner_diameter for c in pipe_classes]
+                self.__gas_pipe_topo_diameter_var_bounds[diam_var_name] = (
+                    min(diameters),
+                    max(diameters),
+                )
+                costs = [c.investment_costs for c in pipe_classes]
+                self.__gas_pipe_topo_cost_var_bounds[cost_var_name] = (
+                    min(costs),
+                    max(costs),
+                )
+                self.__gas_pipe_topo_cost_nominals[cost_var_name] = np.median(costs)
+
+                self.__gas_pipe_topo_diameter_nominals[diam_var_name] = min(
+                    x for x in diameters if x > 0.0
+                )
+
+                # Pipe class variables.
+                if not pipe_classes or len(pipe_classes) == 1:
+                    # No pipe class decision to make for this pipe
+                    pass
+                else:
+                    self._gas_pipe_topo_pipe_class_map[pipe] = {}
+                    self.__gas_pipe_topo_pipe_class_discharge_ordering_map[pipe] = {}
+                    self.__gas_pipe_topo_pipe_class_cost_ordering_map[pipe] = {}
+
+                    for c in pipe_classes:
+                        pipe_class_var_name = f"{pipe}__gn_pipe_class_{c.name}"
+                        pipe_class_ordering_name = (
+                            f"{pipe}__gn_pipe_class_{c.name}_discharge_ordering"
+                        )
+                        pipe_class_cost_ordering_name = (
+                            f"{pipe}__gn_pipe_class_{c.name}_cost_ordering"
+                        )
+
+                        self._gas_pipe_topo_pipe_class_map[pipe][c] = pipe_class_var_name
+                        self.__gas_pipe_topo_pipe_class_var[pipe_class_var_name] = ca.MX.sym(
+                            pipe_class_var_name
+                        )
+                        self.__gas_pipe_topo_pipe_class_var_bounds[pipe_class_var_name] = (0.0, 1.0)
+
+                        self.__gas_pipe_topo_pipe_class_discharge_ordering_map[pipe][
+                            c
+                        ] = pipe_class_ordering_name
+                        self.__gas_pipe_topo_pipe_class_discharge_ordering_var[
+                            pipe_class_ordering_name
+                        ] = ca.MX.sym(pipe_class_ordering_name)
+                        self.__gas_pipe_topo_pipe_class_discharge_ordering_var_bounds[
+                            pipe_class_ordering_name
+                        ] = (0.0, 1.0)
+
+                        self.__gas_pipe_topo_pipe_class_cost_ordering_map[pipe][
+                            c
+                        ] = pipe_class_cost_ordering_name
+                        self.__gas_pipe_topo_pipe_class_cost_ordering_var[
+                            pipe_class_cost_ordering_name
+                        ] = ca.MX.sym(pipe_class_cost_ordering_name)
+                        self.__gas_pipe_topo_pipe_class_cost_ordering_var_bounds[
+                            pipe_class_cost_ordering_name
+                        ] = (0.0, 1.0)
+
         for pipe in self.heat_network_components.get("pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
@@ -170,7 +525,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     max(max_discharges),
                 )
             else:
-                max_velocity = self.heat_network_options()["maximum_velocity"]
+                max_velocity = self.heat_network_settings["maximum_velocity"]
                 self.__pipe_topo_max_discharge_nominals[pipe] = (
                     parameters[f"{pipe}.area"] * max_velocity
                 )
@@ -396,7 +751,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     "When optimizing pipe diameters, "
                     "the `maximum_temperature_der` or `maximum_flow_der` should be infinite."
                 )
-
+        # still to delete because it is not used
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
         # Making the variables for max size
@@ -516,7 +871,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Returns a dictionary of heat network specific options.
         """
 
-        return NotImplementedError
+        options = {}
+
+        return options
 
     def pipe_classes(self, pipe: str) -> List[PipeClass]:
         """
@@ -531,16 +888,61 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         return []
 
+    def gas_pipe_classes(self, pipe: str) -> List[GasPipeClass]:
+        """
+        This method gives the pipe class options for a given pipe.
+
+        If the returned List is:
+        - empty: use the pipe properties from the model
+        - len() == 1: use these pipe properties to overrule that of the model
+        - len() > 1: decide between the pipe class options.
+
+        A pipe class with diameter 0 is interpreted as there being _no_ pipe.
+        """
+        return []
+
+    def electricity_cable_classes(self, cable: str) -> List[CableClass]:
+        """
+        This method gives the cable class options for a given cable.
+
+        If the returned List is:
+        - empty: use the cable properties from the model
+        - len() == 1: use these pipe properties to overrule that of the model
+        - len() > 1: decide between the cable class options.
+
+        A cable class with max_current 0 is interpreted as there being _no_ cable.
+        """
+        return []
+
     def get_unique_pipe_classes(self) -> Set[PipeClass]:
         """
-        Method queries all hot pipes and returns the set of unique pipe classes defined
-        for the network. This means the method assumes the possible pipe classes for each
-        cold pipe match the possible pipe classes for the respective hot pipe.
+        Method queries all pipes and returns the set of unique pipe classes defined
+        for the network.
         """
         unique_pipe_classes = set()
         for p in self.heat_network_components.get("pipe", []):
             unique_pipe_classes.update(self.pipe_classes(p))
         return unique_pipe_classes
+
+    def get_unique_gas_pipe_classes(self) -> Set[PipeClass]:
+        """
+        Method queries all hot pipes and returns the set of unique pipe classes defined
+        for the network.
+        """
+        unique_pipe_classes = set()
+        for p in self.heat_network_components.get("gas_pipe", []):
+            unique_pipe_classes.update(self.gas_pipe_classes(p))
+        return unique_pipe_classes
+
+    def get_unique_cable_classes(self) -> Set[CableClass]:
+        """
+        Method queries all cables and returns the set of unique cable classes defined
+        for the network.
+        """
+        unique_cable_classes = set()
+        for p in self.heat_network_components.get("electricity_cable", []):
+            unique_cable_classes.update(self.electricity_cable_classes(p))
+        return unique_cable_classes
 
     def get_optimized_pipe_class(self, pipe: str) -> PipeClass:
         """
@@ -578,13 +980,27 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__pipe_topo_diameter_var.values())
         variables.extend(self.__pipe_topo_cost_var.values())
         variables.extend(self.__pipe_topo_pipe_class_var.values())
+        variables.extend(self.__gas_pipe_topo_diameter_var.values())
+        variables.extend(self.__gas_pipe_topo_cost_var.values())
+        variables.extend(self.__gas_pipe_topo_pipe_class_var.values())
         variables.extend(self.__asset_max_size_var.values())
         variables.extend(self.__asset_aggregation_count_var.values())
+        variables.extend(self.__gas_pipe_topo_max_discharge_var.values())
         variables.extend(self.__pipe_topo_max_discharge_var.values())
         variables.extend(self.__pipe_topo_global_pipe_class_count_var.values())
+        variables.extend(self.__gas_pipe_topo_global_pipe_class_count_var.values())
         variables.extend(self.__pipe_topo_pipe_class_discharge_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_cost_ordering_var.values())
         variables.extend(self.__pipe_topo_pipe_class_heat_loss_ordering_var.values())
+        variables.extend(self.__gas_pipe_topo_pipe_class_discharge_ordering_var.values())
+        variables.extend(self.__gas_pipe_topo_pipe_class_cost_ordering_var.values())
+        variables.extend(self.__electricity_cable_topo_max_current_var.values())
+        variables.extend(self.__electricity_cable_topo_resistance_var.values())
+        variables.extend(self.__electricity_cable_topo_cost_var.values())
+        variables.extend(self.__electricity_cable_topo_cable_class_var.values())
+        variables.extend(self.__electricity_cable_topo_cable_class_current_ordering_var.values())
+        variables.extend(self.__electricity_cable_topo_cable_class_cost_ordering_var.values())
+        variables.extend(self.__electricity_cable_topo_global_cable_class_count_var.values())
         return variables
 
     @property
@@ -608,6 +1024,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__pipe_topo_pipe_class_discharge_ordering_var
             or variable in self.__pipe_topo_pipe_class_cost_ordering_var
             or variable in self.__pipe_topo_pipe_class_heat_loss_ordering_var
+            or variable in self.__gas_pipe_topo_pipe_class_discharge_ordering_var
+            or variable in self.__gas_pipe_topo_pipe_class_cost_ordering_var
+            or variable in self.__gas_pipe_topo_pipe_class_var
+            or variable in self.__electricity_cable_topo_cable_class_var
+            or variable in self.__electricity_cable_topo_cable_class_current_ordering_var
+            or variable in self.__electricity_cable_topo_cable_class_cost_ordering_var
         ):
             return True
         else:
@@ -627,6 +1049,18 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             return self.__asset_max_size_nominals[variable]
         elif variable in self.__pipe_topo_max_discharge_nominals:
             return self.__pipe_topo_max_discharge_nominals[variable]
+        elif variable in self.__gas_pipe_topo_diameter_nominals:
+            return self.__gas_pipe_topo_diameter_nominals[variable]
+        elif variable in self.__gas_pipe_topo_cost_nominals:
+            return self.__gas_pipe_topo_cost_nominals[variable]
+        elif variable in self.__gas_pipe_topo_max_discharge_nominals:
+            return self.__gas_pipe_topo_max_discharge_nominals[variable]
+        elif variable in self.__electricity_cable_topo_resistance_nominals:
+            return self.__electricity_cable_topo_resistance_nominals[variable]
+        elif variable in self.__electricity_cable_topo_max_current_nominals:
+            return self.__electricity_cable_topo_max_current_nominals[variable]
+        elif variable in self.__electricity_cable_topo_cost_nominals:
+            return self.__electricity_cable_topo_cost_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -641,13 +1075,27 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__pipe_topo_cost_var_bounds)
         bounds.update(self._pipe_heat_loss_var_bounds)
         bounds.update(self.__pipe_topo_heat_discharge_bounds)
+        bounds.update(self.__gas_pipe_topo_pipe_class_var_bounds)
+        bounds.update(self.__gas_pipe_topo_diameter_var_bounds)
+        bounds.update(self.__gas_pipe_topo_cost_var_bounds)
         bounds.update(self.__asset_max_size_bounds)
         bounds.update(self.__asset_aggregation_count_var_bounds)
         bounds.update(self.__pipe_topo_max_discharge_var_bounds)
+        bounds.update(self.__gas_pipe_topo_max_discharge_var_bounds)
         bounds.update(self.__pipe_topo_global_pipe_class_count_var_bounds)
+        bounds.update(self.__gas_pipe_topo_global_pipe_class_count_var_bounds)
         bounds.update(self.__pipe_topo_pipe_class_discharge_ordering_var_bounds)
         bounds.update(self.__pipe_topo_pipe_class_cost_ordering_var_bounds)
         bounds.update(self.__pipe_topo_pipe_class_heat_loss_ordering_var_bounds)
+        bounds.update(self.__gas_pipe_topo_pipe_class_discharge_ordering_var_bounds)
+        bounds.update(self.__gas_pipe_topo_pipe_class_cost_ordering_var_bounds)
+        bounds.update(self.__electricity_cable_topo_max_current_var_bounds)
+        bounds.update(self.__electricity_cable_topo_resistance_var_bounds)
+        bounds.update(self.__electricity_cable_topo_cost_var_bounds)
+        bounds.update(self.__electricity_cable_topo_cable_class_var_bounds)
+        bounds.update(self.__electricity_cable_topo_cable_class_current_ordering_var_bounds)
+        bounds.update(self.__electricity_cable_topo_cable_class_cost_ordering_var_bounds)
+        bounds.update(self.__electricity_cable_topo_global_cable_class_count_var_bounds)
         return bounds
 
     def parameters(self, ensemble_member):
@@ -681,7 +1129,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options = self.heat_network_options()
         components = self.heat_network_components
 
-        if options["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
+        if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
             # be skipped.
             return np.nan
@@ -693,22 +1141,28 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             parameters = self.parameters(ensemble_member)
 
             head_loss = 0.0
-
+            # TODO: asset sizing is currently hard coded to use only the heat network settings
             for pipe in components.get("pipe", []):
                 try:
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
                         self._head_loss_class._hn_pipe_head_loss(
-                            pipe, self, options, parameters, pc.maximum_discharge, pipe_class=pc
+                            pipe,
+                            self,
+                            options,
+                            self.heat_network_settings,
+                            parameters,
+                            pc.maximum_discharge,
+                            pipe_class=pc,
                         )
                         for pc in pipe_classes
                         if pc.maximum_discharge > 0.0
                     )
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
-                    max_discharge = options["maximum_velocity"] * area
+                    max_discharge = self.heat_network_settings["maximum_velocity"] * area
                     head_loss += self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, parameters, max_discharge
+                        pipe, self, options, self.heat_network_settings, parameters, max_discharge
                     )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -718,7 +1172,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Maximum pressure difference allowed with user options
         # NOTE: Does not yet take elevation differences into acccount
         max_dh_network_options = (
-            options["pipe_maximum_pressure"] - options["pipe_minimum_pressure"]
+            self.heat_network_settings["pipe_maximum_pressure"]
+            - self.heat_network_settings["pipe_minimum_pressure"]
         ) * 10.2
 
         return min(max_sum_dh_pipes, max_dh_network_options)
@@ -939,6 +1394,287 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __gas_pipe_topology_constraints(self, ensemble_member):
+        constraints = []
+
+        # These are the constraints to count the amount of a certain pipe class
+        unique_pipe_classes = self.get_unique_gas_pipe_classes()
+        pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
+
+        for p in self.heat_network_components.get("gas_pipe", []):
+            try:
+                pipe_classes = self._gas_pipe_topo_pipe_class_map[p]
+            except KeyError:
+                pass
+            else:
+                for pc in pipe_classes:
+                    var_name = f"{p}__gn_pipe_class_{pc.name}"
+                    pipe_class_count_sum[pc.name] += self.extra_variable(var_name, ensemble_member)
+
+        for pc in unique_pipe_classes:
+            var = self.extra_variable(
+                self.__gas_pipe_topo_global_pipe_class_count_map[pc.name], ensemble_member
+            )
+            constraints.append(((pipe_class_count_sum[pc.name] - var), 0.0, 0.0))
+
+        # These are the constraints to order the discharge capabilities of the pipe classes
+        for p, pipe_classes in self.__gas_pipe_topo_pipe_class_discharge_ordering_map.items():
+            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharges = {
+                pc.name: pc.maximum_discharge for pc in self._gas_pipe_topo_pipe_class_map[p]
+            }
+            median_discharge = np.median(list(max_discharges.values()))
+
+            big_m = 2.0 * max(max_discharges.values())
+            for pc, var_name in pipe_classes.items():
+                pipe_class_discharge_ordering = self.extra_variable(var_name, ensemble_member)
+
+                constraints.append(
+                    (
+                        (
+                            max_discharge
+                            - max_discharges[pc.name]
+                            + pipe_class_discharge_ordering * big_m
+                        )
+                        / median_discharge,
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (
+                            max_discharge
+                            - max_discharges[pc.name]
+                            - (1.0 - pipe_class_discharge_ordering) * big_m
+                        )
+                        / median_discharge,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+
+        # These are the constraints to order the costs of the pipe classes
+        for p, pipe_classes in self.__gas_pipe_topo_pipe_class_cost_ordering_map.items():
+            cost_sym_name = self._gas_pipe_topo_cost_map[p]
+            cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
+            costs = {pc.name: pc.investment_costs for pc in self._gas_pipe_topo_pipe_class_map[p]}
+
+            big_m = 2.0 * max(costs.values())
+            for pc, var_name in pipe_classes.items():
+                pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
+
+                # should be one if >= than cost_symbol
+                constraints.append(
+                    (
+                        (cost_sym - costs[pc.name] + pipe_class_cost_ordering * big_m)
+                        / self.variable_nominal(cost_sym_name),
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (cost_sym - costs[pc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
+                        / self.variable_nominal(cost_sym_name),
+                        -np.inf,
+                        0.0,
+                    )
+                )
+
+        for p, pipe_classes in self._gas_pipe_topo_pipe_class_map.items():
+            variables = {
+                pc.name: self.extra_variable(var_name, ensemble_member)
+                for pc, var_name in pipe_classes.items()
+            }
+
+            # Make sure exactly one indicator is true
+            constraints.append((sum(variables.values()), 1.0, 1.0))
+
+            # set the max discharge
+            max_discharge = self.extra_variable(self._gas_pipe_topo_max_discharge_map[p])
+            max_discharges = {pc.name: pc.maximum_discharge for pc in pipe_classes}
+            max_discharge_expr = sum(
+                variables[pc_name] * max_discharges[pc_name] for pc_name in variables
+            )
+
+            constraints.append(
+                (
+                    (max_discharge - max_discharge_expr)
+                    / self.variable_nominal(self._gas_pipe_topo_max_discharge_map[p]),
+                    0.0,
+                    0.0,
+                )
+            )
+
+            # Match the indicators to the diameter symbol
+            diam_sym_name = self._gas_pipe_topo_diameter_map[p]
+            diam_sym = self.extra_variable(diam_sym_name, ensemble_member)
+
+            diameters = {pc.name: pc.inner_diameter for pc in pipe_classes}
+
+            diam_expr = sum(variables[pc_name] * diameters[pc_name] for pc_name in variables)
+
+            constraint_nominal = self.variable_nominal(diam_sym_name)
+            constraints.append(((diam_sym - diam_expr) / constraint_nominal, 0.0, 0.0))
+
+            # match the indicators to the cost symbol
+            cost_sym_name = self._gas_pipe_topo_cost_map[p]
+            cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
+
+            investment_costs = {pc.name: pc.investment_costs for pc in pipe_classes}
+
+            costs_expr = sum(
+                variables[pc_name] * investment_costs[pc_name] for pc_name in variables
+            )
+            costs_constraint_nominal = self.variable_nominal(cost_sym_name)
+
+            constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
+
+        return constraints
+
+    def __electricity_cable_topology_constraints(self, ensemble_member):
+        constraints = []
+
+        # These are the constraints to count the amount of a certain pipe class
+        unique_cable_classes = self.get_unique_cable_classes()
+        cable_class_count_sum = {cc.name: 0 for cc in unique_cable_classes}
+
+        for c in self.heat_network_components.get("electricity_cable", []):
+            try:
+                cable_classes = self._electricity_cable_topo_cable_class_map[c]
+            except KeyError:
+                pass
+            else:
+                for cc in cable_classes:
+                    var_name = f"{c}__en_cable_class_{cc.name}"
+                    cable_class_count_sum[cc.name] += self.extra_variable(var_name, ensemble_member)
+
+        for cc in unique_cable_classes:
+            var = self.extra_variable(
+                self.__electricity_cable_topo_global_cable_class_count_map[cc.name], ensemble_member
+            )
+            constraints.append(((cable_class_count_sum[cc.name] - var), 0.0, 0.0))
+
+        # These are the constraints to order the discharge capabilities of the pipe classes
+        for (
+            c,
+            cable_classes,
+        ) in self.__electricity_cable_topo_cable_class_current_ordering_map.items():
+            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_currents = {
+                cc.name: cc.maximum_current
+                for cc in self._electricity_cable_topo_cable_class_map[c]
+            }
+            median_current = np.median(list(max_currents.values()))
+
+            big_m = 2.0 * max(max_currents.values())
+            for cc, var_name in cable_classes.items():
+                cable_class_current_ordering = self.extra_variable(var_name, ensemble_member)
+
+                constraints.append(
+                    (
+                        (max_current - max_currents[cc.name] + cable_class_current_ordering * big_m)
+                        / median_current,
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (
+                            max_current
+                            - max_currents[cc.name]
+                            - (1.0 - cable_class_current_ordering) * big_m
+                        )
+                        / median_current,
+                        -np.inf,
+                        0.0,
+                    )
+                )
+
+        # These are the constraints to order the costs of the pipe classes
+        for c, cable_classes in self.__electricity_cable_topo_cable_class_cost_ordering_map.items():
+            cost_sym_name = self._electricity_cable_topo_cost_map[c]
+            cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
+            costs = {
+                pc.name: pc.investment_costs
+                for pc in self._electricity_cable_topo_cable_class_map[c]
+            }
+
+            big_m = 2.0 * max(costs.values())
+            for cc, var_name in cable_classes.items():
+                pipe_class_cost_ordering = self.extra_variable(var_name, ensemble_member)
+
+                # should be one if >= than cost_symbol
+                constraints.append(
+                    (
+                        (cost_sym - costs[cc.name] + pipe_class_cost_ordering * big_m)
+                        / self.variable_nominal(cost_sym_name),
+                        0.0,
+                        np.inf,
+                    )
+                )
+                constraints.append(
+                    (
+                        (cost_sym - costs[cc.name] - (1.0 - pipe_class_cost_ordering) * big_m)
+                        / self.variable_nominal(cost_sym_name),
+                        -np.inf,
+                        0.0,
+                    )
+                )
+
+        for c, cable_classes in self._electricity_cable_topo_cable_class_map.items():
+            variables = {
+                cc.name: self.extra_variable(var_name, ensemble_member)
+                for cc, var_name in cable_classes.items()
+            }
+
+            # Make sure exactly one indicator is true
+            constraints.append((sum(variables.values()), 1.0, 1.0))
+
+            # set the max discharge
+            max_current = self.extra_variable(self._electricity_cable_topo_max_current_map[c])
+            max_currents = {cc.name: cc.maximum_current for cc in cable_classes}
+            max_current_expr = sum(
+                variables[cc_name] * max_currents[cc_name] for cc_name in variables
+            )
+
+            constraints.append(
+                (
+                    (max_current - max_current_expr)
+                    / self.variable_nominal(self._electricity_cable_topo_max_current_map[c]),
+                    0.0,
+                    0.0,
+                )
+            )
+
+            # Match the indicators to the diameter symbol
+            res_sym_name = self._electricity_cable_topo_resistance_map[c]
+            res_sym = self.extra_variable(res_sym_name, ensemble_member)
+
+            resistances = {cc.name: cc.resistance for cc in cable_classes}
+
+            res_expr = sum(variables[cc_name] * resistances[cc_name] for cc_name in variables)
+
+            constraint_nominal = self.variable_nominal(res_sym_name)
+            constraints.append(((res_sym - res_expr) / constraint_nominal, 0.0, 0.0))
+
+            # match the indicators to the cost symbol
+            cost_sym_name = self._electricity_cable_topo_cost_map[c]
+            cost_sym = self.extra_variable(cost_sym_name, ensemble_member)
+
+            investment_costs = {cc.name: cc.investment_costs for cc in cable_classes}
+
+            costs_expr = sum(
+                variables[cc_name] * investment_costs[cc_name] for cc_name in variables
+            )
+            costs_constraint_nominal = self.variable_nominal(cost_sym_name)
+
+            constraints.append(((cost_sym - costs_expr) / costs_constraint_nominal, 0.0, 0.0))
+
+        return constraints
+
     def __pipe_topology_path_constraints(self, ensemble_member):
         """
         This function adds constraints to limit the discharge that can flow through a pipe when the
@@ -950,13 +1686,59 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # Clip discharge based on pipe class
         for p in self.heat_network_components.get("pipe", []):
             # Match the indicators to the discharge symbol(s)
-            discharge_sym_hot = self.state(f"{p}.Q")
+            discharge_sym = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
 
             max_discharge = self.__pipe_topo_max_discharge_var[self._pipe_topo_max_discharge_map[p]]
 
-            constraints.append(((max_discharge - discharge_sym_hot) / nominal, 0.0, np.inf))
-            constraints.append(((-max_discharge - discharge_sym_hot) / nominal, -np.inf, 0.0))
+            constraints.append(((max_discharge - discharge_sym) / nominal, 0.0, np.inf))
+            constraints.append(((-max_discharge - discharge_sym) / nominal, -np.inf, 0.0))
+
+        return constraints
+
+    def __gas_pipe_topology_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to limit the discharge that can flow through a pipe when the
+        pipe class is being optimized. This is needed as the different pipe classes have different
+        diameters and maximum velocities.
+        """
+        constraints = []
+
+        # Clip discharge based on pipe class
+        for p in self.heat_network_components.get("gas_pipe", []):
+            # Match the indicators to the discharge symbol(s)
+            discharge_sym = self.state(f"{p}.Q")
+            nominal = self.variable_nominal(f"{p}.Q")
+
+            max_discharge = self.__gas_pipe_topo_max_discharge_var[
+                self._gas_pipe_topo_max_discharge_map[p]
+            ]
+
+            constraints.append(((max_discharge - discharge_sym) / nominal, 0.0, np.inf))
+            constraints.append(((-max_discharge - discharge_sym) / nominal, -np.inf, 0.0))
+
+        return constraints
+
+    def __electricity_cable_topology_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints to limit the discharge that can flow through a pipe when the
+        pipe class is being optimized. This is needed as the different pipe classes have different
+        diameters and maximum velocities.
+        """
+        constraints = []
+
+        # Clip current based on pipe class
+        for cable in self.heat_network_components.get("electricity_cable", []):
+            # Match the indicators to the discharge symbol(s)
+            current_sym = self.state(f"{cable}.I")
+            nominal = self.variable_nominal(f"{cable}.I")
+
+            max_discharge = self.__electricity_cable_topo_max_current_var[
+                self._electricity_cable_topo_max_current_map[cable]
+            ]
+
+            constraints.append(((max_discharge - current_sym) / nominal, 0.0, np.inf))
+            constraints.append(((-max_discharge - current_sym) / nominal, -np.inf, 0.0))
 
         return constraints
 
@@ -995,7 +1777,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             constraint_nominal = self.variable_nominal(f"{s}.Heat_source")
 
             try:
-                profile = self.get_timeseries(f"{s}.target_heat_source").values
+                profile = self.get_timeseries(f"{s}.maximum_heat_source").values
                 profile_scaled = profile / max(profile)
                 for i in range(0, len(self.times())):
                     constraints.append(
@@ -1204,7 +1986,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     single_power = parameters[f"{asset_name}.volume"]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.HeatIn.Q")
-                elif asset_name in [*self.heat_network_components.get("node", [])]:
+                elif asset_name in [
+                    *self.heat_network_components.get("node", []),
+                    *self.heat_network_components.get("gas_node", []),
+                    *self.heat_network_components.get("gas_pipe", []),
+                ]:
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
                     continue
@@ -1238,6 +2024,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = super().path_constraints(ensemble_member)
 
         constraints.extend(self.__pipe_topology_path_constraints(ensemble_member))
+        constraints.extend(self.__gas_pipe_topology_path_constraints(ensemble_member))
+        constraints.extend(self.__electricity_cable_topology_path_constraints(ensemble_member))
         constraints.extend(self.__optional_asset_path_constraints(ensemble_member))
 
         return constraints
@@ -1252,6 +2040,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = super().constraints(ensemble_member)
 
         constraints.extend(self.__pipe_topology_constraints(ensemble_member))
+        constraints.extend(self.__gas_pipe_topology_constraints(ensemble_member))
+        constraints.extend(self.__electricity_cable_topology_constraints(ensemble_member))
         constraints.extend(self.__max_size_constraints(ensemble_member))
 
         return constraints
@@ -1344,7 +2134,6 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
 
         self.__pipe_class_to_results()
 
@@ -1353,8 +2142,8 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # that we're sort of done minimizing/choosing the pipe diameter, and
         # that we can set the parameters to the optimized values.
         if (
-            options["minimize_head_losses"]
-            and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"]
+            and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()

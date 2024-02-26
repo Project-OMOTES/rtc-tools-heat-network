@@ -10,6 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
@@ -58,4 +60,10 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem)
+    run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="MultipleCarrierTest.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )

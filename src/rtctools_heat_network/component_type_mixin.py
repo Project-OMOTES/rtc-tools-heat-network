@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, Set
 
 from pymoca.backends.casadi.alias_relation import AliasRelation
 
@@ -17,6 +17,10 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     sorted by asset_type. Furthermore, the topology object is created in which for specific assets
     the connections with directions are saved for later use in the constraints.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(**kwargs)
+        self.__hn_component_types = None
 
     def pre(self):
         """
@@ -300,14 +304,12 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         super().pre()
 
     @property
-    def heat_network_components(self) -> Dict[str, str]:
+    def heat_network_components(self) -> Dict[str, Set[str]]:
         """
         This method return a dict with the heat network assets ordered per asset type.
         """
-        try:
-            return self.__hn_component_types
-        except AttributeError:
-            # Create the dictionary once after that it will always succeed in try statement.
+        if self.__hn_component_types is None:
+            # Create the dictionary once after that it will be available
             string_parameters = self.string_parameters(0)
 
             # Find the components in model, detection by string
@@ -322,7 +324,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
             self.__hn_component_types = components
 
-            return components
+        return self.__hn_component_types
 
     @property
     def heat_network_topology(self) -> Topology:
