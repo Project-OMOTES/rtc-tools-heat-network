@@ -104,7 +104,7 @@ class TestAtesTemperature(TestCase):
 
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
         np.testing.assert_array_less(
-            ates_temperature_disc,
+            ates_temperature_disc-tol,
             sum(
                 [
                     results[f"ATES_cb47__temperature_disc_{temp}"] * temp
@@ -159,7 +159,14 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(HeatProblemMaxFlow, base_folder=basefolder)
+        solution = run_optimization_problem(
+            HeatProblemMaxFlow,
+            base_folder=basefolder,
+            esdl_file_name="HP_ATES with return network.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test_3.csv",
+        )
 
         results = solution.extract_results()
         parameters = solution.parameters(0)

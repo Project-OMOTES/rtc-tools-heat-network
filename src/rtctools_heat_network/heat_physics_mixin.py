@@ -3291,7 +3291,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 min_dt = abs(min(np.diff(supply_temperatures)))
 
                 for temperature in supply_temperatures:
-                    #TODO: fix the ordering of the ates temperatures
+                    # TODO: fix the ordering of the ates temperatures
 
                     # ordering_disc = self.state(f"{ates}__{temperature}_ordering_disc")
                     # ordering = self.state(f"{ates}__{temperature}_ordering")

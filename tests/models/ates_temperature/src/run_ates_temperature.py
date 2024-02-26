@@ -145,11 +145,11 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = (
             False  # required since we want to disconnect HP & HEX
         )
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
         return options
 
