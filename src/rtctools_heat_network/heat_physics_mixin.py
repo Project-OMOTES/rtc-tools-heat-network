@@ -2627,7 +2627,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 * 10.2
                 * 1.0e3
             )
-            if self.heat_network_options()["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
+            if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
 
                 # During charging we want a minimum pressure drop like a demand
                 constraints.append(
