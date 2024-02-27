@@ -534,7 +534,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         pressure=parameters[f"{pipe}.pressure"],
                     )
 
-                    big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
+                    big_m = max(
+                        2.0 * 2.0 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge
+                    )
 
                     is_topo_disconnected = 1 - self.extra_variable(pc_var_name, ensemble_member)
                     is_topo_disconnected = ca.repmat(is_topo_disconnected, dh.size1())
@@ -601,7 +603,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        1.1 * self.__maximum_total_head_loss,
+                        2.0 * self.__maximum_total_head_loss,
                         network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
@@ -631,8 +633,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
             # least double (i.e. >= 2.0). And because we do not want Big-Ms to
             # be overly tight, we include an additional factor of 2.
-            big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
-            # big_m = 2.0 * 2.0 * max_head_loss
+            # big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
+            big_m = 2.0 * 2.0 * max_head_loss
             constraints.append(
                 (
                     (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
