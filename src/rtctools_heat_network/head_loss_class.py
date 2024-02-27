@@ -356,7 +356,14 @@ class HeadLossClass:
         else:
             q_nominal = self._hn_pipe_nominal_discharge(options, parameters, pipe_name)
             head_loss_nominal = self._hn_pipe_head_loss(
-                pipe_name, optimization_problem, options, network_settings, parameters, q_nominal
+                pipe_name,
+                optimization_problem,
+                options,
+                network_settings,
+                parameters,
+                q_nominal,
+                network_type=self.network_settings["network_type"],
+                pressure=parameters[f"{pipe_name}.pressure"],
             )
 
             self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = head_loss_nominal
@@ -433,6 +440,8 @@ class HeadLossClass:
         is_disconnected: Union[ca.MX, int] = 0,
         big_m: Optional[float] = None,
         pipe_class: Optional[PipeClass] = None,
+        network_type: NetworkSettings = NetworkSettings.NETWORK_TYPE_HEAT,
+        pressure: float = 0.0,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
         This function has two purposes:
@@ -523,7 +532,12 @@ class HeadLossClass:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
-                maximum_velocity, diameter, wall_roughness, temperature
+                maximum_velocity,
+                diameter,
+                wall_roughness,
+                temperature,
+                network_type=network_type,
+                pressure=pressure,
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
@@ -565,7 +579,11 @@ class HeadLossClass:
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
-                heat_network_options["estimated_velocity"], diameter, wall_roughness, temperature
+                heat_network_options["estimated_velocity"],
+                diameter,
+                wall_roughness,
+                network_type=network_type,
+                pressure=pressure,
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
@@ -621,6 +639,8 @@ class HeadLossClass:
                 temperature=temperature,
                 n_lines=n_lines,
                 v_max=maximum_velocity,
+                network_type=self.network_settings["network_type"],
+                pressure=parameters[f"{pipe}.pressure"],
             )
 
             # The function above only gives result in the positive quadrant
@@ -684,6 +704,8 @@ class HeadLossClass:
         big_m: Optional[float] = None,
         pipe_class: Optional[PipeClass] = None,
         flow_dir: Union[ca.MX, int] = 0,
+        network_type: NetworkSettings = NetworkSettings.NETWORK_TYPE_HEAT,
+        pressure: float = 0.0,
     ) -> Union[List[Tuple[ca.MX, BT, BT]], float, np.ndarray]:
         """
         This function has two purposes:
@@ -774,7 +796,12 @@ class HeadLossClass:
             # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
             # calc)
             ff = darcy_weisbach.friction_factor(
-                maximum_velocity, diameter, wall_roughness, temperature
+                maximum_velocity,
+                diameter,
+                wall_roughness,
+                temperature,
+                network_type=network_type,
+                pressure=pressure,
             )
             # Compute c_k constant (where |hydraulic power| ~ c_k * v^3)
             c_k = rho * ff * length * area / 2.0 / diameter
@@ -854,6 +881,8 @@ class HeadLossClass:
                 temperature=temperature,
                 n_lines=n_lines,
                 v_max=maximum_velocity,
+                network_type=self.network_settings["network_type"],
+                pressure=parameters[f"{pipe}.pressure"],
             )
             discharge_vec = ca.repmat(discharge, len(a_coef))
             hydraulic_power_linearized_vec = a_coef * discharge_vec + b_coef

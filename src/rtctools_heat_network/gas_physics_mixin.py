@@ -329,7 +329,14 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 area = parameters[f"{pipe}.area"]
                 max_discharge = self.gas_network_settings["maximum_velocity"] * area
                 head_loss += self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
+                    pipe,
+                    self,
+                    options,
+                    self.gas_network_settings,
+                    parameters,
+                    max_discharge,
+                    network_type=self.gas_network_settings["network_type"],
+                    pressure=parameters[f"{pipe}.pressure"],
                 )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -521,6 +528,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         parameters,
                         max_discharge,
                         pipe_class=pc,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
 
                     big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
@@ -547,6 +556,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             is_disconnected + is_topo_disconnected,
                             big_m,
                             pc,
+                            network_type=self.gas_network_settings["network_type"],
+                            pressure=parameters[f"{pipe}.pressure"],
                         )
                     )
 
@@ -564,6 +575,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
+                            network_type=self.gas_network_settings["network_type"],
+                            pressure=parameters[f"{pipe}.pressure"],
                         ),
                     )
             else:
@@ -587,11 +600,20 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         dh,
                         is_disconnected + is_topo_disconnected,
                         1.1 * self.__maximum_total_head_loss,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
                 )
 
                 max_head_loss = self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
+                    pipe,
+                    self,
+                    options,
+                    self.gas_network_settings,
+                    parameters,
+                    max_discharge,
+                    network_type=self.gas_network_settings["network_type"],
+                    pressure=parameters[f"{pipe}.pressure"],
                 )
 
             # Relate the head loss symbol to the pipe's dH symbol.
@@ -722,7 +744,15 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.gas_network_settings, parameters, q, None
+                        pipe,
+                        self,
+                        options,
+                        self.gas_network_settings,
+                        parameters,
+                        q,
+                        None,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
                     if self.gas_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])

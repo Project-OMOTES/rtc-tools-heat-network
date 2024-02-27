@@ -392,9 +392,11 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
+            pressure = asset.in_ports[0].carrier.pressure * 1.0e5
             modifiers = dict(
                 length=length,
                 diameter=diameter,
+                pressure=pressure,
                 # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
                 GasIn=dict(
                     Q=dict(min=-q_max, max=q_max),

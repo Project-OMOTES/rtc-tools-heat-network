@@ -1,41 +1,26 @@
 import math
 
+import CoolProp as cP
+
+from iapws import IAPWS95
+
 import numpy as np
 
 from .constants import GRAVITATIONAL_CONSTANT
+from .network_common import NetworkSettings
 
 
-def _kinematic_viscosity(temperature):
+def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_HEAT, pressure=0.0):
     """
-    The kinematic viscosity barely changes with pressure. The below polynomial
-    fit has been deduced using the `iapws` package, which implements the IAPWS
-    standard. The valid range of temperatures is 20 - 130 C.
-
-    Below the snippet of code used to get the polynomial coefficients
-    (possibly useful when refitting):
-
-    .. code-block:: python
-
-        from iapws import IAPWS95
-
-        import numpy as np
-
-        res = []
-        for t in np.linspace(20, 130, 1000):
-            res.append((t, IAPWS95(T=273.15 + t, P=0.5).nu))
-        print(np.polyfit(*zip(*res), 4))
+    The kinematic viscosity barely changes with pressure for water.
     """
-
-    if temperature < 20 or temperature > 130:
-        raise Exception(
-            "Temperature should be in the range 20 - 130 °C.\n"
-            "Note that we use Celcius as the unit, not Kelvin."
-        )
-
-    return np.polyval(
-        [7.53943453e-15, -3.01485854e-12, 4.75924986e-10, -3.79135487e-08, 1.58737429e-06],
-        temperature,
-    )
+    if network_type == NetworkSettings.NETWORK_TYPE_HEAT:
+        return IAPWS95(T=273.15 + temperature, P=0.5).nu
+    elif network_type == NetworkSettings.NETWORK_TYPE_GAS:
+        pressure = pressure if pressure else 101325
+        return cP.CoolProp.PropsSI("V", "T", temperature, "P", pressure, "HYDROGEN")
+    else:
+        raise Exception("Unknown network type for computing dynamic viscosity")
 
 
 def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
@@ -69,13 +54,22 @@ def _colebrook_white(reynolds, relative_roughness, friction_factor=0.015):
         raise Exception("Colebrook-White did not converge")
 
 
-def friction_factor(velocity, diameter, wall_roughness, temperature):
+def friction_factor(
+    velocity,
+    diameter,
+    wall_roughness,
+    temperature,
+    network_type=NetworkSettings.NETWORK_TYPE_HEAT,
+    pressure=0.0,
+):
     """
     Darcy-weisbach friction factor calculation from both laminar and turbulent
     flow.
     """
 
-    kinematic_viscosity = _kinematic_viscosity(temperature)
+    kinematic_viscosity = _kinematic_viscosity(
+        temperature, network_type=network_type, pressure=pressure
+    )
     reynolds = velocity * diameter / kinematic_viscosity
 
     assert velocity >= 0
@@ -95,18 +89,40 @@ def friction_factor(velocity, diameter, wall_roughness, temperature):
     return friction_factor
 
 
-def head_loss(velocity, diameter, length, wall_roughness, temperature):
+def head_loss(
+    velocity,
+    diameter,
+    length,
+    wall_roughness,
+    temperature,
+    network_type=NetworkSettings.NETWORK_TYPE_HEAT,
+    pressure=0.0,
+):
     """
     Head loss for a circular pipe of given length.
     """
 
-    f = friction_factor(velocity, diameter, wall_roughness, temperature)
+    f = friction_factor(
+        velocity,
+        diameter,
+        wall_roughness,
+        temperature,
+        network_type=network_type,
+        pressure=pressure,
+    )
 
     return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity**2 / diameter
 
 
 def get_linear_pipe_dh_vs_q_fit(
-    diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
+    diameter,
+    length,
+    wall_roughness,
+    temperature,
+    n_lines=10,
+    v_max=2.5,
+    network_type=NetworkSettings.NETWORK_TYPE_HEAT,
+    pressure=0.0,
 ):
     """
     This function returns a set of coefficients to approximate a head loss curve with linear
@@ -118,7 +134,18 @@ def get_linear_pipe_dh_vs_q_fit(
     q_points = v_points * area
 
     h_points = np.array(
-        [head_loss(v, diameter, length, wall_roughness, temperature) for v in v_points]
+        [
+            head_loss(
+                v,
+                diameter,
+                length,
+                wall_roughness,
+                temperature,
+                network_type=network_type,
+                pressure=pressure,
+            )
+            for v in v_points
+        ]
     )
 
     a = np.diff(h_points) / np.diff(q_points)
@@ -128,7 +155,15 @@ def get_linear_pipe_dh_vs_q_fit(
 
 
 def get_linear_pipe_power_hydraulic_vs_q_fit(
-    rho, diameter, length, wall_roughness, temperature, n_lines=10, v_max=2.5
+    rho,
+    diameter,
+    length,
+    wall_roughness,
+    temperature,
+    n_lines=10,
+    v_max=2.5,
+    network_type=NetworkSettings.NETWORK_TYPE_HEAT,
+    pressure=0.0,
 ):
     """
     power_hydraulic = b + (a * Q)
@@ -141,7 +176,17 @@ def get_linear_pipe_power_hydraulic_vs_q_fit(
         [
             rho
             * GRAVITATIONAL_CONSTANT
-            * abs(head_loss(v, diameter, length, wall_roughness, temperature))
+            * abs(
+                head_loss(
+                    v,
+                    diameter,
+                    length,
+                    wall_roughness,
+                    temperature,
+                    network_type=network_type,
+                    pressure=pressure,
+                )
+            )
             * v
             * area
             for v in v_points

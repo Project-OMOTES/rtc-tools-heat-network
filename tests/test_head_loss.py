@@ -10,6 +10,7 @@ from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.network_common import NetworkSettings
 
 
 class TestHeadLoss(TestCase):
@@ -163,6 +164,7 @@ class TestHeadLoss(TestCase):
                 input_timeseries_file="timeseries.csv",
             )
             results = solution.extract_results()
+            parameters = solution.parameters(0)
 
             # Check the head loss variable
             np.testing.assert_allclose(
@@ -184,9 +186,21 @@ class TestHeadLoss(TestCase):
             # dH_manual_linear = a*Q + b
             # Then use this linear function to calculate the head loss
             delta_dh_theory = darcy_weisbach.head_loss(
-                v_points[1], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                v_points[1],
+                pipe_diameter,
+                pipe_length,
+                pipe_wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=parameters[f"{pipes[0]}.pressure"],
             ) - darcy_weisbach.head_loss(
-                v_points[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                v_points[0],
+                pipe_diameter,
+                pipe_length,
+                pipe_wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=parameters[f"{pipes[0]}.pressure"],
             )
 
             delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (

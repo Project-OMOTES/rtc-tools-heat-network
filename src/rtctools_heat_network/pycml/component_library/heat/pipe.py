@@ -34,6 +34,7 @@ class Pipe(_NonStorageComponent):
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
         self.carrier_id = -1
+        self.pressure = 16.0e5
 
         # Parameters determining the heat loss
         # All of these have default values in the library function

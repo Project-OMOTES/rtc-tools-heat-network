@@ -70,6 +70,7 @@ class TechnoEconomicMixin(
 
     def get_heat_carriers(self):
         return self.temperature_carriers()
+
     def get_gas_pipe_investment_cost_coefficient(self, asset_name, ensemble_member):
         return self.extra_variable(self._gas_pipe_topo_cost_map[asset_name], ensemble_member)
 
