@@ -582,6 +582,7 @@ class HeadLossClass:
                 heat_network_options["estimated_velocity"],
                 diameter,
                 wall_roughness,
+                temperature,
                 network_type=network_type,
                 pressure=pressure,
             )
