@@ -16,4 +16,4 @@ class HeatPort(HeatComponent, Connector):
         self.add_variable(Variable, "Heat")
         self.add_variable(Variable, "Q")
         self.add_variable(Variable, "H")
-        self.add_variable(Variable, "Hydraulic_power", nominal=16.0e5 * (1.0 * 0.1**2 * 3.14159))
+        self.add_variable(Variable, "Hydraulic_power")

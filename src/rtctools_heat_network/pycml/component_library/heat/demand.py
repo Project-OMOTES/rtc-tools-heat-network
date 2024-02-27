@@ -39,9 +39,11 @@ class Demand(_NonStorageComponent):
         self.add_variable(Variable, "dH", max=0.0)
         self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
         self.add_equation(
-            self.minimum_pressure_drop * self.Q
-            - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
-            / (self.Q_nominal * self.nominal_pressure)
+            (
+                self.minimum_pressure_drop * self.Q
+                - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power)
+            )
+            / (self.Q_nominal * self.minimum_pressure_drop)
         )
 
         self.add_equation(

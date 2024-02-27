@@ -63,7 +63,7 @@ class Pipe(_NonStorageComponent):
 
         self.add_equation(
             (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
-            / self.Hydraulic_power_nominal
+            / (self.nominal_pressure * self.Q_nominal)
         )
 
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))

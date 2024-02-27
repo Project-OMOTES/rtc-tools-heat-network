@@ -104,6 +104,27 @@ class TestHeadLoss(TestCase):
         np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
         np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
 
+        pump_power = results["source.Pump_power"]
+        pump_power_post_process = (
+            results["source.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results["source.Q"]
+        )
+
+        # The pump power should be overestimated compared to the actual head loss due to the fact
+        # that we are linearizing a thrird order equation for hydraulic power instead of the second
+        # order for head loss.
+        np.testing.assert_array_less(pump_power_post_process, pump_power)
+
+        sum_hp = (
+            results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
+        )
+        sum_hp += results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
+        sum_hp += (
+            results["Pipe1_ret.HeatOut.Hydraulic_power"]
+            - results["Pipe1_ret.HeatIn.Hydraulic_power"]
+        )
+
+        np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
+
         for pipe in pipes:
             velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             for ii in range(len(results[f"{pipe}.dH"])):

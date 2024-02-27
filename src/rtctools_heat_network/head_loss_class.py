@@ -108,7 +108,7 @@ class HeadLossOption(IntEnum):
 class _MinimizeHeadLosses(Goal):
     order = 1
 
-    priority = 2**31 - 1
+    priority = 2**31 - 2
 
     def __init__(self, optimization_problem, input_network_settings, *args, **kwargs):
         super().__init__(*args, **kwargs)

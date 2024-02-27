@@ -240,8 +240,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 10.0e6
         )
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
@@ -260,6 +262,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -290,10 +294,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -448,10 +456,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
+                Hydraulic_power=dict(nominal=q_nominal * 16.0e5),
             ),
             HeatOut=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
+                Hydraulic_power=dict(nominal=q_nominal * 16.0e5),
             ),
             Heat_flow=dict(min=-hfr_max, max=hfr_max, nominal=hfr_max),
             insulation_thickness=insulation_thicknesses,
@@ -485,6 +495,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "Pump"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -493,6 +505,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 min_value=1.0,
                 max_value=50.0,
             ),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
@@ -560,8 +574,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         prim_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
+            ),
             Q_nominal=max_power
             / (
                 2
@@ -571,8 +591,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
+            ),
             Q_nominal=max_power
             / (
                 2
@@ -652,9 +678,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
+        prim_heat = dict(
+            HeatIn=dict(Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5)),
+        )
+        sec_heat = dict(
+            HeatIn=dict(Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5)),
+        )
         params = {}
-        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
+
         max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
 
         modifiers = dict(
@@ -726,6 +761,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if hasattr(asset.attributes["KPIs"], "kpi"):
             co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -737,11 +774,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -818,6 +857,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if not efficiency:
             efficiency = 0.7
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -829,7 +870,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
@@ -844,6 +885,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * asset.attributes["aggregationCount"] * 30.0 * 24 * 3600.0,
             ),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -870,6 +913,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "Valve"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -881,7 +926,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -908,9 +955,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "CheckValve"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
