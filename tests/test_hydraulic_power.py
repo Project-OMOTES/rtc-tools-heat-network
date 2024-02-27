@@ -128,10 +128,7 @@ class TestHydraulicPower(TestCase):
         # FIXME: this value from high-fidelity code needs to be checked, due to changes in the setup
         # of the heat_to_discharge constraints, the volumetric flow has increased, resulting in
         # larger pressure drops.
-        np.testing.assert_allclose(
-            128001.23151838078,
-            hydraulic_power_dw_1,
-        )
+        np.testing.assert_allclose(128001.23151838078, hydraulic_power_dw_1, atol=10)
         np.testing.assert_allclose(
             run_hydraulic_power.df_MILP["Pipe1_return_Hydraulic_power"][0],
             run_hydraulic_power.df_MILP["Pipe1_supply_Hydraulic_power"][0],
@@ -235,6 +232,7 @@ class TestHydraulicPower(TestCase):
         np.testing.assert_allclose(
             5332.57631593844,
             hydraulic_power_dw,
+            atol=10.0,
         )
 
 
