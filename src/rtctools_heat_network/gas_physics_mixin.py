@@ -153,6 +153,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         for pipe_name in self.heat_network_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
+            # Note we always use the gas network type for the naming of variables, independent of
+            # the gas mixture used.
             initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
                 self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
             )
