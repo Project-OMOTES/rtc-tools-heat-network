@@ -2,6 +2,8 @@ import logging
 import math
 from typing import Dict, Tuple, Type, Union
 
+import CoolProp as cP
+
 import esdl
 
 from rtctools_heat_network.pycml.component_library.heat import (
@@ -36,6 +38,7 @@ from scipy.optimize import fsolve
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
 from .esdl_model_base import _ESDLModelBase
+from ..network_common import NetworkSettings
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -401,8 +404,25 @@ class AssetToHeatComponent(_AssetToComponentBase):
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
+            temperature = 20.0
+            if NetworkSettings.NETWORK_TYPE_GAS in asset.in_ports[0].carrier.name:
+                density = cP.CoolProp.PropsSI(
+                    "D",
+                    "T",
+                    273.15 + temperature,
+                    "P",
+                    pressure,
+                    "methane[0.8662]&nitrogen[0.1024]&CO2[0.0208]&ethane[0.0106]",
+                )
+            elif NetworkSettings.NETWORK_TYPE_HYDROGEN in asset.in_ports[0].carrier.name:
+                cP.CoolProp.PropsSI("D", "T", 273.15 + temperature, "P", pressure, "HYDROGEN")
+            else:
+                logger.warning(
+                    f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset.name}"
+                )
             modifiers = dict(
                 length=length,
+                density=density,
                 diameter=diameter,
                 pressure=pressure,
                 # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
