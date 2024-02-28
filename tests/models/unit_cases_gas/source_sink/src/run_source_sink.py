@@ -91,5 +91,5 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
-    r = elect.extract_results()
+    results = elect.extract_results()
     a = 1

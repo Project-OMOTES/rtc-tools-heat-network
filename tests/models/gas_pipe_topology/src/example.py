@@ -14,6 +14,8 @@ from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -193,6 +195,12 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    gas_ntwk = run_optimization_problem(HeatProblem)
+    gas_ntwk = run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="2a_gas.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries.csv",
+    )
     results = gas_ntwk.extract_results()
     a = 1

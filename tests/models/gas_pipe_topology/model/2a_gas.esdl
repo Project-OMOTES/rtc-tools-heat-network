@@ -260,7 +260,7 @@
   </instance>
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="b66ef2e0-2543-43a3-98b4-60f2cad50a9a">
     <carriers xsi:type="esdl:Carriers" id="11edbe28-baa6-44c4-a876-c8f112213a28">
-      <carrier xsi:type="esdl:GasCommodity" name="gas" id="9d2ad352-0fbd-458a-ae96-9b0307103f8f" pressure="10.0"/>
+      <carrier xsi:type="esdl:GasCommodity" name="gas" id="9d2ad352-0fbd-458a-ae96-9b0307103f8f" pressure="8.0"/>
     </carriers>
     <quantityAndUnits xsi:type="esdl:QuantityAndUnits" id="c7104449-b5eb-49c7-b064-a2a4b16ae6e4">
       <quantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="Power in MW" physicalQuantity="POWER" id="e9405fc8-5e57-4df5-8584-4babee7cdf1b" multiplier="MEGA" unit="WATT"/>

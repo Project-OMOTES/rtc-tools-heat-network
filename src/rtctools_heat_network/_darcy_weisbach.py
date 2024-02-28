@@ -22,7 +22,7 @@ def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_
     elif network_type == NetworkSettings.NETWORK_TYPE_GAS:
         pressure = pressure if pressure else 101325
         return cP.CoolProp.PropsSI(
-            "D",
+            "V",
             "T",
             273.15 + temperature,
             "P",
