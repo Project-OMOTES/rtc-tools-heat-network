@@ -523,7 +523,13 @@ class HeadLossClass:
             # a default temperature for gas networks
             temperature = parameters[f"{pipe}.temperature"]
             for _id, attr in optimization_problem.temperature_carriers().items():
-                if parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]:
+                if (
+                    parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
+                    and len(
+                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+                    )
+                    > 0
+                ):
                     temperature = min(
                         optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
                     )
@@ -784,7 +790,11 @@ class HeadLossClass:
         wall_roughness = heat_network_options["wall_roughness"]
         temperature = parameters[f"{pipe}.temperature"]
         for _id, attr in optimization_problem.temperature_carriers().items():
-            if parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]:
+            if (
+                parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]
+                and len(optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"]))
+                > 0
+            ):
                 temperature = min(
                     optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
                 )
