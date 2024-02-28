@@ -519,8 +519,16 @@ class HeadLossClass:
 
         # TODO: add commodity temperature to a gas network
         try:
+            # Only heat networks have a temperature attribute in the pipes, otherwise we will use
+            # a default temperature for gas networks
             temperature = parameters[f"{pipe}.temperature"]
+            for _id, attr in optimization_problem.temperature_carriers().items():
+                if parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]:
+                    temperature = min(
+                        optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+                    )
         except KeyError:
+            # A default temperature of 20 degrees celcius is used for gas networks.
             temperature = 20.0
 
         try:
@@ -775,6 +783,11 @@ class HeadLossClass:
 
         wall_roughness = heat_network_options["wall_roughness"]
         temperature = parameters[f"{pipe}.temperature"]
+        for _id, attr in optimization_problem.temperature_carriers().items():
+            if parameters[f"{pipe}.carrier_id"] == attr["id_number_mapping"]:
+                temperature = min(
+                    optimization_problem.temperature_regimes(parameters[f"{pipe}.carrier_id"])
+                )
         rho = parameters[f"{pipe}.rho"]
 
         if pipe_class is not None:
