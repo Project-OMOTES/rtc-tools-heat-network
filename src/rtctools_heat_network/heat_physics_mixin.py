@@ -161,6 +161,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__demand_insulation_class_map = {}
         self.__demand_insulation_class_result = {}
 
+        # Boolean variables for the linear line segment options per pipe.
+        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__pipe_linear_line_segment_var_bounds = {}
+        self._pipe_linear_line_segment_map = {}
+        self.__pipe_linear_line_segment_result = {}
+
         # Variable of selected network temperature
         self.__temperature_regime_var = {}
         self.__temperature_regime_var_bounds = {}
@@ -247,6 +253,33 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
             if initialized_vars[7] != {}:
                 self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+
+            # kvr ---------------------------------
+            # if initialized_vars[8] != {}:
+            #     self._pipe_linear_line_segment_map[pipe_name] = initialized_vars[8]
+            # if initialized_vars[9] != {}:
+            #     self.__pipe_linear_line_segment_var[pipe_name] = initialized_vars[9]
+            # if initialized_vars[10] != {}:
+            #     self.__pipe_linear_line_segment_var_bounds[pipe_name] = initialized_vars[10]
+
+            self._pipe_linear_line_segment_map[pipe_name] = {}
+            for ii_line in range(self.heat_network_settings["n_linearization_lines"]):
+                pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                # = (
+                #     f"{pipe_name}__pipe_linear_line_segment_number_{ii_line + 1}"
+                # )  # start line segment numbering from 1 up to "n_linearization_lines"
+                self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
+                    pipe_linear_line_segment_var_name
+                )
+                self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                    initialized_vars[9][pipe_linear_line_segment_var_name]
+                )
+                self.__pipe_linear_line_segment_var_bounds[
+                    pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
+             
+
+
+
 
             neighbour = self.has_related_pipe(pipe_name)
             if neighbour and pipe_name not in self.hot_pipes:
@@ -398,10 +431,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         demand_insulation_class_var_name = (
                             f"{dmnd}__demand_insulation_class_{insl.name_insulation_level}"
                         )
+                        
                         if demand_insulation_class_var_name in (
                             self.__demand_insulation_class_map[dmnd].values()
                         ):
                             raise Exception(f"Resolve duplicate insulation: {insl}.")
+                        
                         self.__demand_insulation_class_map[dmnd][
                             insl
                         ] = demand_insulation_class_var_name
@@ -478,9 +513,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     def demand_insulation_classes(self, demand_insulation: str) -> List[DemandInsulationClass]:
         """
         If the returned List is:
-        - empty: use the demand insualtion properties from the model
-        - len() == 1: use these demand insualtion properties to overrule that of the model
-        - len() > 1: decide between the demand insualtion class options.
+        - empty: use the demand insulation properties from the model
+        - len() == 1: use these demand insulation properties to overrule that of the model
+        - len() > 1: decide between the demand insulation class options.
 
         """
         return []
@@ -491,6 +526,26 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         optimized demand insulation class is available (yet), a `KeyError` is returned.
         """
         return self.__demand_insulation_class_result[demand_insulation]
+
+    def pipe_linear_line_segment(self, pipe_linear_line: str) -> List[int]:
+        """
+        If the returned List is:
+        - empty: use the demand insulation properties from the model
+        - len() == 1: use these demand insulation properties to overrule that of the model
+        - len() > 1: decide between the demand insulation class options.
+
+        """
+        return []
+
+    def get_optimized_pipe_linear_line_segment(self, pipe_linear_line: str) -> int:
+        """
+        Return the optimized demand_insulation class for a specific pipe. If no
+        optimized demand insulation class is available (yet), a `KeyError` is returned.
+        """
+        return self.__pipe_linear_line_segment_result[pipe_linear_line]
+    
+
+
 
     @property
     def extra_variables(self):
@@ -516,6 +571,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
+        variables.extend(self.__pipe_linear_line_segment_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
         variables.extend(self.__disabled_hex_var.values())
@@ -532,6 +588,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__demand_insulation_class_var
+            or variable in self.__pipe_linear_line_segment_var
             or variable in self.__carrier_selected_var
             or variable in self.__disabled_hex_var
         ):
@@ -562,6 +619,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__demand_insulation_class_var_bounds)
+        bounds.update(self.__pipe_linear_line_segment_var_bounds)
         bounds.update(self._pipe_heat_loss_var_bounds)
         bounds.update(self.__temperature_regime_var_bounds)
         bounds.update(self.__carrier_selected_var_bounds)
@@ -745,7 +803,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         Note:
         - This function is only active when the "include_demand_insulation_options" (False by
         default) has been set to True in the heat network options.
-        - Currently this functional requires that all demands have at least one insualtion option is
+        - Currently this functional requires that all demands have at least one insulation option is
         specified for every demand in the heat network.
         """
 

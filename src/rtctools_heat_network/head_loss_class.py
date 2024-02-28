@@ -100,9 +100,10 @@ class HeadLossOption(IntEnum):
 
     NO_HEADLOSS = 1
     CQ2_INEQUALITY = 2
-    LINEARIZED_DW = 3
-    LINEAR = 4
+    LINEARIZED_DW = 3  # LINEARIZED_N_LINES_WEAK_INEQUALITY
+    LINEAR = 4  # LINEARIZED_ONE_LINE_EQUALITY
     CQ2_EQUALITY = 5
+    LINEARIZED_N_LINES_EQUALITY = 6
 
 
 class _MinimizeHeadLosses(Goal):
@@ -205,6 +206,12 @@ class HeadLossClass:
         self.__pipe_head_loss_nominals = {}
         self.__pipe_head_loss_zero_bounds = {}
         self._hn_pipe_to_head_loss_map = {}
+
+        # Kvr
+        # Boolean variables for the linear line segment options per pipe.
+        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__pipe_linear_line_segment_var_bounds = {}
+        self._pipe_linear_line_segment_map = {}
 
         self.__priority = None
 
@@ -371,6 +378,27 @@ class HeadLossClass:
             self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
             self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
+            # kvr --------------------------------------
+            # Add pipe hesad loss linear line segment 
+            self._pipe_linear_line_segment_map[pipe_name] = {}
+            self.__pipe_linear_line_segment_var[pipe_name] = {}
+            self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
+            for ii_line in range(network_settings["n_linearization_lines"]):
+                pipe_linear_line_segment_var_name = (
+                    f"{pipe_name}__pipe_linear_line_segment_number_{ii_line + 1}"
+                )  # start line segment numbering from 1 up to "n_linearization_lines"
+
+                self._pipe_linear_line_segment_map[pipe_name][
+                    ii_line
+                ] = pipe_linear_line_segment_var_name
+                self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
+                    ca.MX.sym(pipe_linear_line_segment_var_name)
+                )
+                self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                    pipe_linear_line_segment_var_name
+                ] = (0.0, 1.0)
+            # kvr --------------------------------------
+                
         return (
             (
                 self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"]
@@ -412,6 +440,11 @@ class HeadLossClass:
                 if self.__pipe_head_loss_bounds.get(head_loss_var) is not None
                 else self.__pipe_head_loss_bounds
             ),
+            # kvr --------------------------------------
+            (self._pipe_linear_line_segment_map[pipe_name]),
+            (self.__pipe_linear_line_segment_var[pipe_name]),
+            (self.__pipe_linear_line_segment_var_bounds[pipe_name]),
+            # kvr --------------------------------------
         )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
@@ -611,15 +644,18 @@ class HeadLossClass:
             else:
                 return expr
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            n_lines = network_settings["n_linearization_lines"]
+        elif (head_loss_option == HeadLossOption.LINEARIZED_DW
+              or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        ):
+            n_linear_lines = network_settings["n_linearization_lines"]
+            n_timesteps = len(optimization_problem.times())
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,
                 length,
                 wall_roughness,
                 temperature=temperature,
-                n_lines=n_lines,
+                n_lines=n_linear_lines,
                 v_max=maximum_velocity,
             )
 
@@ -635,6 +671,7 @@ class HeadLossClass:
                 head_loss_nominal = optimization_problem.variable_nominal(f"{pipe}.dH")
                 head_loss_vec = ca.repmat(head_loss, len(a))
                 discharge_vec = ca.repmat(discharge, len(a))
+
                 if isinstance(is_disconnected, ca.MX):
                     is_disconnected_vec = ca.repmat(is_disconnected, len(a))
                 else:
@@ -652,7 +689,44 @@ class HeadLossClass:
                 else:
                     big_m_lin = big_m
                     constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
-                return [
+                
+                # add ons for multiple lines equality constraints -------------------
+                
+                pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+                is_line_segment_active = []
+                
+                for ii_line, ii_line_var in pipe_linear_line_segment.items():
+                    # Create integer variable to activated/deactivate (1/0) a linear line segment
+                    # is_line_segment_active_var = self.extra_variable(
+                    #     ii_line_var, self.ensemble_member
+                    # )
+                    is_line_segment_active_var = optimization_problem.extra_variable(ii_line_var)
+
+                    # Linear line segment activation variable for each time step of demand profile
+                    is_line_segment_active.append(
+                        ca.repmat(is_line_segment_active_var, n_timesteps)
+                    )
+
+                constraints = []
+                if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # Calculate constraint to enforce that only 1 linear line segment can be active
+                    # per time step for the current pipe
+                    for itstep in range(n_timesteps):
+                        is_line_segment_active_sum_per_timestep = 0.0
+                        for ii_line in range(len(pipe_linear_line_segment)):
+
+                            is_line_segment_active_sum_per_timestep = (
+                                is_line_segment_active_sum_per_timestep
+                                + is_line_segment_active[ii_line][itstep]
+                            )
+                        # Enforce only 1 line line segment to be active for per timestep for all
+                        # timsteps
+                        constraints.append(
+                            (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
+                        )
+
+                # Add weak inequality constraint, value >= 0.0 for all linear lines
+                constraints.append(
                     (
                         (
                             head_loss_vec
@@ -662,13 +736,94 @@ class HeadLossClass:
                         / constraint_nominal,
                         0.0,
                         np.inf,
-                    )
-                ]
+                    ),
+                )
+
+                if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # Add equality constraint, value == 0.0 for all linear lines
+                    # Loop twice due linear lines exsiting for positive and negative discharge
+                    for ii in range(2):
+                        for ii_line in range(n_linear_lines):
+                            ii_start = (ii_line + 2 * ii) * n_timesteps
+                            ii_end = ii_start + n_timesteps
+                            constraints.append(
+                                (
+                                    (
+                                        head_loss_vec[ii_start:ii_end]
+                                        - (
+                                            a_vec[ii_start:ii_end]
+                                            * discharge_vec[ii_start:ii_end]
+                                            + b_vec[ii_start:ii_end]
+                                        )
+                                        + is_disconnected_vec[ii_start:ii_end] * big_m_lin
+                                        * (1 - is_line_segment_active[ii_line][0:n_timesteps])
+                                    )
+                                    / constraint_nominal[ii_start:ii_end],
+                                    0.0,
+                                    np.inf,
+                                ),
+                            )                      
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             head_loss_vec[0:45]  
+                        #             - (a_vec[0:45] * discharge_vec[0:45] + b_vec[0:45])
+                        #             + is_disconnected_vec[0:45] * big_m_lin * (1 - is_line_segment_active[0][0:45])
+                        #         )
+                        #         / constraint_nominal[0:45],
+                        #         0.0,
+                        #         np.inf,
+                        #     ),
+                        # )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             head_loss_vec[45:90]
+                        #             - (a_vec[45:90] * discharge_vec[45:90] + b_vec[45:90])
+                        #             + is_disconnected_vec[45:90] * big_m_lin * (1 - is_line_segment_active[1][0:45])
+                        #         )
+                        #         / constraint_nominal[45:90],
+                        #         0.0,
+                        #         np.inf,
+                        #     ),
+                        # )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             head_loss_vec[90:135]
+                        #             - (a_vec[90:135] * discharge_vec[90:135] + b_vec[90:135])
+                        #             + is_disconnected_vec[90:135] * big_m_lin * (1 - is_line_segment_active[0][0:45])
+                        #         )
+                        #         / constraint_nominal[90:135],
+                        #         0.0,
+                        #         np.inf,
+                        #     ),
+                        # )
+                        # constraints.append(
+                        #     (
+                        #         (
+                        #             head_loss_vec[135:180]
+                        #             - (a_vec[135:180] * discharge_vec[135:180] + b_vec[135:180])
+                        #             + is_disconnected_vec[135:180] * big_m_lin * (1 - is_line_segment_active[1][0:45])
+                        #         )
+                        #         / constraint_nominal[135:180],
+                        #         0.0,
+                        #         np.inf,
+                        #     ),
+                        # )
+                return constraints
             else:
                 ret = np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
                 if isinstance(discharge, float):
                     ret = ret[0]
                 return ret
+        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+            return []
+
+
+
+
+        
 
     def _hydraulic_power(
         self,
@@ -844,7 +999,7 @@ class HeadLossClass:
             else:
                 return abs(hydraulic_power_linearized)
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+        elif head_loss_option == HeadLossOption.LINEARIZED_DW or HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
             n_lines = network_settings["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
@@ -910,7 +1065,7 @@ class HeadLossClass:
         else:
             assert (
                 head_loss_option == HeadLossOption.LINEARIZED_DW
-                or head_loss_option == HeadLossOption.LINEAR
+                or head_loss_option == HeadLossOption.LINEAR or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
             ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
 
     def _pipe_head_loss_path_constraints(self, optimization_problem, _ensemble_member):

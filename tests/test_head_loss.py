@@ -41,10 +41,16 @@ class TestHeadLoss(TestCase):
             def heat_network_options(self):
                 options = super().heat_network_options()
                 self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-                self.heat_network_settings["n_linearization_lines"] = 5
+                # self.heat_network_settings["head_loss_option"] = (
+                #     HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                # )
+
+                self.heat_network_settings["n_linearization_lines"] = 5  
+                # self.heat_network_settings["n_linearization_lines"] = 2  # temp
                 self.heat_network_settings["minimize_head_losses"] = True
 
                 return options
+
 
         solution = run_optimization_problem(
             SourcePipeSinkDW,
@@ -62,8 +68,39 @@ class TestHeadLoss(TestCase):
         pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
         temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
         pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
-        v_points = [0.0, v_max / solution.heat_network_settings["n_linearization_lines"]]
+        # v_points = [0.0, v_max / solution.heat_network_settings["n_linearization_lines"]]
+        v_points = np.linspace(
+            0.0,
+            v_max,
+            solution.heat_network_settings["n_linearization_lines"] + 1,
+        )
         v_inspect = v_points[0] + (v_points[1] - v_points[0]) / 2.0
+
+        #####
+        import matplotlib.pyplot as plt
+        p_points = [0] * (solution.heat_network_settings["n_linearization_lines"] + 1)
+        p_points[1] = darcy_weisbach.head_loss(
+                        v_points[1], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    )
+        p_points[2] = darcy_weisbach.head_loss(
+                        v_points[2], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    )
+        p_points[3] = darcy_weisbach.head_loss(
+                        v_points[3], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    )
+        p_points[4] = darcy_weisbach.head_loss(
+                        v_points[4], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    )
+        p_points[5] = darcy_weisbach.head_loss(
+                        v_points[5], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    )
+        
+
+        velocities = results[f"{pipes[0]}.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
+        plt.plot(v_points, p_points)
+        plt.plot(velocities[:],-results[f"{pipes[0]}.dH"][:], marker="1", linestyle='None' )
+        plt.show()
+        #####
 
         # Theoretical head loss calc, dH =
         # friction_factor * 8 * pipe_length * volumetric_flow^2 / ( pipe_diameter^5 * g * pi^2)
