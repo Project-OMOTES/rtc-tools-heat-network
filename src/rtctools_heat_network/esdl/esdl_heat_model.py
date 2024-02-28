@@ -88,6 +88,30 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         return dict(rho=self.rho, cp=self.cp)
 
+    def get_density(self, asset_name, carrier):
+        temperature = 20.0
+
+        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+            density = cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + temperature,
+                "P",
+                carrier.pressure,
+                "methane[0.813]&ethane[0.0285]&propane[0.0037]&butane[0.0014]&n-Pentane[0.0004]"
+                "&n-Hexane[0.0005]&nitrogen[0.1435]&CO2[0.0089]&oxygen[0.0001]",
+            )
+        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
+            density = cP.CoolProp.PropsSI(
+                "D", "T", 273.15 + temperature, "P", carrier.pressure, "HYDROGEN"
+            )
+        else:
+            logger.warning(
+                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
+            )
+            density = 6.2  # natural gas at about 8 bar
+        return density
+
     def get_asset_attribute_value(
         self,
         asset: Asset,
@@ -404,25 +428,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
-            temperature = 20.0
-            if NetworkSettings.NETWORK_TYPE_GAS in asset.in_ports[0].carrier.name:
-                density = cP.CoolProp.PropsSI(
-                    "D",
-                    "T",
-                    273.15 + temperature,
-                    "P",
-                    pressure,
-                    "methane[0.8662]&nitrogen[0.1024]&CO2[0.0208]&ethane[0.0106]",
-                )
-            elif NetworkSettings.NETWORK_TYPE_HYDROGEN in asset.in_ports[0].carrier.name:
-                cP.CoolProp.PropsSI("D", "T", 273.15 + temperature, "P", pressure, "HYDROGEN")
-            else:
-                logger.warning(
-                    f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset.name}"
-                )
             modifiers = dict(
                 length=length,
-                density=density,
+                density=self.get_density(asset.name, asset.in_ports[0].carrier),
                 diameter=diameter,
                 pressure=pressure,
                 # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
@@ -1163,6 +1171,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset, asset.in_ports[0].carrier),
             GasIn=dict(
                 Q=dict(
                     min=0.0,
@@ -1194,6 +1203,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset, asset.out_ports[0].carrier),
             Gas_source_mass_flow=dict(
                 min=0.0,
                 max=self._get_connected_q_max(asset),
@@ -1283,6 +1293,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset, asset.in_ports[0].carrier),
             volume=asset.attributes["workingVolume"],
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow

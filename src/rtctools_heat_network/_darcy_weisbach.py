@@ -22,12 +22,13 @@ def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_
     elif network_type == NetworkSettings.NETWORK_TYPE_GAS:
         pressure = pressure if pressure else 101325
         return cP.CoolProp.PropsSI(
-            "V",
+            "D",
             "T",
             273.15 + temperature,
             "P",
             pressure,
-            "methane[0.8662]&nitrogen[0.1024]&CO2[0.0208]&ethane[0.0106]",
+            "methane[0.813]&ethane[0.0285]&propane[0.0037]&butane[0.0014]&n-Pentane[0.0004]"
+            "&n-Hexane[0.0005]&nitrogen[0.1435]&CO2[0.0089]&oxygen[0.0001]",
         )
     else:
         raise Exception("Unknown network type for computing dynamic viscosity")
