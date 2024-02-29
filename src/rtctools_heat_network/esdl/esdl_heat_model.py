@@ -21,6 +21,7 @@ from rtctools_heat_network.pycml.component_library.heat import (
     GasNode,
     GasPipe,
     GasSource,
+    GasSubstation,
     GasTankStorage,
     GeothermalSource,
     HeatExchanger,
@@ -1171,7 +1172,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            density=self.get_density(asset, asset.in_ports[0].carrier),
+            density=self.get_density(asset.name, asset.in_ports[0].carrier),
             GasIn=dict(
                 Q=dict(
                     min=0.0,
@@ -1203,7 +1204,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            density=self.get_density(asset, asset.out_ports[0].carrier),
+            density=self.get_density(asset.name, asset.out_ports[0].carrier),
             Gas_source_mass_flow=dict(
                 min=0.0,
                 max=self._get_connected_q_max(asset),
@@ -1293,7 +1294,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            density=self.get_density(asset, asset.in_ports[0].carrier),
+            density=self.get_density(asset.name, asset.in_ports[0].carrier),
             volume=asset.attributes["workingVolume"],
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
@@ -1305,6 +1306,33 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return GasTankStorage, modifiers
+
+    def convert_gas_substation(self, asset: Asset) -> Tuple[Type[GasSubstation], MODIFIERS]:
+        """
+        This function converts the GasTankStorage object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasTankStorage class with modifiers
+        """
+        assert asset.asset_type in {"GasConversion"}
+
+        q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
+
+        modifiers = dict(
+            Q_nominal_in=q_nom_in,
+            Q_nominal_out=q_nom_out,
+            density_in=self.get_density(asset.name, asset.in_ports[0].carrier),
+            density_out=self.get_density(asset.name, asset.out_ports[0].carrier),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return GasSubstation, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):
