@@ -431,6 +431,8 @@ class _AssetToComponentBase:
             len(asset.in_ports) == 1
             and len(asset.out_ports) == 1
             and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
+            and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
+            and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
         ):
             try:
                 connected_port = asset.in_ports[0].connectedTo[0]
@@ -448,7 +450,7 @@ class _AssetToComponentBase:
 
             if q_nominal_in is not None and q_nominal_out is not None:
                 self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
-                self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_in
+                self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
                 return q_nominal_in, q_nominal_out
             else:
                 raise _RetryLaterException(
