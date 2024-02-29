@@ -383,20 +383,32 @@ class HeadLossClass:
             self._pipe_linear_line_segment_map[pipe_name] = {}
             self.__pipe_linear_line_segment_var[pipe_name] = {}
             self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
-            for ii_line in range(network_settings["n_linearization_lines"]):
-                pipe_linear_line_segment_var_name = (
-                    f"{pipe_name}__pipe_linear_line_segment_number_{ii_line + 1}"
-                )  # start line segment numbering from 1 up to "n_linearization_lines"
+            # We need to creat linear line segments for the + and - volumetric flow rate
+            # possibilites
+            discharge_type = ["neg_discharge", "pos_discharge"]
+            line_number = 0
+            for dtype in discharge_type:
+                for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                    if ii_line < network_settings["n_linearization_lines"]:
+                        dtype = discharge_type[0]
+                        line_number = ii_line + 1
+                    else:
+                        dtype = discharge_type[1]
+                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                self._pipe_linear_line_segment_map[pipe_name][
-                    ii_line
-                ] = pipe_linear_line_segment_var_name
-                self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
-                    ca.MX.sym(pipe_linear_line_segment_var_name)
-                )
-                self.__pipe_linear_line_segment_var_bounds[pipe_name][
-                    pipe_linear_line_segment_var_name
-                ] = (0.0, 1.0)
+                    pipe_linear_line_segment_var_name = (
+                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                    )  # start line segment numbering from 1 up to "n_linearization_lines"
+
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
+                    self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
+                        ca.MX.sym(pipe_linear_line_segment_var_name)
+                    )
+                    self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                        pipe_linear_line_segment_var_name
+                    ] = (0.0, 1.0)
             # kvr --------------------------------------
                 
         return (
@@ -662,7 +674,7 @@ class HeadLossClass:
             # The function above only gives result in the positive quadrant
             # (positive head loss, positive discharge). We also need a
             # positive head loss for _negative_ discharges.
-            a = np.hstack([a, a])  # still to fix later
+            a = np.hstack([-a, a])  # still to fix later
             b = np.hstack([b, b])
 
             # Vectorize constraint for speed
@@ -696,7 +708,12 @@ class HeadLossClass:
                 # big_m_lin = big_m_lin*10**2
                 
                 # add ons for multiple lines equality constraints -------------------
-                
+                # pipe_linear_line_segment: will containt variables of negative and positive
+                # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
+                # linear lines then pipe_linear_line_segment will have 2 * 2 variables
+                # Order of linear line variables:
+                #  negative discharge line_1, line_2 ..._line_N 
+                #   positve discharge line_1, line_2 ..._line_N 
                 pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
                 is_line_segment_active = []
                 

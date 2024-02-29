@@ -263,7 +263,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             #     self.__pipe_linear_line_segment_var_bounds[pipe_name] = initialized_vars[10]
 
             self._pipe_linear_line_segment_map[pipe_name] = {}
-            for ii_line in range(self.heat_network_settings["n_linearization_lines"]):
+            for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
                 pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
                 # = (
                 #     f"{pipe_name}__pipe_linear_line_segment_number_{ii_line + 1}"
