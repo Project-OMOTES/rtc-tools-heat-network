@@ -60,7 +60,15 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        sol_esdl_setpoints = run_optimization_problem(HeatProblem, base_folder=base_folder)
+        sol_esdl_setpoints = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results_4 = _heat_problem_4.extract_results()
 
         esdl_results = sol_esdl_setpoints.extract_results()
         np.testing.assert_array_less(
