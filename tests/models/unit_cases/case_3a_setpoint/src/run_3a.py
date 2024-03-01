@@ -31,27 +31,14 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class MinimizeSourcesFlowGoal(Goal):
-    priority = 4
-
-    order = 2
-
-    def __init__(self, source, nominal=1.0):
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e3)
-        self.source = source
-        self.function_nominal = nominal
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Q") * 1.0e3
-
-
-class MinimizeSourcesQTHGoal(Goal):
+class MinimizeSourcesHeatGoal(Goal):
     priority = 3
 
-    order = 2
+    order = 1
 
     def __init__(self, source):
+        self.target_max = 0.0
+        self.function_range = (0.0, 10e6)
         self.source = source
         self.function_nominal = 1e6
 
