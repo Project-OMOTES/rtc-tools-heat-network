@@ -27,8 +27,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             *self.heat_network_components.get("heat_exchanger", []),
         ]:
             esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
-            for i in range(len(esdl_asset.attributes["constraint"].items)):
-                constraint = esdl_asset.attributes["constraint"].items[i]
+            for constraint in esdl_asset.attributes.get("constraint",[]):
                 if constraint.name == "setpointconstraint":
                     time_unit = constraint.range.profileQuantityAndUnit.perTimeUnit
                     if time_unit == esdl.TimeUnitEnum.HOUR:
