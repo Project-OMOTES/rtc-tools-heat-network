@@ -1769,10 +1769,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 temperature variable to the temperature associated with the temperature of the
                 integer variable. Potentially these lines could be a separate function.
                 """
-                sum = 0.0
+                variable_sum = 0.0
                 for temperature in supply_temperatures:
                     temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
-                    sum += temp_selected
+                    variable_sum += temp_selected
                     big_m = 2.0 * max(supply_temperatures)
                     constraints.append(
                         (
@@ -1789,7 +1789,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     #     )
                     # )
                 if len(supply_temperatures) > 0:
-                    constraints.append((sum, 1.0, 1.0))
+                    constraints.append((variable_sum, 1.0, 1.0))
 
                 # Equality constraint if discharging using big_m;
                 # discr_temp_carrier == discr_temp_ates
