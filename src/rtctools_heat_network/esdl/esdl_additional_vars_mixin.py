@@ -1,3 +1,5 @@
+import logging
+
 import esdl
 
 import numpy as np
@@ -6,9 +8,45 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
+logger = logging.getLogger("rtctools_heat_network")
+
 
 class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
     __temperature_options = {}
+
+    def read(self):
+        super().read()
+
+        for asset in [
+            *self.heat_network_components.get("source", []),
+            *self.heat_network_components.get("ates", []),
+            *self.heat_network_components.get("buffer", []),
+            *self.heat_network_components.get("heat_pump", []),
+            *self.heat_network_components.get("heat_pump_elec", []),
+        ]:
+            esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
+            for constraint in esdl_asset.attributes.get("constraint", []):
+                if constraint.name == "setpointconstraint":
+                    time_unit = constraint.range.profileQuantityAndUnit.perTimeUnit
+                    if time_unit == esdl.TimeUnitEnum.HOUR:
+                        time_hours = 1
+                    elif time_unit == esdl.TimeUnitEnum.DAY:
+                        time_hours = 24
+                    elif time_unit == esdl.TimeUnitEnum.WEEK:
+                        time_hours = 24 * 7
+                    elif time_unit == esdl.TimeUnitEnum.MOTH:
+                        time_hours = 24 * 7 * 30
+                    elif time_unit == esdl.TimeUnitEnum.DAY:
+                        time_hours = 365 * 24
+                    else:
+                        logger.error(
+                            f"{asset} has a setpoint constaint specified with unknown"
+                            f"per time unit"
+                        )
+
+                    asset_setpoints = {asset: (time_hours, constraint.range.maxValue)}
+
+                    self._timed_setpoints.update(asset_setpoints)
 
     def pipe_classes(self, p):
         return self._override_pipe_classes.get(p, [])

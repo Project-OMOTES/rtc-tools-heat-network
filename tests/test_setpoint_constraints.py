@@ -20,7 +20,9 @@ class TestSetpointConstraints(TestCase):
         changes allowed of X times over a desired window length.
 
         Checks:
-        - That setpoint does not change over windowlength if 0 is specified
+        - That setpoint does not change over windowlength if 0 is specified.
+        - That setpoint does not change over windowlength if 0 is specified via the
+        ESDLAdditionalVarsMixin.
         - That setpoint indeed changes once if 1 is specified.
 
         """
@@ -50,6 +52,32 @@ class TestSetpointConstraints(TestCase):
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
+
+        # Here we check whehter the ESDLAdditionalVarsMixin is working as intended when
+        # a constraint for the setpoints is specified
+        import models.unit_cases.case_3a_setpoint.src.run_3a as run_3a
+        from models.unit_cases.case_3a_setpoint.src.run_3a import HeatProblem
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+
+        sol_esdl_setpoints = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results_4 = _heat_problem_4.extract_results()
+
+        esdl_results = sol_esdl_setpoints.extract_results()
+        np.testing.assert_array_less(
+            abs(
+                esdl_results["GeothermalSource_b702.Heat_source"][2:]
+                - esdl_results["GeothermalSource_b702.Heat_source"][1:-1]
+            ),
+            1.0e-6,
+        )
 
         # Check that solution has one setpoint change
         a = abs(

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TimeSeries xmlns="http://www.wldelft.nl/fews/PI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_timeseries.xsd" version="1.8">
+    <timeZone>0.0</timeZone>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <!-- HeatingDemand_2ab9 -->
+            <locationId>a3b88fb6-b4a7-4986-8233-32ca05a5df9f</locationId>
+            <parameterId>18b90d93-5005-45d0-b558-ece8994d39ae</parameterId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2013-05-19" time="22:00:00"/>
+            <endDate date="2013-05-21" time="18:00:00"/>
+            <missVal>-999.0</missVal>
+            <units>W</units>
+        </header>
+        <event date="2013-05-19" time="22:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="00:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="01:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="02:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="03:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="04:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="05:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="06:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="07:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="08:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="09:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="10:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="11:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="12:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="13:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="14:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="15:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="16:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="17:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="18:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="19:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="20:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="21:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="22:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="00:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="01:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="02:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="03:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="04:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="05:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="06:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="07:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="08:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="09:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="10:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="11:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="12:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="13:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="14:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="15:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="16:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="17:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="18:00:00" value="350000.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <!-- HeatingDemand_6662 -->
+            <locationId>d1217097-9b71-4af9-8d14-df08d3ed1edb</locationId>
+            <parameterId>f5eb43f1-fb71-4d82-97cc-3fb0eb2c209d</parameterId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2013-05-19" time="22:00:00"/>
+            <endDate date="2013-05-21" time="18:00:00"/>
+            <missVal>-999.0</missVal>
+            <units>W</units>
+        </header>
+        <event date="2013-05-19" time="22:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="00:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="01:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="02:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="03:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="04:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="05:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="06:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="07:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="08:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="09:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="10:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="11:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="12:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="13:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="14:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="15:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="16:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="17:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="18:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="19:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="20:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="21:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="22:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="00:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="01:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="02:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="03:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="04:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="05:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="06:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="07:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="08:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="09:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="10:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="11:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="12:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="13:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="14:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="15:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="16:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="17:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="18:00:00" value="350000.0" flag="0"/>
+    </series>
+    <series>
+        <header>
+            <type>instantaneous</type>
+            <!-- HeatingDemand_506c -->
+            <locationId>208d2055-e5cd-4382-a561-19ddedec4428</locationId>
+            <parameterId>889db852-2751-425f-ab8c-989ff878acf8</parameterId>
+            <timeStep unit="second" multiplier="3600"/>
+            <startDate date="2013-05-19" time="22:00:00"/>
+            <endDate date="2013-05-21" time="18:00:00"/>
+            <missVal>-999.0</missVal>
+            <units>W</units>
+        </header>
+        <event date="2013-05-19" time="22:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-19" time="23:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="00:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="01:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="02:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="03:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="04:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="05:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="06:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="07:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="08:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="09:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="10:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="11:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="12:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="13:00:00" value="250000.0" flag="0"/>
+        <event date="2013-05-20" time="14:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="15:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="16:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="17:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="18:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="19:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="20:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="21:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="22:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-20" time="23:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="00:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="01:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="02:00:00" value="300000.0" flag="0"/>
+        <event date="2013-05-21" time="03:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="04:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="05:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="06:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="07:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="08:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="09:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="10:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="11:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="12:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="13:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="14:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="15:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="16:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="17:00:00" value="350000.0" flag="0"/>
+        <event date="2013-05-21" time="18:00:00" value="350000.0" flag="0"/>
+    </series>
+</TimeSeries>
