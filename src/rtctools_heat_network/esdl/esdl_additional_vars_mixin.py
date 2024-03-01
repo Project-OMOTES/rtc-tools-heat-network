@@ -24,7 +24,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             *self.heat_network_components.get("buffer", []),
             *self.heat_network_components.get("heat_pump", []),
             *self.heat_network_components.get("heat_pump_elec", []),
-            *self.heat_network_components.get("heat_exchanger", []),
         ]:
             esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
             for i in range(len(esdl_asset.attributes["constraint"].items)):
@@ -73,7 +72,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 *self.heat_network_components.get("ates", []),
                 *self.heat_network_components.get("buffer", []),
                 *self.heat_network_components.get("heat_pump", []),
-                *self.heat_network_components.get("heat_pump_elec", []),
                 *self.heat_network_components.get("heat_exchanger", []),
                 *self.heat_network_components.get("demand", []),
             ]:

@@ -31,37 +31,6 @@ class TargetDemandGoal(Goal):
         return optimization_problem.state(self.state)
 
 
-class ConstantGeothermalSource(Goal):
-    priority = 2
-
-    order = 2
-
-    def __init__(self, optimization_problem, source, target, lower_fac=0.9, upper_fac=1.1):
-        self.target_min = lower_fac * target
-        self.target_max = upper_fac * target
-        self.function_range = (0.0, 2.0 * target)
-        self.state = f"{source}.Q"
-        self.function_nominal = optimization_problem.variable_nominal(self.state)
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(self.state)
-
-
-class MinimizeSourcesHeatGoal(Goal):
-    priority = 3
-
-    order = 1
-
-    def __init__(self, source):
-        self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
-        self.source = source
-        self.function_nominal = 1e6
-
-    def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state(f"{self.source}.Heat_source")
-
-
 class MinimizeSourcesFlowGoal(Goal):
     priority = 4
 
@@ -99,13 +68,6 @@ class _GoalsAndOptions:
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
-
-        # for s in self.heat_network_components["source"]:
-        #     try:
-        #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
-        #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
-        #     except KeyError:
-        #         pass
 
         return goals
 

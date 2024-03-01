@@ -14,7 +14,9 @@ class TestSetpointConstraints(TestCase):
         changes allowed of X times over a desired window length.
 
         Checks:
-        - That setpoint does not change over windowlength if 0 is specified
+        - That setpoint does not change over windowlength if 0 is specified.
+        - That setpoint does not change over windowlength if 0 is specified via the
+        ESDLAdditionalVarsMixin.
         - That setpoint indeed changes once if 1 is specified.
 
         """
@@ -37,6 +39,8 @@ class TestSetpointConstraints(TestCase):
         )
         results_4 = _heat_problem_4.extract_results()
 
+        # Here we check whehter the ESDLAdditionalVarsMixin is working as intended when
+        # a constraint for the setpoints is specified
         import models.unit_cases.case_3a_setpoint.src.run_3a as run_3a
         from models.unit_cases.case_3a_setpoint.src.run_3a import HeatProblem
 
