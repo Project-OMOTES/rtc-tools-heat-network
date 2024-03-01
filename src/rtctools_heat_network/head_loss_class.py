@@ -378,38 +378,37 @@ class HeadLossClass:
             self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
             self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
-            # kvr --------------------------------------
-            # Add pipe head loss linear line segment 
-            self._pipe_linear_line_segment_map[pipe_name] = {}
-            self.__pipe_linear_line_segment_var[pipe_name] = {}
-            self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
-            # We need to creat linear line segments for the + and - volumetric flow rate
-            # possibilites
-            discharge_type = ["neg_discharge", "pos_discharge"]
-            line_number = 0
-            for dtype in discharge_type:
-                for ii_line in range(network_settings["n_linearization_lines"] * 2):
-                    if ii_line < network_settings["n_linearization_lines"]:
-                        dtype = discharge_type[0]
-                        line_number = ii_line + 1
-                    else:
-                        dtype = discharge_type[1]
-                        line_number = ii_line + 1 - network_settings["n_linearization_lines"]
+            if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                # Add pipe head loss linear line segment 
+                self._pipe_linear_line_segment_map[pipe_name] = {}
+                self.__pipe_linear_line_segment_var[pipe_name] = {}
+                self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
+                # We need to creat linear line segments for the + and - volumetric flow rate
+                # possibilites
+                discharge_type = ["neg_discharge", "pos_discharge"]
+                line_number = 0
+                for dtype in discharge_type:
+                    for ii_line in range(network_settings["n_linearization_lines"] * 2):
+                        if ii_line < network_settings["n_linearization_lines"]:
+                            dtype = discharge_type[0]
+                            line_number = ii_line + 1
+                        else:
+                            dtype = discharge_type[1]
+                            line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                    pipe_linear_line_segment_var_name = (
-                        f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
-                    )  # start line segment numbering from 1 up to "n_linearization_lines"
+                        pipe_linear_line_segment_var_name = (
+                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                        )  # start line segment numbering from 1 up to "n_linearization_lines"
 
-                    self._pipe_linear_line_segment_map[pipe_name][
-                        ii_line
-                    ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
-                        ca.MX.sym(pipe_linear_line_segment_var_name)
-                    )
-                    self.__pipe_linear_line_segment_var_bounds[pipe_name][
-                        pipe_linear_line_segment_var_name
-                    ] = (0.0, 1.0)
-            # kvr --------------------------------------
+                        self._pipe_linear_line_segment_map[pipe_name][
+                            ii_line
+                        ] = pipe_linear_line_segment_var_name
+                        self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
+                            ca.MX.sym(pipe_linear_line_segment_var_name)
+                        )
+                        self.__pipe_linear_line_segment_var_bounds[pipe_name][
+                            pipe_linear_line_segment_var_name
+                        ] = (0.0, 1.0)
                 
         return (
             (
@@ -452,11 +451,21 @@ class HeadLossClass:
                 if self.__pipe_head_loss_bounds.get(head_loss_var) is not None
                 else self.__pipe_head_loss_bounds
             ),
-            # kvr --------------------------------------
-            (self._pipe_linear_line_segment_map[pipe_name]),
-            (self.__pipe_linear_line_segment_var[pipe_name]),
-            (self.__pipe_linear_line_segment_var_bounds[pipe_name]),
-            # kvr --------------------------------------
+            (
+                self._pipe_linear_line_segment_map[pipe_name]
+                if self._pipe_linear_line_segment_map.get(pipe_name) is not None
+                else self._pipe_linear_line_segment_map
+            ),
+            (
+                self.__pipe_linear_line_segment_var[pipe_name]
+                if self.__pipe_linear_line_segment_var.get(pipe_name) is not None
+                else self.__pipe_linear_line_segment_var
+            ),
+            (
+                self.__pipe_linear_line_segment_var_bounds[pipe_name]
+                if self.__pipe_linear_line_segment_var_bounds.get(pipe_name) is not None
+                else self.__pipe_linear_line_segment_var_bounds
+            ),
         )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
@@ -674,7 +683,7 @@ class HeadLossClass:
             # The function above only gives result in the positive quadrant
             # (positive head loss, positive discharge). We also need a
             # positive head loss for _negative_ discharges.
-            a = np.hstack([-a, a])  # still to fix later
+            a = np.hstack([-a, a])
             b = np.hstack([b, b])
 
             # Vectorize constraint for speed
@@ -703,33 +712,29 @@ class HeadLossClass:
                 else:
                     big_m_lin = big_m
                     constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
-
-                # temp
-                # big_m_lin = big_m_lin*10**2
                 
                 # add ons for multiple lines equality constraints -------------------
-                # pipe_linear_line_segment: will containt variables of negative and positive
-                # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
-                # linear lines then pipe_linear_line_segment will have 2 * 2 variables
-                # Order of linear line variables:
-                #  negative discharge line_1, line_2 ..._line_N 
-                #   positve discharge line_1, line_2 ..._line_N 
-                pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
-                is_line_segment_active = []
-                
-
-                for ii_line, ii_line_var in pipe_linear_line_segment.items():
-                    # Create integer variable to activated/deactivate (1/0) a linear line segment
-                    is_line_segment_active_var = optimization_problem.extra_variable(ii_line_var)
-
-                    # Linear line segment activation variable for each time step of demand profile
-                    is_line_segment_active.append(
-                        ca.repmat(is_line_segment_active_var, n_timesteps)
-                    )
-                # is_line_segment_active = np.hstack([is_line_segment_active, is_line_segment_active])
 
                 constraints = []
                 if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # pipe_linear_line_segment: will containt variables of negative and positive
+                    # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
+                    # linear lines then pipe_linear_line_segment will have 2 * 2 variables
+                    # Order of linear line variables:
+                    #  - negative discharge line_1, line_2 ..._line_N
+                    #  - positve discharge line_1, line_2 ..._line_N
+                    pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+                    is_line_segment_active = []
+
+                    for ii_line, ii_line_var in pipe_linear_line_segment.items():
+                        # Create integer variable to activated/deactivate (1/0) a linear line segment
+                        is_line_segment_active_var = optimization_problem.extra_variable(ii_line_var)
+
+                        # Linear line segment activation variable for each time step of demand profile
+                        is_line_segment_active.append(
+                            ca.repmat(is_line_segment_active_var, n_timesteps)
+                        )
+
                     # Calculate constraint to enforce that only 1 linear line segment can be active
                     # per time step for the current pipe
                     for itstep in range(n_timesteps):
@@ -758,6 +763,8 @@ class HeadLossClass:
                         np.inf,
                     ),
                 )
+                # big_m_lin = big_m_lin * 2000000.0  # kvr ???? added this
+                # big_m_lin = big_m_lin * 20000 # This was needed to get the 1 pipe gas network working when I specify maximum pipe press
                 if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                     # Add equality constraint, value == 0.0 for all linear lines
                     # Loop twice due linear lines exsiting for positive and negative discharge
@@ -802,68 +809,15 @@ class HeadLossClass:
                                     -np.inf,
                                     0.0,
                                 ),
-                            )                           
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #             head_loss_vec[0:45]  
-                        #             - (a_vec[0:45] * discharge_vec[0:45] + b_vec[0:45])
-                        #             + is_disconnected_vec[0:45] * big_m_lin * (1 - is_line_segment_active[0][0:45])
-                        #         )
-                        #         / constraint_nominal[0:45],
-                        #         0.0,
-                        #         np.inf,
-                        #     ),
-                        # )
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #             head_loss_vec[45:90]
-                        #             - (a_vec[45:90] * discharge_vec[45:90] + b_vec[45:90])
-                        #             + is_disconnected_vec[45:90] * big_m_lin * (1 - is_line_segment_active[1][0:45])
-                        #         )
-                        #         / constraint_nominal[45:90],
-                        #         0.0,
-                        #         np.inf,
-                        #     ),
-                        # )
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #             head_loss_vec[90:135]
-                        #             - (a_vec[90:135] * discharge_vec[90:135] + b_vec[90:135])
-                        #             + is_disconnected_vec[90:135] * big_m_lin * (1 - is_line_segment_active[0][0:45])
-                        #         )
-                        #         / constraint_nominal[90:135],
-                        #         0.0,
-                        #         np.inf,
-                        #     ),
-                        # )
-                        # constraints.append(
-                        #     (
-                        #         (
-                        #             head_loss_vec[135:180]
-                        #             - (a_vec[135:180] * discharge_vec[135:180] + b_vec[135:180])
-                        #             + is_disconnected_vec[135:180] * big_m_lin * (1 - is_line_segment_active[1][0:45])
-                        #         )
-                        #         / constraint_nominal[135:180],
-                        #         0.0,
-                        #         np.inf,
-                        #     ),
-                        # )
+                            )
                 return constraints
             else:
                 ret = np.amax(a * np.tile(discharge, (len(a), 1)).transpose() + b, axis=1)
                 if isinstance(discharge, float):
                     ret = ret[0]
                 return ret
-        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
             return []
 
-
-
-
-        
 
     def _hydraulic_power(
         self,

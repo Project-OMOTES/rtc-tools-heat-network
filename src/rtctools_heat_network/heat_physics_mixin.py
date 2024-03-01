@@ -165,7 +165,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
         self.__pipe_linear_line_segment_var_bounds = {}
         self._pipe_linear_line_segment_map = {}
-        self.__pipe_linear_line_segment_result = {}
 
         # Variable of selected network temperature
         self.__temperature_regime_var = {}
@@ -254,31 +253,22 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if initialized_vars[7] != {}:
                 self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
 
-            # kvr ---------------------------------
-            # if initialized_vars[8] != {}:
-            #     self._pipe_linear_line_segment_map[pipe_name] = initialized_vars[8]
-            # if initialized_vars[9] != {}:
-            #     self.__pipe_linear_line_segment_var[pipe_name] = initialized_vars[9]
-            # if initialized_vars[10] != {}:
-            #     self.__pipe_linear_line_segment_var_bounds[pipe_name] = initialized_vars[10]
-
-            self._pipe_linear_line_segment_map[pipe_name] = {}
-            for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
-                pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                # = (
-                #     f"{pipe_name}__pipe_linear_line_segment_number_{ii_line + 1}"
-                # )  # start line segment numbering from 1 up to "n_linearization_lines"
-                self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
-                    pipe_linear_line_segment_var_name
-                )
-                self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                    initialized_vars[9][pipe_linear_line_segment_var_name]
-                )
-                self.__pipe_linear_line_segment_var_bounds[
-                    pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
-             
-
-
+            if (
+                initialized_vars[8] != {}
+                and initialized_vars[9] != {}
+                and initialized_vars[10] != {}
+            ):
+                self._pipe_linear_line_segment_map[pipe_name] = {}
+                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
+                        pipe_linear_line_segment_var_name
+                    )
+                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    )
+                    self.__pipe_linear_line_segment_var_bounds[
+                        pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
 
             neighbour = self.has_related_pipe(pipe_name)
@@ -526,26 +516,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         optimized demand insulation class is available (yet), a `KeyError` is returned.
         """
         return self.__demand_insulation_class_result[demand_insulation]
-
-    def pipe_linear_line_segment(self, pipe_linear_line: str) -> List[int]:
-        """
-        If the returned List is:
-        - empty: use the demand insulation properties from the model
-        - len() == 1: use these demand insulation properties to overrule that of the model
-        - len() > 1: decide between the demand insulation class options.
-
-        """
-        return []
-
-    def get_optimized_pipe_linear_line_segment(self, pipe_linear_line: str) -> int:
-        """
-        Return the optimized demand_insulation class for a specific pipe. If no
-        optimized demand insulation class is available (yet), a `KeyError` is returned.
-        """
-        return self.__pipe_linear_line_segment_result[pipe_linear_line]
-    
-
-
 
     @property
     def extra_variables(self):

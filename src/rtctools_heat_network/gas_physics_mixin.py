@@ -121,6 +121,11 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # self.__gas_pipe_disconnect_var_bounds = {}
         # self._gas_pipe_disconnect_map = {}
 
+        # Boolean variables for the linear line segment options per pipe.
+        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__pipe_linear_line_segment_var_bounds = {}
+        self._pipe_linear_line_segment_map = {}
+
         super().__init__(*args, **kwargs)
 
         self._gas_pipe_topo_pipe_class_map = {}
@@ -176,6 +181,23 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self.__gas_pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
             if initialized_vars[7] != {}:
                 self.__gas_pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+
+            if (
+                initialized_vars[8] != {}
+                and initialized_vars[9] != {}
+                and initialized_vars[10] != {}
+            ):
+                self._pipe_linear_line_segment_map[pipe_name] = {}
+                for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
+                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
+                        pipe_linear_line_segment_var_name
+                    )
+                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    )
+                    self.__pipe_linear_line_segment_var_bounds[
+                        pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
             flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
@@ -241,6 +263,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         variables.extend(self.__gas_pipe_head_loss_var.values())
         variables.extend(self.__gas_flow_direct_var.values())
         # variables.extend(self.__gas_pipe_disconnect_var.values())
+        variables.extend(self.__pipe_linear_line_segment_var.values())
 
         return variables
 
@@ -249,7 +272,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         All variables that only can take integer values should be added to this function.
         """
         # if (variable in self.__gas_flow_direct_var or variable in self.__gas_pipe_disconnect_var):
-        if variable in self.__gas_flow_direct_var:
+        if (
+            variable in self.__gas_flow_direct_var
+            or variable in self.__pipe_linear_line_segment_var
+        ):
             return True
         else:
             return super().variable_is_discrete(variable)
@@ -275,6 +301,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # bounds.update(self.__gas_pipe_disconnect_var_bounds)
         bounds.update(self.__gas_pipe_head_loss_bounds)
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
+        bounds.update(self.__pipe_linear_line_segment_var_bounds)
 
         for k, v in self.__gas_pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
