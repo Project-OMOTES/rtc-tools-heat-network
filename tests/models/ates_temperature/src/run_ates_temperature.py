@@ -14,6 +14,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
@@ -342,11 +344,23 @@ if __name__ == "__main__":
 
     t0 = time.time()
 
-    sol = run_optimization_problem(HeatProblem)
-    sol._write_updated_esdl()
+    sol = run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="HP_ATES with return network.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test_3.csv",
+    )
+    # sol._write_updated_esdl()
     results = sol.extract_results()
     print("T_ates: ", results["ATES_cb47.Temperature_ates"])
     print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
-    print("T_ates: ", results["ATES_cb47__temperature_disc_40.0"])
+    print("T_ates_40: ", results["ATES_cb47__temperature_disc_40.0"])
+    print("T_ates_45: ", results["ATES_cb47__temperature_disc_45.0"])
+    print("T_ates_50: ", results["ATES_cb47__temperature_disc_50.0"])
+    print("T_ates_55: ", results["ATES_cb47__temperature_disc_55.0"])
+    print("T_ates_60: ", results["ATES_cb47__temperature_disc_60.0"])
+    print("T_ates_65: ", results["ATES_cb47__temperature_disc_65.0"])
+    print("T_ates_70: ", results["ATES_cb47__temperature_disc_70.0"])
     print(f"time: {time.time() - t0}")
     a = 1
