@@ -1791,8 +1791,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 if len(supply_temperatures) > 0:
                     constraints.append((variable_sum, 1.0, 1.0))
 
-                # Equality constraint if discharging using big_m;
-                # discr_temp_carrier == discr_temp_ates
+                # equality constraint during charging to ensure charging at highest temperature
                 big_m = 2.0 * max(supply_temperatures)
                 sup_temperature_disc = self.state(f"{sup_carrier}_temperature")
 
@@ -1819,6 +1818,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
+                # Equality constraint if discharging using big_m;
+                # discr_temp_carrier == discr_temp_ates
                 constraints.append(
                     (
                         ates_temperature_disc - sup_temperature_disc + is_buffer_charging * big_m,
