@@ -10,6 +10,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
@@ -109,14 +111,13 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
+        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
 
 
 class HeatProblemTvar(HeatProblem):
-
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
@@ -137,5 +138,11 @@ class HeatProblemTvar(HeatProblem):
 
 
 if __name__ == "__main__":
-    solution = run_optimization_problem(HeatProblemTvar)
+    solution = run_optimization_problem(
+        HeatProblemTvar,
+        esdl_file_name="heat_pump.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     results = solution.extract_results()

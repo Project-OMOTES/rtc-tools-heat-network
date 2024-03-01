@@ -19,7 +19,7 @@
         <port xsi:type="esdl:InPort" connectedTo="3c0edd70-8a95-4ca0-a363-9e455bedcdda" id="540de366-8c1e-481d-8cfe-fdc1c881860b" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="In">
         </port>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_4abc" id="4abcb49f-2dac-4e00-9c93-9dbab4510a31" length="1986.4">
+      <asset xsi:type="esdl:Pipe" name="Pipe_4abc" id="4abcb49f-2dac-4e00-9c93-9dbab4510a31" length="1986.4" outerDiameter="0.45" diameter="DN300">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
           <point xsi:type="esdl:Point" lon="4.437446594238282" lat="52.0862573323384"/>
           <point xsi:type="esdl:Point" lon="4.46645736694336" lat="52.087417614082575"/>

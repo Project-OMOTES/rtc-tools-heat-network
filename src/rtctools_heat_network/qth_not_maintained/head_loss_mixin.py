@@ -312,8 +312,6 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         options["maximum_velocity"] = 2.5
         options["n_linearization_lines"] = 5
         options["minimize_head_losses"] = True
-        options["pipe_minimum_pressure"] = -np.inf
-        options["pipe_maximum_pressure"] = np.inf
 
         return options
 

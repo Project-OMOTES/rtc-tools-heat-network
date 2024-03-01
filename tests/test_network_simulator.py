@@ -5,6 +5,8 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import NetworkSimulatorHIGHSTestCase
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
@@ -28,7 +30,15 @@ class TestNetworkSimulator(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(NetworkSimulatorHIGHSTestCase, base_folder=base_folder)
+        solution = run_optimization_problem(
+            NetworkSimulatorHIGHSTestCase,
+            base_folder=base_folder,
+            # TODO: it seems to write an output file (NOT NICE!)
+            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
 
         results = solution.extract_results()
 

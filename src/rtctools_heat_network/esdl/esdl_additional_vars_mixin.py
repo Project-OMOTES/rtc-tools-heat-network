@@ -12,7 +12,6 @@ logger = logging.getLogger("rtctools_heat_network")
 
 
 class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
-
     __temperature_options = {}
 
     def read(self):
@@ -59,7 +58,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         return options
 
     def temperature_regimes(self, carrier):
-
         temperature_options = []
         temperature_step = 2.5
 

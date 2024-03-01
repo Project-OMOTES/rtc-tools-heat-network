@@ -3,10 +3,16 @@ from unittest import TestCase
 
 import numpy as np
 
+import pytest
+
 from rtctools.util import run_optimization_problem
+
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestSetpointConstraints(TestCase):
+    @pytest.mark.first
     def test_setpoint_constraints(self):
         """
         his function checks the working of the setpoint constraints for a few cases to ensure the
@@ -28,6 +34,10 @@ class TestSetpointConstraints(TestCase):
         _heat_problem_3 = run_optimization_problem(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 1)}},
         )
         results_3 = _heat_problem_3.extract_results()
@@ -35,6 +45,10 @@ class TestSetpointConstraints(TestCase):
         _heat_problem_4 = run_optimization_problem(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
             **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}},
         )
         results_4 = _heat_problem_4.extract_results()
@@ -73,6 +87,7 @@ class TestSetpointConstraints(TestCase):
             1.0e-6,
         )
 
+    @pytest.mark.second
     def test_run_small_ates_timed_setpoints_2_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
@@ -94,6 +109,10 @@ class TestSetpointConstraints(TestCase):
         solution = run_optimization_problem(
             HeatProblemSetPoints,
             base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 2)}},
         )
         results = solution.extract_results()
@@ -104,6 +123,7 @@ class TestSetpointConstraints(TestCase):
         # than 2 switches
         np.testing.assert_array_less((check >= 1.0).sum(), 3.0)
 
+    @pytest.mark.third
     def test_run_small_ates_timed_setpoints_0_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
@@ -125,6 +145,10 @@ class TestSetpointConstraints(TestCase):
         solution = run_optimization_problem(
             HeatProblemSetPoints,
             base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
             **{"timed_setpoints": {"HeatProducer_1": (24 * 365, 0)}},  # not change at all - works
         )
         results = solution.extract_results()
@@ -133,6 +157,7 @@ class TestSetpointConstraints(TestCase):
         )
         np.testing.assert_array_less(check, 1.0e-6)
 
+    @pytest.mark.fourth
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
@@ -156,6 +181,10 @@ class TestSetpointConstraints(TestCase):
             solution = run_optimization_problem(
                 HeatProblemSetPoints,
                 base_folder=base_folder,
+                esdl_file_name="test_case_small_network_with_ates.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="Warmte_test.csv",
                 **{"timed_setpoints": {"HeatProducer_1": (ihrs, 1)}},
             )
             results = solution.extract_results()

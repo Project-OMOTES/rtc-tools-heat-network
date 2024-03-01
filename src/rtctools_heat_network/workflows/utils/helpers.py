@@ -7,10 +7,7 @@ from pathlib import Path
 
 import esdl
 
-from rtctools.data import pi
-
 from rtctools_heat_network import __version__
-from rtctools_heat_network.esdl.esdl_mixin import _RunInfoReader
 
 
 MULTI_ENUM_NAME_TO_FACTOR = {
@@ -66,7 +63,6 @@ def main_decorator(func):
 
         if func.__module__ == "__main__":
             parser = argparse.ArgumentParser(description="Run ESDL model")
-            parser.add_argument("runinfo_path", type=Path, help="Path to RunInfo.xml file.")
             parser.add_argument(
                 "-l",
                 "--log",
@@ -102,17 +98,6 @@ def main_decorator(func):
             level=log_level,
             handlers=[logging.StreamHandler()],
         )
-
-        # Add PI-XML logger if it doesn't already exist
-        run_info = _RunInfoReader(runinfo_path)
-        root_logger = logging.getLogger("")
-        if run_info.output_diagnostic_file:
-            if not any((isinstance(h, pi.DiagHandler) for h in root_logger.handlers)):
-                basename = run_info.output_diagnostic_file.stem
-                folder = run_info.output_diagnostic_file.parent
-
-                handler = pi.DiagHandler(folder, basename)
-                root_logger.addHandler(handler)
 
         logger.info(f"Using WarmingUP-MPC {__version__}.")
 

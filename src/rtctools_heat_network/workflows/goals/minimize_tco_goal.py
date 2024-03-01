@@ -20,6 +20,7 @@ class MinimizeTCO(Goal):
         for asset in [
             *optimization_problem.heat_network_components.get("source", []),
             *optimization_problem.heat_network_components.get("ates", []),
+            *optimization_problem.heat_network_components.get("heat_pump", []),
         ]:
             obj += (
                 optimization_problem.extra_variable(
@@ -32,6 +33,8 @@ class MinimizeTCO(Goal):
             *optimization_problem.heat_network_components.get("source", []),
             *optimization_problem.heat_network_components.get("ates", []),
             *optimization_problem.heat_network_components.get("buffer", []),
+            *optimization_problem.heat_network_components.get("heat_pump", []),
+            *optimization_problem.heat_network_components.get("heat_exchanger", []),
         ]:
             obj += (
                 optimization_problem.extra_variable(

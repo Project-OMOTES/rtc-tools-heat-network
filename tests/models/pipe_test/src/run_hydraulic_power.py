@@ -92,10 +92,10 @@ class HeatProblem(
     def heat_network_options(self):
         global head_loss_setting, n_linearization_lines_setting
         options = super().heat_network_options()
-        options["head_loss_option"] = head_loss_setting
+        self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_DW:
-            options["n_linearization_lines"] = n_linearization_lines_setting
-        options["minimize_head_losses"] = True
+            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+        self.heat_network_settings["minimize_head_losses"] = True
 
         return options
 

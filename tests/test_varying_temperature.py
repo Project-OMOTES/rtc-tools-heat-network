@@ -6,6 +6,8 @@ import numpy as np
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -31,7 +33,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvar,
+            base_folder=base_folder,
+            esdl_file_name="1a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         # This optimization problem is to see whether the correct minimum delta temperaute is
         # chose by the optimization, minimum of 21 deg is needed, only the 85/60 option is
@@ -88,7 +97,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvarsup, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvarsup,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -153,7 +169,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvarret, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvarret,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -210,7 +233,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvar,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -269,7 +299,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvarDisableHEX, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvarDisableHEX,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
         # FIXME: apparantly there is a conflict in the constraints for the is_disabled_hex
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -304,7 +341,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvarSecondary, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvarSecondary,
+            base_folder=base_folder,
+            esdl_file_name="heat_exchanger.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -335,7 +379,14 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(HeatProblemTvar, base_folder=base_folder)
+        heat_problem = run_optimization_problem(
+            HeatProblemTvar,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
 
         results = heat_problem.extract_results()
         parameters = heat_problem.parameters(0)
@@ -390,3 +441,18 @@ class TestVaryingTemperature(TestCase):
     #     # # Check that the lowest return temperature is selected
     #     # np.testing.assert_allclose(
     #     results[f"{761602374459208051248000}__return_temperature"], 30.0)
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestVaryingTemperature()
+    a.test_1a_temperature_variation()
+    a.test_3a_temperature_variation_supply()
+    a.test_3a_temperature_variation_return()
+    a.test_hex_temperature_variation()
+    a.test_hex_temperature_variation_disablehex()
+    a.test_hex_temperature_variation_secondary()
+    a.test_heat_pump_varying_temperature()
+    print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
