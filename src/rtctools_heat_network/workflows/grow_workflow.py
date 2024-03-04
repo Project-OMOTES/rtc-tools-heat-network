@@ -110,18 +110,9 @@ class SolverGurobi:
 
         return options
 
-# class EndScenarioSizingGeneral(
-#     ScenarioOutput,
-#     TechnoEconomicMixin,
-#     LinearizedOrderGoalProgrammingMixin,
-#     SinglePassGoalProgrammingMixin,
-#     ESDLMixin,
-#     CollocatedIntegratedOptimizationProblem,
-# ):
-
 
 class EndScenarioSizing(
-    SolverGurobi,
+    SolverHIGHS,
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -161,7 +152,7 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-    def _get_runinfo_path_root(self):
+    def _get_runinfo_path_root(self): #degredated
         runinfo_path = Path(self.esdl_run_info_path).resolve()
         tree = ET.parse(runinfo_path)
         return tree.getroot()
@@ -231,7 +222,6 @@ class EndScenarioSizing(
         self.heat_network_settings["minimum_velocity"] = 0.001
         self.heat_network_settings["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
-        # options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = True
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
@@ -378,6 +368,12 @@ class EndScenarioSizing(
             self._write_json_output()
 
 
+class EndScenarioSizingHIGHS(EndScenarioSizing):
+    pass
+
+class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
+    pass
+
 class EndScenarioSizingDiscounted(
     EndScenarioSizing
 ):
@@ -395,19 +391,18 @@ class EndScenarioSizingDiscounted(
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
 
-        options["neglect_pipe_heat_losses"] = True
+        # options["neglect_pipe_heat_losses"] = True # set to true in staged approach
         options["discounted_annualized_cost"] = True
 
         return options
 
-class EndScenarioSizingDiscountedHIGHS(SolverHIGHS, EndScenarioSizingDiscounted):
+class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
     pass
 
-
-class EndScenarioSizingHIGHS(SolverHIGHS, EndScenarioSizing):
+class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounted):
     pass
 
-class EndScenarioSizingStagedSettings:
+class SettingsStaged:
     _stage = 0
 
     def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
@@ -433,12 +428,27 @@ class EndScenarioSizingStagedSettings:
         return bounds
 
 
-class EndScenarioSizingStaged(EndScenarioSizingStagedSettings, EndScenarioSizing):
+class EndScenarioSizingStaged(SettingsStaged, EndScenarioSizing):
     pass
 
-class EndScenarioSizingStagedHIGHS(SolverHIGHS, EndScenarioSizingStaged):
+class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     pass
 
+class EndScenarioSizingStagedGurobi(SolverGurobi, EndScenarioSizingStaged):
+    pass
+
+class EndScenarioSizingDiscountedStaged(SettingsStaged, EndScenarioSizingDiscounted):
+    pass
+
+class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
+    pass
+
+class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
+    pass
+
+#TODO: HIGHS should become standard solver and gurobi only to be used when called specifically
+# currently the classes in HIGHS are maintained such that the same 'old' function calling can be
+# used for the code running in NWN.
 
 def run_end_scenario_sizing_no_heat_losses(
     end_scenario_problem_class,

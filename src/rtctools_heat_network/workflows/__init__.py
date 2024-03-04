@@ -4,6 +4,8 @@ from .grow_workflow import (
     EndScenarioSizingHIGHS,
     EndScenarioSizingStaged,
     EndScenarioSizingStagedHIGHS,
+    SolverGurobi,
+    SolverHIGHS,
     run_end_scenario_sizing,
     run_end_scenario_sizing_no_heat_losses,
 )
@@ -21,6 +23,8 @@ __all__ = [
     "EndScenarioSizingHIGHS",
     "EndScenarioSizingStaged",
     "EndScenarioSizingStagedHIGHS",
+    "SolverGurobi",
+    "SolverHIGHS",
     "run_end_scenario_sizing",
     "run_end_scenario_sizing_no_heat_losses",
     "NetworkSimulator",
