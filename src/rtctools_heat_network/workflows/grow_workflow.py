@@ -73,6 +73,32 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
+class SolverGurobi:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+
+        return options
+
 # class EndScenarioSizingGeneral(
 #     ScenarioOutput,
 #     TechnoEconomicMixin,
@@ -412,44 +438,20 @@ class EndScenarioSizingDiscounted(
             json.dump(results_dict, fp=file)
 
 
-class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.02
+class EndScenarioSizingDiscountedHIGHS(SolverHIGHS, EndScenarioSizingDiscounted):
+    pass
+    # def solver_options(self):
+    #     options = super().solver_options()
+    #     options["casadi_solver"] = self._qpsol
+    #     options["solver"] = "highs"
+    #     highs_options = options["highs"] = {}
+    #     highs_options["mip_rel_gap"] = 0.02
+    #
+    #     options["gurobi"] = None
+    #
+    #     return options
 
-        options["gurobi"] = None
 
-        return options
-
-
-class SolverHIGHS:
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.02
-
-        options["gurobi"] = None
-
-        return options
-
-class SolverGurobi:
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "gurobi"
-        gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
-        gurobi_options["threads"] = 4
-        gurobi_options["LPWarmStart"] = 2
-
-        options["highs"] = None
-
-        return options
 
 class EndScenarioSizing(
     SolverGurobi,
@@ -703,70 +705,71 @@ class EndScenarioSizing(
             if delta_energy >= 1.0:
                 logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
 
-        if self.esdl_run_info_path is None:
-            logger.warning(
-                "Not writing results since no esdl path to write the files to is specified"
-            )
-            return
-
-        root = self._get_runinfo_path_root()
-        parameters_dict = dict()
-        workdir = root.findtext("pi:outputResultsFile", namespaces=ns)
-        if workdir is None:
-            logger.error("No workdir specified, skipping writing results")
-            return
-
-        parameter_path = os.path.join(workdir, "parameters.json")
-        for key, value in parameters.items():
-            new_value = value  # [x for x in value]
-            parameters_dict[key] = new_value
-        if parameter_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            parameter_path = os.path.join(workdir, "parameters.json")
-            if not Path(workdir).is_absolute():
-                parameter_path = Path(workdir).resolve().parent
-                parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
-        with open(parameter_path, "w") as file:
-            json.dump(parameters_dict, fp=file)
-
+        self._write_json_output()
+        # if self.esdl_run_info_path is None:
+        #     logger.warning(
+        #         "Not writing results since no esdl path to write the files to is specified"
+        #     )
+        #     return
+        #
         # root = self._get_runinfo_path_root()
-        # bounds_dict = dict()
-        # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        # bounds_path = os.path.join(workdir, "bounds.json")
-        # for key, value in bounds.items():
-        #     if "Stored_heat" not in key:
-        #         new_value = value  # [x for x in value]
-        #         # if len(new_value) == 1:
-        #         #     new_value = new_value[0]
-        #         bounds_dict[key] = new_value
-        # if bounds_path is None:
+        # parameters_dict = dict()
+        # workdir = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # if workdir is None:
+        #     logger.error("No workdir specified, skipping writing results")
+        #     return
+        #
+        # parameter_path = os.path.join(workdir, "parameters.json")
+        # for key, value in parameters.items():
+        #     new_value = value  # [x for x in value]
+        #     parameters_dict[key] = new_value
+        # if parameter_path is None:
         #     workdir = root.findtext("pi:workDir", namespaces=ns)
-        #     bounds_path = os.path.join(workdir, "bounds.json")
+        #     parameter_path = os.path.join(workdir, "parameters.json")
         #     if not Path(workdir).is_absolute():
-        #         bounds_path = Path(workdir).resolve().parent
-        #         bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-        # with open(bounds_path, "w") as file:
-        #     json.dump(bounds_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        results_dict = dict()
-
-        for key, values in results.items():
-            new_value = values.tolist()
-            if len(new_value) == 1:
-                new_value = new_value[0]
-            results_dict[key] = new_value
-
-        results_path = os.path.join(workdir, "results.json")
-        if results_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            results_path = os.path.join(workdir, "results.json")
-            if not Path(workdir).is_absolute():
-                results_path = Path(workdir).resolve().parent
-                results_path = os.path.join(results_path.__str__() + "results.json")
-        with open(results_path, "w") as file:
-            json.dump(results_dict, fp=file)
+        #         parameter_path = Path(workdir).resolve().parent
+        #         parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
+        # with open(parameter_path, "w") as file:
+        #     json.dump(parameters_dict, fp=file)
+        #
+        # # root = self._get_runinfo_path_root()
+        # # bounds_dict = dict()
+        # # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # # bounds_path = os.path.join(workdir, "bounds.json")
+        # # for key, value in bounds.items():
+        # #     if "Stored_heat" not in key:
+        # #         new_value = value  # [x for x in value]
+        # #         # if len(new_value) == 1:
+        # #         #     new_value = new_value[0]
+        # #         bounds_dict[key] = new_value
+        # # if bounds_path is None:
+        # #     workdir = root.findtext("pi:workDir", namespaces=ns)
+        # #     bounds_path = os.path.join(workdir, "bounds.json")
+        # #     if not Path(workdir).is_absolute():
+        # #         bounds_path = Path(workdir).resolve().parent
+        # #         bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
+        # # with open(bounds_path, "w") as file:
+        # #     json.dump(bounds_dict, fp=file)
+        #
+        # root = self._get_runinfo_path_root()
+        # results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
+        # results_dict = dict()
+        #
+        # for key, values in results.items():
+        #     new_value = values.tolist()
+        #     if len(new_value) == 1:
+        #         new_value = new_value[0]
+        #     results_dict[key] = new_value
+        #
+        # results_path = os.path.join(workdir, "results.json")
+        # if results_path is None:
+        #     workdir = root.findtext("pi:workDir", namespaces=ns)
+        #     results_path = os.path.join(workdir, "results.json")
+        #     if not Path(workdir).is_absolute():
+        #         results_path = Path(workdir).resolve().parent
+        #         results_path = os.path.join(results_path.__str__() + "results.json")
+        # with open(results_path, "w") as file:
+        #     json.dump(results_dict, fp=file)
 
 
 
