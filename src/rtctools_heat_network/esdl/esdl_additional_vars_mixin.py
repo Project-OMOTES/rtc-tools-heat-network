@@ -6,6 +6,8 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
+from rtctools_heat_network.network_common import NetworkSettings
+
 
 class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
     __temperature_options = {}
@@ -20,10 +22,10 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         return options
 
     def temperature_carriers(self):
-        return self.esdl_carriers_typed(type="heat")
+        return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_HEAT).lower())
 
     def electricity_carriers(self):
-        return self.esdl_carriers_typed(type="electricity")
+        return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_ELECTRICITY).lower())
 
     def temperature_regimes(self, carrier):
         temperature_options = []
