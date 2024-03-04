@@ -90,7 +90,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return dict(rho=self.rho, cp=self.cp)
 
     def get_density(self, asset_name, carrier):
-        #TODO: gas carrier temperature still needs to be resolved.
+        # TODO: gas carrier temperature still needs to be resolved.
         # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
         # is also updated in the head_loss_class.
         temperature = 20.0
@@ -106,7 +106,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
         elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
             density = cP.CoolProp.PropsSI(
-                "D", "T", 273.15 + temperature, "P", carrier.pressure, str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper()
+                "D",
+                "T",
+                273.15 + temperature,
+                "P",
+                carrier.pressure,
+                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
             )
         else:
             logger.warning(
