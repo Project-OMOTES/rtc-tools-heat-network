@@ -31,6 +31,7 @@ class TestHeadLoss(TestCase):
         approximated with 5 linear lines)
         - That for the dH value approximated by the code is conservative, in other word greater
         than the theoretical value
+        - That the pump power is conservative
         """
         import models.source_pipe_sink.src.double_pipe_heat as example
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
@@ -110,7 +111,7 @@ class TestHeadLoss(TestCase):
         )
 
         # The pump power should be overestimated compared to the actual head loss due to the fact
-        # that we are linearizing a thrird order equation for hydraulic power instead of the second
+        # that we are linearizing a third order equation for hydraulic power instead of the second
         # order for head loss.
         np.testing.assert_array_less(pump_power_post_process, pump_power)
 
