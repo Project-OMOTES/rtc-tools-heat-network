@@ -2602,7 +2602,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
-    def __storage_hydrualic_power_path_constraints(self, ensemble_member):
+    def __storage_hydraulic_power_path_constraints(self, ensemble_member):
+        """
+        This function adds the constraints to for the headloss and the hydraulic power required to
+        overcome the headloss for every storage if a headloss option is selected.
+        The storages have a minimum headloss #TODO: finish this docstring
+        """
         constraints = []
 
         parameters = self.parameters(ensemble_member)
@@ -2709,7 +2714,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__network_temperature_path_constraints(ensemble_member))
         constraints.extend(self.__heat_pump_cop_constraints(ensemble_member))
-        constraints.extend(self.__storage_hydrualic_power_path_constraints(ensemble_member))
+        constraints.extend(self.__storage_hydraulic_power_path_constraints(ensemble_member))
 
         return constraints
 

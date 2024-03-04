@@ -472,7 +472,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
     def get_gas_pipe_class_map(self):
         """
         This function should return the mapping between the gas pipe and all the possible pipe
-        classes  available for that pipe.
+        classes available for that pipe.
 
         Returns
         -------

@@ -12,7 +12,13 @@ from .network_common import NetworkSettings
 
 def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_HEAT, pressure=0.0):
     """
-    The kinematic viscosity barely changes with pressure for water.
+    The kinematic viscosity is determined as a function of the fluid used.
+    - If the network type is a heat network, the used fluid is water for which the kinematic
+    viscosity barely changes with pressure, thus determined at a fixed pressure (0.5MPa) and a temperature
+    based on the network information.
+    - If the fluid is hydrogen or gas, the kinematic viscosity is calculated using CoolProp for
+    which the pressure [Pa] and temperature [K] are provided as inputs.
+    The gas composition is based on Groninger gas.
     """
     if network_type == NetworkSettings.NETWORK_TYPE_HEAT:
         return IAPWS95(T=273.15 + temperature, P=0.5).nu
@@ -27,8 +33,7 @@ def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_
             273.15 + temperature,
             "P",
             pressure,
-            "methane[0.813]&ethane[0.0285]&propane[0.0037]&butane[0.0014]&n-Pentane[0.0004]"
-            "&n-Hexane[0.0005]&nitrogen[0.1435]&CO2[0.0089]&oxygen[0.0001]",
+            NetworkSettings.NETWORK_COMPOSITION_GAS,
         )
     else:
         raise Exception("Unknown network type for computing dynamic viscosity")
