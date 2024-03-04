@@ -73,6 +73,16 @@ class TargetHeatGoal(Goal):
         return optimization_problem.state(self.state)
 
 
+# class EndScenarioSizingGeneral(
+#     ScenarioOutput,
+#     TechnoEconomicMixin,
+#     LinearizedOrderGoalProgrammingMixin,
+#     SinglePassGoalProgrammingMixin,
+#     ESDLMixin,
+#     CollocatedIntegratedOptimizationProblem,
+# ):
+
+
 class EndScenarioSizingDiscounted(
     ScenarioOutput,
     TechnoEconomicMixin,
@@ -415,7 +425,34 @@ class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
         return options
 
 
+class SolverHIGHS:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+
+        options["gurobi"] = None
+
+        return options
+
+class SolverGurobi:
+    def solver_options(self):
+        options = super().solver_options()
+        options["casadi_solver"] = self._qpsol
+        options["solver"] = "gurobi"
+        gurobi_options = options["gurobi"] = {}
+        gurobi_options["MIPgap"] = 0.02
+        gurobi_options["threads"] = 4
+        gurobi_options["LPWarmStart"] = 2
+
+        options["highs"] = None
+
+        return options
+
 class EndScenarioSizing(
+    SolverGurobi,
     ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -594,17 +631,6 @@ class EndScenarioSizing(
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "gurobi"
-        gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
-        gurobi_options["threads"] = 4
-        gurobi_options["LPWarmStart"] = 2
-
-        return options
-
     def solver_success(self, solver_stats, log_solver_failure_as_error):
         success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
 
@@ -743,42 +769,11 @@ class EndScenarioSizing(
             json.dump(results_dict, fp=file)
 
 
-def connect_database():
-    client = InfluxDBClient(
-        host=DB_HOST, port=DB_PORT, username=DB_USER, password=DB_PASSWORD, database=DB_NAME
-    )
-    if DB_NAME not in client.get_list_database():
-        client.create_database(DB_NAME)
-    return client
 
+class EndScenarioSizingHIGHS(SolverHIGHS, EndScenarioSizing):
+    pass
 
-def format_datetime(dt):
-    date, time = dt.split(" ")
-    day, month, year = date.split("-")
-    ndate = year + "-" + month + "-" + day
-    ntime = time + ":00+0000"
-    return ndate + "T" + ntime
-
-
-class EndScenarioSizingHIGHS(EndScenarioSizing):
-    def post(self):
-        super().post()
-
-        self._write_updated_esdl(self.get_energy_system_copy())
-
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "highs"
-        highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.02
-
-        options["gurobi"] = None
-
-        return options
-
-
-class EndScenarioSizingStaged(EndScenarioSizing):
+class EndScenarioSizingStagedSettings:
     _stage = 0
 
     def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
@@ -817,6 +812,46 @@ class EndScenarioSizingStaged(EndScenarioSizing):
         return bounds
 
 
+class EndScenarioSizingStaged(EndScenarioSizingStagedSettings, EndScenarioSizing):
+    pass
+    # _stage = 0
+    # 
+    # def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #
+    #     self._stage = stage
+    #     self.__boolean_bounds = boolean_bounds
+    #
+    # def heat_network_options(self):
+    #     options = super().heat_network_options()
+    #     if self._stage == 1:
+    #         options["neglect_pipe_heat_losses"] = True
+    #         self.heat_network_settings["minimum_velocity"] = 0.0
+    #
+    #     return options
+    #
+    # def solver_options(self):
+    #     options = super().solver_options()
+    #     options["solver"] = "gurobi"
+    #     gurobi_options = options["gurobi"] = {}
+    #     if self._stage == 1:
+    #         gurobi_options["MIPgap"] = 0.005
+    #     else:
+    #         gurobi_options["MIPgap"] = 0.02
+    #     gurobi_options["threads"] = 4
+    #     gurobi_options["LPWarmStart"] = 2
+    #
+    #     return options
+    #
+    # def bounds(self):
+    #     bounds = super().bounds()
+    #
+    #     if self._stage == 2:
+    #         bounds.update(self.__boolean_bounds)
+    #
+    #     return bounds
+
+
 class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     def solver_options(self):
         options = super().solver_options()
@@ -829,26 +864,6 @@ class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
             highs_options["mip_rel_gap"] = 0.02
 
         options["gurobi"] = None
-
-        return options
-
-
-class EndScenarioSizingCBC(EndScenarioSizing):
-    def post(self):
-        super().post()
-
-        self._write_updated_esdl(self.get_energy_system_copy())
-
-    def solver_options(self):
-        options = super().solver_options()
-        # options["casadi_solver"] = self._qpsol
-        options["solver"] = "cbc"
-        options["gurobi"] = None
-
-        if options["solver"] == "cbc":
-            options["hot_start"] = self._hot_start
-            cbc_options = options["cbc"] = {}
-            cbc_options["seconds"] = 300000.0
 
         return options
 
@@ -987,6 +1002,23 @@ def run_end_scenario_sizing(
 
     return solution
 
+
+
+def connect_database():
+    client = InfluxDBClient(
+        host=DB_HOST, port=DB_PORT, username=DB_USER, password=DB_PASSWORD, database=DB_NAME
+    )
+    if DB_NAME not in client.get_list_database():
+        client.create_database(DB_NAME)
+    return client
+
+
+def format_datetime(dt):
+    date, time = dt.split(" ")
+    day, month, year = date.split("-")
+    ndate = year + "-" + month + "-" + day
+    ntime = time + ":00+0000"
+    return ndate + "T" + ntime
 
 @main_decorator
 def main(runinfo_path, log_level):
