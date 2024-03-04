@@ -159,6 +159,8 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
+        self._save_json = False
+
     def _get_runinfo_path_root(self):
         runinfo_path = Path(self.esdl_run_info_path).resolve()
         tree = ET.parse(runinfo_path)
@@ -372,7 +374,7 @@ class EndScenarioSizing(
             if delta_energy >= 1.0:
                 logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
 
-        if os.path.exists(self.output_folder):
+        if os.path.exists(self.output_folder) and self._save_json:
             self._write_json_output()
 
 
@@ -394,199 +396,9 @@ class EndScenarioSizingDiscounted(
         options = super().heat_network_options()
 
         options["neglect_pipe_heat_losses"] = True
+        options["discounted_annualized_cost"] = True
 
         return options
-
-    def goals(self):
-        goals = super().goals().copy()
-        # We do a minization of TCO consisting of CAPEX and OPEX
-        # CAPEX is based upon the boolean placement variables and the optimized maximum sizes
-        # Note that CAPEX for geothermal and ATES is also dependent on the amount of doublets
-        # In practice this means that the CAPEX is mainly driven by the peak day problem
-        # The OPEX is based on the Source strategy which is computed on the __daily_avg variables
-        # The OPEX thus is based on an avg strategy and discrepancies due to fluctuations intra-day
-        # are possible.
-        # The idea behind the two timelines is that the optimizer can make the OPEX vs CAPEX
-        # trade-offs
-
-        goals.append(MinimizeTCO(priority=2))
-
-        return goals
-
-    def constraints(self, ensemble_member):
-        constraints = super().constraints(ensemble_member)
-
-        for a in self.heat_network_components.get("ates", []):
-            stored_heat = self.state_vector(f"{a}.Stored_heat")
-            constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
-
-        for b in self.heat_network_components.get("buffer", {}):
-            vars = self.state_vector(f"{b}.Heat_buffer")
-            symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
-            constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
-            for i in range(len(self.times())):
-                if i < self.__indx_max_peak or i > (self.__indx_max_peak + 23):
-                    constraints.append((vars[i], 0.0, 0.0))
-
-        return constraints
-
-    def history(self, ensemble_member):
-        return AliasDict(self.alias_relation)
-
-    def __state_vector_scaled(self, variable, ensemble_member):
-        canonical, sign = self.alias_relation.canonical_signed(variable)
-        return (
-            self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
-        )
-
-    def solver_options(self):
-        options = super().solver_options()
-        options["casadi_solver"] = self._qpsol
-        options["solver"] = "gurobi"
-        gurobi_options = options["gurobi"] = {}
-        gurobi_options["MIPgap"] = 0.02
-        gurobi_options["threads"] = 4
-        gurobi_options["LPWarmStart"] = 2
-
-        return options
-
-    def solver_success(self, solver_stats, log_solver_failure_as_error):
-        success, log_level = super().solver_success(solver_stats, log_solver_failure_as_error)
-
-        # Allow time-outs for CPLEX and CBC
-        if (
-            solver_stats["return_status"] == "time limit exceeded"
-            or solver_stats["return_status"] == "stopped - on maxnodes, maxsols, maxtime"
-        ):
-            if self.objective_value > 1e10:
-                # Quick check on the objective value. If no solution was
-                # found, this is typically something like 1E50.
-                return success, log_level
-
-            return True, logging.INFO
-        else:
-            return success, log_level
-
-    def priority_started(self, priority):
-        self.__priority = priority
-        self.__priority_timer = time.time()
-
-        super().priority_started(priority)
-
-    def priority_completed(self, priority):
-        super().priority_completed(priority)
-
-        self._hot_start = True
-
-        time_taken = time.time() - self.__priority_timer
-        self._priorities_output.append(
-            (
-                priority,
-                time_taken,
-                True,
-                self.objective_value,
-                self.solver_stats,
-            )
-        )
-
-    def post(self):
-        # In case the solver fails, we do not get in priority_completed(). We
-        # append this last priority's statistics here in post().
-        # TODO: check if we still need this small part of code below
-        success, _ = self.solver_success(self.solver_stats, False)
-        if not success:
-            time_taken = time.time() - self.__priority_timer
-            self._priorities_output.append(
-                (
-                    self.__priority,
-                    time_taken,
-                    False,
-                    self.objective_value,
-                    self.solver_stats,
-                )
-            )
-
-        super().post()
-        results = self.extract_results()
-        parameters = self.parameters(0)
-        # bounds = self.bounds()
-        # Optimized ESDL
-        self._write_updated_esdl(self.get_energy_system_copy())
-
-        for d in self.heat_network_components.get("demand", []):
-            realized_demand = results[f"{d}.Heat_demand"]
-            target = self.get_timeseries(f"{d}.target_heat_demand").values
-            timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
-            parameters[f"{d}.target_heat_demand"] = target.tolist()
-            delta_energy = np.sum((realized_demand - target)[1:] * timesteps / 1.0e9)
-            if delta_energy >= 1.0:
-                logger.warning(f"For demand {d} the target is not matched by {delta_energy} GJ")
-
-        if self.esdl_run_info_path is None:
-            logger.warning(
-                "Not writing results since no esdl path to write the files to is specified"
-            )
-            return
-
-        root = self._get_runinfo_path_root()
-        parameters_dict = dict()
-        workdir = root.findtext("pi:outputResultsFile", namespaces=ns)
-        if workdir is None:
-            logger.error("No workdir specified, skipping writing results")
-            return
-
-        parameter_path = os.path.join(workdir, "parameters.json")
-        for key, value in parameters.items():
-            new_value = value  # [x for x in value]
-            parameters_dict[key] = new_value
-        if parameter_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            parameter_path = os.path.join(workdir, "parameters.json")
-            if not Path(workdir).is_absolute():
-                parameter_path = Path(workdir).resolve().parent
-                parameter_path = os.path.join(parameter_path.__str__() + "parameters.json")
-        with open(parameter_path, "w") as file:
-            json.dump(parameters_dict, fp=file)
-
-        # root = self._get_runinfo_path_root()
-        # bounds_dict = dict()
-        # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        # bounds_path = os.path.join(workdir, "bounds.json")
-        # for key, value in bounds.items():
-        #     if "Stored_heat" not in key:
-        #         new_value = value  # [x for x in value]
-        #         # if len(new_value) == 1:
-        #         #     new_value = new_value[0]
-        #         bounds_dict[key] = new_value
-        # if bounds_path is None:
-        #     workdir = root.findtext("pi:workDir", namespaces=ns)
-        #     bounds_path = os.path.join(workdir, "bounds.json")
-        #     if not Path(workdir).is_absolute():
-        #         bounds_path = Path(workdir).resolve().parent
-        #         bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-        # with open(bounds_path, "w") as file:
-        #     json.dump(bounds_dict, fp=file)
-
-        root = self._get_runinfo_path_root()
-        results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        results_dict = dict()
-
-        for key, values in results.items():
-            new_value = values.tolist()
-            if len(new_value) == 1:
-                new_value = new_value[0]
-            results_dict[key] = new_value
-
-        results_path = os.path.join(workdir, "results.json")
-        if results_path is None:
-            workdir = root.findtext("pi:workDir", namespaces=ns)
-            results_path = os.path.join(workdir, "results.json")
-            if not Path(workdir).is_absolute():
-                results_path = Path(workdir).resolve().parent
-                results_path = os.path.join(results_path.__str__() + "results.json")
-        with open(results_path, "w") as file:
-            json.dump(results_dict, fp=file)
-
 
 class EndScenarioSizingDiscountedHIGHS(SolverHIGHS, EndScenarioSizingDiscounted):
     pass
