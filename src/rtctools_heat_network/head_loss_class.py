@@ -13,6 +13,7 @@ from rtctools.optimization.optimization_problem import BT
 import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 
 from .constants import GRAVITATIONAL_CONSTANT
+from .network_common import NetworkSettings
 from .pipe_class import PipeClass
 
 
@@ -109,9 +110,10 @@ class _MinimizeHeadLosses(Goal):
 
     priority = 2**31 - 1
 
-    def __init__(self, optimization_problem, *args, **kwargs):
+    def __init__(self, optimization_problem, input_network_settings, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
+        self.network_settings = input_network_settings
         self.function_nominal = len(optimization_problem.times())
 
     def function(self, optimization_problem, ensemble_member):
@@ -121,7 +123,6 @@ class _MinimizeHeadLosses(Goal):
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
-        options = optimization_problem.heat_network_options()
 
         pumps = optimization_problem.heat_network_components.get("pump", [])
         sources = optimization_problem.heat_network_components.get("source", [])
@@ -135,12 +136,21 @@ class _MinimizeHeadLosses(Goal):
         for s in sources:
             sum_ += 2 * optimization_problem.state(f"{s}.dH")
 
-        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for p in optimization_problem.heat_network_components["pipe"]:
-            if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
-                sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
-                sum_ += optimization_problem.state(sym_name)
+        if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
+            for p in optimization_problem.heat_network_components.get("pipe", []):
+                if (
+                    not parameters[f"{p}.has_control_valve"]
+                    and not parameters[f"{p}.length"] == 0.0
+                ):
+                    sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
+                    sum_ += optimization_problem.state(sym_name)
+        elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
+            for p in optimization_problem.heat_network_components.get("gas_pipe", []):
+                if not parameters[f"{p}.length"] == 0.0:
+                    sym_name = optimization_problem._hn_gas_pipe_to_head_loss_map[p]
+                    sum_ += optimization_problem.state(sym_name)
 
         return sum_
 
@@ -153,11 +163,13 @@ class _MinimizeHydraulicPower(Goal):
     def __init__(
         self,
         optimization_problem,
+        input_network_settings,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.optimization_problem = optimization_problem
+        self.network_settings = input_network_settings
 
     def function(self, optimization_problem, ensemble_member):
         """
@@ -166,9 +178,8 @@ class _MinimizeHydraulicPower(Goal):
         sum_ = 0.0
 
         parameters = optimization_problem.parameters(ensemble_member)
-        options = optimization_problem.heat_network_options()
 
-        assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
+        assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         for pipe in optimization_problem.heat_network_components.get("pipe", []):
             if (
@@ -185,7 +196,8 @@ class HeadLossClass:
     For handling of discharge - head (loss) relationship to the model.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input_network_settings, *args, **kwargs):
+
         self.__pipe_head_bounds = {}
 
         self.__pipe_head_loss_var = {}
@@ -196,6 +208,8 @@ class HeadLossClass:
 
         self.__priority = None
 
+        self.network_settings = input_network_settings
+
     def pre(self):
         """
         Some checks to avoid that different pipes have different head_loss options in case one
@@ -205,16 +219,22 @@ class HeadLossClass:
 
         self.__initialize_nominals_and_bounds()
 
-        options = self.heat_network_options()
         parameters = self.parameters(0)
 
         # It is not allowed to mix NO_HEADLOSS with other head loss options as
         # that just leads to weird and undefined behavior.
         head_loss_values = {
-            options["head_loss_option"],
+            self.network_settings["head_loss_option"],
         }
-        for p in self.heat_network_components.get("pipe", []):
-            head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
+
+        pipe_type = "pipe"
+        if len(self.heat_network_components.get("pipe", [])) == 0:
+            pipe_type = "gas_pipe"
+
+        for p in self.heat_network_components.get(pipe_type, []):
+            head_loss_values.add(
+                self._hn_get_pipe_head_loss_option(p, self.network_settings, parameters)
+            )
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
             raise Exception(
@@ -234,19 +254,7 @@ class HeadLossClass:
         +--------------------------------+-----------+-----------------------------------+
         | ``wall_roughness``             | ``float`` | ``0.0002`` m                      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
-        +--------------------------------+-----------+-----------------------------------+
         | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s (LINEARIZED_DW)       |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``n_linearization_lines``      | ``int``   | ``5`` (LINEARIZED_DW)             |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``minimize_head_losses``       | ``bool``  | ``True``                          |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``pipe_minimum_pressure``      | ``float`` | ``-np.inf``                       |
-        +--------------------------------+-----------+-----------------------------------+
-        | ``pipe_maximum_pressure``      | ``float`` | ``np.inf``                        |
         +--------------------------------+-----------+-----------------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
@@ -255,67 +263,19 @@ class HeadLossClass:
 
         The ``wall_roughness`` of the pipes plays a role in determining the
         resistance of the pipes.
-
-        To model the head loss in pipes, the ``head_loss_option`` refers to
-        one of the ways this can be done. See :class:`HeadLossOption` for more
-        explanation on what each option entails. Note that some options model
-        the head loss as an inequality, i.e. :math:`\Delta H \ge f(Q)`, whereas
-        others model it as an equality.
-
-        When ``HeadLossOption.CQ2_INEQUALITY`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
-        \cdot Q^2`.
-
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
-        ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
-        relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
-        will then be linearized using ``n_linearization`` lines.
-
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
-        Q`. For pipes that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
-
-        When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
-        ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
-        Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
-        that contain a control valve, the formulation of
-        ``HeadLossOption.CQ2_INEQUALITY`` is used.
-
-
-        When ``minimize_head_losses`` is set to True (default), a last
-        priority is inserted where the head losses and hydraulic power in the system are
-        minimized if the ``head_loss_option`` is not `NO_HEADLOSS`.
-        This is related to the assumption that control valves are
-        present in the system to steer water in the right direction the case
-        of multiple routes. If such control valves are not present, enabling
-        this option will give warnings in case the found solution is not
-        feasible. In case the option is False, both the minimization and
-        checks are skipped.
-
-        The ``pipe_minimum_pressure`` is the global minimum pressured allowed
-        in the network. Similarly, ``pipe_maximum_pressure`` is the maximum
-        one.
         """
 
         options = {}
 
         options["minimum_pressure_far_point"] = 1.0
         options["wall_roughness"] = 2e-4
-        options["head_loss_option"] = HeadLossOption.CQ2_INEQUALITY
         options["estimated_velocity"] = 1.0
-        options["maximum_velocity"] = 2.5
-        options["n_linearization_lines"] = 5
-        options["minimize_head_losses"] = True
-        options["pipe_minimum_pressure"] = -np.inf
-        options["pipe_maximum_pressure"] = np.inf
 
         return options
 
     @abstractmethod
     def _hn_get_pipe_head_loss_option(
-        self, pipe, heat_network_options, parameters, **kwargs
+        self, pipe, network_settings, parameters, **kwargs
     ) -> HeadLossOption:
         """
         The global user head loss option is not necessarily the same as the
@@ -357,68 +317,101 @@ class HeadLossClass:
         """
         return _MinimizeHydraulicPower
 
-    def initialize_variables_nominals_and_bounds(self, optimization_problem):
+    def initialize_variables_nominals_and_bounds(
+        self, optimization_problem, commodity_type, pipe_name, network_settings
+    ):
         """
         This function computes and sets the bounds and nominals for the head loss of all the pipes
         as well as the minimum and maximum pipe pressure.
         """
-        # self.__pipe_head_loss_nominals = AliasDict(self.alias_relation)
-
         options = optimization_problem.heat_network_options()
         parameters = optimization_problem.parameters(0)
 
-        min_pressure = options["pipe_minimum_pressure"]
-        max_pressure = options["pipe_maximum_pressure"]
+        min_pressure = network_settings["pipe_minimum_pressure"]
+        max_pressure = network_settings["pipe_maximum_pressure"]
         assert (
             max_pressure > min_pressure
         ), "The global maximum pressure must be larger than the minimum one."
         if np.isfinite(min_pressure) or np.isfinite(max_pressure):
-            for p in optimization_problem.heat_network_components["pipe"]:
-                # No elevation data available yet. Assume 0 mDAT for now.
-                pipe_elevation = 0.0
-                min_head = min_pressure * 10.2 + pipe_elevation
-                max_head = max_pressure * 10.2 + pipe_elevation
-                self.__pipe_head_bounds[f"{p}.HeatIn.H"] = (min_head, max_head)
-                self.__pipe_head_bounds[f"{p}.HeatOut.H"] = (min_head, max_head)
+            # No elevation data available yet. Assume 0 mDAT for now.
+            pipe_elevation = 0.0
+            min_head = min_pressure * 10.2 + pipe_elevation
+            max_head = max_pressure * 10.2 + pipe_elevation
+            self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"] = (min_head, max_head)
+            self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}Out.H"] = (min_head, max_head)
 
-        head_loss_option = options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
-        for p in optimization_problem.heat_network_components.get("pipe", []):
-            length = parameters[f"{p}.length"]
-            if length < 0.0:
-                raise ValueError("Pipe length has to be larger than or equal to zero")
+        length = parameters[f"{pipe_name}.length"]
+        if length < 0.0:
+            raise ValueError("Pipe length has to be larger than or equal to zero")
 
-            if head_loss_option == HeadLossOption.NO_HEADLOSS or (
-                length == 0.0 and not parameters[f"{p}.has_control_valve"]
-            ):
-                self.__pipe_head_loss_zero_bounds[f"{p}.dH"] = (0.0, 0.0)
-            else:
-                q_nominal = self._hn_pipe_nominal_discharge(options, parameters, p)
-                head_loss_nominal = self._hn_pipe_head_loss(
-                    p, optimization_problem, options, parameters, q_nominal
-                )
+        if head_loss_option == HeadLossOption.NO_HEADLOSS or (
+            length == 0.0 and not parameters[f"{pipe_name}.has_control_valve"]
+        ):
+            self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = (0.0, 0.0)
+            head_loss_var = ""  # Required for checking if the keys exist in the return past below
+        else:
+            q_nominal = self._hn_pipe_nominal_discharge(options, parameters, pipe_name)
+            head_loss_nominal = self._hn_pipe_head_loss(
+                pipe_name, optimization_problem, options, network_settings, parameters, q_nominal
+            )
 
-                self.__pipe_head_loss_nominals[f"{p}.dH"] = head_loss_nominal
+            self.__pipe_head_loss_nominals[f"{pipe_name}.dH"] = head_loss_nominal
 
-                # The .dH is by definition "Out - In". The .__head_loss is by
-                # definition larger than or equal to the absolute value of dH.
-                head_loss_var = f"{p}.__head_loss"
+            # The .dH is by definition "Out - In". The .__head_loss is by
+            # definition larger than or equal to the absolute value of dH.
+            head_loss_var = f"{pipe_name}.__head_loss"
 
-                self._hn_pipe_to_head_loss_map[p] = head_loss_var
-                self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
+            self._hn_pipe_to_head_loss_map[pipe_name] = head_loss_var
+            self.__pipe_head_loss_var[head_loss_var] = ca.MX.sym(head_loss_var)
 
-                self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
-                self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
+            self.__pipe_head_loss_nominals[head_loss_var] = head_loss_nominal
+            self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
         return (
-            self.__pipe_head_bounds,
-            self.__pipe_head_loss_zero_bounds,
-            self._hn_pipe_to_head_loss_map,
-            self.__pipe_head_loss_var,
-            self.__pipe_head_loss_nominals,
-            self.__pipe_head_loss_bounds,
+            (
+                self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"]
+                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}In.H") is not None
+                else self.__pipe_head_bounds
+            ),
+            (
+                self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}Out.H"]
+                if self.__pipe_head_bounds.get(f"{pipe_name}.{commodity_type}Out.H") is not None
+                else self.__pipe_head_bounds
+            ),
+            (
+                self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"]
+                if self.__pipe_head_loss_zero_bounds.get(f"{pipe_name}.dH") is not None
+                else self.__pipe_head_loss_zero_bounds
+            ),
+            (
+                self._hn_pipe_to_head_loss_map[pipe_name]
+                if self._hn_pipe_to_head_loss_map.get(pipe_name) is not None
+                else self._hn_pipe_to_head_loss_map
+            ),
+            (
+                self.__pipe_head_loss_var[head_loss_var]
+                if self.__pipe_head_loss_var.get(head_loss_var) is not None
+                else self.__pipe_head_loss_var
+            ),
+            (
+                self.__pipe_head_loss_nominals[f"{pipe_name}.dH"]
+                if self.__pipe_head_loss_nominals.get(f"{pipe_name}.dH") is not None
+                else self.__pipe_head_loss_nominals
+            ),
+            (
+                self.__pipe_head_loss_nominals[head_loss_var]
+                if self.__pipe_head_loss_nominals.get(head_loss_var) is not None
+                else self.__pipe_head_loss_nominals
+            ),
+            (
+                self.__pipe_head_loss_bounds[head_loss_var]
+                if self.__pipe_head_loss_bounds.get(head_loss_var) is not None
+                else self.__pipe_head_loss_bounds
+            ),
         )
 
     def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
@@ -432,6 +425,7 @@ class HeadLossClass:
         pipe: str,
         optimization_problem,
         heat_network_options,
+        network_settings,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
         head_loss: Optional[ca.MX] = None,
@@ -469,7 +463,7 @@ class HeadLossClass:
         else:
             symbolic = True
 
-        head_loss_option = heat_network_options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         assert (
             head_loss_option != HeadLossOption.NO_HEADLOSS
         ), "This method should be skipped when NO_HEADLOSS is set."
@@ -505,7 +499,6 @@ class HeadLossClass:
             assert big_m != 0.0
 
         wall_roughness = heat_network_options["wall_roughness"]
-
         if pipe_class is not None:
             diameter = pipe_class.inner_diameter
             area = pipe_class.area
@@ -513,29 +506,37 @@ class HeadLossClass:
         else:
             diameter = parameters[f"{pipe}.diameter"]
             area = parameters[f"{pipe}.area"]
-            maximum_velocity = heat_network_options["maximum_velocity"]
+            maximum_velocity = network_settings["maximum_velocity"]
 
-        temperature = parameters[f"{pipe}.temperature"]
-        has_control_valve = parameters[f"{pipe}.has_control_valve"]
+        # TODO: add commodity temperature to a gas network
+        try:
+            temperature = parameters[f"{pipe}.temperature"]
+        except KeyError:
+            temperature = 20.0
+
+        try:
+            has_control_valve = parameters[f"{pipe}.has_control_valve"]
+        except KeyError:
+            has_control_valve = False
 
         if head_loss_option == HeadLossOption.LINEAR:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
-                heat_network_options["maximum_velocity"], diameter, wall_roughness, temperature
+                maximum_velocity, diameter, wall_roughness, temperature
             )
 
             # Compute c_v constant (where |dH| ~ c_v * v^2)
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
-            linearization_velocity = heat_network_options["maximum_velocity"]
+            linearization_velocity = maximum_velocity
             linearization_head_loss = c_v * linearization_velocity**2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                constraint_nominal = c_v * heat_network_options["estimated_velocity"] ** 2
+                constraint_nominal = c_v * maximum_velocity**2
                 # Interior point solvers, like IPOPT, do not like linearly dependent
                 # tight inequality constraints. For this reason, we split the
                 # constraints depending whether the Big-M formulation is used or not.
@@ -611,7 +612,7 @@ class HeadLossClass:
                 return expr
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            n_lines = heat_network_options["n_linearization_lines"]
+            n_lines = network_settings["n_linearization_lines"]
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
                 diameter,
@@ -674,6 +675,7 @@ class HeadLossClass:
         pipe: str,
         optimization_problem,
         heat_network_options,
+        network_settings,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
         hydraulic_power: Optional[Union[ca.MX, float, np.ndarray]] = None,
@@ -715,7 +717,7 @@ class HeadLossClass:
         else:
             symbolic = True
 
-        head_loss_option = heat_network_options["head_loss_option"]
+        head_loss_option = network_settings["head_loss_option"]
         assert (
             head_loss_option != HeadLossOption.NO_HEADLOSS
         ), "This method should be skipped when NO_HEADLOSS is set."
@@ -759,7 +761,7 @@ class HeadLossClass:
         else:
             diameter = parameters[f"{pipe}.diameter"]
             area = parameters[f"{pipe}.area"]
-            maximum_velocity = heat_network_options["maximum_velocity"]
+            maximum_velocity = network_settings["maximum_velocity"]
 
         constraint_nominal = abs(
             parameters[f"{pipe}.rho"]
@@ -843,7 +845,7 @@ class HeadLossClass:
                 return abs(hydraulic_power_linearized)
 
         elif head_loss_option == HeadLossOption.LINEARIZED_DW:
-            n_lines = heat_network_options["n_linearization_lines"]
+            n_lines = network_settings["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
                 diameter,
@@ -919,14 +921,20 @@ class HeadLossClass:
         """
         constraints = []
 
-        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+        pipe_type = "pipe"
+        commodity = "Heat"
+        if len(optimization_problem.heat_network_components.get(pipe_type, [])) == 0:
+            pipe_type = "gas_pipe"
+            commodity = NetworkSettings.NETWORK_TYPE_GAS
+
+        for pipe in optimization_problem.heat_network_components.get(pipe_type, []):
             dh = optimization_problem.state(f"{pipe}.dH")
-            h_down = optimization_problem.state(f"{pipe}.HeatOut.H")
-            h_up = optimization_problem.state(f"{pipe}.HeatIn.H")
+            h_down = optimization_problem.state(f"{pipe}.{commodity}Out.H")
+            h_up = optimization_problem.state(f"{pipe}.{commodity}In.H")
 
             constraint_nominal = (
                 optimization_problem.variable_nominal(f"{pipe}.dH")
-                * optimization_problem.variable_nominal(f"{pipe}.HeatIn.H")
+                * optimization_problem.variable_nominal(f"{pipe}.{commodity}In.H")
             ) ** 0.5
             constraints.append(((dh - (h_down - h_up)) / constraint_nominal, 0.0, 0.0))
 

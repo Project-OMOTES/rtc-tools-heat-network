@@ -8,7 +8,7 @@ from rtctools.data.storage import DataStore
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMixin
+from rtctools.optimization.goal_programming_mixin import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
@@ -18,7 +18,10 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
+
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -109,7 +112,7 @@ class HeatProblem(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
         return options
 
     def solver_options(self):
@@ -286,7 +289,7 @@ class HeatProblemSetPoints(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
-    GoalProgrammingMixin,
+    SinglePassGoalProgrammingMixin,
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
@@ -297,12 +300,16 @@ class HeatProblemSetPoints(
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["minimum_velocity"] = 0.001
+        self.heat_network_settings["minimum_velocity"] = 0.0
         return options
 
     def solver_options(self):
         options = super().solver_options()
         options["solver"] = "highs"
+        highs_options = options["highs"] = {}
+        highs_options["mip_rel_gap"] = 0.02
+        highs_options["mip_abs_gap"] = 0.01
+
         return options
 
     def constraints(self, ensemble_member):
@@ -447,5 +454,11 @@ class HeatProblemSetPoints(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemPlacingOverTime)
+    sol = run_optimization_problem(
+        HeatProblemPlacingOverTime,
+        esdl_file_name="test_case_small_network_with_ates.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="Warmte_test.csv",
+    )
     results = sol.extract_results()

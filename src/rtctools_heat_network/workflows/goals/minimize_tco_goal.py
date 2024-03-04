@@ -36,8 +36,8 @@ class MinimizeTCO(Goal):
         self.function_nominal = 1.0e6
 
         default_asset_type_maps = {
-            "operational": {"source", "ates"},
-            "fixed_operational": {"source", "ates", "buffer"},
+            "operational": {"source", "ates", "heat_pump"},
+            "fixed_operational": {"source", "ates", "buffer", "heat_pump", "heat_exchanger"},
             "investment": {
                 "source",
                 "ates",

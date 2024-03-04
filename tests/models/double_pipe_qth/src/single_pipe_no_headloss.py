@@ -13,7 +13,7 @@ class SinglePipeQTHNoHeadLoss(SinglePipeQTH):
 
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options
 
 

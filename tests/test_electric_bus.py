@@ -15,6 +15,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+
 
 class TestMILPbus(TestCase):
     def test_voltages_and_power_network1(self):
@@ -36,7 +39,14 @@ class TestMILPbus(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         # Run the problem
-        solution = run_optimization_problem(ElectricityProblem, base_folder=base_folder)
+        solution = run_optimization_problem(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="Electric_bus3.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
         results = solution.extract_results()
         v1 = results["Bus_f262.ElectricityConn[1].V"]
         v2 = results["Bus_f262.ElectricityConn[2].V"]

@@ -12,6 +12,8 @@ from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassG
 from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
@@ -93,7 +95,7 @@ class HeatProblem(
     def heat_network_options(self):
         options = super().heat_network_options()
         options["heat_loss_disconnected_pipe"] = True
-        options["minimum_velocity"] = 0.0001
+        self.heat_network_settings["minimum_velocity"] = 0.0001
 
         return options
 
@@ -121,5 +123,11 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    run_optimization_problem(HeatProblem)
+    run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="2a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     # run_heat_network_optimization(HeatProblem, QTHProblem)
