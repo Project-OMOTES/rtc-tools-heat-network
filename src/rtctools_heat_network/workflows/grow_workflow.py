@@ -27,7 +27,6 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-from rtctools_heat_network.workflows.goals.minimize_discounted_tco import MinimizeDiscountedTCO
 from rtctools_heat_network.workflows.goals.minimize_tco_goal import MinimizeTCO
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 from rtctools_heat_network.workflows.utils.adapt_profiles import (
@@ -224,7 +223,7 @@ class EndScenarioSizingDiscounted(
         # The idea behind the two timelines is that the optimizer can make the OPEX vs CAPEX
         # trade-offs
 
-        goals.append(MinimizeDiscountedTCO(priority=2))
+        goals.append(MinimizeTCO(priority=2))
 
         return goals
 
