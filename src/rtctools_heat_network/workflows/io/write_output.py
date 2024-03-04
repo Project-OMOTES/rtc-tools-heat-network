@@ -34,6 +34,7 @@ class ScenarioOutput(TechnoEconomicMixin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model_folder = kwargs.get("model_folder")
+        self.output_folder = kwargs.get("output_folder")
         self.esdl_file_name = kwargs.get("esdl_file_name", "ESDL_file.esdl")
         # Settings for influxdb when writing out result profile data to it
         # Default settings
@@ -1172,11 +1173,12 @@ class ScenarioOutput(TechnoEconomicMixin):
         #     esh.save(str(filename))
 
     def _write_json_output(self):
+        #TODO: still add solver stats as json output
         results = self.extract_results()
+        workdir = self.output_folder
+
         parameters = self.parameters(0)
         parameters_dict = dict()
-        workdir = self.model_folder
-
         parameter_path = os.path.join(workdir, "parameters.json")
         for key, value in parameters.items():
             new_value = value  # [x for x in value]
@@ -1184,27 +1186,18 @@ class ScenarioOutput(TechnoEconomicMixin):
         with open(parameter_path, "w") as file:
             json.dump(parameters_dict, fp=file)
 
-        # root = self._get_runinfo_path_root()
-        # bounds_dict = dict()
-        # bounds_path = root.findtext("pi:outputResultsFile", namespaces=ns)
-        # bounds_path = os.path.join(workdir, "bounds.json")
-        # for key, value in bounds.items():
-        #     if "Stored_heat" not in key:
-        #         new_value = value  # [x for x in value]
-        #         # if len(new_value) == 1:
-        #         #     new_value = new_value[0]
-        #         bounds_dict[key] = new_value
-        # if bounds_path is None:
-        #     workdir = root.findtext("pi:workDir", namespaces=ns)
-        #     bounds_path = os.path.join(workdir, "bounds.json")
-        #     if not Path(workdir).is_absolute():
-        #         bounds_path = Path(workdir).resolve().parent
-        #         bounds_path = os.path.join(bounds_path.__str__() + "bounds.json")
-        # with open(bounds_path, "w") as file:
-        #     json.dump(bounds_dict, fp=file)
+        bounds = self.bounds()
+        bounds_dict = dict()
+        bounds_path = os.path.join(workdir, "bounds.json")
+        for key, value in bounds.items():
+            if "Stored_heat" not in key:
+                new_value = value  # [x for x in value]
+                # if len(new_value) == 1:
+                #     new_value = new_value[0]
+                bounds_dict[key] = new_value
+        with open(bounds_path, "w") as file:
+            json.dump(bounds_dict, fp=file)
 
-        # root = self._get_runinfo_path_root()
-        # results_path = root.findtext("pi:outputResultsFile", namespaces=ns)
         results_dict = dict()
 
         for key, values in results.items():
