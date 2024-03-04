@@ -9,7 +9,7 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import (
     EndScenarioSizingDiscountedHIGHS,
-    EndScenarioSizingHIGHS,
+    EndScenarioSizingHIGHS, EndScenarioSizingStagedHIGHS, run_end_scenario_sizing,
 )
 
 
@@ -35,24 +35,28 @@ class TestEndScenarioSizing(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        class TestEndScenarioSizingHIGHS(EndScenarioSizingHIGHS):
-            def solver_options(self):
-                options = super().solver_options()
-                options["solver"] = "highs"
-                highs_options = options["highs"] = {}
-                highs_options["mip_rel_gap"] = 0.05
-                return options
-
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
         solution = run_optimization_problem(
-            TestEndScenarioSizingHIGHS,
+            EndScenarioSizingHIGHS,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
         )
+        #TODO: check staged approach, the pipe flow direction seems to give some unwanted flow directions, because objective becomes 1% higher enventhough MIPGap becomes 0%, when staged_pipe_optimization=False, the same occurs that the objective is lower
+        #
+        #TODO: add staged approach test
+        # solution = run_end_scenario_sizing(
+        #     EndScenarioSizingStagedHIGHS,
+        #     # staged_pipe_optimization=False,
+        #     base_folder=base_folder,
+        #     esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+        #     esdl_parser=ESDLFileParser,
+        #     profile_reader=ProfileReaderFromFile,
+        #     input_timeseries_file="Warmte_test.csv",
+        # )
 
         results = solution.extract_results()
         # In the future we want to check the following

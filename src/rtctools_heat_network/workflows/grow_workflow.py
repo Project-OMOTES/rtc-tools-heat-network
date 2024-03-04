@@ -470,6 +470,8 @@ def run_end_scenario_sizing_no_heat_losses(
     """
     import time
 
+    assert issubclass(end_scenario_problem_class, SettingsStaged), "A staged problem class is required as input for the sizing without heat_losses"
+
     start_time = time.time()
     solution = run_optimization_problem(
         end_scenario_problem_class,
