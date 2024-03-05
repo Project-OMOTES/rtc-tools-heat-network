@@ -123,14 +123,21 @@ class TestEndScenarioSizing(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
         )
-
+        solution_unstaged_2 = run_end_scenario_sizing(
+            EndScenarioSizingHIGHS,
+            staged_pipe_optimization=False,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
         # TODO: check staged approach, the pipe flow direction seems to give some unwanted flow
-        #  directions, because objective becomes 1% higher enventhough MIPGap becomes 0%, when staged_pipe_optimization=False, the same occurs that the objective is lower
-        #
-        # TODO: add staged approach test
+        #  directions, because objective becomes 1% higher enventhough MIPGap becomes 0%, when
+        #  staged_pipe_optimization=False, the same occurs that the objective is lower
+
         solution = run_end_scenario_sizing(
             EndScenarioSizingStagedHIGHS,
-            # staged_pipe_optimization=False,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
             esdl_parser=ESDLFileParser,
@@ -181,11 +188,15 @@ class TestEndScenarioSizing(TestCase):
         # MIPgap or because of some tighter constraints in the staged problem e.g. staged problem
         # slightly higher objective value
         np.testing.assert_allclose(solution.objective_value, solution_unstaged.objective_value)
-
-        # TODO: check time optimisation, for the staged optimisation the time for the first and
-        #  second stage should be added
+        
+        #checking time spend on optimisation approaches, the difference between the unstaged
+        # approaches should be smaller than the difference with the staged approach. The staged
+        # approach should be quickest in solving.
         solution_time_unstaged = sum([i[1] for i in solution_unstaged._priorities_output])
+        solution_time_unstaged_2 = sum([i[1] for i in solution_unstaged_2._priorities_output])
         solution_time_staged = sum([i[1] for i in solution._priorities_output])
+        np.testing.assert_allclose(abs(solution_time_unstaged_2 - solution_time_unstaged),
+                                   (solution_time_staged - solution_time_unstaged))
         np.testing.assert_array_less(solution_time_staged,
                                      solution_time_unstaged)
 
