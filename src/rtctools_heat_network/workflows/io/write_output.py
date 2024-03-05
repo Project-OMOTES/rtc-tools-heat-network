@@ -1192,8 +1192,8 @@ class ScenarioOutput(TechnoEconomicMixin):
         for key, value in bounds.items():
             if "Stored_heat" not in key:
                 new_value = value  # [x for x in value]
-                # if len(new_value) == 1:
-                #     new_value = new_value[0]
+                if type(value[0]).__name__ =='Timeseries' or type(value[1]).__name__ =='Timeseries':
+                    new_value = (value[0].values.tolist(), value[1].values.tolist())
                 bounds_dict[key] = new_value
         with open(bounds_path, "w") as file:
             json.dump(bounds_dict, fp=file)

@@ -150,7 +150,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = False
+        self._save_json = True
 
     def _get_runinfo_path_root(self): #degredated
         runinfo_path = Path(self.esdl_run_info_path).resolve()
@@ -521,6 +521,7 @@ def run_end_scenario_sizing(
         )
         results = solution.extract_results()
         parameters = solution.parameters(0)
+        bounds = solution.bounds()
 
         # We give bounds for stage 2 by allowing one DN sizes larger than what was found in the
         # stage 1 optimization.
@@ -561,12 +562,15 @@ def run_end_scenario_sizing(
                 for i in range(len(t)):
                     r = results[f"{p}__flow_direct_var"][i]
                     # bound to roughly represent 4km of heat losses in pipes
+                    #TODO newly applied bounds need to be checked with old bounds, sometimes flowdirection 0 was not allowed.
                     lb.append(
                         r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 0
                     )
+                    print(bounds[f"{p}__flow_direct_var"], lb[-1])
                     ub.append(
                         r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 1
                     )
+
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 try:
