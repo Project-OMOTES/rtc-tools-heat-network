@@ -55,7 +55,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
     def electricity_carriers(self):
         """
         This function should be overwritten by the problem and should give a dict with the
-        carriers as keys and a list of temperatures as values.
+        carriers as keys and a list of voltage values.
         """
         return {}
 

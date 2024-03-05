@@ -433,7 +433,7 @@ class _AssetToComponentBase:
             and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
             and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
             and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
-        ):
+        ):  # Cater for gas substation
             try:
                 connected_port = asset.in_ports[0].connectedTo[0]
                 q_nominal_in = self._port_to_q_nominal[connected_port]

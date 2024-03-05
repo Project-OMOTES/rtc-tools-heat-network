@@ -1151,7 +1151,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 try:
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
-                        self._head_loss_class._hn_pipe_head_loss(
+                        self._hn_head_loss_class._hn_pipe_head_loss(
                             pipe,
                             self,
                             options,
@@ -1166,7 +1166,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 except KeyError:
                     area = parameters[f"{pipe}.area"]
                     max_discharge = self.heat_network_settings["maximum_velocity"] * area
-                    head_loss += self._head_loss_class._hn_pipe_head_loss(
+                    head_loss += self._hn_head_loss_class._hn_pipe_head_loss(
                         pipe, self, options, self.heat_network_settings, parameters, max_discharge
                     )
 
@@ -2128,7 +2128,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         if (
             self.heat_network_settings["minimize_head_losses"]
             and self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
-            and priority == self._head_loss_class._hn_minimization_goal_class.priority
+            and priority == self._hn_head_loss_class._hn_minimization_goal_class.priority
         ):
             self.__pipe_diameter_to_parameters()
 
