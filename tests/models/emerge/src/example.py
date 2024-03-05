@@ -58,6 +58,38 @@ class MaxHydrogenProduction(Goal):
         """
         return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
+class MaxRevenue(Goal):
+
+    priority = 1
+
+    order = 1
+
+    def __init__(self, asset_name: str):
+        """
+        The constructor of the goal.
+
+        Parameters
+        ----------
+        source : string of the source name that is going to be minimized
+        """
+        self.asset_name = asset_name
+
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
+        """
+        This function returns the state variable to be minimized.
+
+        Parameters
+        ----------
+        optimization_problem : The optimization class containing the variables'.
+        ensemble_member : the ensemble member.
+
+        Returns
+        -------
+        The negative hydrogen production state of the optimization problem.
+        """
+        return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
 
 class EmergeTest(
     ESDLAdditionalVarsMixin,
@@ -80,18 +112,30 @@ class EmergeTest(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
 
-    def path_goals(self):
-        """
-        This function adds the minimization goal for minimizing the heat production.
+    # def path_goals(self):
+    #     """
+    #     This function adds the minimization goal for minimizing the heat production.
+    #
+    #     Returns
+    #     -------
+    #     The appended list of goals
+    #     """
+    #     goals = super().path_goals().copy()
+    #
+    #     for s in self.heat_network_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
+    #         goals.append(MaxHydrogenProduction(s))
+    #
+    #     return goals
 
-        Returns
-        -------
-        The appended list of goals
-        """
-        goals = super().path_goals().copy()
+    def goals(self):
 
-        for s in self.heat_network_components["electrolyzer"]:
-            goals.append(MaxHydrogenProduction(s))
+        goals = super().goals().copy()
+
+        for asset_name in self.heat_network_components["electricity_demand"]:
+            goals.append(MaxRevenue(asset_name))
+
+        for asset_name in self.heat_network_components["gas_demand"]:
+            goals.append(MaxRevenue(asset_name))
 
         return goals
 
