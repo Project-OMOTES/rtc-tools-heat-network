@@ -559,16 +559,15 @@ def run_end_scenario_sizing(
             if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
+                bounds_pipe = bounds[f"{p}__flow_direct_var"]
                 for i in range(len(t)):
                     r = results[f"{p}__flow_direct_var"][i]
                     # bound to roughly represent 4km of heat losses in pipes
-                    #TODO newly applied bounds need to be checked with old bounds, sometimes flowdirection 0 was not allowed.
                     lb.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 0
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else bounds_pipe[0]
                     )
-                    print(bounds[f"{p}__flow_direct_var"], lb[-1])
                     ub.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else 1
+                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else bounds_pipe[1]
                     )
 
 
