@@ -467,7 +467,7 @@ class TestHeadLoss(TestCase):
                 # This is now completely failing
 
                 # kvr this is completely broken after the merge
-                # np.testing.assert_allclose(dh_manual_linear[1], -results[f"{pipes[0]}.dH"][1])
+                np.testing.assert_allclose(dh_manual_linear[1], -results[f"{pipes[0]}.dH"][1])
                 temp = 10.0
 
             for pipe in pipes:
@@ -601,7 +601,7 @@ class TestHeadLoss(TestCase):
 
             # Check that the aproximated head loss matches the maunally calculated value
             # kvr this is broken after merge
-            # np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"])
+            np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"])
 
             for pipe in pipes:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
