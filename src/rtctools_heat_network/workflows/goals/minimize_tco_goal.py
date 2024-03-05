@@ -83,7 +83,7 @@ class MinimizeTCO(Goal):
                 "demand",
                 "heat_exchanger",
                 "heat_pump",
-                "pipe", 
+                "pipe",
                 "heat_exchanger_elec",
                 "pump",
             },  # TODO: confirm inclusion of "heat_exchanger_elec" & "pump"  in "annualized"

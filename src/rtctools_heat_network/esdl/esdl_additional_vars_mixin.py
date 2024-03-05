@@ -8,6 +8,8 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
+from rtctools_heat_network.network_common import NetworkSettings
+
 logger = logging.getLogger("rtctools_heat_network")
 
 
