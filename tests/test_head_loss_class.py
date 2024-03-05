@@ -66,12 +66,12 @@ class TestHeadLossCalculation(TestCase):
             parameters = m.parameters(0)
             heat_network_settings["head_loss_option"] = h
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot", m, options, heat_network_settings, parameters, 0.1
             )
             self.assertIsInstance(ret, float)
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot",
                 m,
                 options,
@@ -82,7 +82,7 @@ class TestHeadLossCalculation(TestCase):
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 1)
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot",
                 m,
                 options,

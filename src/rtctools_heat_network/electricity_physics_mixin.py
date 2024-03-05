@@ -52,6 +52,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         return options
 
+    def electricity_carriers(self):
+        """
+        This function should be overwritten by the problem and should give a dict with the
+        carriers as keys and a list of voltage values.
+        """
+        return {}
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create

@@ -11,6 +11,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
@@ -111,15 +113,6 @@ class _GoalsAndOptions:
 
         return goals
 
-    def solver_options(self):
-        options = super().solver_options()
-        options["solver"] = "highs"
-        # highs_options = options["highs"] = {}
-        # highs_options["mip_rel_gap"] = 0.0025
-        # options["gurobi"] = gurobi_options = {}
-        # gurobi_options["MIPgap"] = 0.001
-        return options
-
     def heat_network_options(self):
         options = super().heat_network_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
@@ -148,7 +141,7 @@ class HeatProblem(
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.0025
+        highs_options["mip_rel_gap"] = 0.005
         # options["gurobi"] = gurobi_options = {}
         # gurobi_options["MIPgap"] = 0.0001
         return options
@@ -363,7 +356,13 @@ class QTHProblem(
 if __name__ == "__main__":
     from rtctools.util import run_optimization_problem
 
-    sol = run_optimization_problem(HeatProblemProdProfile)
+    sol = run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="3a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     # sol = run_optimization_problem(
     #     HeatProblemSetPointConstraints, **{"timed_setpoints": {"GeothermalSource_b702": (45, 0)}}
     # )
