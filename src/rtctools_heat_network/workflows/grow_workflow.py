@@ -405,11 +405,13 @@ class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounte
 class SettingsStaged:
     _stage = 0
 
-    def __init__(self, stage=None, boolean_bounds=None, *args, **kwargs):
+    def __init__(self, stage=None, boolean_bounds=None, priorities_output: list=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._stage = stage
         self.__boolean_bounds = boolean_bounds
+        if self._stage == 2 and priorities_output:
+            self._priorities_output = priorities_output
 
     def heat_network_options(self):
         options = super().heat_network_options()
@@ -511,6 +513,7 @@ def run_end_scenario_sizing(
     import time
 
     boolean_bounds = {}
+    priorities_output = []
 
     start_time = time.time()
     if staged_pipe_optimization:
@@ -577,11 +580,13 @@ def run_end_scenario_sizing(
                     boolean_bounds[f"{p}__is_disconnected"] = (Timeseries(t, r), Timeseries(t, r))
                 except KeyError:
                     pass
+        priorities_output = solution._priorities_output
 
     solution = run_optimization_problem(
         end_scenario_problem_class,
         stage=2,
         boolean_bounds=boolean_bounds,
+        priorities_output=priorities_output,
         **kwargs,
     )
 
