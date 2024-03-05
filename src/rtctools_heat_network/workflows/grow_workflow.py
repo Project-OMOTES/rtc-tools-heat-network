@@ -150,7 +150,7 @@ class EndScenarioSizing(
         self.__heat_demand_bounds = dict()
         self.__heat_demand_nominal = dict()
 
-        self._save_json = True
+        self._save_json = False
 
     def _get_runinfo_path_root(self): #degredated
         runinfo_path = Path(self.esdl_run_info_path).resolve()

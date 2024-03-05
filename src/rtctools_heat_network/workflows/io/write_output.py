@@ -1210,4 +1210,16 @@ class ScenarioOutput(TechnoEconomicMixin):
         with open(results_path, "w") as file:
             json.dump(results_dict, fp=file)
 
+        # save aliases
+        alias_dict = {}
+        aliases = self.alias_relation._canonical_variables_map
+        for key, values in aliases.items():
+            new_value = values
+            alias_dict[key] = new_value
+
+        aliases_path = os.path.join(workdir, "aliases.json")
+        with open(aliases_path, "w") as file:
+            json.dump(alias_dict, fp=file)
+
+
 
