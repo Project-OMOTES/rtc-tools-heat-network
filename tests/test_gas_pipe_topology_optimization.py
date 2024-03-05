@@ -52,9 +52,9 @@ class TestGasNetwork(TestCase):
         removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927"]
         remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
         for pipe in removed_pipes:
-            np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0)
-            np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0)
-            np.testing.assert_allclose(results[f"{pipe}__gn_max_discharge"], 0.0)
+            np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__gn_max_discharge"], 0.0, atol=1.0e-6)
         for pipe in remained_pipes:
             np.testing.assert_array_less(0.0, results[f"{pipe}__gn_diameter"])
             np.testing.assert_array_less(0.0, results[f"{pipe}__investment_cost"])

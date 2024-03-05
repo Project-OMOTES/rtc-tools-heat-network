@@ -29,9 +29,11 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.component_type = "heat_pump"
         self.efficiency = nan
         self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
+        self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
         )
+        self.pump_efficiency = 0.5
         self.elec_power_nominal = self.nominal / self.COP
 
         # Assumption: heat in/out and added is nonnegative
@@ -40,13 +42,27 @@ class HeatPump(HeatFourPort, BaseAsset):
         self.add_variable(Variable, "Secondary_heat", min=0.0)
         self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
         self.add_variable(Variable, "Power_elec", min=0.0)
-        self.add_variable(Variable, "dH_prim")
-        self.add_variable(Variable, "dH_sec")
+        self.add_variable(Variable, "dH_prim", max=0.0)
+        self.add_variable(Variable, "dH_sec", min=0.0)
 
         # Hydraulically decoupled so Heads remain the same
         # #TODO: can't these two equations be moved to the non_storagecomponent?
         self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))
+        self.add_equation(
+            (
+                self.minimum_pressure_drop * self.Primary.Q
+                - (self.Primary.HeatIn.Hydraulic_power - self.Primary.HeatOut.Hydraulic_power)
+            )
+            / (self.Primary.Q_nominal * self.Primary.nominal_pressure)
+        )
         self.add_equation(self.dH_sec - (self.Secondary.HeatOut.H - self.Secondary.HeatIn.H))
+        self.add_equation(
+            (
+                self.Pump_power
+                - (self.Secondary.HeatOut.Hydraulic_power - self.Secondary.HeatIn.Hydraulic_power)
+            )
+            / (self.Secondary.Q_nominal * self.Secondary.nominal_pressure)
+        )
 
         self.add_equation(
             ((self.Primary_heat + self.Power_elec - self.Secondary_heat) / self.nominal)

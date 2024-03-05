@@ -85,6 +85,7 @@ class _AssetToComponentBase:
         "GasHeater": "source",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
+        "GasConversion": "gas_substation",
         "GasStorage": "gas_tank_storage",
         "GenericProducer": "source",
         "GeothermalSource": "source",
@@ -422,6 +423,35 @@ class _AssetToComponentBase:
             if q_nominal is not None:
                 self._set_q_nominal(asset, q_nominal)
                 return q_nominal
+            else:
+                raise _RetryLaterException(
+                    f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"
+                )
+        elif (
+            len(asset.in_ports) == 1
+            and len(asset.out_ports) == 1
+            and asset.in_ports[0].carrier.id != asset.out_ports[0].carrier.id
+            and isinstance(asset.in_ports[0].carrier, esdl.GasCommodity)
+            and isinstance(asset.out_ports[0].carrier, esdl.GasCommodity)
+        ):  # Cater for gas substation
+            try:
+                connected_port = asset.in_ports[0].connectedTo[0]
+                q_nominal_in = self._port_to_q_nominal[connected_port]
+            except KeyError:
+                connected_port = asset.out_ports[0].connectedTo[0]
+                q_nominal_out = self._port_to_q_nominal.get(connected_port, None)
+
+            try:
+                connected_port = asset.out_ports[0].connectedTo[0]
+                q_nominal_out = self._port_to_q_nominal[connected_port]
+            except KeyError:
+                connected_port = asset.in_ports[0].connectedTo[0]
+                q_nominal_in = self._port_to_q_nominal.get(connected_port, None)
+
+            if q_nominal_in is not None and q_nominal_out is not None:
+                self._port_to_q_nominal[asset.in_ports[0]] = q_nominal_in
+                self._port_to_q_nominal[asset.out_ports[0]] = q_nominal_out
+                return q_nominal_in, q_nominal_out
             else:
                 raise _RetryLaterException(
                     f"Could not determine nominal discharge for {asset.asset_type} '{asset.name}'"

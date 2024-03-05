@@ -27,7 +27,7 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values) * 100.0)
+        self.function_range = (0.0, 2.0 * max(target.values))
         self.function_nominal = np.median(target.values)
 
     def function(
@@ -86,7 +86,7 @@ class GasProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         GasProblem,
-        esdl_file_name="source_sink.esdl",
+        esdl_file_name="multiple_carriers.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

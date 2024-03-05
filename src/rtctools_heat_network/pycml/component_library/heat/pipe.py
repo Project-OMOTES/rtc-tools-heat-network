@@ -34,6 +34,7 @@ class Pipe(_NonStorageComponent):
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
         self.carrier_id = -1
+        self.pressure = 16.0e5
 
         # Parameters determining the heat loss
         # All of these have default values in the library function
@@ -59,6 +60,11 @@ class Pipe(_NonStorageComponent):
         self.add_variable(
             Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal
         )  # [W]
+
+        self.add_equation(
+            (self.Hydraulic_power - (self.HeatIn.Hydraulic_power - self.HeatOut.Hydraulic_power))
+            / (self.nominal_pressure * self.Q_nominal * self.Hydraulic_power_nominal) ** 0.5
+        )
 
         self.add_equation(((self.Heat_flow - self.HeatIn.Heat) / self.Heat_nominal))
 

@@ -103,7 +103,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             "pipe_minimum_pressure": -np.inf,
             "pipe_maximum_pressure": np.inf,
         }
-        self._head_loss_class = HeadLossClass(self.gas_network_settings)
+        self._gn_head_loss_class = HeadLossClass(self.gas_network_settings)
         self.__gas_pipe_head_bounds = {}
         self.__gas_pipe_head_loss_var = {}
         self.__gas_pipe_head_loss_bounds = {}
@@ -122,6 +122,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # self._gas_pipe_disconnect_map = {}
 
         # Boolean variables for the linear line segment options per pipe.
+        # TDOD: change name to _gas_pipe_...
         self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
         self.__pipe_linear_line_segment_var_bounds = {}
         self._pipe_linear_line_segment_map = {}
@@ -158,7 +159,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         for pipe_name in self.heat_network_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
-            initialized_vars = self._head_loss_class.initialize_variables_nominals_and_bounds(
+            # Note we always use the gas network type for the naming of variables, independent of
+            # the gas mixture used.
+            initialized_vars = self._gn_head_loss_class.initialize_variables_nominals_and_bounds(
                 self, NetworkSettings.NETWORK_TYPE_GAS, pipe_name, self.gas_network_settings
             )
             if initialized_vars[0] != {}:
@@ -236,7 +239,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         """
 
-        options = self._head_loss_class.head_loss_network_options()
+        options = self._gn_head_loss_class.head_loss_network_options()
 
         options["minimum_pressure_far_point"] = 1.0
 
@@ -321,7 +324,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
         ):
             g.append(
-                self._head_loss_class._hn_minimization_goal_class(self, self.gas_network_settings)
+                self._gn_head_loss_class._hn_minimization_goal_class(
+                    self, self.gas_network_settings
+                )
             )
 
         return g
@@ -355,8 +360,15 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             for pipe in components.get("gas_pipe", []):
                 area = parameters[f"{pipe}.area"]
                 max_discharge = self.gas_network_settings["maximum_velocity"] * area
-                head_loss += self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
+                head_loss += self._gn_head_loss_class._hn_pipe_head_loss(
+                    pipe,
+                    self,
+                    options,
+                    self.gas_network_settings,
+                    parameters,
+                    max_discharge,
+                    network_type=self.gas_network_settings["network_type"],
+                    pressure=parameters[f"{pipe}.pressure"],
                 )
 
             head_loss += options["minimum_pressure_far_point"] * 10.2
@@ -540,7 +552,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     if pc.inner_diameter == 0.0:
                         continue
 
-                    head_loss_max_discharge = self._head_loss_class._hn_pipe_head_loss(
+                    head_loss_max_discharge = self._gn_head_loss_class._hn_pipe_head_loss(
                         pipe,
                         self,
                         options,
@@ -548,9 +560,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         parameters,
                         max_discharge,
                         pipe_class=pc,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
 
-                    big_m = max(1.1 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge)
+                    big_m = max(
+                        2.0 * 2.0 * self.__maximum_total_head_loss, 2 * head_loss_max_discharge
+                    )
 
                     is_topo_disconnected = 1 - self.extra_variable(pc_var_name, ensemble_member)
                     is_topo_disconnected = ca.repmat(is_topo_disconnected, dh.size1())
@@ -562,7 +578,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     # booleans) is either 0 when the pipe is connected, or >= 1 when it
                     # is disconnected.
                     constraints.extend(
-                        self._head_loss_class._hn_pipe_head_loss(
+                        self._gn_head_loss_class._hn_pipe_head_loss(
                             pipe,
                             self,
                             options,
@@ -574,6 +590,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             is_disconnected + is_topo_disconnected,
                             big_m,
                             pc,
+                            network_type=self.gas_network_settings["network_type"],
+                            pressure=parameters[f"{pipe}.pressure"],
                         )
                     )
 
@@ -583,7 +601,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     # we pass the current pipe class's maximum discharge.
                     max_head_loss = max(
                         max_head_loss,
-                        self._head_loss_class._hn_pipe_head_loss(
+                        self._gn_head_loss_class._hn_pipe_head_loss(
                             pipe,
                             self,
                             options,
@@ -591,6 +609,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                             parameters,
                             pc.maximum_discharge,
                             pipe_class=pc,
+                            network_type=self.gas_network_settings["network_type"],
+                            pressure=parameters[f"{pipe}.pressure"],
                         ),
                     )
             else:
@@ -603,7 +623,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
 
                 constraints.extend(
-                    self._head_loss_class._hn_pipe_head_loss(
+                    self._gn_head_loss_class._hn_pipe_head_loss(
                         pipe,
                         self,
                         options,
@@ -613,12 +633,21 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        1.1 * self.__maximum_total_head_loss,
+                        2.0 * self.__maximum_total_head_loss,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
                 )
 
-                max_head_loss = self._head_loss_class._hn_pipe_head_loss(
-                    pipe, self, options, self.gas_network_settings, parameters, max_discharge
+                max_head_loss = self._gn_head_loss_class._hn_pipe_head_loss(
+                    pipe,
+                    self,
+                    options,
+                    self.gas_network_settings,
+                    parameters,
+                    max_discharge,
+                    network_type=self.gas_network_settings["network_type"],
+                    pressure=parameters[f"{pipe}.pressure"],
                 )
 
             # Relate the head loss symbol to the pipe's dH symbol.
@@ -634,8 +663,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
             # least double (i.e. >= 2.0). And because we do not want Big-Ms to
             # be overly tight, we include an additional factor of 2.
-            big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
-            # big_m = 2.0 * 2.0 * max_head_loss
+            # big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
+            big_m = 2.0 * 2.0 * max_head_loss
             constraints.append(
                 (
                     (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
@@ -660,7 +689,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         # Add source/demand head loss constrains only if head loss is non-zero
         if self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             constraints.extend(
-                self._head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
+                self._gn_head_loss_class._pipe_head_loss_path_constraints(self, ensemble_member)
             )
 
         constraints.extend(self.__flow_direction_path_constraints(ensemble_member))
@@ -719,7 +748,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         if (
             self.gas_network_settings["minimize_head_losses"]
             and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
-            and priority == self._head_loss_class._hn_minimization_goal_class.priority
+            and priority == self._gn_head_loss_class._hn_minimization_goal_class.priority
         ):
             components = self.heat_network_components
 
@@ -748,8 +777,16 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         continue
 
                     q = results[f"{pipe}.Q"][inds]
-                    head_loss_target = self._head_loss_class._hn_pipe_head_loss(
-                        pipe, self, options, self.gas_network_settings, parameters, q, None
+                    head_loss_target = self._gn_head_loss_class._hn_pipe_head_loss(
+                        pipe,
+                        self,
+                        options,
+                        self.gas_network_settings,
+                        parameters,
+                        q,
+                        None,
+                        network_type=self.gas_network_settings["network_type"],
+                        pressure=parameters[f"{pipe}.pressure"],
                     )
                     if self.gas_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])

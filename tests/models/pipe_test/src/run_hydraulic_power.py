@@ -70,6 +70,16 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
+
+    def __init__(self, *args, **kwargs):
+
+        global head_loss_setting, n_linearization_lines_setting
+        super().__init__(*args, **kwargs)
+        self.heat_network_settings["head_loss_option"] = head_loss_setting
+        if head_loss_setting == HeadLossOption.LINEARIZED_DW:
+            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+        self.heat_network_settings["minimize_head_losses"] = True
+
     def pre(self):
         super().pre()
         global ThermalDemand

@@ -85,8 +85,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # # Assertion 1: Model for annualized objective value with discount=0 and
         # # technical life 1 year matches the objective value of the non-discounted problem
         np.testing.assert_allclose(
-            solution__annualized_modified_param.objective_value,
-            solution_run_ates.objective_value,
+            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
         )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
@@ -98,7 +97,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         results = solution_annualized_cost.extract_results()
         heat_producers = [1, 2]
-        decimal = 3
+        # Number of decimal positions for test accuracy
+        decimal = 4
         for i in heat_producers:
             investment_and_installation_cost = (
                 results[f"HeatProducer_{i}__investment_cost"]

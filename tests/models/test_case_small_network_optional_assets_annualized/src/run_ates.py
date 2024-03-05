@@ -40,9 +40,9 @@ class MinimizeSourcesHeatCostGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
+        self.function_range = (0.0, 1.0e6)
         self.source = source
-        self.function_nominal = 1.0e7
+        self.function_nominal = 1.0e6
 
     def function(self, optimization_problem, ensemble_member):
         return (
@@ -162,3 +162,4 @@ if __name__ == "__main__":
         input_timeseries_file="Warmte_test.csv",
     )
     results = solution.extract_results()
+    print("Finished")
