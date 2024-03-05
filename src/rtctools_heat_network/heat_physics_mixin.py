@@ -2604,9 +2604,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def __storage_hydraulic_power_path_constraints(self, ensemble_member):
         """
-        This function adds the constraints to for the headloss and the hydraulic power required to
-        overcome the headloss for every storage if a headloss option is selected.
-        The storages have a minimum headloss #TODO: finish this docstring
+        This function adds hydraulic power and pump power contraints for a storage assets. If the
+        head loss option is not enabled then the hydraulic power and pump power are for forced to
+        0.0 but if the head loss option is enabled then:
+            - The delta hydraulic power is constrained to be equal to f(minimum pressure drop,
+            volumetric flow rate) when the storage is being charged.
+            - The pump power is constrained to be equal the delta hydraulic power when the storage
+            is not being charged.
         """
         constraints = []
 
