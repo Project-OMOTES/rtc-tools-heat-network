@@ -128,7 +128,8 @@ class EndScenarioSizing(
     HIGHS is now the standard solver and gurobi only to be used when called specifically.
 
     Goal priorities are:
-    1. minimize TCO = Capex + Opex*lifetime
+    1. Demand matching (e.g. minimize (heat demand - heat consumed))
+    2. minimize TCO = Capex + Opex*lifetime
     """
 
     def __init__(self, *args, **kwargs):
