@@ -295,7 +295,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for hex in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             disabeld_hex_var = f"{hex}__disabled"
             self.__disabled_hex_map[hex] = disabeld_hex_var
@@ -1791,7 +1790,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for heat_exchanger in [
             *self.heat_network_components.get("heat_exchanger", []),
             *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             cp_prim = parameters[f"{heat_exchanger}.Primary.cp"]
             rho_prim = parameters[f"{heat_exchanger}.Primary.rho"]
@@ -2505,7 +2503,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for hp in [
             *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             sec_sup_carrier = parameters[f"{hp}.Secondary.T_supply_id"]
             sec_ret_carrier = parameters[f"{hp}.Secondary.T_return_id"]

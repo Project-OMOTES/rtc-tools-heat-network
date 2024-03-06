@@ -140,7 +140,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             elif asset_name in [
                 *self.heat_network_components.get("heat_exchanger", []),
                 *self.heat_network_components.get("heat_pump", []),
-                *self.heat_network_components.get("heat_pump_elec", []),
             ]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Secondary_heat")
                 nominal_variable_operational = nominal_fixed_operational
@@ -802,7 +801,6 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         for hp in [
             *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             elec_consumption = self.__state_vector_scaled(f"{hp}.Power_elec", ensemble_member)
             variable_operational_cost_var = self._asset_variable_operational_cost_map[hp]
@@ -835,6 +833,10 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                     variable_operational_cost_coefficient * elec_consumption[i] * timesteps[i - 1]
                 )
                 sum += price_profile.values[i] * pump_power[i] * timesteps[i - 1] / eff
+                if hp not in self.heat_network_components.get("heat_pump_elec", []):
+                    # assuming that if heatpump has electricity port, the cost for the electricity
+                    # are already made by the electricity producer and transport
+                    sum += price_profile.values[i] * elec_consumption[i] * timesteps[i - 1]
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 

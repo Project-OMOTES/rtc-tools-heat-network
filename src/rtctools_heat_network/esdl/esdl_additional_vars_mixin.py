@@ -24,7 +24,6 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             *self.heat_network_components.get("ates", []),
             *self.heat_network_components.get("buffer", []),
             *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
         ]:
             esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
             for constraint in esdl_asset.attributes.get("constraint", []):
