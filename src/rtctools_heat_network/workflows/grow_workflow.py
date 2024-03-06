@@ -374,6 +374,10 @@ class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
 
 class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
+    The discounted annualized is utilised as the objective function.
+    The change of the objective function is done by changing the option 'discounted_annulized_cost'
+    to True
+
     Goal priorities are:
     1. Match heat demand with target
     2. minimize TCO = Capex + Opex*lifetime
@@ -399,6 +403,15 @@ class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounte
 
 
 class SettingsStaged:
+    """
+    Additional settings to be used when a staged approach should be implemented.
+    Staged approach currently entails 2 stages:
+    1. optimisation without heat losses and thus a much smaller MIPgap (in solver options) is used
+    to ensure the bounds set for the second stage are not limiting the optimal solution
+    2. optimisation including heat losses with updated boolean bounds (smaller range) of asset
+    sizes and flow directions.
+    """
+
     _stage = 0
 
     def __init__(
@@ -642,7 +655,6 @@ def main(runinfo_path, log_level):
         log_level=log_level,
         **kwargs,
     )
-    # results = solution.extract_results()
 
 
 if __name__ == "__main__":
