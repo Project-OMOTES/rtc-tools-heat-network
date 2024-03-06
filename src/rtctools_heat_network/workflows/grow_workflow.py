@@ -121,6 +121,10 @@ class EndScenarioSizing(
     CollocatedIntegratedOptimizationProblem,
 ):
     """
+    This class is the base class to run all the other EndScenarioSizing classes from.
+
+    HIGHS is now the standard solver and gurobi only to be used when called specifically.
+
     Goal priorities are:
     1. minimize TCO = Capex + Opex*lifetime
     """
@@ -172,23 +176,6 @@ class EndScenarioSizing(
 
         super().pre()
 
-        # parameters = self.parameters(0)
-        # bounds = self.bounds()
-
-        # TODO: these constraints do no longer work as we now have varying size timesteps
-        # for s in self._setpoint_constraints_sources:
-        #     # Here we enforce that over the full time horizon no setpoint changes can be done
-        #     self._timed_setpoints[s] = (len(self.times()), 0)
-        #
-        # # Mixed-interger formulation of component setpoint
-        # for component_name in self._timed_setpoints.keys():
-        #     # Make 1 variable per component (so not per control
-        #     # variable) which represents if the setpoint of the component
-        #     # is changed (1) is not changed (0) in a timestep
-        #     change_setpoint_var = f"{component_name}._change_setpoint_var"
-        #     self._component_to_change_setpoint_map[component_name] = change_setpoint_var
-        #     self._change_setpoint_var[change_setpoint_var] = ca.MX.sym(change_setpoint_var)
-        #     self._change_setpoint_bounds[change_setpoint_var] = (0, 1.0)
 
     def read(self):
         """
@@ -369,9 +356,17 @@ class EndScenarioSizing(
 
 
 class EndScenarioSizingHIGHS(EndScenarioSizing):
+    """
+    HIGHS is now the standard solver and gurobi only to be used when called specifically.
+    Currently, the classes in HIGHS are maintained such that the same 'old' function calling can be
+    used for the code running in NWN.
+    """
     pass
 
 class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
+    """
+    Uses Gurobi as the solver for the EndScenarioSizing problem.
+    """
     pass
 
 class EndScenarioSizingDiscounted(
@@ -387,11 +382,8 @@ class EndScenarioSizingDiscounted(
         super().__init__(*args, **kwargs)
 
     def heat_network_options(self):
-        # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
-        #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
 
-        # options["neglect_pipe_heat_losses"] = True # set to true in staged approach
         options["discounted_annualized_cost"] = True
 
         return options
@@ -448,9 +440,6 @@ class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
 class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
     pass
 
-#TODO: HIGHS should become standard solver and gurobi only to be used when called specifically
-# currently the classes in HIGHS are maintained such that the same 'old' function calling can be
-# used for the code running in NWN.
 
 def run_end_scenario_sizing_no_heat_losses(
     end_scenario_problem_class,
@@ -516,7 +505,7 @@ def run_end_scenario_sizing(
     priorities_output = []
 
     start_time = time.time()
-    if staged_pipe_optimization:
+    if staged_pipe_optimization and issubclass(end_scenario_problem_class, SettingsStaged):
         solution = run_optimization_problem(
             end_scenario_problem_class,
             stage=1,
