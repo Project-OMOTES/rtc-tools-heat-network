@@ -2,6 +2,8 @@ import logging
 import math
 from typing import Dict, Tuple, Type, Union
 
+import CoolProp as cP
+
 import esdl
 
 from rtctools_heat_network.pycml.component_library.heat import (
@@ -19,6 +21,7 @@ from rtctools_heat_network.pycml.component_library.heat import (
     GasNode,
     GasPipe,
     GasSource,
+    GasSubstation,
     GasTankStorage,
     GeothermalSource,
     HeatExchanger,
@@ -36,6 +39,7 @@ from scipy.optimize import fsolve
 from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
 from .common import Asset
 from .esdl_model_base import _ESDLModelBase
+from ..network_common import NetworkSettings
 
 logger = logging.getLogger("rtctools_heat_network")
 
@@ -84,6 +88,37 @@ class AssetToHeatComponent(_AssetToComponentBase):
         rho and cp
         """
         return dict(rho=self.rho, cp=self.cp)
+
+    def get_density(self, asset_name, carrier):
+        # TODO: gas carrier temperature still needs to be resolved.
+        # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
+        # is also updated in the head_loss_class.
+        temperature = 20.0
+
+        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+            density = cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + temperature,
+                "P",
+                carrier.pressure,
+                NetworkSettings.NETWORK_COMPOSITION_GAS,
+            )
+        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
+            density = cP.CoolProp.PropsSI(
+                "D",
+                "T",
+                273.15 + temperature,
+                "P",
+                carrier.pressure,
+                str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
+            )
+        else:
+            logger.warning(
+                f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
+            )
+            density = 6.2  # natural gas at about 8 bar
+        return density
 
     def get_asset_attribute_value(
         self,
@@ -240,8 +275,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
             else 10.0e6
         )
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             height=r,
             radius=r,
             heat_transfer_coeff=1.0,
@@ -260,6 +297,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             Heat_flow=dict(min=-hfr_discharge_max, max=hfr_charge_max, nominal=hfr_charge_max),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             init_Heat=min_heat,
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -290,10 +329,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             Heat_demand=dict(max=max_demand, nominal=max_demand / 2.0),
             Heat_flow=dict(max=max_demand, nominal=max_demand / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -392,9 +435,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             self._set_q_nominal(asset, q_nominal)
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
+            pressure = asset.in_ports[0].carrier.pressure * 1.0e5
             modifiers = dict(
                 length=length,
+                density=self.get_density(asset.name, asset.in_ports[0].carrier),
                 diameter=diameter,
+                pressure=pressure,
                 # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
                 GasIn=dict(
                     Q=dict(min=-q_max, max=q_max),
@@ -446,10 +492,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
             HeatIn=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
+                Hydraulic_power=dict(nominal=q_nominal * 16.0e5),
             ),
             HeatOut=dict(
                 Heat=dict(min=-hfr_max, max=hfr_max),
                 Q=dict(min=-q_max, max=q_max),
+                Hydraulic_power=dict(nominal=q_nominal * 16.0e5),
             ),
             Heat_flow=dict(min=-hfr_max, max=hfr_max, nominal=hfr_max),
             insulation_thickness=insulation_thicknesses,
@@ -483,6 +531,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "Pump"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -491,6 +541,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 min_value=1.0,
                 max_value=50.0,
             ),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
@@ -558,8 +610,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
 
         prim_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
+            ),
             Q_nominal=max_power
             / (
                 2
@@ -569,8 +627,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             ),
         )
         sec_heat = dict(
-            HeatIn=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
-            HeatOut=dict(Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0)),
+            HeatIn=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
+            ),
+            HeatOut=dict(
+                Heat=dict(min=-max_power, max=max_power, nominal=max_power / 2.0),
+                Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
+            ),
             Q_nominal=max_power
             / (
                 2
@@ -650,9 +714,18 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         params_t = self._supply_return_temperature_modifiers(asset)
         params_q = self._get_connected_q_nominal(asset)
+        prim_heat = dict(
+            HeatIn=dict(Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5)),
+        )
+        sec_heat = dict(
+            HeatIn=dict(Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5)),
+        )
         params = {}
-        params["Primary"] = {**params_t["Primary"], **params_q["Primary"]}
-        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"]}
+        params["Primary"] = {**params_t["Primary"], **params_q["Primary"], **prim_heat}
+        params["Secondary"] = {**params_t["Secondary"], **params_q["Secondary"], **sec_heat}
+
         max_power = power_electrical * (1.0 + cop)  # TODO: dit kan zijn power_electrical*cop
 
         modifiers = dict(
@@ -724,6 +797,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if hasattr(asset.attributes["KPIs"], "kpi"):
             co2_coefficient = asset.attributes["KPIs"].kpi.items[0].value
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -735,11 +810,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
             co2_coeff=co2_coefficient,
             Heat_source=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
             Heat_flow=dict(min=0.0, max=max_supply, nominal=max_supply / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -816,6 +893,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if not efficiency:
             efficiency = 0.7
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -827,7 +906,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             single_doublet_power=single_doublet_power,
             heat_loss_coeff=(1.0 - efficiency ** (1.0 / 100.0)) / (3600.0 * 24.0),
             state=self.get_state(asset),
@@ -842,6 +921,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=hfr_charge_max * asset.attributes["aggregationCount"] * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * asset.attributes["aggregationCount"] * 30.0 * 24 * 3600.0,
             ),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
             **self._get_cost_figure_modifiers(asset),
@@ -868,6 +949,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "Valve"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(
                 asset,
@@ -879,7 +962,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             discount_rate=self.get_asset_attribute_value(
                 asset, "discountRate", default_value=0.0, min_value=0.0, max_value=100.0
             ),
-            Q_nominal=self._get_connected_q_nominal(asset),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
@@ -906,9 +991,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type == "CheckValve"
 
+        q_nominal = self._get_connected_q_nominal(asset)
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             state=self.get_state(asset),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             **self._supply_return_temperature_modifiers(asset),
             **self._rho_cp_modifiers,
         )
@@ -1090,6 +1179,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset.name, asset.in_ports[0].carrier),
             GasIn=dict(
                 Q=dict(
                     min=0.0,
@@ -1121,6 +1211,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset.name, asset.out_ports[0].carrier),
             Gas_source_mass_flow=dict(
                 min=0.0,
                 max=self._get_connected_q_max(asset),
@@ -1210,6 +1301,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
+            density=self.get_density(asset.name, asset.in_ports[0].carrier),
             volume=asset.attributes["workingVolume"],
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
@@ -1221,6 +1313,33 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
 
         return GasTankStorage, modifiers
+
+    def convert_gas_substation(self, asset: Asset) -> Tuple[Type[GasSubstation], MODIFIERS]:
+        """
+        This function converts the GasTankStorage object in esdl to a set of modifiers that can be
+        used in a pycml object.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        GasTankStorage class with modifiers
+        """
+        assert asset.asset_type in {"GasConversion"}
+
+        q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
+
+        modifiers = dict(
+            Q_nominal_in=q_nom_in,
+            Q_nominal_out=q_nom_out,
+            density_in=self.get_density(asset.name, asset.in_ports[0].carrier),
+            density_out=self.get_density(asset.name, asset.out_ports[0].carrier),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return GasSubstation, modifiers
 
 
 class ESDLHeatModel(_ESDLModelBase):

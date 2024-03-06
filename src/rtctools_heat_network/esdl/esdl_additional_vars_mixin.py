@@ -8,6 +8,8 @@ from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 
+from rtctools_heat_network.network_common import NetworkSettings
+
 logger = logging.getLogger("rtctools_heat_network")
 
 
@@ -56,6 +58,12 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         options = super().esdl_heat_model_options()
         options["min_fraction_tank_volume"] = 0.0
         return options
+
+    def temperature_carriers(self):
+        return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_HEAT).lower())
+
+    def electricity_carriers(self):
+        return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_ELECTRICITY).lower())
 
     def temperature_regimes(self, carrier):
         temperature_options = []

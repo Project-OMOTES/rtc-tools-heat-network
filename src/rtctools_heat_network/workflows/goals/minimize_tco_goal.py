@@ -36,8 +36,24 @@ class MinimizeTCO(Goal):
         self.function_nominal = 1.0e6
 
         default_asset_type_maps = {
-            "operational": {"source", "ates", "heat_pump"},
-            "fixed_operational": {"source", "ates", "buffer", "heat_pump", "heat_exchanger"},
+            "operational": {
+                "source",
+                "ates",
+                "heat_pump",
+                "heat_pump_elec",
+                "pump",
+                "heat_exchanger",
+                "buffer",
+            },
+            "fixed_operational": {
+                "source",
+                "ates",
+                "buffer",
+                "heat_pump",
+                "heat_exchanger",
+                "heat_exchanger_elec",
+                "pump",
+            },
             "investment": {
                 "source",
                 "ates",
@@ -46,6 +62,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "pipe",
+                "heat_exchanger_elec",
+                "pump",
             },
             "installation": {
                 "source",
@@ -55,6 +73,8 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "pipe",
+                "heat_exchanger_elec",
+                "pump",
             },
             "annualized": {
                 "source",
@@ -64,7 +84,9 @@ class MinimizeTCO(Goal):
                 "heat_exchanger",
                 "heat_pump",
                 "pipe",
-            },
+                "heat_exchanger_elec",
+                "pump",
+            },  # TODO: confirm inclusion of "heat_exchanger_elec" & "pump"  in "annualized"
         }
 
         self.asset_type_maps = (

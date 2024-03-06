@@ -315,7 +315,7 @@ class ESDLMixin(
         return self._esdl_assets
 
     @property
-    def esdl_carriers(self) -> Dict[str, Dict[str, Any]]:
+    def esdl_carriers(self, type=None) -> Dict[str, Dict[str, Any]]:
         """
         property method to retrieve the esdl carriers which are a private attribute of the class.
 
@@ -323,7 +323,25 @@ class ESDLMixin(
         -------
         A dict with the id of the carrier and the attributes in the value
         """
+
         return self._esdl_carriers
+
+    def esdl_carriers_typed(self, type=None) -> Dict[str, Dict[str, Any]]:
+        """
+        property method to retrieve the esdl carriers which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict with the id of the carrier and the attributes in the value
+        """
+        if type is None:
+            return self._esdl_carriers
+        else:
+            carriers = {}
+            for id, attr in self._esdl_carriers.items():
+                if attr["type"] == type:
+                    carriers[id] = attr
+        return carriers
 
     def get_energy_system_copy(self) -> esdl.esdl.EnergySystem:
         """

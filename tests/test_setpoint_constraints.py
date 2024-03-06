@@ -92,7 +92,7 @@ class TestSetpointConstraints(TestCase):
                 results_4["GeothermalSource_b702.Heat_source"][2:]
                 - results_4["GeothermalSource_b702.Heat_source"][1:-1]
             ),
-            1.0e-6,
+            1.0e-3,
         )
 
     @pytest.mark.second

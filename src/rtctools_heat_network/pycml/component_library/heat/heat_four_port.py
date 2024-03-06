@@ -1,3 +1,5 @@
+from rtctools_heat_network.pycml import Variable
+
 from ._internal import HeatComponent
 from ._non_storage_component import _NonStorageComponent
 
@@ -19,3 +21,9 @@ class HeatFourPort(HeatComponent):
 
         self.add_variable(_NonStorageComponent, "Primary", **modifiers["Primary"])
         self.add_variable(_NonStorageComponent, "Secondary", **modifiers["Secondary"])
+        self.add_variable(
+            Variable,
+            "Pump_power",
+            min=0.0,
+            nominal=self.Secondary.Q_nominal * self.Secondary.nominal_pressure,
+        )
