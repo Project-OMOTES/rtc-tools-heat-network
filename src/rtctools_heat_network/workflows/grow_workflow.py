@@ -289,6 +289,11 @@ class EndScenarioSizing(
             return success, log_level
 
     def priority_started(self, priority):
+        goals_print = set()
+        for goal in [*self.path_goals(), *self.goals()]:
+            if goal.priority == priority:
+                goals_print.update([str(type(goal))])
+        logger.info(f"{goals_print}")
         self.__priority = priority
         self.__priority_timer = time.time()
 
@@ -395,6 +400,27 @@ class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounte
     pass
 
 
+class EndScenarioSizingHeadLoss(EndScenarioSizing):
+    """
+    EndScenarioSizing optimisation including the linearised inequality DarcyWeisbach Head loss
+    relations
+
+    As long as the pumping costs are not yet included in the TCO, the minimize_head_losses setting
+    must be set to true, to get the headloss inequalities close to their equality lines.
+    """
+
+    def heat_network_options(self):
+        options = super().heat_network_options()
+
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+        self.heat_network_settings["minimize_head_losses"] = True
+
+        return options
+
+
+class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
+    pass
+
 class SettingsStaged:
     """
     Additional settings to be used when a staged approach should be implemented.
@@ -422,6 +448,8 @@ class SettingsStaged:
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
             self.heat_network_settings["minimum_velocity"] = 0.0
+            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"] = False
 
         return options
 
@@ -455,6 +483,18 @@ class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
 
 
 class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
+    pass
+
+class EndScenarioSizingHeadLossStaged(SettingsStaged, EndScenarioSizingHeadLoss):
+    pass
+
+class EndScenarioSizingHeadLossStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossStaged):
+    pass
+
+class EndScenarioSizingHeadLossDiscountedStaged(SettingsStaged, EndScenarioSizingHeadLossDiscounted):
+    pass
+
+class EndScenarioSizingHeadLossDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged):
     pass
 
 

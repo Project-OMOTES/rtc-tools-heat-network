@@ -1,3 +1,4 @@
+from math import nan
 from pathlib import Path
 from unittest import TestCase
 
@@ -5,6 +6,7 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
+import rtctools_heat_network._darcy_weisbach as darcy_weisbach
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import (
@@ -13,6 +15,8 @@ from rtctools_heat_network.workflows import (
     EndScenarioSizingStagedHIGHS,
     run_end_scenario_sizing,
 )
+from rtctools_heat_network.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
+from tests.utils_tests import demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):
@@ -266,6 +270,53 @@ class TestEndScenarioSizing(TestCase):
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
                     np.testing.assert_allclose(heat_buffer[i], 0.0, atol=1.0e-6)
+
+    def test_end_scenario_sizing_head_loss(self):
+        """
+        Test is EndScenarioSizingHeadLoss class is behaving as expected. E.g. should behave
+        similarly to EndScenarioSizing class but now the linearised inequality Darcy Weisbach
+        equations should be included for the head loss.
+
+        Checks:
+        - objective (TCO) same order of magnitude
+        - head loss is calculated, currently only checked if it is equal or larger than the
+        DW head_loss
+        """
+
+        import models.test_case_small_network_ates_buffer_optional_assets.src.run_ates as run_ates
+
+        base_folder = Path(run_ates.__file__).resolve().parent.parent
+
+        solution = run_end_scenario_sizing(
+            EndScenarioSizingHeadLossStaged,
+            base_folder=base_folder,
+            esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="Warmte_test.csv",
+        )
+
+        results = solution.extract_results()
+
+        demand_matching_test(solution, results)
+
+        pipes = solution.heat_network_components.get("pipe")
+        for pipe in pipes:
+            print(pipe)
+            v_max = solution.heat_network_settings["maximum_velocity"]
+            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
+            temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
+            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+            for ii in range(len(results[f"{pipe}.dH"])):
+                if velocities[ii]>0 and pipe_diameter>0:
+                    np.testing.assert_array_less(
+                        darcy_weisbach.head_loss(
+                            velocities[ii], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                        ),
+                        abs(results[f"{pipe}.dH"][ii]),
+                    )
 
 
 if __name__ == "__main__":
