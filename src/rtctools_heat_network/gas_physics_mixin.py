@@ -633,7 +633,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         head_loss,
                         dh,
                         is_disconnected + is_topo_disconnected,
-                        2.0 * self.__maximum_total_head_loss,
+                        2.0 * 2.0 * self.__maximum_total_head_loss,
                         network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
@@ -649,6 +649,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     network_type=self.gas_network_settings["network_type"],
                     pressure=parameters[f"{pipe}.pressure"],
                 )
+
 
             # Relate the head loss symbol to the pipe's dH symbol.
 

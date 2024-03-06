@@ -763,11 +763,11 @@ class HeadLossClass:
 
                     for ii_line, ii_line_var in pipe_linear_line_segment.items():
                         # Create integer variable to activated/deactivate (1/0) a linear line segment
-                        is_line_segment_active_var = optimization_problem.extra_variable(ii_line_var)
+                        is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
 
                         # Linear line segment activation variable for each time step of demand profile
                         is_line_segment_active.append(
-                            ca.repmat(is_line_segment_active_var, n_timesteps)
+                            is_line_segment_active_var #ca.repmat(is_line_segment_active_var, n_timesteps)
                         )
 
                     # Calculate constraint to enforce that only 1 linear line segment can be active
