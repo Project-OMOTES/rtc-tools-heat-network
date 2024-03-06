@@ -9,7 +9,9 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.workflows import (
     EndScenarioSizingDiscountedHIGHS,
-    EndScenarioSizingHIGHS, EndScenarioSizingStagedHIGHS, run_end_scenario_sizing,
+    EndScenarioSizingHIGHS,
+    EndScenarioSizingStagedHIGHS,
+    run_end_scenario_sizing,
 )
 
 
@@ -183,22 +185,23 @@ class TestEndScenarioSizing(TestCase):
 
         np.testing.assert_allclose(obj / 1.0e6, solution.objective_value)
 
-        #comparing results of staged and unstaged problem definition. For larger systems there
+        # comparing results of staged and unstaged problem definition. For larger systems there
         # might be a difference in the value but that would either be a difference within the
         # MIPgap or because of some tighter constraints in the staged problem e.g. staged problem
         # slightly higher objective value
         np.testing.assert_allclose(solution.objective_value, solution_unstaged.objective_value)
 
-        #checking time spend on optimisation approaches, the difference between the unstaged
+        # checking time spend on optimisation approaches, the difference between the unstaged
         # approaches should be smaller than the difference with the staged approach. The staged
         # approach should be quickest in solving.
         solution_time_unstaged = sum([i[1] for i in solution_unstaged._priorities_output])
         solution_time_unstaged_2 = sum([i[1] for i in solution_unstaged_2._priorities_output])
         solution_time_staged = sum([i[1] for i in solution._priorities_output])
-        np.testing.assert_array_less(abs(solution_time_unstaged_2 - solution_time_unstaged),
-                                   abs(solution_time_staged - solution_time_unstaged))
-        np.testing.assert_array_less(solution_time_staged,
-                                     solution_time_unstaged)
+        np.testing.assert_array_less(
+            abs(solution_time_unstaged_2 - solution_time_unstaged),
+            abs(solution_time_staged - solution_time_unstaged),
+        )
+        np.testing.assert_array_less(solution_time_staged, solution_time_unstaged)
 
     def test_end_scenario_sizing_discounted(self):
         """

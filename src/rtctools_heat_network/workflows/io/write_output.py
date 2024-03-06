@@ -18,6 +18,8 @@ import pandas as pd
 
 import pytz
 
+from rtctools.optimization.timeseries import Timeseries
+
 import rtctools_heat_network.esdl.esdl_parser
 from rtctools_heat_network.constants import GRAVITATIONAL_CONSTANT
 from rtctools_heat_network.esdl.edr_pipe_class import EDRPipeClass
@@ -1173,7 +1175,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         #     esh.save(str(filename))
 
     def _write_json_output(self):
-        #TODO: still add solver stats as json output
+        # TODO: still add solver stats as json output
         results = self.extract_results()
         workdir = self.output_folder
 
@@ -1192,7 +1194,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         for key, value in bounds.items():
             if "Stored_heat" not in key:
                 new_value = value  # [x for x in value]
-                if type(value[0]).__name__ =='Timeseries' or type(value[1]).__name__ =='Timeseries':
+                if isinstance(value[0], Timeseries) or isinstance(value[1], Timeseries):
                     new_value = (value[0].values.tolist(), value[1].values.tolist())
                 bounds_dict[key] = new_value
         with open(bounds_path, "w") as file:
@@ -1220,6 +1222,3 @@ class ScenarioOutput(TechnoEconomicMixin):
         aliases_path = os.path.join(workdir, "aliases.json")
         with open(aliases_path, "w") as file:
             json.dump(alias_dict, fp=file)
-
-
-

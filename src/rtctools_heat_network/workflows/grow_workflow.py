@@ -1,4 +1,3 @@
-import json
 import locale
 import logging
 import os
@@ -79,7 +78,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        if hasattr(self, '_stage'):
+        if hasattr(self, "_stage"):
             if self._stage == 1:
                 highs_options["mip_rel_gap"] = 0.005
             else:
@@ -91,13 +90,14 @@ class SolverHIGHS:
 
         return options
 
+
 class SolverGurobi:
     def solver_options(self):
         options = super().solver_options()
         options["casadi_solver"] = self._qpsol
         options["solver"] = "gurobi"
         gurobi_options = options["gurobi"] = {}
-        if hasattr(self, '_stage'):
+        if hasattr(self, "_stage"):
             if self._stage == 1:
                 gurobi_options["MIPgap"] = 0.005
             else:
@@ -156,7 +156,7 @@ class EndScenarioSizing(
 
         self._save_json = False
 
-    def _get_runinfo_path_root(self): #degredated
+    def _get_runinfo_path_root(self):  # degredated
         runinfo_path = Path(self.esdl_run_info_path).resolve()
         tree = ET.parse(runinfo_path)
         return tree.getroot()
@@ -175,7 +175,6 @@ class EndScenarioSizing(
         self._qpsol = CachingQPSol()
 
         super().pre()
-
 
     def read(self):
         """
@@ -361,17 +360,19 @@ class EndScenarioSizingHIGHS(EndScenarioSizing):
     Currently, the classes in HIGHS are maintained such that the same 'old' function calling can be
     used for the code running in NWN.
     """
+
     pass
+
 
 class EndScenarioSizingGurobi(SolverGurobi, EndScenarioSizing):
     """
     Uses Gurobi as the solver for the EndScenarioSizing problem.
     """
+
     pass
 
-class EndScenarioSizingDiscounted(
-    EndScenarioSizing
-):
+
+class EndScenarioSizingDiscounted(EndScenarioSizing):
     """
     Goal priorities are:
     1. Match heat demand with target
@@ -388,16 +389,21 @@ class EndScenarioSizingDiscounted(
 
         return options
 
+
 class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
     pass
+
 
 class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounted):
     pass
 
+
 class SettingsStaged:
     _stage = 0
 
-    def __init__(self, stage=None, boolean_bounds=None, priorities_output: list=None, *args, **kwargs):
+    def __init__(
+        self, stage=None, boolean_bounds=None, priorities_output: list = None, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         self._stage = stage
@@ -425,17 +431,22 @@ class SettingsStaged:
 class EndScenarioSizingStaged(SettingsStaged, EndScenarioSizing):
     pass
 
+
 class EndScenarioSizingStagedHIGHS(EndScenarioSizingStaged):
     pass
+
 
 class EndScenarioSizingStagedGurobi(SolverGurobi, EndScenarioSizingStaged):
     pass
 
+
 class EndScenarioSizingDiscountedStaged(SettingsStaged, EndScenarioSizingDiscounted):
     pass
 
+
 class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
     pass
+
 
 class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
     pass
@@ -461,7 +472,9 @@ def run_end_scenario_sizing_no_heat_losses(
     """
     import time
 
-    assert issubclass(end_scenario_problem_class, SettingsStaged), "A staged problem class is required as input for the sizing without heat_losses"
+    assert issubclass(
+        end_scenario_problem_class, SettingsStaged
+    ), "A staged problem class is required as input for the sizing without heat_losses"
 
     start_time = time.time()
     solution = run_optimization_problem(
@@ -556,12 +569,15 @@ def run_end_scenario_sizing(
                     r = results[f"{p}__flow_direct_var"][i]
                     # bound to roughly represent 4km of heat losses in pipes
                     lb.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else bounds_pipe[0]
+                        r
+                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
+                        else bounds_pipe[0]
                     )
                     ub.append(
-                        r if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2 else bounds_pipe[1]
+                        r
+                        if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2
+                        else bounds_pipe[1]
                     )
-
 
                 boolean_bounds[f"{p}__flow_direct_var"] = (Timeseries(t, lb), Timeseries(t, ub))
                 try:
@@ -584,7 +600,6 @@ def run_end_scenario_sizing(
     return solution
 
 
-
 def connect_database():
     client = InfluxDBClient(
         host=DB_HOST, port=DB_PORT, username=DB_USER, password=DB_PASSWORD, database=DB_NAME
@@ -600,6 +615,7 @@ def format_datetime(dt):
     ndate = year + "-" + month + "-" + day
     ntime = time + ":00+0000"
     return ndate + "T" + ntime
+
 
 @main_decorator
 def main(runinfo_path, log_level):
