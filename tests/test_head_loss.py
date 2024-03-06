@@ -395,6 +395,9 @@ class TestHeadLoss(TestCase):
                         self.gas_network_settings["minimize_head_losses"] = False
                         self.gas_network_settings["minimum_velocity"] = 0.0
 
+                    # This code below was needed for LINEARIZED_N_LINES_EQUALITY to pass below
+                    self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                    self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
             solution = run_optimization_problem(
@@ -539,8 +542,8 @@ class TestHeadLoss(TestCase):
                         self.gas_network_settings["minimize_head_losses"] = True
 
 
-                    self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                    self.gas_network_settings["pipe_minimum_pressure"] = 0.0
+                    # self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                    # self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                     return options
 
             solution = run_optimization_problem(
