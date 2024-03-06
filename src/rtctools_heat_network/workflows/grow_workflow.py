@@ -405,8 +405,9 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
     EndScenarioSizing optimisation including the linearised inequality DarcyWeisbach Head loss
     relations
 
-    As long as the pumping costs are not yet included in the TCO, the minimize_head_losses setting
-    must be set to true, to get the headloss inequalities close to their equality lines.
+    The minimize_head_losses setting can be set to False as the pumping costs can be included in
+    the TCO, it does require a price profile to be added to the electricity carrier, else it should
+     be set to True.
     """
 
     def heat_network_options(self):
@@ -420,6 +421,7 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
     pass
+
 
 class SettingsStaged:
     """
@@ -485,16 +487,24 @@ class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
 class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
     pass
 
+
 class EndScenarioSizingHeadLossStaged(SettingsStaged, EndScenarioSizingHeadLoss):
     pass
+
 
 class EndScenarioSizingHeadLossStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossStaged):
     pass
 
-class EndScenarioSizingHeadLossDiscountedStaged(SettingsStaged, EndScenarioSizingHeadLossDiscounted):
+
+class EndScenarioSizingHeadLossDiscountedStaged(
+    SettingsStaged, EndScenarioSizingHeadLossDiscounted
+):
     pass
 
-class EndScenarioSizingHeadLossDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged):
+
+class EndScenarioSizingHeadLossDiscountedStagedGurobi(
+    SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged
+):
     pass
 
 

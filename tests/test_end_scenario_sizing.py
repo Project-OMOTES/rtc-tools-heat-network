@@ -1,4 +1,3 @@
-from math import nan
 from pathlib import Path
 from unittest import TestCase
 
@@ -16,6 +15,7 @@ from rtctools_heat_network.workflows import (
     run_end_scenario_sizing,
 )
 from rtctools_heat_network.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
+
 from tests.utils_tests import demand_matching_test
 
 
@@ -302,18 +302,20 @@ class TestEndScenarioSizing(TestCase):
 
         pipes = solution.heat_network_components.get("pipe")
         for pipe in pipes:
-            print(pipe)
-            v_max = solution.heat_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
             pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
             temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
             velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
             for ii in range(len(results[f"{pipe}.dH"])):
-                if velocities[ii]>0 and pipe_diameter>0:
+                if velocities[ii] > 0 and pipe_diameter > 0:
                     np.testing.assert_array_less(
                         darcy_weisbach.head_loss(
-                            velocities[ii], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                            velocities[ii],
+                            pipe_diameter,
+                            pipe_length,
+                            pipe_wall_roughness,
+                            temperature,
                         ),
                         abs(results[f"{pipe}.dH"][ii]),
                     )
