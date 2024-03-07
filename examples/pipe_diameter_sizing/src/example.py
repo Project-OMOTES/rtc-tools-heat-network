@@ -67,8 +67,8 @@ class PipeDiameterSizingProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
         options["maximum_temperature_der"] = np.inf
@@ -98,7 +98,7 @@ class PipeDiameterSizingProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 

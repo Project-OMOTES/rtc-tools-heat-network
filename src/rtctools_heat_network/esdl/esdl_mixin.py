@@ -422,7 +422,7 @@ class ESDLMixin(
     def esdl_heat_model_options(self) -> Dict:
         """
         function to spedifically return the needed HeatMixin options needed for the conversion
-        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+        from ESDL to pycml. This case velocities used to set nominals and caps on the milp.
 
         Returns
         -------
@@ -436,7 +436,7 @@ class ESDLMixin(
     def esdl_qth_model_options(self) -> Dict:
         """
         function to spedifically return the needed HeatMixin options needed for the conversion
-        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+        from ESDL to pycml. This case velocities used to set nominals and caps on the milp.
 
         Returns
         -------
@@ -533,7 +533,7 @@ class ESDLMixin(
         None
         """
         super().read()
-        heat_network_components = self.heat_network_components
+        heat_network_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
         self.__profile_reader.read_profiles(
@@ -701,13 +701,13 @@ class _ESDLInputDataConfig:
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its heat timeseries."
+                f"Using neutral suffix '.target_heat' for its milp timeseries."
             )
             suffix = ".target_heat"
 
         # Note that the qualifier id (if any specified) refers to the profile
         # element of the respective ESDL asset->in_port. For now we just
-        # assume that only heat demand timeseries are set in the XML file.
+        # assume that only milp demand timeseries are set in the XML file.
         return f"{component_name}{suffix}"
 
     def pi_variable_ids(self, variable):

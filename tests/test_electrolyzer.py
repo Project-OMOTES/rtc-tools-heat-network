@@ -33,7 +33,7 @@ class TestElectrolyzer(TestCase):
 
         class MILPProblemSolve(MILPProblem):
             def heat_network_options(self):
-                options = super().heat_network_options()
+                options = super().energy_system_options()
                 self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
                 self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
@@ -106,7 +106,7 @@ class TestElectrolyzer(TestCase):
         np.testing.assert_allclose(results["GasStorage_e492.Stored_gas_mass"][0], 0.0)
         np.testing.assert_allclose(results["GasStorage_e492.Gas_tank_flow"][0], 0.0)
 
-        for cable in solution.heat_network_components.get("electricity_cable", []):
+        for cable in solution.energy_system_components.get("electricity_cable", []):
             ub = solution.esdl_assets[solution.esdl_asset_name_to_id_map[f"{cable}"]].attributes[
                 "capacity"
             ]

@@ -96,7 +96,7 @@ class QTHESDL(
 ):
     @property
     def heat_network_flow_directions(self):
-        pipes = self.heat_network_components["pipe"]
+        pipes = self.energy_system_components["pipe"]
         return {p: "__fixed_positive_flow" for p in pipes}
 
     def constant_inputs(self, ensemble_member):

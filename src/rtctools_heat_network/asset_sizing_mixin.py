@@ -205,7 +205,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__pipe_topo_global_pipe_class_count_map[f"{pc.name}"] = pipe_class_count
             self.__pipe_topo_global_pipe_class_count_var_bounds[pipe_class_count] = (
                 0.0,
-                len(self.heat_network_components.get("pipe", [])),
+                len(self.energy_system_components.get("pipe", [])),
             )
 
         unique_pipe_classes = self.get_unique_gas_pipe_classes()
@@ -217,7 +217,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__gas_pipe_topo_global_pipe_class_count_map[f"{pc.name}"] = pipe_class_count
             self.__gas_pipe_topo_global_pipe_class_count_var_bounds[pipe_class_count] = (
                 0.0,
-                len(self.heat_network_components.get("gas_pipe", [])),
+                len(self.energy_system_components.get("gas_pipe", [])),
             )
 
         unique_cable_classes = self.get_unique_cable_classes()
@@ -231,10 +231,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
             self.__electricity_cable_topo_global_cable_class_count_var_bounds[cable_class_count] = (
                 0.0,
-                len(self.heat_network_components.get("electricity_cable", [])),
+                len(self.energy_system_components.get("electricity_cable", [])),
             )
 
-        for cable in self.heat_network_components.get("electricity_cable", []):
+        for cable in self.energy_system_components.get("electricity_cable", []):
             cable_classes = self.electricity_cable_classes(cable)
 
             res_var_name = f"{cable}__en_resistance"
@@ -368,7 +368,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             cable_class_cost_ordering_name
                         ] = (0.0, 1.0)
 
-        for pipe in self.heat_network_components.get("gas_pipe", []):
+        for pipe in self.energy_system_components.get("gas_pipe", []):
             pipe_classes = self.gas_pipe_classes(pipe)
 
             diam_var_name = f"{pipe}__gn_diameter"
@@ -489,7 +489,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe_class_cost_ordering_name
                         ] = (0.0, 1.0)
 
-        for pipe in self.heat_network_components.get("pipe", []):
+        for pipe in self.energy_system_components.get("pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
 
@@ -583,14 +583,14 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     d[f"{pipe}.diameter"] = np.nan
                     d[f"{pipe}.area"] = np.nan
 
-            # For similar reasons as for the diameter, we always make a heat
-            # loss symbol, even if the heat loss is fixed. Note that we also
+            # For similar reasons as for the diameter, we always make a milp
+            # loss symbol, even if the milp loss is fixed. Note that we also
             # override the .Heat_loss parameter for cold pipes, even though
             # it is not actually used in the optimization problem.
             heat_loss_var_name = f"{pipe}__hn_heat_loss"
 
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
-                # No pipe class decision to make for this pipe w.r.t. heat loss
+                # No pipe class decision to make for this pipe w.r.t. milp loss
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe)
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     0.0,
@@ -609,7 +609,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     h[f"{pipe}.Heat_loss"] = pipe_heat_loss(self, options, parameters, pipe)
 
             elif len(pipe_classes) == 1:
-                # No pipe class decision to make for this pipe w.r.t. heat loss
+                # No pipe class decision to make for this pipe w.r.t. milp loss
                 u_values = pipe_classes[0].u_values
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe, u_values)
 
@@ -763,12 +763,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
             self.__asset_max_size_nominals[asset_max_size_var] = nominal
 
-        for asset_name in self.heat_network_components.get("source", []):
+        for asset_name in self.energy_system_components.get("source", []):
             ub = bounds[f"{asset_name}.Heat_source"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("demand", []):
+        for asset_name in self.energy_system_components.get("demand", []):
             ub = (
                 bounds[f"{asset_name}.Heat_demand"][1]
                 if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
@@ -779,12 +779,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if np.isinf(bounds[f"{asset_name}.Heat_demand"][1]) else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("ates", []):
+        for asset_name in self.energy_system_components.get("ates", []):
             ub = bounds[f"{asset_name}.Heat_ates"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("buffer", []):
+        for asset_name in self.energy_system_components.get("buffer", []):
             ub = (
                 max(bounds[f"{asset_name}.Stored_heat"][1].values)
                 if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries)
@@ -799,9 +799,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
         for asset_name in [
-            *self.heat_network_components.get("heat_exchanger", []),
-            *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+            *self.energy_system_components.get("heat_pump_elec", []),
         ]:
             ub = bounds[f"{asset_name}.Secondary_heat"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
@@ -812,42 +812,42 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 nominal=self.variable_nominal(f"{asset_name}.Secondary_heat"),
             )
 
-        for asset_name in self.heat_network_components.get("gas_demand", []):
+        for asset_name in self.energy_system_components.get("gas_demand", []):
             # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
             # Note that we set the nominal to one to avoid division by zero
             ub = 0.0
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
 
-        for asset_name in self.heat_network_components.get("gas_source", []):
+        for asset_name in self.energy_system_components.get("gas_source", []):
             # TODO: add bound value for mass flow rate, used 1.0 for now instead of 0.0 which
             # Note that we set the nominal to one to avoid division by zero
             ub = 0.0
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=1.0)
 
-        for asset_name in self.heat_network_components.get("gas_tank_storage", []):
+        for asset_name in self.energy_system_components.get("gas_tank_storage", []):
             ub = bounds[f"{asset_name}.Stored_gas_mass"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("gas_substation", []):
+        for asset_name in self.energy_system_components.get("gas_substation", []):
             ub = bounds[f"{asset_name}.GasIn.Q"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("electrolyzer", []):
+        for asset_name in self.energy_system_components.get("electrolyzer", []):
             ub = bounds[f"{asset_name}.ElectricityIn.Power"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("electricity_demand", []):
+        for asset_name in self.energy_system_components.get("electricity_demand", []):
             v = bounds[f"{asset_name}.Electricity_demand"][1]
             ub = v if not np.isinf(v) else bounds[f"{asset_name}.ElectricityIn.Power"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] == 2 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.heat_network_components.get("electricity_source", []):
+        for asset_name in self.energy_system_components.get("electricity_source", []):
             ub = (
                 bounds[f"{asset_name}.Electricity_source"][1]
                 if not isinstance(bounds[f"{asset_name}.Electricity_source"][1], Timeseries)
@@ -857,7 +857,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
         # Making the __aggregation_count variable for each asset
-        for asset_list in self.heat_network_components.values():
+        for asset_list in self.energy_system_components.values():
             for asset in asset_list:
                 aggr_count_var = f"{asset}_aggregation_count"
                 self._asset_aggregation_count_var_map[asset] = aggr_count_var
@@ -873,7 +873,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     @abstractmethod
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
         """
 
         options = {}
@@ -925,7 +925,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for the network.
         """
         unique_pipe_classes = set()
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             unique_pipe_classes.update(self.pipe_classes(p))
         return unique_pipe_classes
 
@@ -935,7 +935,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for the network.
         """
         unique_pipe_classes = set()
-        for p in self.heat_network_components.get("gas_pipe", []):
+        for p in self.energy_system_components.get("gas_pipe", []):
             unique_pipe_classes.update(self.gas_pipe_classes(p))
         return unique_pipe_classes
 
@@ -945,7 +945,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for the network.
         """
         unique_cable_classes = set()
-        for p in self.heat_network_components.get("electricity_cable", []):
+        for p in self.energy_system_components.get("electricity_cable", []):
             unique_cable_classes.update(self.electricity_cable_classes(p))
         return unique_cable_classes
 
@@ -1132,7 +1132,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         options = self.heat_network_options()
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
@@ -1146,7 +1146,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             parameters = self.parameters(ensemble_member)
 
             head_loss = 0.0
-            # TODO: asset sizing is currently hard coded to use only the heat network settings
+            # TODO: asset sizing is currently hard coded to use only the milp network settings
             for pipe in components.get("pipe", []):
                 try:
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
@@ -1214,7 +1214,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_pipe_classes = self.get_unique_pipe_classes()
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             try:
                 pipe_classes = self._pipe_topo_pipe_class_map[p]
             except KeyError:
@@ -1299,7 +1299,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
 
-        # These are the constraints to order the heat loss of the pipe classes.
+        # These are the constraints to order the milp loss of the pipe classes.
         if not self.heat_network_options()["neglect_pipe_heat_losses"]:
             for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
                 if pipe in self.hot_pipes and self.has_related_pipe(pipe):
@@ -1406,7 +1406,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_pipe_classes = self.get_unique_gas_pipe_classes()
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
-        for p in self.heat_network_components.get("gas_pipe", []):
+        for p in self.energy_system_components.get("gas_pipe", []):
             try:
                 pipe_classes = self._gas_pipe_topo_pipe_class_map[p]
             except KeyError:
@@ -1545,7 +1545,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_cable_classes = self.get_unique_cable_classes()
         cable_class_count_sum = {cc.name: 0 for cc in unique_cable_classes}
 
-        for c in self.heat_network_components.get("electricity_cable", []):
+        for c in self.energy_system_components.get("electricity_cable", []):
             try:
                 cable_classes = self._electricity_cable_topo_cable_class_map[c]
             except KeyError:
@@ -1689,7 +1689,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
 
         # Clip discharge based on pipe class
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             # Match the indicators to the discharge symbol(s)
             discharge_sym = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
@@ -1710,7 +1710,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
 
         # Clip discharge based on pipe class
-        for p in self.heat_network_components.get("gas_pipe", []):
+        for p in self.energy_system_components.get("gas_pipe", []):
             # Match the indicators to the discharge symbol(s)
             discharge_sym = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
@@ -1733,7 +1733,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
 
         # Clip current based on pipe class
-        for cable in self.heat_network_components.get("electricity_cable", []):
+        for cable in self.energy_system_components.get("electricity_cable", []):
             # Match the indicators to the discharge symbol(s)
             current_sym = self.state(f"{cable}.I")
             nominal = self.variable_nominal(f"{cable}.I")
@@ -1760,7 +1760,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         bounds = self.bounds()
 
-        for b in self.heat_network_components.get("buffer", []):
+        for b in self.energy_system_components.get("buffer", []):
             max_var = self._asset_max_size_map[b]
             max_heat = self.extra_variable(max_var, ensemble_member)
             stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
@@ -1775,7 +1775,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             # Same as for the buffer but now for the source
-        for s in self.heat_network_components.get("source", []):
+        for s in self.energy_system_components.get("source", []):
             max_var = self._asset_max_size_map[s]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
@@ -1802,9 +1802,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
         for hx in [
-            *self.heat_network_components.get("heat_exchanger", []),
-            *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+            *self.energy_system_components.get("heat_pump_elec", []),
         ]:
             max_var = self._asset_max_size_map[hx]
             max_heat = self.extra_variable(max_var, ensemble_member)
@@ -1819,7 +1819,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.heat_network_components.get("demand", []):
+        for d in self.energy_system_components.get("demand", []):
             max_var = self._asset_max_size_map[d]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_demand = self.__state_vector_scaled(f"{d}.Heat_demand", ensemble_member)
@@ -1834,7 +1834,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             max_var = self._asset_max_size_map[a]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_ates = self.__state_vector_scaled(f"{a}.Heat_ates", ensemble_member)
@@ -1855,7 +1855,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.heat_network_components.get("electricity_demand", []):
+        for d in self.energy_system_components.get("electricity_demand", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_demand = self.__state_vector_scaled(
@@ -1872,7 +1872,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.heat_network_components.get("electricity_source", []):
+        for d in self.energy_system_components.get("electricity_source", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_source = self.__state_vector_scaled(
@@ -1889,7 +1889,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.heat_network_components.get("electrolyzer", []):
+        for d in self.energy_system_components.get("electrolyzer", []):
             max_var = self._asset_max_size_map[d]
             max_power = self.extra_variable(max_var, ensemble_member)
             electricity_electrolyzer = self.__state_vector_scaled(
@@ -1906,7 +1906,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
             )
 
-        for d in self.heat_network_components.get("gas_tank_storage", []):
+        for d in self.energy_system_components.get("gas_tank_storage", []):
             max_var = self._asset_max_size_map[d]
             max_size = self.extra_variable(max_var, ensemble_member)
             gas_mass = self.__state_vector_scaled(f"{d}.Stored_gas_mass", ensemble_member)
@@ -1939,27 +1939,27 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         for asset_name in [
             asset_name
-            for asset_name_list in self.heat_network_components.values()
+            for asset_name_list in self.energy_system_components.values()
             for asset_name in asset_name_list
         ]:
             if parameters[f"{asset_name}.state"] == 0 or parameters[f"{asset_name}.state"] == 2:
                 if asset_name in [
-                    *self.heat_network_components.get("geothermal", []),
-                    *self.heat_network_components.get("ates", []),
+                    *self.energy_system_components.get("geothermal", []),
+                    *self.energy_system_components.get("ates", []),
                 ]:
                     state_var = self.state(f"{asset_name}.Heat_flow")
                     single_power = parameters[f"{asset_name}.single_doublet_power"]
                     nominal_value = 2.0 * bounds[f"{asset_name}.Heat_flow"][1]
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
-                elif asset_name in [*self.heat_network_components.get("buffer", [])]:
+                elif asset_name in [*self.energy_system_components.get("buffer", [])]:
                     state_var = self.state(f"{asset_name}.HeatIn.Q")
                     single_power = parameters[f"{asset_name}.volume"]
                     nominal_value = single_power
                     nominal_var = self.variable_nominal(f"{asset_name}.HeatIn.Q")
                 elif asset_name in [
-                    *self.heat_network_components.get("node", []),
-                    *self.heat_network_components.get("gas_node", []),
-                    *self.heat_network_components.get("gas_pipe", []),
+                    *self.energy_system_components.get("node", []),
+                    *self.energy_system_components.get("gas_node", []),
+                    *self.energy_system_components.get("gas_pipe", []),
                 ]:
                     # TODO: can we generalize to all possible components to avoid having to skip
                     #  joints and other components in the future?
@@ -2064,7 +2064,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ensemble_member in range(self.ensemble_size):
             results = self.extract_results(ensemble_member)
 
-            for pipe in self.heat_network_components.get("pipe", []):
+            for pipe in self.energy_system_components.get("pipe", []):
                 pipe_classes = self.pipe_classes(pipe)
 
                 if not pipe_classes:
@@ -2083,7 +2083,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
     def _pipe_heat_loss_to_parameters(self):
         """
-        This function is used to set the optimized heat losses in the parameters object.
+        This function is used to set the optimized milp losses in the parameters object.
         """
         options = self.heat_network_options()
 

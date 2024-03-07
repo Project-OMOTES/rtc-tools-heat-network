@@ -1,6 +1,6 @@
 from rtctools_heat_network.pycml import Variable
+from rtctools_heat_network.pycml.component_library.milp._internal import HeatComponent
 
-from ._internal import HeatComponent
 from ._non_storage_component import _NonStorageComponent
 
 

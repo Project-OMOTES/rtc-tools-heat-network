@@ -84,7 +84,7 @@ class HeatProblem(
         super().pre()
         global ThermalDemand
         # Making modifications to the target
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
 
             # Manually set Demand

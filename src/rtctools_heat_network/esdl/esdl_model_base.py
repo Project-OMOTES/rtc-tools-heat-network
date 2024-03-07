@@ -185,7 +185,7 @@ class _ESDLModelBase(_Model):
                         else:
                             raise Exception(
                                 f"{asset.name} has total of 5 ports, but no proper split between "
-                                f"heat(4) and electricity (1) ports"
+                                f"milp(4) and electricity (1) ports"
                             )
 
                 else:

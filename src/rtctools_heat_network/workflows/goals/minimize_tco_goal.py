@@ -9,7 +9,7 @@ from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 class MinimizeTCO(Goal):
     """
-    Minimize the Total Cost of Ownership (TCO) for a heat network.
+    Minimize the Total Cost of Ownership (TCO) for a milp network.
 
     This goal aims to minimize the sum of operational, fixed operational,
     investment, and installation costs over a specified
@@ -124,7 +124,7 @@ class MinimizeTCO(Goal):
         """
         obj = 0.0
         for asset_type in asset_types:
-            for asset in optimization_problem.heat_network_components.get(asset_type, []):
+            for asset in optimization_problem.energy_system_components.get(asset_type, []):
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
                     # We only want the operational cost for a single year when we use
@@ -141,7 +141,7 @@ class MinimizeTCO(Goal):
         """
         Calculate the objective function value for the optimization problem.
 
-        This method sums up the various costs associated with the heat network assets.
+        This method sums up the various costs associated with the milp network assets.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -151,7 +151,7 @@ class MinimizeTCO(Goal):
             MX object: CasADi expression with the total cost objective function value.
         """
 
-        options = optimization_problem.heat_network_options()
+        options = optimization_problem.energy_system_options()
 
         cost_type_maps = {
             "operational": optimization_problem._asset_variable_operational_cost_map,

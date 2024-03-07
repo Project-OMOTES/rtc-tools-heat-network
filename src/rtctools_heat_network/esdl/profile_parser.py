@@ -55,8 +55,8 @@ class BaseProfileReader:
         ensemble_size: int,
     ) -> None:
         """
-        This function takes a datastore and a dictionary of heat network components and loads a
-        profile for each demand and source in the provided heat network components into the
+        This function takes a datastore and a dictionary of milp network components and loads a
+        profile for each demand and source in the provided milp network components into the
         datastore. If no profile is available the following happens:
         - for sources, no target profile is set
         - for demands a default profile is loaded equal to the power of the demand asset
@@ -545,11 +545,11 @@ class _ESDLInputDataConfig:
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its heat timeseries."
+                f"Using neutral suffix '.target_heat' for its milp timeseries."
             )
             suffix = ".target_heat"
 
         # Note that the qualifier id (if any specified) refers to the profile
         # element of the respective ESDL asset->in_port. For now we just
-        # assume that only heat demand timeseries are set in the XML file.
+        # assume that only milp demand timeseries are set in the XML file.
         return f"{component_name}{suffix}"

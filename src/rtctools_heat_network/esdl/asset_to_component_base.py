@@ -223,7 +223,7 @@ class _AssetToComponentBase:
         This function checks if the pipe is connected to specific assets (e.g. source) and if so
         returns true. The true here means that we will later make a is_disconnected variable
         allowing for optionally disconnecting a pipe from the optimization meaning it will not have
-        any flow, but also avoiding the need to compensate the heat losses for that pipe.
+        any flow, but also avoiding the need to compensate the milp losses for that pipe.
 
         Parameters
         ----------

@@ -15,7 +15,7 @@ from rtctools_heat_network.network_common import NetworkSettings
 
 class TestHeadLoss(TestCase):
     """
-    Test case for a heat network and a gas network consisting out of a source, pipe(s) and a sink
+    Test case for a milp network and a gas network consisting out of a source, pipe(s) and a sink
     """
 
     def test_heat_network_head_loss(self):
@@ -41,7 +41,7 @@ class TestHeadLoss(TestCase):
         # Added for case where head loss is modelled via DW
         class SourcePipeSinkDW(SourcePipeSink):
             def heat_network_options(self):
-                options = super().heat_network_options()
+                options = super().energy_system_options()
                 self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
                 self.heat_network_settings["n_linearization_lines"] = 5
                 self.heat_network_settings["minimize_head_losses"] = True
@@ -61,7 +61,7 @@ class TestHeadLoss(TestCase):
         pipes = ["Pipe1", "Pipe1_ret"]
         v_max = solution.heat_network_settings["maximum_velocity"]
         pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
-        pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
+        pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
         temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
         pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
         v_points = [0.0, v_max / solution.heat_network_settings["n_linearization_lines"]]
@@ -160,7 +160,7 @@ class TestHeadLoss(TestCase):
 
             class TestSourceSink(GasProblem):
                 def heat_network_options(self):
-                    options = super().heat_network_options()
+                    options = super().energy_system_options()
                     self.gas_network_settings["minimize_head_losses"] = True
 
                     nonlocal head_loss_option_setting
@@ -197,7 +197,7 @@ class TestHeadLoss(TestCase):
             pipes = ["Pipe_4abc"]
             v_max = solution.gas_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
-            pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             # TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
             temperature = 20.0
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
@@ -270,7 +270,7 @@ class TestHeadLoss(TestCase):
 
         assert parameters["Pipe1.pressure"] != parameters["Pipe2.pressure"]
 
-        for pipe in solution.heat_network_components.get("gas_pipe", []):
+        for pipe in solution.energy_system_components.get("gas_pipe", []):
             dh = results[f"{pipe}.dH"]
             vel = results[f"{pipe}.Q"] / (np.pi * (parameters[f"{pipe}.diameter"] / 2.0) ** 2)
             for i in range(len(solution.times())):
@@ -281,7 +281,7 @@ class TestHeadLoss(TestCase):
                         solution.gas_network_settings["maximum_velocity"],
                         parameters[f"{pipe}.diameter"],
                         parameters[f"{pipe}.length"],
-                        solution.heat_network_options()["wall_roughness"],
+                        solution.energy_system_options()["wall_roughness"],
                         20.0,
                         network_type=NetworkSettings.NETWORK_TYPE_GAS,
                         pressure=parameters[f"{pipe}.pressure"],

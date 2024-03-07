@@ -44,9 +44,9 @@ class BufferTargetDischargeGoal(Goal):
 class QTHLoopMixin(QTHMixin):
     """
     Alternative to QTHMixin when the assumptions of sufficient hydraulic
-    control do not hold for a certain heat network. This Mixin runs 1 timestep
+    control do not hold for a certain milp network. This Mixin runs 1 timestep
     at a time, and solves with the `CQ2_EQUALITY` head loss option to get to a
-    hydraulically feasible result for such heat networks.
+    hydraulically feasible result for such milp networks.
     More precisely, the Mixin loops over the time horizon optimizing two
     timesteps at each iteration where the solution of first timestep is de facto
     fixed, using the result of the previous iteration of the loop. As IPOPT does
@@ -118,7 +118,7 @@ class QTHLoopMixin(QTHMixin):
 
     def heat_network_options(self):
         """
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         See :py:meth:`QTHMixin.heat_network_options` for all options. When
         inheriting from QTHLoopMixin, some defaults are changed:
@@ -165,7 +165,7 @@ class QTHLoopMixin(QTHMixin):
             g.buffer: g for g in self.goals() if isinstance(g, BufferTargetDischargeGoal)
         }
 
-        for b in self.heat_network_topology.buffers:
+        for b in self.energy_system_topology.buffers:
             if b not in buffer_goals:
                 raise Exception(f"Buffer {b} is missing a corresponding BufferTargetDischargeGoal")
 
@@ -269,14 +269,14 @@ class QTHLoopMixin(QTHMixin):
 
             fix_value_variables = set()
 
-            for s in self.heat_network_components["source"]:
+            for s in self.energy_system_components["source"]:
                 fix_value_variables.add(self.alias_relation.canonical_signed(f"{s}.QTHOut.T")[0])
 
-            for b in self.heat_network_components.get("buffer", []):
+            for b in self.energy_system_components.get("buffer", []):
                 fix_value_variables.add(self.alias_relation.canonical_signed(f"{b}.T_hot_tank")[0])
                 fix_value_variables.add(self.alias_relation.canonical_signed(f"{b}.T_cold_tank")[0])
 
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["pipe"]:
                 fix_value_variables.add(self.alias_relation.canonical_signed(f"{p}.Q")[0])
 
             previous_indices = self.__previous_indices

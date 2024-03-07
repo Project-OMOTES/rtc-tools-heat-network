@@ -1,14 +1,14 @@
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
-from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
-from rtctools_heat_network.pycml.component_library.heat._internal.electricity_component import (
+from rtctools_heat_network.pycml.component_library.milp._internal import BaseAsset
+from rtctools_heat_network.pycml.component_library.milp._internal.electricity_component import (
     ElectricityComponent,
 )
-from rtctools_heat_network.pycml.component_library.heat.electricity.electricity_base import (
+from rtctools_heat_network.pycml.component_library.milp.electricity.electricity_base import (
     ElectricityPort,
 )
-from rtctools_heat_network.pycml.component_library.heat.gas.gas_base import (
+from rtctools_heat_network.pycml.component_library.milp.gas.gas_base import (
     GasPort,
 )
 

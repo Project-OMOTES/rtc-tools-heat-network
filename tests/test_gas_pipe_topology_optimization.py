@@ -29,7 +29,7 @@ class TestGasNetwork(TestCase):
 
         class GasNetworkProblem(HeatProblem):
             def heat_network_options(self):
-                options = super().heat_network_options()
+                options = super().energy_system_options()
                 self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
@@ -45,7 +45,7 @@ class TestGasNetwork(TestCase):
 
         results = solution.extract_results()
 
-        for demand in solution.heat_network_components.get("gas_demand", []):
+        for demand in solution.energy_system_components.get("gas_demand", []):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 

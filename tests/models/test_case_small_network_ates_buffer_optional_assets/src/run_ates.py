@@ -88,8 +88,8 @@ class HeatProblem(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.005
         options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = False
@@ -102,7 +102,7 @@ class HeatProblem(
         # might want to do optimization over shorter periods of time where this would lead to
         # infeasibility. In this case we do want the cyclic behaviour, therefore we add it to the
         # problem.
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[0] - stored_heat[-1]), 0.0, 0.0))
 
@@ -120,7 +120,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
+        demands = self.energy_system_components.get("demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 

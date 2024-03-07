@@ -125,8 +125,8 @@ class MILPProblem(
 
         return options
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
 
@@ -204,11 +204,11 @@ if __name__ == "__main__":
     # test = {data_name: r[data_name] / 3600.0}
     # df_data = pd.DataFrame(test)
     # df_data.to_pickle(
-    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\"
     #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
     # )
     # df_read_1 = pd.read_pickle(
-    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\"
     #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
     # )
 
@@ -217,11 +217,11 @@ if __name__ == "__main__":
     # test = {data_name: r[data_name] / 3600.0}
     # df_data = pd.DataFrame(test)
     # df_data.to_pickle(
-    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\"
     #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
     # )
     # df_read_2 = pd.read_pickle(
-    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\"
+    #     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\"
     #     f"unit_cases_electricity\\electrolyzer\\df_data{storage}.pkl"
     # )
 

@@ -67,7 +67,7 @@ class DemandTemperatureOption(IntEnum):
 
 class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     """
-    Adds handling of QTH heat network objects in your model to your
+    Adds handling of QTH milp network objects in your model to your
     optimization problem.
 
     Relevant parameters and variables are read from the model, and from this
@@ -127,7 +127,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         +--------------------------------+-----------+--------------------------------------+
         | Option                         | Type      | Default value                        |
@@ -225,7 +225,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     def __check_source_temperature(self):
         bounds = self.bounds()
         options = self.heat_network_options()
-        components = self.heat_network_components
+        components = self.energy_system_components
         sources = components.get("source", [])
         demands = components.get("demand", [])
 
@@ -285,7 +285,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         parameters = self.parameters(0)
         bounds = self.bounds()
-        components = self.heat_network_components
+        components = self.energy_system_components
         buffers = components.get("buffer", [])
 
         for b in buffers:
@@ -350,10 +350,10 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         constraints = []
 
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         # At theta=0, the temperature of the hot/cold pipes are constant
-        # and equal to the design ones. Thus heat loss equations do not apply.
+        # and equal to the design ones. Thus milp loss equations do not apply.
         if theta == 0.0:
             return []
 
@@ -399,14 +399,14 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             heat_loss_nominal = length * (u_1 - u_2) * self.variable_nominal(f"{p}.QTHIn.T")
             equation_nominal = (heat_nominal * heat_loss_nominal) ** 0.5
 
-            # If pipe is connected, add heat losses
-            # The heat losses have three components:
+            # If pipe is connected, add milp losses
+            # The milp losses have three components:
             # - dependency on the pipe temperature
             # - dependency on the ground temperature
             # - dependency on temperature difference between the supply/return line.
             # This latter term assumes that the supply and return lines lie close
             # to, and thus influence, each other. I.e., the supply line loses
-            # heat that is absorbed by the return line. Note that the term dtemp is
+            # milp that is absorbed by the return line. Note that the term dtemp is
             # positive when the pipe is in the supply line and negative otherwise.
             heat_loss_inds = np.flatnonzero((flow_direction != 0).astype(int)).tolist()
             heat_loss_eq.append(
@@ -426,7 +426,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             if len(heat_loss_inds) > 0:
                 constraints.append((ca.vertcat(*heat_loss_eq), 0.0, 0.0))
 
-            # If pipe is disabled, no heat equations
+            # If pipe is disabled, no milp equations
             no_heat_loss_inds = np.flatnonzero((flow_direction == 0).astype(int)).tolist()
             no_heat_loss_eq.append((temp_out_sym - temp_in_sym)[no_heat_loss_inds])
 
@@ -443,7 +443,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
-        for node, connected_pipes in self.heat_network_topology.nodes.items():
+        for node, connected_pipes in self.energy_system_topology.nodes.items():
             temperature_node_sym = self.__state_vector_scaled(f"{node}.Tnode", ensemble_member)
             temperature_estimate = parameters[f"{node}.temperature"]
 
@@ -507,7 +507,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # Conservation of mass
             constraints.append(((q_in_sum - q_out_sum) / q_nominal, 0.0, 0.0))
 
-            # Conservation of heat
+            # Conservation of milp
             constraints.append(
                 (
                     (
@@ -534,7 +534,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
 
-        for b, (hot_pair, cold_pair) in self.heat_network_topology.buffers.items():
+        for b, (hot_pair, cold_pair) in self.energy_system_topology.buffers.items():
             hot_pipe, hot_pipe_orientation = hot_pair
             _, cold_pipe_orientation = cold_pair
 
@@ -616,11 +616,11 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # There are two set of equations, depending on whether the tank is charging
             # or not charging (i.e., discharging or not used).
             # If tank is charging, there is temperature mixing and thus:
-            # * der(T_tank * V_tank) - T_pipe * Q_pipe + heat losses = 0.
+            # * der(T_tank * V_tank) - T_pipe * Q_pipe + milp losses = 0.
             # If the tank is discharging or is not used, there is no temperature mixing and thus:
-            # * der(T_tank) + heat losses = 0.
-            # Where heat losses are:
-            # surface area * heat transfer coefficient * (T_tank - T_outside) / (rho * cp)
+            # * der(T_tank) + milp losses = 0.
+            # Where milp losses are:
+            # surface area * milp transfer coefficient * (T_tank - T_outside) / (rho * cp)
             # Surface area is 2 * pi * r * h, i.e., only the rounded area.
             # It is approximated with an average height when there is no temperature mixing.
             # Note: the equations are not apply at t0
@@ -749,7 +749,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             # To avoid overconstraining the problem, we only impose these constraints
             # for N-1 buffers (where N is the total number of buffers)
             # The constraint is already imposed at t0, thus we skip this timestep
-            buffers = self.heat_network_components.get("buffer", [])
+            buffers = self.energy_system_components.get("buffer", [])
             if len(buffers) > 1:
                 for b in buffers[1:]:
                     vol_hot = self.__state_vector_scaled(f"{b}.V_hot_tank", e)[1:]
@@ -766,7 +766,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         constraints = []
 
         options = self.heat_network_options()
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         parameters = self.parameters(ensemble_member)
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
@@ -886,7 +886,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         options = self.heat_network_options()
         parameters = self.parameters(ensemble_member)
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         # Set the head loss according to the direction in the pipes.
         interpolated_flow_dir_values = self.__get_interpolated_flow_directions(ensemble_member)
@@ -933,7 +933,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
     def path_constraints(self, ensemble_member):
         constraints = super().path_constraints(ensemble_member).copy()
 
-        components = self.heat_network_components
+        components = self.energy_system_components
         parameters = self.parameters(ensemble_member)
         options = self.heat_network_options()
         theta = parameters[self.homotopy_options()["homotopy_parameter"]]
@@ -944,7 +944,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         if theta > 0.0:
             # Fix sources output temperatures
             if options["sources_equal_output_temp"]:
-                sources = self.heat_network_components["source"]
+                sources = self.energy_system_components["source"]
                 if len(sources) > 1:
                     for s in sources[1:]:
                         constraints.append(
@@ -993,9 +993,9 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         interpolated_flow_dir_values = {}
 
         for c in [
-            *self.heat_network_components["pipe"],
-            *self.heat_network_components.get("check_valve", []),
-            *self.heat_network_components.get("control_valve", []),
+            *self.energy_system_components["pipe"],
+            *self.energy_system_components.get("check_valve", []),
+            *self.energy_system_components.get("control_valve", []),
         ]:
             try:
                 direction_ts = constant_inputs[flow_dirs[c]]
@@ -1029,7 +1029,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         updated_bounds = {}
 
-        for d in self.heat_network_components["demand"]:
+        for d in self.energy_system_components["demand"]:
             lb = parameters[f"{d}.T_return"]
             key = f"{d}.QTHOut.T"
             updated_bounds[key] = self.merge_bounds(bounds[key], (lb, np.inf))
@@ -1050,7 +1050,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         minimum_velocity = options["minimum_velocity"]
 
-        for p in self.heat_network_components["pipe"]:
+        for p in self.energy_system_components["pipe"]:
             dir_values = interpolated_flow_dir_values[p]
 
             if isfinite(minimum_velocity):
@@ -1076,7 +1076,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
             direction_bounds[f"{p}.dH"] = b
 
-        for v in self.heat_network_components.get("check_valve", []):
+        for v in self.energy_system_components.get("check_valve", []):
             dir_values = interpolated_flow_dir_values[v]
 
             lb = np.zeros_like(dir_values)
@@ -1092,7 +1092,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
             direction_bounds[f"{v}.dH"] = b
 
-        for v in self.heat_network_components.get("control_valve", []):
+        for v in self.energy_system_components.get("control_valve", []):
             dir_values = interpolated_flow_dir_values[v]
 
             lb = np.where(dir_values == ControlValveDirection.NEGATIVE, -np.inf, 0.0)
@@ -1120,7 +1120,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         parameters = self.parameters(0)
         temperature_bounds = {}
 
-        for p in self.heat_network_components["pipe"]:
+        for p in self.energy_system_components["pipe"]:
             temperature = parameters[f"{p}.temperature"]
             b = (temperature, temperature)
 
@@ -1159,9 +1159,9 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         string_parameters = self.string_parameters(0)
 
         for c in [
-            *self.heat_network_components["pipe"],
-            *self.heat_network_components.get("check_valve", []),
-            *self.heat_network_components.get("control_valve", []),
+            *self.energy_system_components["pipe"],
+            *self.energy_system_components.get("check_valve", []),
+            *self.energy_system_components.get("control_valve", []),
         ]:
             cur_pipe_flow_dir_values = [
                 ens_interpolated_flow_dir_values[e][c] for e in range(self.ensemble_size)
@@ -1206,7 +1206,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
             ub = np.full_like(ubx, np.inf)
 
             fix_value_variables = set()
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["pipe"]:
                 fix_value_variables.add(f"{p}.QTHIn.Q")
             fix_value_variables = {
                 self.alias_relation.canonical_signed(v)[0] for v in fix_value_variables

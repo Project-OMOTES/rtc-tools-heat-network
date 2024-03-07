@@ -45,7 +45,7 @@ class MinimizeSourcesFlowGoal(Goal):  # or pipediametersizingproblem
         return optimization_problem.state(f"{self.source}.Q")
 
 
-# test 1. selecting the lowest heating demands passed on minimising the source heat production
+# test 1. selecting the lowest heating demands passed on minimising the source milp production
 class HeatProblem(
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -56,13 +56,13 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = True
         # options["neglect_pipe_heat_losses"] = True
@@ -88,7 +88,7 @@ class HeatProblem(
 
     def demand_insulation_classes(self, demand_insualtion):
         available_demand_insulation_classes = []
-        for dmnd in self.heat_network_components["demand"]:
+        for dmnd in self.energy_system_components["demand"]:
             for ii in range(len(self.insulation_levels()["insulation_level"])):
                 available_demand_insulation_classes.append(
                     DemandInsulationClass(
@@ -137,7 +137,7 @@ class HeatProblem(
         return self._override_pipe_classes.get(p, [])
 
 
-# test 1b. ensure that the heat problem works when specifying only 1 insulation level for 1 demand
+# test 1b. ensure that the milp problem works when specifying only 1 insulation level for 1 demand
 class HeatProblemB(
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -148,13 +148,13 @@ class HeatProblemB(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = True
 
@@ -235,7 +235,7 @@ class HeatProblemB(
 
 # TODO: add test code below in future work:
 # # test 2. Insulating specific demands to either ensure Tmin is low enough add specific LT
-# sources and thus ensuring enough production capacity or to reduce heat demand enough such that
+# sources and thus ensuring enough production capacity or to reduce milp demand enough such that
 # total demand is below total production capacity, but not cost effective, thus trying to insulate
 # as minimal as possible.
 # class HeatProblemSources(

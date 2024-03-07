@@ -1,5 +1,5 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import Demand, Node, Pipe, Pump, Source
+from rtctools_heat_network.pycml.component_library.milp import Demand, Node, Pipe, Pump, Source
 
 
 class Model(_Model):

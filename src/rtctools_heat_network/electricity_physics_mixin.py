@@ -42,7 +42,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
         """
 
         options = {}
@@ -73,7 +73,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         if options["include_asset_is_switched_on"]:
             for asset in [
-                *self.heat_network_components.get("electrolyzer", []),
+                *self.energy_system_components.get("electrolyzer", []),
             ]:
                 var_name = f"{asset}__asset_is_switched_on"
                 self.__asset_is_switched_on_map[asset] = var_name
@@ -162,7 +162,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
     def __update_windpark_upper_bounds(self):
         t = self.times()
-        for wp in self.heat_network_components.get("wind_park", []):
+        for wp in self.energy_system_components.get("wind_park", []):
             lb = Timeseries(t, np.zeros(len(self.times())))
             ub = self.get_timeseries(f"{wp}.maximum_electricity_source")
             self.__windpark_upper_bounds[f"{wp}.Electricity_source"] = (lb, ub)
@@ -175,7 +175,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for wp in self.heat_network_components.get("wind_park", []):
+        for wp in self.energy_system_components.get("wind_park", []):
             set_point = self.__state_vector_scaled(f"{wp}.Set_point", ensemble_member)
             electricity_source = self.__state_vector_scaled(
                 f"{wp}.Electricity_source", ensemble_member
@@ -193,7 +193,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
 
-        for bus, connected_cables in self.heat_network_topology.busses.items():
+        for bus, connected_cables in self.energy_system_topology.busses.items():
             power_sum = 0.0
             i_sum = 0.0
             power_nominal = []
@@ -231,7 +231,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for cable in self.heat_network_components.get("electricity_cable", []):
+        for cable in self.energy_system_components.get("electricity_cable", []):
             current = self.state(f"{cable}.ElectricityIn.I")
             power_in = self.state(f"{cable}.ElectricityIn.Power")
             power_out = self.state(f"{cable}.ElectricityOut.Power")
@@ -303,7 +303,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for cable in self.heat_network_components.get("electricity_cable", []):
+        for cable in self.energy_system_components.get("electricity_cable", []):
             cable_classes = []
 
             current = self.state(f"{cable}.ElectricityIn.I")
@@ -362,9 +362,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         parameters = self.parameters(ensemble_member)
 
         for elec_demand in [
-            *self.heat_network_components.get("electricity_demand", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
-            *self.heat_network_components.get("electrolyzer", []),
+            *self.energy_system_components.get("electricity_demand", []),
+            *self.energy_system_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("electrolyzer", []),
         ]:
             min_voltage = parameters[f"{elec_demand}.min_voltage"]
             voltage = self.state(f"{elec_demand}.ElectricityIn.V")
@@ -460,7 +460,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
-        for asset in self.heat_network_components.get("electrolyzer", []):
+        for asset in self.energy_system_components.get("electrolyzer", []):
             gas_mass_flow_out = self.state(f"{asset}.Gas_mass_flow_out")
             power_consumed = self.state(f"{asset}.Power_consumed")
 

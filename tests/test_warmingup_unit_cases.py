@@ -21,7 +21,7 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
-        - Checks for conservation of flow and heat at the node
+        - Checks for conservation of flow and milp at the node
         - Check for equal head at all node connections
         - Checks that the minimum pressure-drop constraints at the demand are satisfied
         - Check that Heat_demand & Heat_source are set correctly and are linked to the Heat_flow
@@ -49,7 +49,7 @@ class TestWarmingUpUnitCases(TestCase):
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
-        for node, connected_pipes in heat_problem.heat_network_topology.nodes.items():
+        for node, connected_pipes in heat_problem.energy_system_topology.nodes.items():
             discharge_sum = 0.0
             heat_sum = 0.0
 
@@ -63,7 +63,7 @@ class TestWarmingUpUnitCases(TestCase):
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
             np.testing.assert_allclose(0.0, heat_sum, atol=1.0e-6)
 
-        for demand in heat_problem.heat_network_components.get("demand", []):
+        for demand in heat_problem.energy_system_components.get("demand", []):
             np.testing.assert_array_less(
                 10.2 - 1.0e-6, results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
             )
@@ -76,7 +76,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{demand}.Heat_demand"], results[f"{demand}.Heat_flow"], atol=1.0e-6
             )
 
-        for source in heat_problem.heat_network_components.get("source", []):
+        for source in heat_problem.energy_system_components.get("source", []):
             np.testing.assert_allclose(
                 results[f"{source}.HeatOut.Heat"] - results[f"{source}.HeatIn.Heat"],
                 results[f"{source}.Heat_source"],
@@ -129,8 +129,8 @@ class TestWarmingUpUnitCases(TestCase):
         direction for the pipe connected to the buffer tank)
         - Check that the Heat_buffer & Heat_flow variable are set correctly
         - Check that the history for the buffer is set correctly at t=0
-        - Check that the heat loss is positive and as expected
-        - Check that the Stored heat is the sum of (dis)charge and losses
+        - Check that the milp loss is positive and as expected
+        - Check that the Stored milp is the sum of (dis)charge and losses
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -163,7 +163,7 @@ class TestWarmingUpUnitCases(TestCase):
             np.sign(results["Pipe_e53a.Q"][inds]),
         )
 
-        for buffer in heat_problem.heat_network_components.get("buffer", []):
+        for buffer in heat_problem.energy_system_components.get("buffer", []):
             np.testing.assert_allclose(
                 results[f"{buffer}.Heat_buffer"], results[f"{buffer}.Heat_flow"]
             )
@@ -171,7 +171,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.HeatIn.Heat"] - results[f"{buffer}.HeatOut.Heat"],
                 results[f"{buffer}.Heat_buffer"],
             )
-            # buffer should have positive heat loss
+            # buffer should have positive milp loss
             assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
             np.testing.assert_allclose(
                 results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],

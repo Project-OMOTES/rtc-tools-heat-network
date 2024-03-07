@@ -110,8 +110,8 @@ class HeatProblem(
         super().pre()
         self._qpsol = CachingQPSol()
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         return options
 
@@ -141,7 +141,7 @@ class HeatProblem(
         """
         constraints = super().constraints(ensemble_member)
 
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
@@ -155,7 +155,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
+        demands = self.energy_system_components.get("demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 
@@ -200,7 +200,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
     achieved by having an upper limit on the investment per time-step.
     """
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         """
         In this problem we are optimizing when the assets are realized over time, hence we set the
         inclusion of asset_is_realized variables and constraints to true.
@@ -209,7 +209,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
         -------
         dict with the adapted network options
         """
-        options = super().heat_network_options()
+        options = super().energy_system_options()
         options["include_asset_is_realized"] = True
 
         return options
@@ -217,7 +217,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
     @property
     def esdl_assets(self):
         """
-        In this problem we want the heat producers to be optional so that the asset_is_realized
+        In this problem we want the milp producers to be optional so that the asset_is_realized
         variables are generated for them, thus we adapt the esdl assets here to avoid the need
         of an extra esdl file.
 
@@ -253,7 +253,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
         constraints = super().constraints(ensemble_member)
 
         # Constraints for investment speed, please note that we need to enforce index 0 to be 0.
-        for s in self.heat_network_components.get("source", []):
+        for s in self.energy_system_components.get("source", []):
             inv_made = self.state_vector(f"{s}__cumulative_investments_made_in_eur")
             nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
             inv_cap = 2.5e5
@@ -264,7 +264,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
                 )
 
         # to avoid ates in short problem
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((heat_ates, 0.0, 0.0))
 
@@ -298,8 +298,8 @@ class HeatProblemSetPoints(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0
         return options
 
@@ -315,14 +315,14 @@ class HeatProblemSetPoints(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
 
         return constraints
 
     # TODO: place this and the _set_data_with_averages_and_peak_day function in an appropriate place
-    #  in the rtctools-heat-network package. Should have a unit test.
+    #  in the rtctools-milp-network package. Should have a unit test.
     def read(self):
         """
         Reads the yearly profile with hourly time steps and adapt to a daily averaged profile
@@ -330,7 +330,7 @@ class HeatProblemSetPoints(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
+        demands = self.energy_system_components.get("demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 
@@ -391,7 +391,7 @@ class HeatProblemSetPoints(
 
             # TODO: this has not been tested but is required if a production profile is included
             #  in the data
-            for source in self.heat_network_components.get("source", []):
+            for source in self.energy_system_components.get("source", []):
                 try:
                     self.get_timeseries(f"{source}.target_heat_source_year", ensemble_member)
                 except KeyError:

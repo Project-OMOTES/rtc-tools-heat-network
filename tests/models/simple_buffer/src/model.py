@@ -1,5 +1,5 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import (
+from rtctools_heat_network.pycml.component_library.milp import (
     Buffer,
     Demand,
     Node,

@@ -1,10 +1,10 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import Demand, Pipe, Pump, Source
+from rtctools_heat_network.pycml.component_library.milp import Demand, Pipe, Pump, Source
 
 
 class Model(_Model):
     """
-    Very simple model of a heat network consisting of a source, pump, pipe and demand for testing
+    Very simple model of a milp network consisting of a source, pump, pipe and demand for testing
     head loss.
     """
 

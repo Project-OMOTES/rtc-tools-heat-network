@@ -245,7 +245,7 @@ class HeadLossClass:
 
     def head_loss_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         +--------------------------------+-----------+-----------------------------------+
         | Option                         | Type      | Default value                     |
@@ -324,7 +324,7 @@ class HeadLossClass:
         This function computes and sets the bounds and nominals for the head loss of all the pipes
         as well as the minimum and maximum pipe pressure.
         """
-        options = optimization_problem.heat_network_options()
+        options = optimization_problem.energy_system_options()
         parameters = optimization_problem.parameters(0)
 
         min_pressure = network_settings["pipe_minimum_pressure"]
@@ -519,7 +519,7 @@ class HeadLossClass:
 
         # TODO: add commodity temperature to a gas network
         try:
-            # Only heat networks have a temperature attribute in the pipes, otherwise we will use
+            # Only milp networks have a temperature attribute in the pipes, otherwise we will use
             # a default temperature for gas networks
             temperature = parameters[f"{pipe}.temperature"]
             for _id, attr in optimization_problem.temperature_carriers().items():
@@ -976,11 +976,11 @@ class HeadLossClass:
 
         pipe_type = "pipe"
         commodity = "Heat"
-        if len(optimization_problem.heat_network_components.get(pipe_type, [])) == 0:
+        if len(optimization_problem.energy_system_components.get(pipe_type, [])) == 0:
             pipe_type = "gas_pipe"
             commodity = NetworkSettings.NETWORK_TYPE_GAS
 
-        for pipe in optimization_problem.heat_network_components.get(pipe_type, []):
+        for pipe in optimization_problem.energy_system_components.get(pipe_type, []):
             dh = optimization_problem.state(f"{pipe}.dH")
             h_down = optimization_problem.state(f"{pipe}.{commodity}Out.H")
             h_up = optimization_problem.state(f"{pipe}.{commodity}In.H")
@@ -1001,8 +1001,8 @@ class HeadLossClass:
         """
         constraints = []
 
-        options = optimization_problem.heat_network_options()
-        components = optimization_problem.heat_network_components
+        options = optimization_problem.energy_system_options()
+        components = optimization_problem.energy_system_components
 
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2

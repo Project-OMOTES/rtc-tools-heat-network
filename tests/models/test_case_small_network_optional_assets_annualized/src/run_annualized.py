@@ -18,8 +18,8 @@ except ModuleNotFoundError:
 
 
 class HeatProblemDiscAnnualizedCost(HeatProblem):
-    def heat_network_options(self) -> Dict[str, Any]:
-        options = super().heat_network_options()
+    def energy_system_options(self) -> Dict[str, Any]:
+        options = super().energy_system_options()
         options["discounted_annualized_cost"] = True
         return options
 

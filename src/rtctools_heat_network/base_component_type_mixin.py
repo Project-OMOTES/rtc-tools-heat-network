@@ -14,7 +14,7 @@ class BaseComponentTypeMixin:
 
     @property
     @abstractmethod
-    def heat_network_components(self) -> Dict[str, str]:
+    def energy_system_components(self) -> Dict[str, str]:
         """
         This method return a dict with the components structured by asset_type.
         """
@@ -22,7 +22,7 @@ class BaseComponentTypeMixin:
 
     @property
     @abstractmethod
-    def heat_network_topology(self) -> Topology:
+    def energy_system_topology(self) -> Topology:
         """
         The method return a Topology object that contains asset with specific
         topology and associated direction information needed for the physics in the constraints
@@ -67,10 +67,10 @@ class BaseComponentTypeMixin:
         """
         related = False
         if self.is_hot_pipe(pipe):
-            if self.hot_to_cold_pipe(pipe) in self.heat_network_components.get("pipe", []):
+            if self.hot_to_cold_pipe(pipe) in self.energy_system_components.get("pipe", []):
                 related = True
         elif self.is_cold_pipe(pipe):
-            if self.cold_to_hot_pipe(pipe) in self.heat_network_components.get("pipe", []):
+            if self.cold_to_hot_pipe(pipe) in self.energy_system_components.get("pipe", []):
                 related = True
         return related
 
@@ -79,11 +79,11 @@ class BaseComponentTypeMixin:
         """
         This function return a list of all the supply/hot pipe names.
         """
-        return [p for p in self.heat_network_components.get("pipe", []) if self.is_hot_pipe(p)]
+        return [p for p in self.energy_system_components.get("pipe", []) if self.is_hot_pipe(p)]
 
     @property
     def cold_pipes(self) -> List[str]:
         """
         This function return a list of all the return/cold pipe names.
         """
-        return [p for p in self.heat_network_components.get("pipe", []) if self.is_cold_pipe(p)]
+        return [p for p in self.energy_system_components.get("pipe", []) if self.is_cold_pipe(p)]

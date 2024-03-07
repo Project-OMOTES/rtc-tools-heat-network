@@ -67,7 +67,7 @@ class TargetDemandGoal(Goal):
 
 class MinimizeSourcesHeatGoal(Goal):
     """
-    A minimization goal for source heat production. We use order 1 here as we want to minimize heat
+    A minimization goal for source milp production. We use order 1 here as we want to minimize milp
     over the full horizon and not per time-step.
     """
 
@@ -140,7 +140,7 @@ class HeatProblem(
     CollocatedIntegratedOptimizationProblem,
 ):
     """
-    This problem class is for the absolute heat tests. Meaning that this problem class
+    This problem class is for the absolute milp tests. Meaning that this problem class
     is applied to an esdl where there is no dedicated supply or return line. For this test case
     we just match heating demand (_GoalsAndOptions) and minimize the energy production to have a
     representative result.
@@ -148,7 +148,7 @@ class HeatProblem(
 
     def path_goals(self):
         """
-        This function adds the minimization goal for minimizing the heat production.
+        This function adds the minimization goal for minimizing the milp production.
 
         Returns
         -------
@@ -156,7 +156,7 @@ class HeatProblem(
         """
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -173,7 +173,7 @@ class HeatProblem(
         options["solver"] = "highs"
         return options
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         """
         This function does not add anything at the moment but during debugging we use this.
 
@@ -181,7 +181,7 @@ class HeatProblem(
         -------
         Options dict for the physics modelling
         """
-        options = super().heat_network_options()
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False
