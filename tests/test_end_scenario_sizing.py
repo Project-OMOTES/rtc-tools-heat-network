@@ -16,7 +16,7 @@ from rtctools_heat_network.workflows import (
 )
 from rtctools_heat_network.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
 
-from tests.utils_tests import demand_matching_test
+from utils_tests import demand_matching_test
 
 
 class TestEndScenarioSizing(TestCase):

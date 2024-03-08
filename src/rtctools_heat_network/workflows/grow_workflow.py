@@ -401,13 +401,11 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
      be set to True.
     """
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
         self.heat_network_settings["minimize_head_losses"] = True
-
-        return options
 
 
 class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
@@ -427,12 +425,21 @@ class SettingsStaged:
     _stage = 0
 
     def __init__(
-        self, stage=None, boolean_bounds=None, priorities_output: list = None, *args, **kwargs
+        self,
+        stage=None,
+        boolean_bounds: list = None,
+        priorities_output: list = None,
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
         self._stage = stage
         self.__boolean_bounds = boolean_bounds
+        if self._stage == 1:
+            self.heat_network_settings["minimum_velocity"] = 0.0
+            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"] = False
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
@@ -440,9 +447,6 @@ class SettingsStaged:
         options = super().heat_network_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-            self.heat_network_settings["minimize_head_losses"] = False
 
         return options
 
