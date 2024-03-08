@@ -1,6 +1,7 @@
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    introduction
    approach
-   heat_loss
+   Validation_pipe_diameter_sizing
+   pipe_classes

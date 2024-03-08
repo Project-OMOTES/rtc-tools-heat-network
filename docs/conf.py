@@ -21,9 +21,9 @@ sys.path.insert(0, os.path.abspath('../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'RTC-Tools Heat Network'
-copyright = '2020, Teresa Piovesan et al.'
-author = 'Teresa Piovesan, et al.'
+project = 'Nieuwe Warmte Nu - Design Toolkit'
+author = 'Kelbij Star, Teresa Piovesan, et al.'
+review = 'Jesus Andres Rodriguez Sarasty, Ivo Pothof, Mike van Meerkerk'
 
 
 # -- General configuration ---------------------------------------------------
@@ -36,7 +36,24 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
               'sphinx.ext.mathjax',
-              'sphinx.ext.viewcode']
+              'sphinx.ext.viewcode',
+              'sphinx.ext.graphviz',
+              'sphinx.ext.autosectionlabel',
+              'sphinxcontrib.bibtex']
+
+mathjax3_config = {'chtml': {'displayAlign': 'left',
+                             'displayIndent': '2em'}}
+
+bibtex_bibfiles = ['references.bib']
+
+# -- GraphViz configuration ----------------------------------
+graphviz_output_format = 'svg'
+
+# Make sure the target is unique
+autosectionlabel_prefix_document = True
+
+# Enable numref
+numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -75,4 +92,4 @@ html_css_files = [
 ]
 
 # Intersphinx: refer to the RTC-Tools standard library.
-intersphinx_mapping = {'rtctools': ('https://rtc-tools.readthedocs.io/en/latest/', None)}
+# intersphinx_mapping = {'rtctools': ('https://rtc-tools.readthedocs.io/en/latest/', None)}
