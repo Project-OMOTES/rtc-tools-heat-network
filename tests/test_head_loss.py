@@ -40,7 +40,7 @@ class TestHeadLoss(TestCase):
 
         # Added for case where head loss is modelled via DW
         class SourcePipeSinkDW(SourcePipeSink):
-            def heat_network_options(self):
+            def energy_system_options(self):
                 options = super().energy_system_options()
                 self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
                 self.heat_network_settings["n_linearization_lines"] = 5
