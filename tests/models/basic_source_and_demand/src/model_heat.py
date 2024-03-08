@@ -2,8 +2,8 @@ from rtctools_heat_network.pycml import ControlInput, Model as _Model
 from rtctools_heat_network.pycml.component_library.milp import (
     HeatDemand,
     HeatPipe,
-    Pump,
     HeatSource,
+    Pump,
 )
 
 
