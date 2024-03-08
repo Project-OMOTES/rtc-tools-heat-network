@@ -159,7 +159,7 @@ class TestHeadLoss(TestCase):
         ]:
 
             class TestSourceSink(GasProblem):
-                def heat_network_options(self):
+                def energy_system_options(self):
                     options = super().energy_system_options()
                     self.gas_network_settings["minimize_head_losses"] = True
 

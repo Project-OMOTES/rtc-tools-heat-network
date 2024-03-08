@@ -28,7 +28,7 @@ class TestGasNetwork(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class GasNetworkProblem(HeatProblem):
-            def heat_network_options(self):
+            def energy_system_options(self):
                 options = super().energy_system_options()
                 self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
                 self.gas_network_settings["minimize_head_losses"] = True
