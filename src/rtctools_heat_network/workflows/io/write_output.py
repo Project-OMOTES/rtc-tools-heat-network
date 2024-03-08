@@ -567,7 +567,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                                 * (self.times()[1:] - self.times()[0:-1])
                                 / 3600.0
                             )
-                    if asset_name in self.energy_system_components.get("demand", []):
+                    if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
                     elif asset_name in self.energy_system_components.get("buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
@@ -580,7 +580,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     else:
                         flow_variable = ""
                     if (
-                        asset_name in self.energy_system_components.get("demand", [])
+                        asset_name in self.energy_system_components.get("heat_demand", [])
                         or asset_name in self.energy_system_components.get("buffer", [])
                         or asset_name in self.energy_system_components.get("ates", [])
                         or asset_name in self.energy_system_components.get("pipe", [])
@@ -898,7 +898,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
             for asset_name in [
                 *self.energy_system_components.get("source", []),
-                *self.energy_system_components.get("demand", []),
+                *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("pipe", []),
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("ates", []),

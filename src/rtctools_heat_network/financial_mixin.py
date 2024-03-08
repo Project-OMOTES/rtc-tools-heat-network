@@ -109,7 +109,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_ates")
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("demand", [])]:
+            elif asset_name in [*self.energy_system_components.get("heat_demand", [])]:
                 nominal_fixed_operational = (
                     bounds[f"{asset_name}.Heat_demand"][1]
                     if not np.isinf(bounds[f"{asset_name}.Heat_demand"][1])
@@ -304,7 +304,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         for asset in [
             *self.energy_system_components.get("source", []),
-            *self.energy_system_components.get("demand", []),
+            *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("buffer", []),
             *self.energy_system_components.get("pipe", []),
@@ -329,7 +329,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         if options["include_asset_is_realized"]:
             for asset in [
                 *self.energy_system_components.get("source", []),
-                *self.energy_system_components.get("demand", []),
+                *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
@@ -994,7 +994,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         options = self.energy_system_options()
         if options["include_asset_is_realized"]:
             for asset in [
-                *self.energy_system_components.get("demand", []),
+                *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),

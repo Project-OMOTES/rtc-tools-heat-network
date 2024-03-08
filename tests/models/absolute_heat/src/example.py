@@ -122,7 +122,7 @@ class _GoalsAndOptions:
         """
         goals = super().path_goals().copy()
 
-        for demand in self.energy_system_components.get("demand", []):
+        for demand in self.energy_system_components.get("heat_demand", []):
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 

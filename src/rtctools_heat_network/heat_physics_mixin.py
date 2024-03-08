@@ -385,7 +385,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     h[f"{pipe}.Heat_loss"] = heat_loss
 
         # Demand insulation link
-        for dmnd in self.energy_system_components.get("demand", []):
+        for dmnd in self.energy_system_components.get("heat_demand", []):
             demand_insulation_classes = self.demand_insulation_classes(dmnd)
             if not demand_insulation_classes or len(demand_insulation_classes) == 1:
                 # No insulation options availabe for the demands
@@ -750,7 +750,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
 
         constraints = []
-        for dmnd in self.energy_system_components["demand"]:
+        for dmnd in self.energy_system_components["heat_demand"]:
             heat_demand = self.__state_vector_scaled(f"{dmnd}.Heat_demand", ensemble_member)
             target_demand = self.get_timeseries(f"{dmnd}.target_heat_demand")
 
@@ -1225,7 +1225,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for d in self.energy_system_components.get("demand", []):
+        for d in self.energy_system_components.get("heat_demand", []):
             heat_nominal = parameters[f"{d}.Heat_nominal"]
             cp = parameters[f"{d}.cp"]
             rho = parameters[f"{d}.rho"]

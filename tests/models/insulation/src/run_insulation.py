@@ -88,7 +88,7 @@ class HeatProblem(
 
     def demand_insulation_classes(self, demand_insualtion):
         available_demand_insulation_classes = []
-        for dmnd in self.energy_system_components["demand"]:
+        for dmnd in self.energy_system_components["heat_demand"]:
             for ii in range(len(self.insulation_levels()["insulation_level"])):
                 available_demand_insulation_classes.append(
                     DemandInsulationClass(

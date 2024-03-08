@@ -65,7 +65,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.energy_system_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -149,7 +149,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.energy_system_components.get("demand", [])
+        demands = self.energy_system_components.get("heat_demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 

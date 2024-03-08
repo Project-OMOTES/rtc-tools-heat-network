@@ -191,7 +191,7 @@ class EndScenarioSizingDiscounted(
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.energy_system_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
@@ -320,7 +320,7 @@ class EndScenarioSizingDiscounted(
         # Optimized ESDL
         self._write_updated_esdl(self.get_energy_system_copy())
 
-        for d in self.energy_system_components.get("demand", []):
+        for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
             target = self.get_timeseries(f"{d}.target_heat_demand").values
             timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
@@ -524,7 +524,7 @@ class EndScenarioSizing(
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.energy_system_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
@@ -653,7 +653,7 @@ class EndScenarioSizing(
         # Optimized ESDL
         self._write_updated_esdl(self.get_energy_system_copy())
 
-        for d in self.energy_system_components.get("demand", []):
+        for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
             target = self.get_timeseries(f"{d}.target_heat_demand").values
             timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)

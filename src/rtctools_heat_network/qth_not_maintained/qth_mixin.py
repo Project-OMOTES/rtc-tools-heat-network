@@ -1029,7 +1029,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         updated_bounds = {}
 
-        for d in self.energy_system_components["demand"]:
+        for d in self.energy_system_components["heat_demand"]:
             lb = parameters[f"{d}.T_return"]
             key = f"{d}.QTHOut.T"
             updated_bounds[key] = self.merge_bounds(bounds[key], (lb, np.inf))

@@ -40,7 +40,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.energy_system_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -175,7 +175,7 @@ class HeatProblem2(
     def read(self):
         super().read()
 
-        for d in self.energy_system_components["demand"]:
+        for d in self.energy_system_components["heat_demand"]:
             new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
@@ -220,7 +220,7 @@ class ElectricityProblem(
     def read(self):
         super().read()
 
-        for d in self.energy_system_components["demand"]:
+        for d in self.energy_system_components["heat_demand"]:
             new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 

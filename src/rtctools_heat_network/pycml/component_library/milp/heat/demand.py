@@ -29,7 +29,7 @@ class Demand(_NonStorageComponent):
             ),
         )
 
-        self.component_type = "demand"
+        self.component_type = "heat_demand"
 
         self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
 

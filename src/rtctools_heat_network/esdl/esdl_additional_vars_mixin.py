@@ -78,7 +78,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("heat_exchanger", []),
-                *self.energy_system_components.get("demand", []),
+                *self.energy_system_components.get("heat_demand", []),
             ]:
                 esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
                 parameters = self.parameters(0)
