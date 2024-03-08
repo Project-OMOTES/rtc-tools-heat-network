@@ -135,6 +135,10 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.heat_network_settings["minimum_velocity"] = 0.001
+        self.heat_network_settings["maximum_velocity"] = 3.0
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+
         self._override_hn_options = {}
 
         self._number_of_years = 30.0
@@ -158,11 +162,6 @@ class EndScenarioSizing(
         self.__heat_demand_nominal = dict()
 
         self._save_json = False
-
-    def _get_runinfo_path_root(self):  # degredated
-        runinfo_path = Path(self.esdl_run_info_path).resolve()
-        tree = ET.parse(runinfo_path)
-        return tree.getroot()
 
     def parameters(self, ensemble_member):
         parameters = super().parameters(ensemble_member)
@@ -205,11 +204,8 @@ class EndScenarioSizing(
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
         options = super().heat_network_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
-        self.heat_network_settings["maximum_velocity"] = 3.0
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         # options.update(self._override_hn_options)
         return options
 
@@ -374,11 +370,8 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
 
     Goal priorities are:
     1. Match heat demand with target
-    2. minimize TCO = Capex + Opex*lifetime
+    2. minimize TCO = Anualized capex (function of technical lifetime of individual assets) + Opex*timehorizon
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def heat_network_options(self):
         options = super().heat_network_options()
@@ -605,23 +598,6 @@ def run_end_scenario_sizing(
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
 
     return solution
-
-
-def connect_database():
-    client = InfluxDBClient(
-        host=DB_HOST, port=DB_PORT, username=DB_USER, password=DB_PASSWORD, database=DB_NAME
-    )
-    if DB_NAME not in client.get_list_database():
-        client.create_database(DB_NAME)
-    return client
-
-
-def format_datetime(dt):
-    date, time = dt.split(" ")
-    day, month, year = date.split("-")
-    ndate = year + "-" + month + "-" + day
-    ntime = time + ":00+0000"
-    return ndate + "T" + ntime
 
 
 @main_decorator

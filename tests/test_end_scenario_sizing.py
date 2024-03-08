@@ -134,9 +134,6 @@ class TestEndScenarioSizing(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
         )
-        # TODO: check staged approach, the pipe flow direction seems to give some unwanted flow
-        #  directions, because objective becomes 1% higher enventhough MIPGap becomes 0%, when
-        #  staged_pipe_optimization=False, the same occurs that the objective is lower
 
         solution = run_end_scenario_sizing(
             EndScenarioSizingStagedHIGHS,
