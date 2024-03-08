@@ -8,10 +8,8 @@ import esdl
 
 from rtctools_heat_network.pycml.component_library.milp import (
     ATES,
-    HeatBuffer,
     CheckValve,
     ControlValve,
-    HeatDemand,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -24,13 +22,15 @@ from rtctools_heat_network.pycml.component_library.milp import (
     GasSubstation,
     GasTankStorage,
     GeothermalSource,
+    HeatBuffer,
+    HeatDemand,
     HeatExchanger,
+    HeatPipe,
     HeatPump,
     HeatPumpElec,
-    Node,
-    HeatPipe,
-    Pump,
     HeatSource,
+    Node,
+    Pump,
     WindPark,
 )
 
