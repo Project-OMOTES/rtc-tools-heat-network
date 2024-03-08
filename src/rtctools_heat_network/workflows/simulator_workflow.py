@@ -126,7 +126,7 @@ class _GoalsAndOptions:
             goals.append(TargetDemandGoal(state, target))
 
         if False:
-            for source in self.energy_system_components.get("source", []):
+            for source in self.energy_system_components.get("heat_source", []):
                 goals.append(
                     MinimizeSourcesHeatGoal(
                         source,
@@ -191,8 +191,8 @@ class NetworkSimulator(
     def path_goals(self):
         goals = super().path_goals().copy()
         # TODO: add other producer assets
-        # assets_to_include = ["source", "ates"] # TODO: add other assets in the future
-        assets_to_include = ["source"]
+        # assets_to_include = ["heat_source", "ates"] # TODO: add other assets in the future
+        assets_to_include = ["heat_source"]
 
         number_of_source_producers = 0
         for prod_asset in assets_to_include:

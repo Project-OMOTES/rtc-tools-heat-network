@@ -76,7 +76,7 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{demand}.Heat_demand"], results[f"{demand}.Heat_flow"], atol=1.0e-6
             )
 
-        for source in heat_problem.energy_system_components.get("source", []):
+        for source in heat_problem.energy_system_components.get("heat_source", []):
             np.testing.assert_allclose(
                 results[f"{source}.HeatOut.Heat"] - results[f"{source}.HeatIn.Heat"],
                 results[f"{source}.Heat_source"],

@@ -56,7 +56,7 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -148,7 +148,7 @@ class HeatProblemB(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -248,7 +248,7 @@ class HeatProblemB(
 #     def path_goals(self):
 #         goals = super().path_goals().copy()
 
-#         for s in self.energy_system_components["source"]:
+#         for s in self.energy_system_components["heat_source"]:
 #             goals.append(MinimizeSourcesFlowGoal(s))
 
 #         return goals

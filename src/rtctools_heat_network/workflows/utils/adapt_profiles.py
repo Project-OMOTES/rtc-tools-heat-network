@@ -131,7 +131,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
 
         # TODO: this has not been tested but is required if a production profile is included
         #  in the data
-        for source in problem.energy_system_components.get("source", []):
+        for source in problem.energy_system_components.get("heat_source", []):
             var_name = f"{source}.maximum_heat_source"
             try:
                 problem.get_timeseries(variable=var_name, ensemble_member=ensemble_member)

@@ -928,7 +928,7 @@ def run_end_scenario_sizing(
                 first_pipe_class = False
 
         for asset in [
-            *solution.energy_system_components.get("source", []),
+            *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"

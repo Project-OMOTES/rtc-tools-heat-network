@@ -67,7 +67,7 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -253,7 +253,7 @@ class HeatProblemPlacingOverTime(HeatProblem):
         constraints = super().constraints(ensemble_member)
 
         # Constraints for investment speed, please note that we need to enforce index 0 to be 0.
-        for s in self.energy_system_components.get("source", []):
+        for s in self.energy_system_components.get("heat_source", []):
             inv_made = self.state_vector(f"{s}__cumulative_investments_made_in_eur")
             nominal = self.variable_nominal(f"{s}__cumulative_investments_made_in_eur")
             inv_cap = 2.5e5
@@ -391,7 +391,7 @@ class HeatProblemSetPoints(
 
             # TODO: this has not been tested but is required if a production profile is included
             #  in the data
-            for source in self.energy_system_components.get("source", []):
+            for source in self.energy_system_components.get("heat_source", []):
                 try:
                     self.get_timeseries(f"{source}.target_heat_source_year", ensemble_member)
                 except KeyError:

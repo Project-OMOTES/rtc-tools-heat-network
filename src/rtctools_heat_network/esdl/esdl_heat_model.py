@@ -754,7 +754,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif len(asset.in_ports) == 3:
             return HeatPumpElec, modifiers
 
-    def convert_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
+    def convert_heat_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
         """
         This function converts the Source object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:

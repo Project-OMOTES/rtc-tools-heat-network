@@ -117,7 +117,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 )
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("source", [])]:
+            elif asset_name in [*self.energy_system_components.get("heat_source", [])]:
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
@@ -303,7 +303,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
 
         for asset in [
-            *self.energy_system_components.get("source", []),
+            *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("buffer", []),
@@ -328,7 +328,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         if options["include_asset_is_realized"]:
             for asset in [
-                *self.energy_system_components.get("source", []),
+                *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),
@@ -766,7 +766,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
 
-        for s in self.energy_system_components.get("source", []):
+        for s in self.energy_system_components.get("heat_source", []):
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)
             variable_operational_cost_var = self._asset_variable_operational_cost_map[s]
             variable_operational_cost = self.extra_variable(
@@ -995,7 +995,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         if options["include_asset_is_realized"]:
             for asset in [
                 *self.energy_system_components.get("heat_demand", []),
-                *self.energy_system_components.get("source", []),
+                *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("heat_exchanger", []),
@@ -1101,7 +1101,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = []
 
-        asset_categories = ["source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
+        asset_categories = ["heat_source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
 
         parameters = super().parameters(ensemble_member)
 

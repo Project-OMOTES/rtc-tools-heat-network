@@ -37,7 +37,7 @@ class MinimizeTCO(Goal):
 
         default_asset_type_maps = {
             "operational": {
-                "source",
+                "heat_source",
                 "ates",
                 "heat_pump",
                 "heat_pump_elec",
@@ -46,7 +46,7 @@ class MinimizeTCO(Goal):
                 "buffer",
             },
             "fixed_operational": {
-                "source",
+                "heat_source",
                 "ates",
                 "buffer",
                 "heat_pump",
@@ -55,7 +55,7 @@ class MinimizeTCO(Goal):
                 "pump",
             },
             "investment": {
-                "source",
+                "heat_source",
                 "ates",
                 "buffer",
                 "heat_demand",
@@ -66,7 +66,7 @@ class MinimizeTCO(Goal):
                 "pump",
             },
             "installation": {
-                "source",
+                "heat_source",
                 "ates",
                 "buffer",
                 "heat_demand",
@@ -77,7 +77,7 @@ class MinimizeTCO(Goal):
                 "pump",
             },
             "annualized": {
-                "source",
+                "heat_source",
                 "ates",
                 "buffer",
                 "heat_demand",

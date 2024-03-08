@@ -104,7 +104,7 @@ class _GoalsAndOptions:
 
             goals.append(TargetDemandGoal(state, target))
 
-        # for s in self.energy_system_components["source"]:
+        # for s in self.energy_system_components["heat_source"]:
         #     try:
         #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
         #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
@@ -132,7 +132,7 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -165,7 +165,7 @@ class HeatProblemSetPointConstraints(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -186,7 +186,7 @@ class HeatProblemTvarsup(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -236,7 +236,7 @@ class HeatProblemTvarret(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesFlowGoal(s))
 
         return goals
@@ -296,7 +296,7 @@ class HeatProblemProdProfile(
     def read(self):
         super().read()
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
@@ -318,7 +318,7 @@ class HeatProblemProdProfile(
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -340,7 +340,7 @@ class QTHProblem(
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.energy_system_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesQTHGoal(s))
 
         return goals

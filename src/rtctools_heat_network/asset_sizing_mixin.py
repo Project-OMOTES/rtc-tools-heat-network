@@ -762,7 +762,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__asset_max_size_bounds[asset_max_size_var] = (lb, ub)
             self.__asset_max_size_nominals[asset_max_size_var] = nominal
 
-        for asset_name in self.energy_system_components.get("source", []):
+        for asset_name in self.energy_system_components.get("heat_source", []):
             ub = bounds[f"{asset_name}.Heat_source"][1]
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
@@ -1773,7 +1773,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             # Same as for the buffer but now for the source
-        for s in self.energy_system_components.get("source", []):
+        for s in self.energy_system_components.get("heat_source", []):
             max_var = self._asset_max_size_map[s]
             max_heat = self.extra_variable(max_var, ensemble_member)
             heat_source = self.__state_vector_scaled(f"{s}.Heat_source", ensemble_member)

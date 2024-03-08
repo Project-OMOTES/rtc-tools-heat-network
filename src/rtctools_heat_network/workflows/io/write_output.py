@@ -189,7 +189,7 @@ class ScenarioOutput(TechnoEconomicMixin):
             for buffer in self.energy_system_components.get("buffer", [])
         ]
 
-        for source in _sort_numbered(self.energy_system_components["source"]):
+        for source in _sort_numbered(self.energy_system_components["heat_source"]):
             if source in self._minimize_size_sources:
                 max_size_var = self._max_source_heat_map[source]
                 results_sources_size[source] = float(results[max_size_var][0]) / 10.0**3
@@ -211,7 +211,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 result_placed=results_sources_placed[source],
                 result_size=results_sources_size[source],
             )
-            for source in self.energy_system_components["source"]
+            for source in self.energy_system_components["heat_source"]
         ]
 
         # Format the pipe results
@@ -554,7 +554,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     # Calculate the total energy [Wh] consumed/produced in an are.
                     # Note: milp losses of buffers, ATES' and pipes are included in the area energy
                     # consumption
-                    if asset_name in self.energy_system_components.get("source", []):
+                    if asset_name in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
                                 results[f"{asset_name}.Heat_source"][1:]
@@ -774,7 +774,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         for _, attributes in self.esdl_assets.items():
             name = attributes.name
             if name in [
-                *self.energy_system_components.get("source", []),
+                *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),
             ]:
@@ -897,7 +897,7 @@ class ScenarioOutput(TechnoEconomicMixin):
             # )
 
             for asset_name in [
-                *self.energy_system_components.get("source", []),
+                *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("pipe", []),
                 *self.energy_system_components.get("buffer", []),

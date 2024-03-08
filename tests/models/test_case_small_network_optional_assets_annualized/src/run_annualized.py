@@ -27,9 +27,9 @@ class HeatProblemDiscAnnualizedCost(HeatProblem):
         goals = []
 
         custom_asset_type_maps = {
-            "operational": {"source"},
-            "fixed_operational": {"source"},
-            "annualized": {"source"},
+            "operational": {"heat_source"},
+            "fixed_operational": {"heat_source"},
+            "annualized": {"heat_source"},
         }
         goals.append(MinimizeTCO(priority=2, custom_asset_type_maps=custom_asset_type_maps))
         return goals

@@ -2,7 +2,7 @@
 # Used for default manual input configuration using get_goals_and_options_class
 map_comp_type_to_rangegoal_variable = {
     "heat_demand": ".Heat_demand",
-    "source": ".Heat_source",
+    "heat_source": ".Heat_source",
     "heat_pump": ".Secondary_heat",
 }
 
@@ -10,7 +10,7 @@ map_comp_type_to_rangegoal_variable = {
 # These variables are the default 'control' variables of a component. Used for setpoint constraints.
 map_comp_type_to_control_variable = {
     "heat_demand": ".Heat_demand",
-    "source": ".Heat_source",
+    "heat_source": ".Heat_source",
     "geothermal": ".Heat_source",
     "heat_pump": [
         ".Power_elec",
@@ -60,5 +60,5 @@ map_comp_type_to_milp_result_variables = {
     "node": {"H"},
     "pipe": {"dH", "params.Heat_loss", "params.temperature"}.union(heat_two_port_vars),
     "pump": {"dH"}.union(heat_two_port_vars),
-    "source": {"Heat_source", "dH"}.union(heat_two_port_vars),
+    "heat_source": {"Heat_source", "dH"}.union(heat_two_port_vars),
 }

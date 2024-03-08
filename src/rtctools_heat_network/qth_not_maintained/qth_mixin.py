@@ -226,7 +226,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         bounds = self.bounds()
         options = self.heat_network_options()
         components = self.energy_system_components
-        sources = components.get("source", [])
+        sources = components.get("heat_source", [])
         demands = components.get("heat_demand", [])
 
         min_temp_demands = np.inf

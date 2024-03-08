@@ -1289,7 +1289,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        for s in self.energy_system_components.get("source", []):
+        for s in self.energy_system_components.get("heat_source", []):
             heat_nominal = parameters[f"{s}.Heat_nominal"]
             q_nominal = self.variable_nominal(f"{s}.Q")
             cp = parameters[f"{s}.cp"]
@@ -1603,7 +1603,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             # We want an _equality_ constraint between discharge and milp if the buffer is
             # consuming (i.e. behaving like a "demand"). We want an _inequality_
-            # constraint (`|milp| >= |f(Q)|`) just like a "source" component if milp is
+            # constraint (`|milp| >= |f(Q)|`) just like a "heat_source" component if milp is
             # extracted from the buffer. We accomplish this by disabling one of
             # the constraints with a boolean. Note that `discharge` and `heat_hot`
             # are guaranteed to have the same sign.

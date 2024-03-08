@@ -20,7 +20,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         super().read()
 
         for asset in [
-            *self.energy_system_components.get("source", []),
+            *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("buffer", []),
             *self.energy_system_components.get("heat_pump", []),
@@ -73,7 +73,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             temperature_options = self.__temperature_options[carrier]
         except KeyError:
             for asset in [
-                *self.energy_system_components.get("source", []),
+                *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("heat_pump", []),

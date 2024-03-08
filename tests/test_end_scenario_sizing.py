@@ -83,7 +83,7 @@ class TestEndScenarioSizing(TestCase):
         obj = 0.0
         years = solution.parameters(0)["number_of_years"]
         for asset in [
-            *solution.energy_system_components.get("source", []),
+            *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("ates", []),
             *solution.energy_system_components.get("buffer", []),
             *solution.energy_system_components.get("heat_demand", []),

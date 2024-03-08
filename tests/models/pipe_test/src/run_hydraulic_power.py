@@ -41,7 +41,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0.0
-        for source in optimization_problem.energy_system_components.get("source", []):
+        for source in optimization_problem.energy_system_components.get("heat_source", []):
             obj += optimization_problem.state(f"{source}.Heat_source")
 
         return obj

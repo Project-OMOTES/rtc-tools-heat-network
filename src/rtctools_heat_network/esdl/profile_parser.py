@@ -31,7 +31,7 @@ class _ProfileParserException(Exception):
 class BaseProfileReader:
     component_type_to_var_name_map: dict = {
         "heat_demand": ".target_heat_demand",
-        "source": ".maximum_heat_source",
+        "heat_source": ".maximum_heat_source",
         "electricity_demand": ".target_electricity_demand",
         "electricity_source": ".maximum_electricity_source",
         "gas_demand": ".target_gas_demand",
@@ -512,7 +512,7 @@ class _ESDLInputDataConfig:
     def __init__(self, id_map: Dict[str, str], energy_system_components: Dict[str, Set[str]]):
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map: Dict[str, str] = id_map
-        self._sources: Set = set(energy_system_components.get("source", []))
+        self._sources: Set = set(energy_system_components.get("heat_source", []))
         self._demands: Set = set(energy_system_components.get("heat_demand", []))
         self._electricity_sources: Set = set(energy_system_components.get("electricity_source", []))
         self._electricity_demands: Set = set(energy_system_components.get("electricity_demand", []))

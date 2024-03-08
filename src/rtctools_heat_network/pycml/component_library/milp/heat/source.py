@@ -29,7 +29,7 @@ class Source(_NonStorageComponent):
             ),
         )
 
-        self.component_type = "source"
+        self.component_type = "heat_source"
 
         self.price = nan  # TODO: delete not needed anymore
         self.co2_coeff = 1.0
