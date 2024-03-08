@@ -135,7 +135,7 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings["minimum_velocity"] = 0.001
+        self.heat_network_settings["minimum_velocity"] = 0.0 #0.001
         self.heat_network_settings["maximum_velocity"] = 3.0
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
@@ -415,7 +415,7 @@ class SettingsStaged:
         options = super().heat_network_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            self.heat_network_settings["minimum_velocity"] = 0.0
+            # self.heat_network_settings["minimum_velocity"] = 0.0
 
         return options
 
