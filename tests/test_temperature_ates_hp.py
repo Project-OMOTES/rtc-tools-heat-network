@@ -104,7 +104,7 @@ class TestAtesTemperature(TestCase):
 
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
         np.testing.assert_array_less(
-            ates_temperature_disc-tol,
+            ates_temperature_disc - tol,
             sum(
                 [
                     results[f"ATES_cb47__temperature_disc_{temp}"] * temp
