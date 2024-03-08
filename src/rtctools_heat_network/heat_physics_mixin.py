@@ -678,7 +678,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(0)
         bounds = self.bounds()
         components = self.energy_system_components
-        buffers = components.get("buffer", [])
+        buffers = components.get("heat_buffer", [])
 
         for b in buffers:
             min_fract_vol = parameters[f"{b}.min_fraction_tank_volume"]
@@ -2751,7 +2751,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         initial_time = np.array([self.initial_time])
         empty_timeseries = Timeseries(initial_time, [np.nan])
-        buffers = self.energy_system_components.get("buffer", [])
+        buffers = self.energy_system_components.get("heat_buffer", [])
 
         for b in buffers:
             hist_heat_buffer = history.get(f"{b}.Heat_buffer", empty_timeseries).values

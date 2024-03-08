@@ -22,7 +22,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         for asset in [
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("buffer", []),
+            *self.energy_system_components.get("heat_buffer", []),
             *self.energy_system_components.get("heat_pump", []),
             *self.energy_system_components.get("heat_pump_elec", []),
         ]:
@@ -75,7 +75,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             for asset in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("buffer", []),
+                *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("heat_pump", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_demand", []),

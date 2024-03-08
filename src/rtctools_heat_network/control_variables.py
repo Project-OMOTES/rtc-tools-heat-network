@@ -52,7 +52,7 @@ map_comp_type_to_milp_result_variables = {
     ),
     # Heat: (),
     "ates": set(),
-    "buffer": {"Stored_heat", "Heat_buffer", "Heat_loss"}.union(heat_two_port_vars),
+    "heat_buffer": {"Stored_heat", "Heat_buffer", "Heat_loss"}.union(heat_two_port_vars),
     "check_valve": {"dH"}.union(heat_two_port_vars),
     "control_valve": {"dH"}.union(heat_two_port_vars),
     "heat_demand": {"Heat_demand"}.union(heat_two_port_vars),

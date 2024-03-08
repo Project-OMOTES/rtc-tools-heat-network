@@ -68,7 +68,7 @@ class _GoalsAndOptions:
         for s in [
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("ates", []),
-            *self.energy_system_components.get("buffer", []),
+            *self.energy_system_components.get("heat_buffer", []),
         ]:
             goals.append(MinimizeSourcesHeatCostGoal(s))
 

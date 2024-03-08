@@ -193,7 +193,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             logger.warning(warning_msg)
 
-    def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:

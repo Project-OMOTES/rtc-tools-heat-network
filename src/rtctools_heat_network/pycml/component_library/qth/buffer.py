@@ -11,7 +11,7 @@ class Buffer(_FluidPropertiesComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "buffer"
+        self.component_type = "heat_buffer"
 
         self.Q_nominal = 1.0
         self.head_loss = 0.0

@@ -163,7 +163,7 @@ class TestWarmingUpUnitCases(TestCase):
             np.sign(results["Pipe_e53a.Q"][inds]),
         )
 
-        for buffer in heat_problem.energy_system_components.get("buffer", []):
+        for buffer in heat_problem.energy_system_components.get("heat_buffer", []):
             np.testing.assert_allclose(
                 results[f"{buffer}.Heat_buffer"], results[f"{buffer}.Heat_flow"]
             )

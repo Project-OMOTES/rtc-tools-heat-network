@@ -783,7 +783,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             lb = 0.0 if parameters[f"{asset_name}.state"] != 1 else ub
             _make_max_size_var(name=asset_name, lb=lb, ub=ub, nominal=ub / 2.0)
 
-        for asset_name in self.energy_system_components.get("buffer", []):
+        for asset_name in self.energy_system_components.get("heat_buffer", []):
             ub = (
                 max(bounds[f"{asset_name}.Stored_heat"][1].values)
                 if isinstance(bounds[f"{asset_name}.Stored_heat"][1], Timeseries)
@@ -1758,7 +1758,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         bounds = self.bounds()
 
-        for b in self.energy_system_components.get("buffer", []):
+        for b in self.energy_system_components.get("heat_buffer", []):
             max_var = self._asset_max_size_map[b]
             max_heat = self.extra_variable(max_var, ensemble_member)
             stored_heat = self.__state_vector_scaled(f"{b}.Stored_heat", ensemble_member)
@@ -1949,7 +1949,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     single_power = parameters[f"{asset_name}.single_doublet_power"]
                     nominal_value = 2.0 * bounds[f"{asset_name}.Heat_flow"][1]
                     nominal_var = self.variable_nominal(f"{asset_name}.Heat_flow")
-                elif asset_name in [*self.energy_system_components.get("buffer", [])]:
+                elif asset_name in [*self.energy_system_components.get("heat_buffer", [])]:
                     state_var = self.state(f"{asset_name}.HeatIn.Q")
                     single_power = parameters[f"{asset_name}.volume"]
                     nominal_value = single_power

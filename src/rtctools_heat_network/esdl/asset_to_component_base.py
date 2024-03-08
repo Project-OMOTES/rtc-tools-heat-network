@@ -95,7 +95,7 @@ class _AssetToComponentBase:
         "Joint": "node",
         "Pipe": "heat_pipe",
         "Pump": "pump",
-        "HeatStorage": "buffer",
+        "HeatStorage": "heat_buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
@@ -252,7 +252,7 @@ class _AssetToComponentBase:
             if v
             in {
                 "heat_source",
-                "buffer",
+                "heat_buffer",
                 "ates",
                 "heat_exchanger",
                 "heat_pump",

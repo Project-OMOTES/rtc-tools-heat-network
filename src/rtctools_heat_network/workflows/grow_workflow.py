@@ -227,7 +227,7 @@ class EndScenarioSizingDiscounted(
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
 
-        for b in self.energy_system_components.get("buffer", {}):
+        for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
@@ -560,7 +560,7 @@ class EndScenarioSizing(
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
 
-        for b in self.energy_system_components.get("buffer", {}):
+        for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
@@ -929,7 +929,7 @@ def run_end_scenario_sizing(
 
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
-            *solution.energy_system_components.get("buffer", []),
+            *solution.energy_system_components.get("heat_buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
             lb = results[var_name][0]

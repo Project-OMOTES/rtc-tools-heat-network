@@ -129,7 +129,7 @@ def heat_to_discharge_test(solution, results):
 
     for d in [
         *solution.energy_system_components.get("ates", []),
-        *solution.energy_system_components.get("buffer", []),
+        *solution.energy_system_components.get("heat_buffer", []),
     ]:
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -293,7 +293,7 @@ def energy_conservation_test(solution, results):
     for d in solution.energy_system_components.get("heat_demand", []):
         energy_sum -= results[f"{d}.Heat_demand"]
 
-    for d in solution.energy_system_components.get("buffer", []):
+    for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
 
     for d in solution.energy_system_components.get("heat_source", []):

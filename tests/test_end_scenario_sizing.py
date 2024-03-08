@@ -74,7 +74,7 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.energy_system_components.get("buffer", []):
+        for b in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -85,7 +85,7 @@ class TestEndScenarioSizing(TestCase):
         for asset in [
             *solution.energy_system_components.get("heat_source", []),
             *solution.energy_system_components.get("ates", []),
-            *solution.energy_system_components.get("buffer", []),
+            *solution.energy_system_components.get("heat_buffer", []),
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("heat_exchanger", []),
             *solution.energy_system_components.get("heat_pump", []),
@@ -158,7 +158,7 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.energy_system_components.get("buffer", []):
+        for b in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):

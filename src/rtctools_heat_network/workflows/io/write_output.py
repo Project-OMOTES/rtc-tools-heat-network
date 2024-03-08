@@ -148,7 +148,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         results_max_charging_rate = {}
         results_max_discharging_rate = {}
 
-        for buffer in _sort_numbered(self.energy_system_components.get("buffer", [])):
+        for buffer in _sort_numbered(self.energy_system_components.get("heat_buffer", [])):
             if buffer in self._minimize_size_buffers:
                 max_size_var = self._max_buffer_heat_map[buffer]
                 results_buffers_size[buffer] = float(results[max_size_var][0]) / (
@@ -186,7 +186,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 max_charging_rate=results_max_charging_rate[buffer],
                 max_discharging_rate=results_max_discharging_rate[buffer],
             )
-            for buffer in self.energy_system_components.get("buffer", [])
+            for buffer in self.energy_system_components.get("heat_buffer", [])
         ]
 
         for source in _sort_numbered(self.energy_system_components["heat_source"]):
@@ -569,7 +569,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                             )
                     if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
-                    elif asset_name in self.energy_system_components.get("buffer", []):
+                    elif asset_name in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
                     elif asset_name in self.energy_system_components.get("ates", []):
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
@@ -581,7 +581,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                         flow_variable = ""
                     if (
                         asset_name in self.energy_system_components.get("heat_demand", [])
-                        or asset_name in self.energy_system_components.get("buffer", [])
+                        or asset_name in self.energy_system_components.get("heat_buffer", [])
                         or asset_name in self.energy_system_components.get("ates", [])
                         or asset_name in self.energy_system_components.get("heat_pipe", [])
                     ):
@@ -776,14 +776,14 @@ class ScenarioOutput(TechnoEconomicMixin):
             if name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("ates", []),
-                *self.energy_system_components.get("buffer", []),
+                *self.energy_system_components.get("heat_buffer", []),
             ]:
                 asset = _name_to_asset(name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset in self.energy_system_components.get("buffer", []):
+                if asset in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
                         parameters[f"{name}.cp"]
@@ -900,7 +900,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
                 *self.energy_system_components.get("heat_pipe", []),
-                *self.energy_system_components.get("buffer", []),
+                *self.energy_system_components.get("heat_buffer", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),
                 *self.energy_system_components.get("heat_pump", []),
