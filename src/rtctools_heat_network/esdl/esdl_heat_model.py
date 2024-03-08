@@ -307,7 +307,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Buffer, modifiers
 
-    def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
+    def convert_heat_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
         """
         This function converts the demand object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
