@@ -1,5 +1,11 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.milp import Demand, Node, Pipe, Pump, Source
+from rtctools_heat_network.pycml.component_library.milp import (
+    HeatDemand,
+    Node,
+    HeatPipe,
+    Pump,
+    HeatSource,
+)
 
 
 class Model(_Model):
@@ -17,7 +23,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Source,
+            HeatSource,
             "source",
             Heat_source=dict(min=0.75e5, max=1.25e5),
             Heat_flow=dict(min=0.75e5, max=1.25e5),
@@ -26,7 +32,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Demand,
+            HeatDemand,
             "demand",
             HeatIn=dict(Heat=dict(max=self.max_heat)),
             Heat_demand=dict(min=0.0, max=self.max_heat),
@@ -35,7 +41,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_hot",
             length=1000.0,
             diameter=0.15,
@@ -46,7 +52,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_cold",
             length=1000.0,
             diameter=0.15,
@@ -57,7 +63,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_2_hot",
             length=1000.0,
             diameter=0.15,
@@ -68,7 +74,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_2_cold",
             length=1000.0,
             diameter=0.15,
@@ -79,7 +85,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_demand_hot",
             length=0.0,
             diameter=0.15,
@@ -90,7 +96,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_demand_cold",
             length=0.0,
             diameter=0.15,
@@ -101,7 +107,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_source_hot",
             length=0.0,
             diameter=0.15,
@@ -112,7 +118,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_source_cold",
             length=0.0,
             diameter=0.15,

@@ -8,7 +8,7 @@ from rtctools_heat_network.pycml.component_library.milp._internal.heat_component
 from .heat_two_port import HeatTwoPort
 
 
-class Buffer(HeatTwoPort, BaseAsset):
+class HeatBuffer(HeatTwoPort, BaseAsset):
     """
     The buffer component is to model milp storage in a tank. This means that we model a tank of hot
     water being filled and radiating milp away (milp loss) over the hot surfaces. We assume that the

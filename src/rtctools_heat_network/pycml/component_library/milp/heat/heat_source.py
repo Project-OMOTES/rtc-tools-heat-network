@@ -5,7 +5,7 @@ from rtctools_heat_network.pycml import Variable
 from ._non_storage_component import _NonStorageComponent
 
 
-class Source(_NonStorageComponent):
+class HeatSource(_NonStorageComponent):
     """
     The source component is there to insert thermal power (Heat) into the network.
 

@@ -1,8 +1,8 @@
 from .ates import ATES
-from .buffer import Buffer
+from .heat_buffer import HeatBuffer
 from .check_valve import CheckValve
 from .control_valve import ControlValve
-from .demand import Demand
+from .heat_demand import HeatDemand
 from .geothermal_source import GeothermalSource
 from .heat_exchanger import HeatExchanger
 from .heat_four_port import HeatFourPort
@@ -10,16 +10,16 @@ from .heat_port import HeatPort
 from .heat_pump import HeatPump
 from .heat_two_port import HeatTwoPort
 from .node import Node
-from .pipe import Pipe
+from .heat_pipe import HeatPipe
 from .pump import Pump
-from .source import Source
+from .heat_source import HeatSource
 
 __all__ = [
     "ATES",
-    "Buffer",
+    "HeatBuffer",
     "CheckValve",
     "ControlValve",
-    "Demand",
+    "HeatDemand",
     "GeothermalSource",
     "HeatExchanger",
     "HeatFourPort",
@@ -27,7 +27,7 @@ __all__ = [
     "HeatPump",
     "HeatTwoPort",
     "Node",
-    "Pipe",
+    "HeatPipe",
     "Pump",
-    "Source",
+    "HeatSource",
 ]

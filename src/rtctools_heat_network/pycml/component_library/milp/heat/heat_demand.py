@@ -3,7 +3,7 @@ from rtctools_heat_network.pycml import Variable
 from ._non_storage_component import _NonStorageComponent
 
 
-class Demand(_NonStorageComponent):
+class HeatDemand(_NonStorageComponent):
     """
     The demand component is there to extract thermal power (Heat) out of the network. Typically,
     this component is used to model aggregated demands.

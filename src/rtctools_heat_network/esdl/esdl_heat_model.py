@@ -8,10 +8,10 @@ import esdl
 
 from rtctools_heat_network.pycml.component_library.milp import (
     ATES,
-    Buffer,
+    HeatBuffer,
     CheckValve,
     ControlValve,
-    Demand,
+    HeatDemand,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -28,9 +28,9 @@ from rtctools_heat_network.pycml.component_library.milp import (
     HeatPump,
     HeatPumpElec,
     Node,
-    Pipe,
+    HeatPipe,
     Pump,
-    Source,
+    HeatSource,
     WindPark,
 )
 
@@ -193,7 +193,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             logger.warning(warning_msg)
 
-    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -305,9 +305,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return Buffer, modifiers
+        return HeatBuffer, modifiers
 
-    def convert_heat_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
+    def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
         """
         This function converts the demand object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -343,7 +343,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return Demand, modifiers
+        return HeatDemand, modifiers
 
     def convert_node(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
         """
@@ -396,7 +396,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-    def convert_heat_pipe(self, asset: Asset) -> Tuple[Union[Type[Pipe], Type[GasPipe]], MODIFIERS]:
+    def convert_heat_pipe(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -510,7 +512,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if "T_ground" in asset.attributes.keys():
             modifiers["T_ground"] = asset.attributes["T_ground"]
 
-        return Pipe, modifiers
+        return HeatPipe, modifiers
 
     def convert_pump(self, asset: Asset) -> Tuple[Type[Pump], MODIFIERS]:
         """
@@ -754,7 +756,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif len(asset.in_ports) == 3:
             return HeatPumpElec, modifiers
 
-    def convert_heat_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
+    def convert_heat_source(self, asset: Asset) -> Tuple[Type[HeatSource], MODIFIERS]:
         """
         This function converts the Source object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -849,7 +851,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             return GeothermalSource, modifiers
         else:
-            return Source, modifiers
+            return HeatSource, modifiers
 
     def convert_ates(self, asset: Asset) -> Tuple[Type[ATES], MODIFIERS]:
         """

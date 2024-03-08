@@ -5,7 +5,7 @@ from rtctools_heat_network.pycml import Variable
 from ._non_storage_component import _NonStorageComponent
 
 
-class Pipe(_NonStorageComponent):
+class HeatPipe(_NonStorageComponent):
     """
     The pipe component is to model the pressure drop (and optionally hydraulic power) and
     milp losses over a pipe. Three options for head loss computation are available in the HeatMixin
