@@ -1,5 +1,4 @@
 import logging
-from abc import abstractmethod
 from typing import List, Set
 
 import casadi as ca
@@ -181,7 +180,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         super().pre()
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         parameters = self.parameters(0)
 
         bounds = self.bounds()
@@ -870,8 +869,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     aggr_count_max = 0.0
                 self.__asset_aggregation_count_var_bounds[aggr_count_var] = (0.0, aggr_count_max)
 
-    @abstractmethod
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
         """
@@ -1131,7 +1129,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         the lowest one of them.
         """
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         components = self.energy_system_components
 
         if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
@@ -1300,7 +1298,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
         # These are the constraints to order the milp loss of the pipe classes.
-        if not self.heat_network_options()["neglect_pipe_heat_losses"]:
+        if not self.energy_system_options()["neglect_pipe_heat_losses"]:
             for pipe, pipe_classes in self.__pipe_topo_pipe_class_heat_loss_ordering_map.items():
                 if pipe in self.hot_pipes and self.has_related_pipe(pipe):
                     heat_loss_sym_name = self._pipe_heat_loss_map[pipe]
@@ -2085,7 +2083,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         This function is used to set the optimized milp losses in the parameters object.
         """
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         for ensemble_member in range(self.ensemble_size):
             parameters = self.parameters(ensemble_member)

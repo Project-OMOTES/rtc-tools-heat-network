@@ -48,7 +48,7 @@ class BaseProfileReader:
     def read_profiles(
         self,
         io: DataStore,
-        heat_network_components: Dict[str, Set[str]],
+        energy_system_components: Dict[str, Set[str]],
         esdl_asset_id_to_name_map: Dict[str, str],
         esdl_assets: Dict[str, Asset],
         carrier_properties: Dict[str, Dict],
@@ -66,7 +66,7 @@ class BaseProfileReader:
         Parameters
         ----------
         io : Datastore in which the profiles will be saved
-        heat_network_components :   Dictionary of the components of the network, should
+        energy_system_components :   Dictionary of the components of the network, should
                                     contain at least every component for which a profile
                                     needs to be loaded
         esdl_asset_id_to_name_map : Dictionary that maps asset ids to asset names,
@@ -82,7 +82,7 @@ class BaseProfileReader:
         None
         """
         self._load_profiles_from_source(
-            heat_network_components=heat_network_components,
+            energy_system_components=energy_system_components,
             esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
             carrier_properties=carrier_properties,
             ensemble_size=ensemble_size,
@@ -101,7 +101,7 @@ class BaseProfileReader:
 
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
-                for component in heat_network_components.get(component_type, []):
+                for component in energy_system_components.get(component_type, []):
                     profile = self._profiles[ensemble_member].get(component + var_name, None)
                     if profile is not None:
                         values = profile
@@ -142,7 +142,7 @@ class BaseProfileReader:
 
     def _load_profiles_from_source(
         self,
-        heat_network_components: Dict[str, Set[str]],
+        energy_system_components: Dict[str, Set[str]],
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
@@ -155,7 +155,7 @@ class BaseProfileReader:
 
         Parameters
         ----------
-        heat_network_components :   Dictionary of the components of the network, should
+        energy_system_components :   Dictionary of the components of the network, should
                                     contain at least every component for which a profile
                                     needs to be loaded
         esdl_asset_id_to_name_map : Dictionary that maps asset ids to asset names,
@@ -187,7 +187,7 @@ class InfluxDBProfileReader(BaseProfileReader):
 
     def _load_profiles_from_source(
         self,
-        heat_network_components: Dict[str, Set[str]],
+        energy_system_components: Dict[str, Set[str]],
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
@@ -406,7 +406,7 @@ class ProfileReaderFromFile(BaseProfileReader):
 
     def _load_profiles_from_source(
         self,
-        heat_network_components: Dict[str, Set[str]],
+        energy_system_components: Dict[str, Set[str]],
         esdl_asset_id_to_name_map: Dict[str, str],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
@@ -416,12 +416,12 @@ class ProfileReaderFromFile(BaseProfileReader):
                 "XML type loading currently does not support loading " "price profiles for carriers"
             )
             self._load_xml(
-                heat_network_components=heat_network_components,
+                energy_system_components=energy_system_components,
                 esdl_asset_id_to_name_map=esdl_asset_id_to_name_map,
             )
         elif self._file_path.suffix == ".csv":
             self._load_csv(
-                heat_network_components=heat_network_components,
+                energy_system_components=energy_system_components,
                 carrier_properties=carrier_properties,
                 ensemble_size=ensemble_size,
             )
@@ -432,7 +432,7 @@ class ProfileReaderFromFile(BaseProfileReader):
 
     def _load_csv(
         self,
-        heat_network_components: Dict[str, Set[str]],
+        energy_system_components: Dict[str, Set[str]],
         carrier_properties: Dict[str, Dict],
         ensemble_size: int,
     ) -> None:
@@ -460,7 +460,7 @@ class ProfileReaderFromFile(BaseProfileReader):
         self._reference_datetimes = timeseries_import_times
         for ensemble_member in range(ensemble_size):
             for component_type, var_name in self.component_type_to_var_name_map.items():
-                for component_name in heat_network_components.get(component_type, []):
+                for component_name in energy_system_components.get(component_type, []):
                     try:
                         values = data[f"{component_name.replace(' ', '')}"].to_numpy()
                     except KeyError:
@@ -478,13 +478,13 @@ class ProfileReaderFromFile(BaseProfileReader):
                         carrier_name + self.carrier_profile_var_name
                     ] = values
 
-    def _load_xml(self, heat_network_components, esdl_asset_id_to_name_map):
+    def _load_xml(self, energy_system_components, esdl_asset_id_to_name_map):
         timeseries_import_basename = self._file_path.stem
         input_folder = self._file_path.parent
 
         try:
             data = rtctools.data.pi.Timeseries(
-                _ESDLInputDataConfig(esdl_asset_id_to_name_map, heat_network_components),
+                _ESDLInputDataConfig(esdl_asset_id_to_name_map, energy_system_components),
                 input_folder,
                 timeseries_import_basename,
                 binary=False,
@@ -509,15 +509,15 @@ class ProfileReaderFromFile(BaseProfileReader):
 class _ESDLInputDataConfig:
     ns: dict = {"fews": "http://www.wldelft.nl/fews", "pi": "http://www.wldelft.nl/fews/PI"}
 
-    def __init__(self, id_map: Dict[str, str], heat_network_components: Dict[str, Set[str]]):
+    def __init__(self, id_map: Dict[str, str], energy_system_components: Dict[str, Set[str]]):
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map: Dict[str, str] = id_map
-        self._sources: Set = set(heat_network_components.get("source", []))
-        self._demands: Set = set(heat_network_components.get("demand", []))
-        self._electricity_sources: Set = set(heat_network_components.get("electricity_source", []))
-        self._electricity_demands: Set = set(heat_network_components.get("electricity_demand", []))
-        self._gas_sources: Set = set(heat_network_components.get("gas_source", []))
-        self._gas_demands: Set = set(heat_network_components.get("gas_demand", []))
+        self._sources: Set = set(energy_system_components.get("source", []))
+        self._demands: Set = set(energy_system_components.get("demand", []))
+        self._electricity_sources: Set = set(energy_system_components.get("electricity_source", []))
+        self._electricity_demands: Set = set(energy_system_components.get("electricity_demand", []))
+        self._gas_sources: Set = set(energy_system_components.get("gas_source", []))
+        self._gas_demands: Set = set(energy_system_components.get("gas_demand", []))
 
     def variable(self, pi_header):
         location_id = pi_header.find("pi:locationId", self.ns).text

@@ -56,16 +56,16 @@ class PhysicsMixin(
 
         super().__init__(*args, **kwargs)
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
         """
 
         # options = super().heat_network_options()
 
-        options = HeatPhysicsMixin.heat_network_options(self)
-        options.update(ElectricityPhysicsMixin.heat_network_options(self))
-        options.update(GasPhysicsMixin.heat_network_options(self))
+        options = HeatPhysicsMixin.energy_system_options(self)
+        options.update(ElectricityPhysicsMixin.energy_system_options(self))
+        options.update(GasPhysicsMixin.energy_system_options(self))
 
         return options
 

@@ -147,7 +147,7 @@ class TestEndScenarioSizing(TestCase):
         # TODO: this workflow will be improved, currently the not matching of demands is within
         # MIPGAP.
         # Check whether the milp demand is matched
-        # for d in solution.heat_network_components.get("demand", []):
+        # for d in solution.energy_system_components.get("demand", []):
         #     target = solution.get_timeseries(f"{d}.target_heat_demand").values
         #     # np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 

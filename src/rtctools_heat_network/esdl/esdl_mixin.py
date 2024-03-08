@@ -428,8 +428,8 @@ class ESDLMixin(
         -------
         dict with estimated and maximum velocity
         """
-        heat_network_options = self.heat_network_options()
-        v_nominal = heat_network_options["estimated_velocity"]
+        energy_system_options = self.energy_system_options()
+        v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         return dict(v_nominal=v_nominal, v_max=v_max)
 
@@ -442,7 +442,7 @@ class ESDLMixin(
         -------
         dict with estimated and maximum velocity
         """
-        heat_network_options = self.heat_network_options()
+        heat_network_options = self.energy_system_options()
         kwargs = {}
         kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
         kwargs["v_max"] = self.heat_network_settings["maximum_velocity"]
@@ -533,11 +533,11 @@ class ESDLMixin(
         None
         """
         super().read()
-        heat_network_components = self.energy_system_components
+        energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
         self.__profile_reader.read_profiles(
-            heat_network_components=heat_network_components,
+            energy_system_components=energy_system_components,
             io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
@@ -652,15 +652,15 @@ class _ESDLInputDataConfig:
     production profiles.
     """
 
-    def __init__(self, id_map: Dict, heat_network_components: Dict) -> None:
+    def __init__(self, id_map: Dict, energy_system_components: Dict) -> None:
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map = id_map
-        self._sources = set(heat_network_components.get("source", []))
-        self._demands = set(heat_network_components.get("demand", []))
-        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
-        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
-        self._gas_sources = set(heat_network_components.get("gas_source", []))
-        self._gas_demands = set(heat_network_components.get("gas_demand", []))
+        self._sources = set(energy_system_components.get("source", []))
+        self._demands = set(energy_system_components.get("demand", []))
+        self._electricity_sources = set(energy_system_components.get("electricity_source", []))
+        self._electricity_demands = set(energy_system_components.get("electricity_demand", []))
+        self._gas_sources = set(energy_system_components.get("gas_source", []))
+        self._gas_demands = set(energy_system_components.get("gas_demand", []))
 
     def variable(self, pi_header: Any) -> str:
         """

@@ -248,7 +248,7 @@ class HeatProblemB(
 #     def path_goals(self):
 #         goals = super().path_goals().copy()
 
-#         for s in self.heat_network_components["source"]:
+#         for s in self.energy_system_components["source"]:
 #             goals.append(MinimizeSourcesFlowGoal(s))
 
 #         return goals

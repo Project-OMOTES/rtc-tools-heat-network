@@ -117,7 +117,7 @@ class MinimizeTCO(Goal):
                             "fixed_operational", "investment", "installation")
             asset_types (Set[str]): Set of asset types to consider for cost calculation.
             cost_type_map (Dict[str, Any]): Mapping of assets to their respective costs.
-            options (Dict[str, Any]): Options dictionary from heat_network_options
+            options (Dict[str, Any]): Options dictionary from energy_system_options
 
         Returns:
             MX object: CasADi expression with total cost for the given asset types.

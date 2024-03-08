@@ -61,7 +61,7 @@ class TestHeat(TestCase):
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
         class Model(SourcePipeSink):
-            def heat_network_options(self):
+            def energy_system_options(self):
                 options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = True
 
@@ -122,7 +122,7 @@ class TestMinMaxPressureOptions(TestCase):
             return []
 
     class MinPressure(SmallerPipes):
-        def heat_network_options(self):
+        def energy_system_options(self):
             options = super().energy_system_options()
             assert "pipe_minimum_pressure" in self.heat_network_settings
             self.heat_network_settings["pipe_minimum_pressure"] = (
@@ -131,14 +131,14 @@ class TestMinMaxPressureOptions(TestCase):
             return options
 
     class MaxPressure(SmallerPipes):
-        def heat_network_options(self):
+        def energy_system_options(self):
             options = super().energy_system_options()
             assert "pipe_maximum_pressure" in self.heat_network_settings
             options["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
             return options
 
     class MinMaxPressure(SmallerPipes):
-        def heat_network_options(self):
+        def energy_system_options(self):
             options = super().energy_system_options()
             self.heat_network_settings["pipe_minimum_pressure"] = (
                 TestMinMaxPressureOptions.min_pressure
@@ -268,14 +268,14 @@ class TestDisconnectablePipe(TestCase):
 
             return constraints
 
-        def heat_network_options(self):
+        def energy_system_options(self):
             options = super().energy_system_options()
             options["heat_loss_disconnected_pipe"] = False
             return options
 
     class ModelDisconnectedNoHeatLoss(ModelDisconnected):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             options["heat_loss_disconnected_pipe"] = False
             return options
 
@@ -328,8 +328,8 @@ class TestDisconnectablePipe(TestCase):
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
             return options
 

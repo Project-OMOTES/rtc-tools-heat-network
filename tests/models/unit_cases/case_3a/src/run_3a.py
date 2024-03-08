@@ -98,13 +98,13 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
-        # for s in self.heat_network_components["source"]:
+        # for s in self.energy_system_components["source"]:
         #     try:
         #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
         #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
@@ -113,8 +113,8 @@ class _GoalsAndOptions:
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         # options["neglect_pipe_heat_losses"] = False
@@ -345,8 +345,8 @@ class QTHProblem(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         from rtctools_heat_network.head_loss_class import HeadLossOption
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS

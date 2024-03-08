@@ -146,7 +146,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             # TODO: set the nominal values below
-            # elif asset_name in [*self.heat_network_components.get("gas_tank_storage", [])]:
+            # elif asset_name in [*self.energy_system_components.get("gas_tank_storage", [])]:
             #     nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
             #     nominal_variable_operational = nominal_fixed_operational
             #     nominal_investment = nominal_fixed_operational

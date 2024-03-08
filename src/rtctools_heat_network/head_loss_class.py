@@ -23,7 +23,7 @@ logger = logging.getLogger("rtctools_heat_network")
 class HeadLossOption(IntEnum):
     r"""
     Enumeration for the possible options to take head loss in pipes into account.
-    Also see :py:meth:`._HeadLossMixin.heat_network_options` for related options.
+    Also see :py:meth:`._HeadLossMixin.energy_system_options` for related options.
 
     .. note::
         Not all options are supported by :py:class:`.HeatMixin`, due to the focus
@@ -68,7 +68,7 @@ class HeadLossOption(IntEnum):
         This approach can more easily be explain with a plot, showing the Darcy-Weisbach
         head loss, and the linear lines approximating it. Note that the number of
         supporting lines is an option that can be set by the user by overriding
-        :py:meth:`._HeadLossMixin.heat_network_options`. Also note that, just like
+        :py:meth:`._HeadLossMixin.energy_system_options`. Also note that, just like
         ``CQ2_INEQUALITY``, a boolean is needed when flow directions are not fixed.
 
            .. image:: /images/DWlinearization.PNG
@@ -86,7 +86,7 @@ class HeadLossOption(IntEnum):
         are not fixed yet, at the cost of reduced fidelity in the head-loss relationship.
 
         The exact velocity to use to linearize can be set by overriding
-        :py:meth:`._HeadLossMixin.heat_network_options`.
+        :py:meth:`._HeadLossMixin.energy_system_options`.
 
     CQ2_EQUALITY
         This option adds **equality** constraints of the type:
@@ -124,8 +124,8 @@ class _MinimizeHeadLosses(Goal):
 
         parameters = optimization_problem.parameters(ensemble_member)
 
-        pumps = optimization_problem.heat_network_components.get("pump", [])
-        sources = optimization_problem.heat_network_components.get("source", [])
+        pumps = optimization_problem.energy_system_components.get("pump", [])
+        sources = optimization_problem.energy_system_components.get("source", [])
 
         for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
@@ -139,7 +139,7 @@ class _MinimizeHeadLosses(Goal):
         assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
-            for p in optimization_problem.heat_network_components.get("pipe", []):
+            for p in optimization_problem.energy_system_components.get("pipe", []):
                 if (
                     not parameters[f"{p}.has_control_valve"]
                     and not parameters[f"{p}.length"] == 0.0
@@ -147,7 +147,7 @@ class _MinimizeHeadLosses(Goal):
                     sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
                     sum_ += optimization_problem.state(sym_name)
         elif self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_GAS:
-            for p in optimization_problem.heat_network_components.get("gas_pipe", []):
+            for p in optimization_problem.energy_system_components.get("gas_pipe", []):
                 if not parameters[f"{p}.length"] == 0.0:
                     sym_name = optimization_problem._hn_gas_pipe_to_head_loss_map[p]
                     sum_ += optimization_problem.state(sym_name)
@@ -181,7 +181,7 @@ class _MinimizeHydraulicPower(Goal):
 
         assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+        for pipe in optimization_problem.energy_system_components.get("pipe", []):
             if (
                 not parameters[f"{pipe}.has_control_valve"]
                 and not parameters[f"{pipe}.length"] == 0.0
@@ -228,10 +228,10 @@ class HeadLossClass:
         }
 
         pipe_type = "pipe"
-        if len(self.heat_network_components.get("pipe", [])) == 0:
+        if len(self.energy_system_components.get("pipe", [])) == 0:
             pipe_type = "gas_pipe"
 
-        for p in self.heat_network_components.get(pipe_type, []):
+        for p in self.energy_system_components.get(pipe_type, []):
             head_loss_values.add(
                 self._hn_get_pipe_head_loss_option(p, self.network_settings, parameters)
             )
@@ -240,7 +240,7 @@ class HeadLossClass:
             raise Exception(
                 "Mixing .NO_HEADLOSS with other head loss options is not allowed. "
                 "Either all pipes should have .NO_HEADLOSS set, or none. "
-                "The global value returned by heat_network_options() also need to match."
+                "The global value returned by energy_system_options() also need to match."
             )
 
     def head_loss_network_options(self):
@@ -284,7 +284,7 @@ class HeadLossClass:
         .CQ2_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
-        :py:meth:`.heat_network_options`.
+        :py:meth:`.energy_system_options`.
         """
         raise NotImplementedError
 
@@ -421,17 +421,17 @@ class HeadLossClass:
             ),
         )
 
-    def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+    def _hn_pipe_nominal_discharge(self, energy_system_options, parameters, pipe: str) -> float:
         """
         This function returns the nominal volumetric flow (m^3/s) through the pipe.
         """
-        return parameters[f"{pipe}.area"] * heat_network_options["estimated_velocity"]
+        return parameters[f"{pipe}.area"] * energy_system_options["estimated_velocity"]
 
     def _hn_pipe_head_loss(
         self,
         pipe: str,
         optimization_problem,
-        heat_network_options,
+        energy_system_options,
         network_settings,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
@@ -507,7 +507,7 @@ class HeadLossClass:
         else:
             assert big_m != 0.0
 
-        wall_roughness = heat_network_options["wall_roughness"]
+        wall_roughness = energy_system_options["wall_roughness"]
         if pipe_class is not None:
             diameter = pipe_class.inner_diameter
             area = pipe_class.area
@@ -593,7 +593,7 @@ class HeadLossClass:
             HeadLossOption.CQ2_EQUALITY,
         }:
             ff = darcy_weisbach.friction_factor(
-                heat_network_options["estimated_velocity"],
+                energy_system_options["estimated_velocity"],
                 diameter,
                 wall_roughness,
                 temperature,
@@ -709,7 +709,7 @@ class HeadLossClass:
         self,
         pipe: str,
         optimization_problem,
-        heat_network_options,
+        energy_system_options,
         network_settings,
         parameters,
         discharge: Union[ca.MX, float, np.ndarray],
@@ -787,7 +787,7 @@ class HeadLossClass:
         else:
             assert big_m != 0.0
 
-        wall_roughness = heat_network_options["wall_roughness"]
+        wall_roughness = energy_system_options["wall_roughness"]
         temperature = parameters[f"{pipe}.temperature"]
         for _id, attr in optimization_problem.temperature_carriers().items():
             if (

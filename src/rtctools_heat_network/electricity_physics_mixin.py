@@ -40,7 +40,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
         self._electricity_cable_topo_cable_class_map = {}
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
         """
@@ -67,7 +67,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         super().pre()
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         self.__update_windpark_upper_bounds()
 
@@ -248,7 +248,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraints.append(((power_in - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             constraints.append(((power_out - current * v_max) / (i_max * v_max), -np.inf, 0.0))
             # Power loss constraint
-            options = self.heat_network_options()
+            options = self.energy_system_options()
             if options["include_electric_cable_power_loss"]:
                 if cable in self._electricity_cable_topo_cable_class_map.keys():
                     cable_classes = self._electricity_cable_topo_cable_class_map[cable]

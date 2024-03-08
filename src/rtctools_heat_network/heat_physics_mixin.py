@@ -201,7 +201,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         super().pre()
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         parameters = self.parameters(0)
 
         def _get_max_bound(bound):
@@ -419,7 +419,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
         Returns a dictionary of milp network physics specific options.
 
@@ -629,7 +629,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         the lowest one of them.
         """
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         components = self.energy_system_components
 
         if self.heat_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
@@ -837,7 +837,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
 
         parameters = self.parameters(ensemble_member)
-        hn_options = self.heat_network_options()
+        hn_options = self.energy_system_options()
 
         t_change = hn_options["maximum_temperature_der"]
         q_change = hn_options["maximum_flow_der"]
@@ -973,7 +973,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         - neglect_pipe_heat_losses:
         """
         constraints = []
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         for p in self.energy_system_components.get("pipe", []):
             heat_in = self.state(f"{p}.HeatIn.Heat")
@@ -1357,7 +1357,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         done to avoid "stacked" overestimations.
         """
         constraints = []
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
             parameters = self.parameters(ensemble_member)
@@ -1504,7 +1504,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             for heat in [scaled_heat_in, scaled_heat_out]:
-                if self.heat_network_options()["neglect_pipe_heat_losses"]:
+                if self.energy_system_options()["neglect_pipe_heat_losses"]:
                     constraints.append(
                         (
                             (heat - pipe_q * (cp * rho * temp)) / heat_nominal,
@@ -2067,7 +2067,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.state_vector(canonical, ensemble_member) * self.variable_nominal(canonical) * sign
         )
 
-    def _hn_pipe_nominal_discharge(self, heat_network_options, parameters, pipe: str) -> float:
+    def _hn_pipe_nominal_discharge(self, energy_system_options, parameters, pipe: str) -> float:
         """
         This functions returns a nominal for the discharge of pipes under topology optimization.
         """
@@ -2077,7 +2077,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         except KeyError:
             area = parameters[f"{pipe}.area"]
 
-        return area * heat_network_options["estimated_velocity"]
+        return area * energy_system_options["estimated_velocity"]
 
     @staticmethod
     def _hn_get_pipe_head_loss_option(pipe, heat_network_settings, parameters):
@@ -2108,7 +2108,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
         components = self.energy_system_components
         # Set the head loss according to the direction in the pipes. Note that
@@ -2404,7 +2404,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 except KeyError:
                     heat_loss = pipe_heat_loss(
                         self,
-                        self.heat_network_options(),
+                        self.energy_system_options(),
                         self.parameters(ensemble_member),
                         p,
                     )
@@ -2422,7 +2422,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if len(pipe_classes) == 0:
                         heat_loss = pipe_heat_loss(
                             self,
-                            self.heat_network_options(),
+                            self.energy_system_options(),
                             self.parameters(ensemble_member),
                             p,
                             temp=temperature,
@@ -2456,7 +2456,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         heat_losses = [
                             pipe_heat_loss(
                                 self,
-                                self.heat_network_options(),
+                                self.energy_system_options(),
                                 self.parameters(ensemble_member),
                                 p,
                                 u_values=c.u_values,
@@ -2737,7 +2737,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__heat_loss_variable_constraints(ensemble_member))
         constraints.extend(self.__pipe_rate_heat_change_constraints(ensemble_member))
 
-        if self.heat_network_options()["include_demand_insulation_options"]:
+        if self.energy_system_options()["include_demand_insulation_options"]:
             constraints.extend(self.__heat_matching_demand_insulation_constraints(ensemble_member))
 
         return constraints
@@ -2807,7 +2807,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         if (
             self.heat_network_settings["minimize_head_losses"]
@@ -2882,7 +2882,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         results = self.extract_results()
         parameters = self.parameters(0)
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         # The flow directions are the same as the milp directions if the
         # return (i.e. cold) line has zero milp throughout. Here we check that

@@ -84,7 +84,7 @@ class TechnoEconomicMixin(
         Returns a dictionary of milp network specific options.
         """
 
-        options = PhysicsMixin.heat_network_options(self)
+        options = PhysicsMixin.energy_system_options(self)
         options.update(FinancialMixin.energy_system_options(self))
         # problem with abstractmethod
         options["include_asset_is_realized"] = False

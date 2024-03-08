@@ -40,13 +40,13 @@ class RevenueGoal(Goal):
             sum += symbols[i] * price_profile[i]
 
         for asset in [
-            *optimization_problem.heat_network_components.get("gas_demand", []),
-            *optimization_problem.heat_network_components.get("gas_source", []),
-            *optimization_problem.heat_network_components.get("electrolyzer", []),
-            *optimization_problem.heat_network_components.get("gas_tank_storage", []),
-            *optimization_problem.heat_network_components.get("wind_park", []),
-            *optimization_problem.heat_network_components.get("electricity_demand", []),
-            *optimization_problem.heat_network_components.get("electricity_source", []),
+            *optimization_problem.energy_system_components.get("gas_demand", []),
+            *optimization_problem.energy_system_components.get("gas_source", []),
+            *optimization_problem.energy_system_components.get("electrolyzer", []),
+            *optimization_problem.energy_system_components.get("gas_tank_storage", []),
+            *optimization_problem.energy_system_components.get("wind_park", []),
+            *optimization_problem.energy_system_components.get("electricity_demand", []),
+            *optimization_problem.energy_system_components.get("electricity_source", []),
         ]:
             sum -= optimization_problem.extra_variable(
                 f"{asset}__variable_operational_cost", ensemble_member
@@ -63,7 +63,7 @@ class _GoalsAndOptions:
         goals = super().goals().copy()
 
         # TODO: these goals should incorperate the timestep
-        for demand in self.heat_network_components.get("electricity_demand", []):
+        for demand in self.energy_system_components.get("electricity_demand", []):
             carrier_name = (
                 self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
             )
@@ -76,7 +76,7 @@ class _GoalsAndOptions:
 
             goals.append(RevenueGoal(state, price_profile, nominal))
 
-        for demand in self.heat_network_components.get("gas_demand", []):
+        for demand in self.energy_system_components.get("gas_demand", []):
             # Code below: When profile is assigned to carrier instead of using .csv file
             carrier_name = (
                 self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
@@ -95,7 +95,7 @@ class _GoalsAndOptions:
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        for gs in self.heat_network_components.get("gas_tank_storage", []):
+        for gs in self.energy_system_components.get("gas_tank_storage", []):
             canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
             storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
             constraints.append((storage_t0, 0.0, 0.0))

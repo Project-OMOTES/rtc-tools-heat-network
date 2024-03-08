@@ -210,7 +210,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
         Returns a dictionary of milp network specific options.
 
@@ -313,7 +313,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         the lowest one of them.
         """
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         components = self.energy_system_components
 
         if self.gas_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
@@ -474,7 +474,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         constraints = []
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
         components = self.energy_system_components
         # Set the head loss according to the direction in the pipes. Note that
@@ -715,7 +715,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         if (
             self.gas_network_settings["minimize_head_losses"]

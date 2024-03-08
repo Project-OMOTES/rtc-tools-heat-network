@@ -61,13 +61,13 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
