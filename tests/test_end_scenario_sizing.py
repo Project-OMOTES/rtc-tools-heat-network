@@ -62,16 +62,7 @@ class TestEndScenarioSizing(TestCase):
         #
         # This is an optimization done over a full year with timesteps of 5 days and hour timesteps
         # for the peak day
-        # solution = run_optimization_problem(
-        #     EndScenarioSizingHIGHS,
-        #     base_folder=base_folder,
-        #     esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
-        #     esdl_parser=ESDLFileParser,
-        #     profile_reader=ProfileReaderFromFile,
-        #     input_timeseries_file="Warmte_test.csv",
-        # )
 
-        # results = solution.extract_results()
         # In the future we want to check the following
         # Is the timeline correctly converted, correct peak day, correct amount of timesteps, etc.
         # Check whether expected assets are disabled
@@ -80,9 +71,6 @@ class TestEndScenarioSizing(TestCase):
         # Check that computation time is within expected bounds
 
         # Check whehter the heat demand is matched
-        # for d in solution.heat_network_components.get("demand", []):
-        #     target = solution.get_timeseries(f"{d}.target_heat_demand").values
-        #     np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
         demand_matching_test(self.solution, self.results)
 
         # Check whether cyclic ates constraint is working
@@ -144,14 +132,7 @@ class TestEndScenarioSizing(TestCase):
         # for the peak day
 
         solution_unstaged = self.solution
-        # solution_unstaged = run_optimization_problem(
-        #     EndScenarioSizingHIGHS,
-        #     base_folder=base_folder,
-        #     esdl_file_name="test_case_small_network_with_ates_with_buffer_all_optional.esdl",
-        #     esdl_parser=ESDLFileParser,
-        #     profile_reader=ProfileReaderFromFile,
-        #     input_timeseries_file="Warmte_test.csv",
-        # )
+
         solution_unstaged_2 = run_end_scenario_sizing(
             EndScenarioSizingHIGHS,
             staged_pipe_optimization=False,
@@ -175,9 +156,6 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whehter the heat demand is matched
         demand_matching_test(solution_staged, results)
-        # for d in solution_staged.heat_network_components.get("demand", []):
-        #     target = solution_staged.get_timeseries(f"{d}.target_heat_demand").values
-        #     np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check whether cyclic ates constraint is working
         for a in solution_staged.heat_network_components.get("ates", []):
@@ -291,9 +269,6 @@ class TestEndScenarioSizing(TestCase):
 
         # Check whether the heat demand is matched
         demand_matching_test(solution, results)
-        # for d in solution.heat_network_components.get("demand", []):
-        #     target = solution.get_timeseries(f"{d}.target_heat_demand").values
-        #     np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check whether cyclic ates constraint is working
         for a in solution.heat_network_components.get("ates", []):
