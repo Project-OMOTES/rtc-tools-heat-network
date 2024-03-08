@@ -573,7 +573,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
                     elif asset_name in self.energy_system_components.get("ates", []):
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
-                    elif asset_name in self.energy_system_components.get("pipe", []):
+                    elif asset_name in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
                             np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
                         )
@@ -583,7 +583,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                         asset_name in self.energy_system_components.get("heat_demand", [])
                         or asset_name in self.energy_system_components.get("buffer", [])
                         or asset_name in self.energy_system_components.get("ates", [])
-                        or asset_name in self.energy_system_components.get("pipe", [])
+                        or asset_name in self.energy_system_components.get("heat_pipe", [])
                     ):
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
@@ -899,7 +899,7 @@ class ScenarioOutput(TechnoEconomicMixin):
             for asset_name in [
                 *self.energy_system_components.get("heat_source", []),
                 *self.energy_system_components.get("heat_demand", []),
-                *self.energy_system_components.get("pipe", []),
+                *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("buffer", []),
                 *self.energy_system_components.get("ates", []),
                 *self.energy_system_components.get("heat_exchanger", []),

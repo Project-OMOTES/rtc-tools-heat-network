@@ -121,7 +121,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_fixed_operational = self.variable_nominal(f"{asset_name}.Heat_source")
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
-            elif asset_name in [*self.energy_system_components.get("pipe", [])]:
+            elif asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
                 nominal_fixed_operational = max(parameters[f"{asset_name}.length"], 1.0)
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
@@ -242,7 +242,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 asset_investment_cost_var
             )
 
-            if asset_name in self.energy_system_components.get("pipe", []):
+            if asset_name in self.energy_system_components.get("heat_pipe", []):
                 if asset_name in self.get_pipe_class_map().keys():
                     pipe_classes = self.get_pipe_class_map()[asset_name]
                     max_cost = (
@@ -307,7 +307,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             *self.energy_system_components.get("heat_demand", []),
             *self.energy_system_components.get("ates", []),
             *self.energy_system_components.get("buffer", []),
-            *self.energy_system_components.get("pipe", []),
+            *self.energy_system_components.get("heat_pipe", []),
             *self.energy_system_components.get("heat_exchanger", []),
             *self.energy_system_components.get("heat_pump", []),
         ]:
@@ -639,7 +639,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             investment_cost_coefficient = parameters[f"{asset_name}.investment_cost_coefficient"]
             nominal = self.variable_nominal(investment_cost_var)
 
-            if asset_name in [*self.energy_system_components.get("pipe", [])]:
+            if asset_name in [*self.energy_system_components.get("heat_pipe", [])]:
                 # We do the pipe seperately as their coefficients are specified per meter.
                 investment_cost_coefficient = self.get_pipe_investment_cost_coefficient(
                     asset_name, ensemble_member
@@ -689,7 +689,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         ]:
             if asset_name in [
                 *self.energy_system_components.get("node", []),
-                *self.energy_system_components.get("pipe", []),
+                *self.energy_system_components.get("heat_pipe", []),
                 *self.energy_system_components.get("electricity_cable", []),
                 *self.energy_system_components.get("electricity_node", []),
                 *self.energy_system_components.get("gas_pipe", []),
@@ -1101,7 +1101,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = []
 
-        asset_categories = ["heat_source", "ates", "buffer", "pipe", "heat_exchanger", "heat_pump"]
+        asset_categories = ["heat_source", "ates", "buffer", "heat_pipe", "heat_exchanger", "heat_pump"]
 
         parameters = super().parameters(ensemble_member)
 

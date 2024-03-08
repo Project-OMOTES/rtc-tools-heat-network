@@ -396,7 +396,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-    def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[Pipe], Type[GasPipe]], MODIFIERS]:
+    def convert_heat_pipe(self, asset: Asset) -> Tuple[Union[Type[Pipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:

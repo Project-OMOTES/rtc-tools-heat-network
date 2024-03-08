@@ -58,7 +58,7 @@ map_comp_type_to_milp_result_variables = {
     "heat_demand": {"Heat_demand"}.union(heat_two_port_vars),
     "geothermal": {"Heat_source", "dH"}.union(heat_two_port_vars),
     "node": {"H"},
-    "pipe": {"dH", "params.Heat_loss", "params.temperature"}.union(heat_two_port_vars),
+    "heat_pipe": {"dH", "params.Heat_loss", "params.temperature"}.union(heat_two_port_vars),
     "pump": {"dH"}.union(heat_two_port_vars),
     "heat_source": {"Heat_source", "dH"}.union(heat_two_port_vars),
 }

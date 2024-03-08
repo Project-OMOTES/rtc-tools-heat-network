@@ -229,7 +229,7 @@ def heat_to_discharge_test(solution, results):
                 np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
 
-    for p in solution.energy_system_components.get("pipe", []):
+    for p in solution.energy_system_components.get("heat_pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
@@ -311,7 +311,7 @@ def energy_conservation_test(solution, results):
     for d in solution.energy_system_components.get("heat_pump_elec", []):
         energy_sum += results[f"{d}.Power_elec"]
 
-    for p in solution.energy_system_components.get("pipe", []):
+    for p in solution.energy_system_components.get("heat_pipe", []):
         energy_sum -= abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"])
         if f"{p}__is_disconnected" in results.keys():
             p_discon = results[f"{p}__is_disconnected"].copy()

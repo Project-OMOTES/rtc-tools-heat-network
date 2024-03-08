@@ -35,7 +35,7 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         buffers = components.get("buffer", [])
         atess = components.get("ates", [])
         try:
-            pipes = components["pipe"]
+            pipes = components["heat_pipe"]
             cables = components.get("electricity_cable", [])
             gas_pipes = components.get("gas_pipe", [])
         except KeyError:

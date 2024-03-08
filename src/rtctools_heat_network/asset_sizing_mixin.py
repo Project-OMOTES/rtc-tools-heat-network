@@ -204,7 +204,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self.__pipe_topo_global_pipe_class_count_map[f"{pc.name}"] = pipe_class_count
             self.__pipe_topo_global_pipe_class_count_var_bounds[pipe_class_count] = (
                 0.0,
-                len(self.energy_system_components.get("pipe", [])),
+                len(self.energy_system_components.get("heat_pipe", [])),
             )
 
         unique_pipe_classes = self.get_unique_gas_pipe_classes()
@@ -488,7 +488,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             pipe_class_cost_ordering_name
                         ] = (0.0, 1.0)
 
-        for pipe in self.energy_system_components.get("pipe", []):
+        for pipe in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = self.pipe_classes(pipe)
             # cold_pipe = self.hot_to_cold_pipe(pipe)
 
@@ -923,7 +923,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for the network.
         """
         unique_pipe_classes = set()
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             unique_pipe_classes.update(self.pipe_classes(p))
         return unique_pipe_classes
 
@@ -1145,7 +1145,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             head_loss = 0.0
             # TODO: asset sizing is currently hard coded to use only the milp network settings
-            for pipe in components.get("pipe", []):
+            for pipe in components.get("heat_pipe", []):
                 try:
                     pipe_classes = self._pipe_topo_pipe_class_map[pipe].keys()
                     head_loss += max(
@@ -1212,7 +1212,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_pipe_classes = self.get_unique_pipe_classes()
         pipe_class_count_sum = {pc.name: 0 for pc in unique_pipe_classes}
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             try:
                 pipe_classes = self._pipe_topo_pipe_class_map[p]
             except KeyError:
@@ -1687,7 +1687,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
 
         # Clip discharge based on pipe class
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             # Match the indicators to the discharge symbol(s)
             discharge_sym = self.state(f"{p}.Q")
             nominal = self.variable_nominal(f"{p}.Q")
@@ -2062,7 +2062,7 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ensemble_member in range(self.ensemble_size):
             results = self.extract_results(ensemble_member)
 
-            for pipe in self.energy_system_components.get("pipe", []):
+            for pipe in self.energy_system_components.get("heat_pipe", []):
                 pipe_classes = self.pipe_classes(pipe)
 
                 if not pipe_classes:

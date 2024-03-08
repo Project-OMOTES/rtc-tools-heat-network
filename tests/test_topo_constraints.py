@@ -65,7 +65,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         - pipe_diameter_var is that of the selected pipe class
         - pipe_heat_loss_var is that of the selected pipe class
         """
-        for p in self.problem.energy_system_components.get("pipe", []):
+        for p in self.problem.energy_system_components.get("heat_pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made
             if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue
@@ -120,7 +120,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         """
         pc_sums = {pc.name: 0 for pc in self.problem.get_unique_pipe_classes()}
         total_pipes_to_optimize = 0
-        for p in self.problem.energy_system_components.get("pipe", []):
+        for p in self.problem.energy_system_components.get("heat_pipe", []):
             # If there is nothing to choose for the optimizer, no pipe class binaries are made,
             if self.problem.pipe_classes(p) is None or len(self.problem.pipe_classes(p)) == 1:
                 continue

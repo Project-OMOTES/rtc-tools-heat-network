@@ -83,7 +83,7 @@ class TestPipeDiameterSizingExample(TestCase):
             "The incorrect 4 pipes have been removed",
         )
 
-        for pipe in problem.energy_system_components.get("pipe", []):
+        for pipe in problem.energy_system_components.get("heat_pipe", []):
             neighbour = problem.has_related_pipe(pipe)
             if neighbour and pipe not in problem.hot_pipes:
                 pipe = problem.cold_to_hot_pipe(pipe)
@@ -98,7 +98,7 @@ class TestPipeDiameterSizingExample(TestCase):
                 chosen_pc.maximum_velocity * np.pi * (chosen_pc.inner_diameter / 2.0) ** 2 + 1.0e-6,
             )
 
-        for pipe in problem.energy_system_components.get("pipe", []):
+        for pipe in problem.energy_system_components.get("heat_pipe", []):
             if results[f"{pipe}__hn_diameter"] == 0.0:
                 # TODO: At the moment it is so that a pipe which is not placed (diameter == 0.) can
                 # have head loss since there is an equivalent solution where simultaniously the

@@ -24,7 +24,7 @@ class Pipe(_NonStorageComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "pipe"
+        self.component_type = "heat_pipe"
         self.disconnectable = False
         self.has_control_valve = False
 

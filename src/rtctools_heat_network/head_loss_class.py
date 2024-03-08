@@ -139,7 +139,7 @@ class _MinimizeHeadLosses(Goal):
         assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
         if self.network_settings["network_type"] == NetworkSettings.NETWORK_TYPE_HEAT:
-            for p in optimization_problem.energy_system_components.get("pipe", []):
+            for p in optimization_problem.energy_system_components.get("heat_pipe", []):
                 if (
                     not parameters[f"{p}.has_control_valve"]
                     and not parameters[f"{p}.length"] == 0.0
@@ -181,7 +181,7 @@ class _MinimizeHydraulicPower(Goal):
 
         assert self.network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for pipe in optimization_problem.energy_system_components.get("pipe", []):
+        for pipe in optimization_problem.energy_system_components.get("heat_pipe", []):
             if (
                 not parameters[f"{pipe}.has_control_valve"]
                 and not parameters[f"{pipe}.length"] == 0.0
@@ -227,8 +227,8 @@ class HeadLossClass:
             self.network_settings["head_loss_option"],
         }
 
-        pipe_type = "pipe"
-        if len(self.energy_system_components.get("pipe", [])) == 0:
+        pipe_type = "heat_pipe"
+        if len(self.energy_system_components.get("heat_pipe", [])) == 0:
             pipe_type = "gas_pipe"
 
         for p in self.energy_system_components.get(pipe_type, []):
@@ -974,7 +974,7 @@ class HeadLossClass:
         """
         constraints = []
 
-        pipe_type = "pipe"
+        pipe_type = "heat_pipe"
         commodity = "Heat"
         if len(optimization_problem.energy_system_components.get(pipe_type, [])) == 0:
             pipe_type = "gas_pipe"

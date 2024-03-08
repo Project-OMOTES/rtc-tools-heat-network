@@ -940,7 +940,7 @@ def run_end_scenario_sizing(
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
 
-        for p in solution.energy_system_components.get("pipe", []):
+        for p in solution.energy_system_components.get("heat_pipe", []):
             if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []

@@ -222,7 +222,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         bounds = self.bounds()
 
-        for pipe_name in self.energy_system_components.get("pipe", []):
+        for pipe_name in self.energy_system_components.get("heat_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
             initialized_vars = self._hn_head_loss_class.initialize_variables_nominals_and_bounds(
                 self, NetworkSettings.NETWORK_TYPE_HEAT, pipe_name, self.heat_network_settings
@@ -341,7 +341,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for _ in range(self.ensemble_size):
             self.__pipe_heat_loss_parameters.append({})
 
-        for pipe in self.energy_system_components.get("pipe", []):
+        for pipe in self.energy_system_components.get("heat_pipe", []):
             # For similar reasons as for the diameter, we always make a milp
             # loss symbol, even if the milp loss is fixed. Note that we also
             # override the .Heat_loss parameter for cold pipes, even though
@@ -645,7 +645,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             head_loss = 0.0
 
-            for pipe in components.get("pipe", []):
+            for pipe in components.get("heat_pipe", []):
                 area = parameters[f"{pipe}.area"]
                 max_discharge = self.heat_network_settings["maximum_velocity"] * area
                 head_loss += self._hn_head_loss_class._hn_pipe_head_loss(
@@ -847,7 +847,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 not self._pipe_topo_pipe_class_map
             ), "milp rate change constraints not allowed with topology optimization"
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             variable = f"{p}.HeatIn.Heat"
             dt = np.diff(self.times(variable))
 
@@ -975,7 +975,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         options = self.energy_system_options()
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             heat_in = self.state(f"{p}.HeatIn.Heat")
             heat_out = self.state(f"{p}.HeatOut.Heat")
             heat_nominal = self.variable_nominal(f"{p}.HeatIn.Heat")
@@ -1077,7 +1077,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         # Also ensure that the discharge has the same sign as the milp.
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             flow_dir_var = self._pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
@@ -1363,7 +1363,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             parameters = self.parameters(ensemble_member)
             components = self.energy_system_components
 
-            for pipe in components.get("pipe", []):
+            for pipe in components.get("heat_pipe", []):
                 if parameters[f"{pipe}.length"] == 0.0:
                     # If the pipe does not have a control valve, the head loss is
                     # forced to zero via bounds. If the pipe _does_ have a control
@@ -1474,7 +1474,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         sum_heat_losses = 0.0
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             if p in self._pipe_heat_losses:
                 sum_heat_losses += max(self._pipe_heat_losses[p])
             else:
@@ -1482,7 +1482,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         assert not np.isnan(sum_heat_losses)
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
             temp = parameters[f"{p}.temperature"]
@@ -2119,7 +2119,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         # relationship in this case (but dH is still equal to Out - In of
         # course).
 
-        for pipe in components.get("pipe", []):
+        for pipe in components.get("heat_pipe", []):
             if parameters[f"{pipe}.length"] == 0.0:
                 # If the pipe does not have a control valve, the head loss is
                 # forced to zero via bounds. If the pipe _does_ have a control
@@ -2273,7 +2273,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        all_pipes = set(self.energy_system_components.get("pipe", []))
+        all_pipes = set(self.energy_system_components.get("heat_pipe", []))
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         for v in self.energy_system_components.get("check_valve", []):
@@ -2320,7 +2320,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
 
-        all_pipes = set(self.energy_system_components.get("pipe", []))
+        all_pipes = set(self.energy_system_components.get("heat_pipe", []))
         maximum_velocity = self.heat_network_settings["maximum_velocity"]
 
         for v in self.energy_system_components.get("control_valve", []):
@@ -2376,7 +2376,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         constraints = []
 
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             pipe_classes = []
 
             heat_loss_sym_name = self._pipe_heat_loss_map[p]
@@ -2823,7 +2823,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 parameters = self.parameters(ensemble_member)
                 results = self.extract_results(ensemble_member)
 
-                for pipe in components.get("pipe", []):
+                for pipe in components.get("heat_pipe", []):
                     if parameters[f"{pipe}.has_control_valve"]:
                         continue
 
@@ -2894,7 +2894,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 logger.warning(f"Heat directions of pipes might be wrong. Check {p}.")
 
         if self.heat_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS:
-            for p in self.energy_system_components.get("pipe", []):
+            for p in self.energy_system_components.get("heat_pipe", []):
                 head_diff = results[f"{p}.HeatIn.H"] - results[f"{p}.HeatOut.H"]
                 if parameters[f"{p}.length"] == 0.0 and not parameters[f"{p}.has_control_valve"]:
                     atol = self.variable_nominal(f"{p}.HeatIn.H") * 1e-5
@@ -2915,7 +2915,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         assert np.all(np.sign(head_diff[inds]) == np.sign(q[inds]))
 
         minimum_velocity = self.heat_network_settings["minimum_velocity"]
-        for p in self.energy_system_components.get("pipe", []):
+        for p in self.energy_system_components.get("heat_pipe", []):
             area = parameters[f"{p}.area"]
 
             if area == 0.0:

@@ -89,7 +89,7 @@ class TestEndScenarioSizing(TestCase):
             *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("heat_exchanger", []),
             *solution.energy_system_components.get("heat_pump", []),
-            *solution.energy_system_components.get("pipe", []),
+            *solution.energy_system_components.get("heat_pipe", []),
         ]:
             obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years

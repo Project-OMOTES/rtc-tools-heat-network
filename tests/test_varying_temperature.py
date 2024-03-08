@@ -63,7 +63,7 @@ class TestVaryingTemperature(TestCase):
 
         parameters = heat_problem.parameters(0)
 
-        for pipe in heat_problem.energy_system_components.get("pipe", []):
+        for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
             carrier_id = parameters[f"{pipe}.carrier_id"]
             temperature = results[f"{carrier_id}_temperature"]
@@ -133,7 +133,7 @@ class TestVaryingTemperature(TestCase):
 
         parameters = heat_problem.parameters(0)
 
-        for pipe in heat_problem.energy_system_components.get("pipe", []):
+        for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
             carrier_id = parameters[f"{pipe}.carrier_id"]
             if carrier_id == 4195016129475469474608:
@@ -198,7 +198,7 @@ class TestVaryingTemperature(TestCase):
 
         parameters = heat_problem.parameters(0)
 
-        for pipe in heat_problem.energy_system_components.get("pipe", []):
+        for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
             carrier_id = parameters[f"{pipe}.carrier_id"]
             if carrier_id == 4195016129475469474608000:
@@ -265,7 +265,7 @@ class TestVaryingTemperature(TestCase):
 
         parameters = heat_problem.parameters(0)
 
-        for pipe in heat_problem.energy_system_components.get("pipe", []):
+        for pipe in heat_problem.energy_system_components.get("heat_pipe", []):
             heat_loss_opt = results[f"{pipe}__hn_heat_loss"]
             carrier_id = parameters[f"{pipe}.carrier_id"]
             if carrier_id == 33638164429859421:

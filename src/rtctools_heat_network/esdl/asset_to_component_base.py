@@ -93,7 +93,7 @@ class _AssetToComponentBase:
         "ResidualHeatSource": "heat_source",
         "GenericConversion": "heat_exchanger",
         "Joint": "node",
-        "Pipe": "pipe",
+        "Pipe": "heat_pipe",
         "Pump": "pump",
         "HeatStorage": "buffer",
         "Sensor": "skip",

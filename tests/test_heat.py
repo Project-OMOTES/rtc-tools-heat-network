@@ -81,7 +81,7 @@ class TestHeat(TestCase):
         results = case.extract_results()
         parameters = case.parameters(0)
 
-        for pipe in case.energy_system_components.get("pipe", []):
+        for pipe in case.energy_system_components.get("heat_pipe", []):
             np.testing.assert_allclose(results[f"{pipe}__hn_heat_loss"], 0.0)
             np.testing.assert_allclose(parameters[f"{pipe}.Heat_loss"], 0.0)
 
@@ -108,7 +108,7 @@ class TestMinMaxPressureOptions(TestCase):
         # pressure range can force this to go lower than usual.
         def parameters(self, ensemble_member):
             parameters = super().parameters(ensemble_member)
-            for p in self.energy_system_components["pipe"]:
+            for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.diameter"] = 0.04
                 parameters[f"{p}.area"] = 0.25 * 3.14159265 * parameters[f"{p}.diameter"] ** 2
             return parameters
@@ -198,7 +198,7 @@ class TestMinMaxPressureOptions(TestCase):
             max_head = -np.inf
 
             results = case.extract_results()
-            for p in case.energy_system_components["pipe"]:
+            for p in case.energy_system_components["heat_pipe"]:
                 min_head_in = min(results[f"{p}.HeatIn.H"])
                 min_head_out = min(results[f"{p}.HeatOut.H"])
                 min_head = min([min_head, min_head_in, min_head_out])
@@ -246,7 +246,7 @@ class TestDisconnectablePipe(TestCase):
 
         def parameters(self, ensemble_member):
             parameters = super().parameters(ensemble_member)
-            for p in self.energy_system_components["pipe"]:
+            for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.disconnectable"] = True
             return parameters
 
