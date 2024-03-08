@@ -320,8 +320,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 0.0,
                 np.inf,
             )  # (lb, ub)
-            installation_cost_symbol_name = self._asset_installation_cost_map[asset_name]
-            investment_cost_symbol_name = self._asset_investment_cost_map[asset_name]
+            installation_cost_symbol_name = self._asset_installation_cost_map[asset]
+            investment_cost_symbol_name = self._asset_investment_cost_map[asset]
             self.__annualized_capex_var_nominals[annualized_capex_var_name] = self.variable_nominal(
                 installation_cost_symbol_name
             ) + self.variable_nominal(investment_cost_symbol_name)
