@@ -63,7 +63,7 @@ class TestWarmingUpUnitCases(TestCase):
             np.testing.assert_allclose(discharge_sum, 0.0, atol=1.0e-12)
             np.testing.assert_allclose(0.0, heat_sum, atol=1.0e-6)
 
-        for demand in heat_problem.energy_system_components.get("demand", []):
+        for demand in heat_problem.energy_system_components.get("heat_demand", []):
             np.testing.assert_array_less(
                 10.2 - 1.0e-6, results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
             )

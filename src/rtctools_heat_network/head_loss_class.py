@@ -1007,7 +1007,7 @@ class HeadLossClass:
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
 
-        for d in components.get("demand", []):
+        for d in components.get("heat_demand", []):
             constraints.append(
                 (
                     optimization_problem.state(f"{d}.HeatIn.H")

@@ -30,7 +30,7 @@ class _ProfileParserException(Exception):
 
 class BaseProfileReader:
     component_type_to_var_name_map: dict = {
-        "demand": ".target_heat_demand",
+        "heat_demand": ".target_heat_demand",
         "source": ".maximum_heat_source",
         "electricity_demand": ".target_electricity_demand",
         "electricity_source": ".maximum_electricity_source",
@@ -106,7 +106,7 @@ class BaseProfileReader:
                     if profile is not None:
                         values = profile
                     else:
-                        if "demand" not in component_type:
+                        if "heat_demand" not in component_type:
                             # We don't set a default profile for source targets
                             continue
                         logger.warning(
@@ -513,7 +513,7 @@ class _ESDLInputDataConfig:
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map: Dict[str, str] = id_map
         self._sources: Set = set(energy_system_components.get("source", []))
-        self._demands: Set = set(energy_system_components.get("demand", []))
+        self._demands: Set = set(energy_system_components.get("heat_demand", []))
         self._electricity_sources: Set = set(energy_system_components.get("electricity_source", []))
         self._electricity_demands: Set = set(energy_system_components.get("electricity_demand", []))
         self._gas_sources: Set = set(energy_system_components.get("gas_source", []))

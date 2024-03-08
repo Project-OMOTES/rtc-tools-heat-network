@@ -2857,14 +2857,14 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 min_head_loss_target = options["minimum_pressure_far_point"] * 10.2
                 min_head_loss = None
 
-                for demand in components.get("demand", []):
+                for demand in components.get("heat_demand", []):
                     head_loss = results[f"{demand}.HeatIn.H"] - results[f"{demand}.HeatOut.H"]
                     if min_head_loss is None:
                         min_head_loss = head_loss
                     else:
                         min_head_loss = np.minimum(min_head_loss, head_loss)
 
-                if len(components.get("demand", [])) > 0 and not np.allclose(
+                if len(components.get("heat_demand", [])) > 0 and not np.allclose(
                     min_head_loss, min_head_loss_target, rtol=rtol, atol=atol
                 ):
                     logger.warning("Minimum head at demands is higher than target minimum.")

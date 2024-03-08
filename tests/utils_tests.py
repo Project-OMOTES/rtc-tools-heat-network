@@ -6,7 +6,7 @@ import numpy as np
 def demand_matching_test(solution, results):
     """ "Test function to check whether the milp demand of each consumer is matched"""
     len_times = 0.0
-    for d in solution.energy_system_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
@@ -72,7 +72,7 @@ def heat_to_discharge_test(solution, results):
     """
     test = TestCase()
     tol = 1.0e-2
-    for d in solution.energy_system_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         # return_id = solution.parameters(0)[f"{d}.T_return_id"]
@@ -290,7 +290,7 @@ def energy_conservation_test(solution, results):
     """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
-    for d in solution.energy_system_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         energy_sum -= results[f"{d}.Heat_demand"]
 
     for d in solution.energy_system_components.get("buffer", []):

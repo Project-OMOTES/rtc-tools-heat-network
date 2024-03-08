@@ -69,7 +69,7 @@ def adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day(problem, prob
         - heat_demand_nominal: max demand value found for a specific heating demand
     """
 
-    demands = problem.energy_system_components.get("demand", [])
+    demands = problem.energy_system_components.get("heat_demand", [])
     new_datastore = DataStore(problem)
     new_datastore.reference_datetime = problem.io.datetimes[0]
 

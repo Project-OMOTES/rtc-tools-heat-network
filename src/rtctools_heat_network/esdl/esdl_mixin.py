@@ -656,7 +656,7 @@ class _ESDLInputDataConfig:
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map = id_map
         self._sources = set(energy_system_components.get("source", []))
-        self._demands = set(energy_system_components.get("demand", []))
+        self._demands = set(energy_system_components.get("heat_demand", []))
         self._electricity_sources = set(energy_system_components.get("electricity_source", []))
         self._electricity_demands = set(energy_system_components.get("electricity_demand", []))
         self._gas_sources = set(energy_system_components.get("gas_source", []))

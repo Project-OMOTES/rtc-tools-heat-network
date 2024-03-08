@@ -115,7 +115,7 @@ class TestVaryingTemperature(TestCase):
         results = heat_problem.extract_results()
 
         # Check whehter the milp demand is matched
-        for d in heat_problem.energy_system_components.get("demand", []):
+        for d in heat_problem.energy_system_components.get("heat_demand", []):
             target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
                 : len(heat_problem.times())
             ]

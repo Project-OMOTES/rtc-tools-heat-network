@@ -63,7 +63,7 @@ class TestEndScenarioSizing(TestCase):
         # Check that computation time is within expected bounds
 
         # Check whehter the milp demand is matched
-        for d in solution.energy_system_components.get("demand", []):
+        for d in solution.energy_system_components.get("heat_demand", []):
             target = solution.get_timeseries(f"{d}.target_heat_demand").values
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
@@ -86,7 +86,7 @@ class TestEndScenarioSizing(TestCase):
             *solution.energy_system_components.get("source", []),
             *solution.energy_system_components.get("ates", []),
             *solution.energy_system_components.get("buffer", []),
-            *solution.energy_system_components.get("demand", []),
+            *solution.energy_system_components.get("heat_demand", []),
             *solution.energy_system_components.get("heat_exchanger", []),
             *solution.energy_system_components.get("heat_pump", []),
             *solution.energy_system_components.get("pipe", []),
