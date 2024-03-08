@@ -1101,7 +1101,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         """
         constraints = []
 
-        asset_categories = ["heat_source", "ates", "heat_buffer", "heat_pipe", "heat_exchanger", "heat_pump"]
+        asset_categories = [
+            "heat_source",
+            "ates",
+            "heat_buffer",
+            "heat_pipe",
+            "heat_exchanger",
+            "heat_pump",
+        ]
 
         parameters = super().parameters(ensemble_member)
 

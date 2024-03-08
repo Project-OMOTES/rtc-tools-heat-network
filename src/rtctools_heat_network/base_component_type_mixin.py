@@ -79,11 +79,15 @@ class BaseComponentTypeMixin:
         """
         This function return a list of all the supply/hot pipe names.
         """
-        return [p for p in self.energy_system_components.get("heat_pipe", []) if self.is_hot_pipe(p)]
+        return [
+            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_hot_pipe(p)
+        ]
 
     @property
     def cold_pipes(self) -> List[str]:
         """
         This function return a list of all the return/cold pipe names.
         """
-        return [p for p in self.energy_system_components.get("heat_pipe", []) if self.is_cold_pipe(p)]
+        return [
+            p for p in self.energy_system_components.get("heat_pipe", []) if self.is_cold_pipe(p)
+        ]
