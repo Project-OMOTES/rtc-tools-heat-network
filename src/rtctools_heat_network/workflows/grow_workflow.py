@@ -2,10 +2,6 @@ import locale
 import logging
 import os
 import time
-import xml.etree.ElementTree as ET  # noqa: N817
-from pathlib import Path
-
-from influxdb import InfluxDBClient
 
 import numpy as np
 
@@ -135,7 +131,7 @@ class EndScenarioSizing(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings["minimum_velocity"] = 0.0 #0.001
+        self.heat_network_settings["minimum_velocity"] = 0.0  # 0.001
         self.heat_network_settings["maximum_velocity"] = 3.0
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
@@ -370,7 +366,8 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
 
     Goal priorities are:
     1. Match heat demand with target
-    2. minimize TCO = Anualized capex (function of technical lifetime of individual assets) + Opex*timehorizon
+    2. minimize TCO = Anualized capex (function of technical lifetime of individual assets) +
+    Opex*timehorizon
     """
 
     def heat_network_options(self):
@@ -415,7 +412,7 @@ class SettingsStaged:
         options = super().heat_network_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
-            # self.heat_network_settings["minimum_velocity"] = 0.0
+            self.heat_network_settings["minimum_velocity"] = 0.0
 
         return options
 

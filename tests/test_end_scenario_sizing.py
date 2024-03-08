@@ -184,10 +184,23 @@ class TestEndScenarioSizing(TestCase):
 
         # comparing results of staged and unstaged problem definition. For larger systems there
         # might be a difference in the value but that would either be a difference within the
-        # MIPgap or because of some tighter constraints in the staged problem e.g. staged problem
-        # slightly higher objective value
-        np.testing.assert_allclose(solution.objective_value, solution_unstaged.objective_value)
-
+        # MIPgap (thus checking best bound objective is still smaller or equal than objective of
+        # the other problem) or because of some tighter constraints in the staged problem e.g.
+        # staged problem slightly higher objective value
+        if (
+            solution.solver_stats["mip_gap"] == 0.0
+            and solution_unstaged.solver_stats["mip_gap"] == 0.0
+        ):
+            np.testing.assert_allclose(solution.objective_value, solution_unstaged.objective_value)
+        else:
+            np.testing.assert_array_less(
+                solution_unstaged._priorities_output[1][4]["mip_dual_bound"] - 1e-6,
+                solution.objective_value,
+            )
+            np.testing.assert_array_less(
+                solution._priorities_output[3][4]["mip_dual_bound"] - 1e-6,
+                solution_unstaged.objective_value,
+            )
         # checking time spend on optimisation approaches, the difference between the unstaged
         # approaches should be smaller than the difference with the staged approach. The staged
         # approach should be quickest in solving.
