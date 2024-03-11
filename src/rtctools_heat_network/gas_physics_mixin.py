@@ -193,14 +193,15 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
-                        pipe_linear_line_segment_var_name
-                    )
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
                     self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
                         initialized_vars[9][pipe_linear_line_segment_var_name]
                     )
                     self.__pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
+                        pipe_linear_line_segment_var_name
+                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             # Integer variables
             flow_dir_var = f"{pipe_name}__gas_flow_direct_var"
@@ -621,7 +622,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 max_discharge = self.gas_network_settings["maximum_velocity"] * area
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
-                
+
                 constraints.extend(
                     self._gn_head_loss_class._hn_pipe_head_loss(
                         pipe,
@@ -650,7 +651,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     pressure=parameters[f"{pipe}.pressure"],
                 )
 
-
             # Relate the head loss symbol to the pipe's dH symbol.
 
             # FIXME: Ugly hack. Cold pipes should be modelled completely with
@@ -658,7 +658,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             flow_dir = self.__state_vector_scaled(
                 self._gas_pipe_to_flow_direct_map[pipe], ensemble_member
             )
-           
+
             # Note that the Big-M should _at least_ cover the maximum
             # distance between `head_loss` and `dh`. If `head_loss` can be at
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
@@ -678,7 +678,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
             # -------------------------------------------------------------------------------
             # This is probalby not needed. Issue max gas flow limit?
-            
+
             # pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
             # is_line_segment_active = []
 

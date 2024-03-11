@@ -71,7 +71,7 @@ class TestHeadLoss(TestCase):
                 profile_reader=ProfileReaderFromFile,
                 input_timeseries_file="timeseries_import.csv",
             )
-            results = solution.extract_results()          
+            results = solution.extract_results()
 
             pipes = ["Pipe1"]
             for itime in range(len(results[f"{pipes[0]}.dH"])):
@@ -85,12 +85,18 @@ class TestHeadLoss(TestCase):
                     v_max,
                     solution.heat_network_settings["n_linearization_lines"] + 1,
                 )
-                v_inspect = results[f"{pipes[0]}.Q"][itime] / solution.parameters(0)[f"{pipes[0]}.area"]
+                v_inspect = (
+                    results[f"{pipes[0]}.Q"][itime] / solution.parameters(0)[f"{pipes[0]}.area"]
+                )
                 idx = []
                 linearized_idx = []
-                idx.append((results[f"Pipe1.Q"][itime] / solution.parameters(0)[f"Pipe1.area"]) >= v_points)
-                idx.append((results[f"Pipe1.Q"][itime] / solution.parameters(0)[f"Pipe1.area"]) < v_points)
-                linearized_idx.append(np.where(idx[0])[0][-1]) 
+                idx.append(
+                    (results[f"Pipe1.Q"][itime] / solution.parameters(0)[f"Pipe1.area"]) >= v_points
+                )
+                idx.append(
+                    (results[f"Pipe1.Q"][itime] / solution.parameters(0)[f"Pipe1.area"]) < v_points
+                )
+                linearized_idx.append(np.where(idx[0])[0][-1])
                 linearized_idx.append(np.where(idx[1])[0][0])
                 # #####
                 # import matplotlib.pyplot as plt
@@ -102,7 +108,7 @@ class TestHeadLoss(TestCase):
                 #         pipe_length,
                 #         pipe_wall_roughness,
                 #         temperature,
-                #         )  
+                #         )
 
                 # velocities = results[f"{pipes[0]}.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
                 # plt.plot(v_points, p_points)
@@ -128,14 +134,22 @@ class TestHeadLoss(TestCase):
                 # dH_manual_linear = a*Q + b
                 # Then use this linear function to calculate the head loss
                 delta_dh_theory = darcy_weisbach.head_loss(
-                    v_points[linearized_idx[1]], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    v_points[linearized_idx[1]],
+                    pipe_diameter,
+                    pipe_length,
+                    pipe_wall_roughness,
+                    temperature,
                 ) - darcy_weisbach.head_loss(
-                    v_points[linearized_idx[0]], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    v_points[linearized_idx[0]],
+                    pipe_diameter,
+                    pipe_length,
+                    pipe_wall_roughness,
+                    temperature,
                 )
 
-                delta_volumetric_flow = (v_points[linearized_idx[1]] * np.pi * pipe_diameter**2 / 4.0) - (
-                    v_points[linearized_idx[0]] * np.pi * pipe_diameter**2 / 4.0
-                )
+                delta_volumetric_flow = (
+                    v_points[linearized_idx[1]] * np.pi * pipe_diameter**2 / 4.0
+                ) - (v_points[linearized_idx[0]] * np.pi * pipe_diameter**2 / 4.0)
 
                 a = delta_dh_theory / delta_volumetric_flow
                 b = delta_dh_theory - a * delta_volumetric_flow
@@ -150,13 +164,11 @@ class TestHeadLoss(TestCase):
 
                 if head_loss_option_setting == HeadLossOption.LINEARIZED_DW:
                     np.testing.assert_array_less(
-                        dh_manual_linear,
-                        -results[f"{pipes[0]}.dH"][itime] + 1e-6,
+                        dh_manual_linear, -results[f"{pipes[0]}.dH"][itime] + 1e-6
                     )
                 elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                     np.testing.assert_allclose(
-                        -results[f"{pipes[0]}.dH"][itime],
-                        dh_manual_linear, rtol=1e-5, atol=1e-7
+                        -results[f"{pipes[0]}.dH"][itime], dh_manual_linear, rtol=1e-5, atol=1e-7
                     )
 
             for pipe in pipes:
@@ -164,7 +176,11 @@ class TestHeadLoss(TestCase):
                 for ii in range(len(results[f"{pipe}.dH"])):
                     np.testing.assert_array_less(
                         darcy_weisbach.head_loss(
-                            velocities[ii], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                            velocities[ii],
+                            pipe_diameter,
+                            pipe_length,
+                            pipe_wall_roughness,
+                            temperature,
                         ),
                         -results[f"{pipe}.dH"][ii],
                     )
@@ -182,7 +198,9 @@ class TestHeadLoss(TestCase):
             sum_hp = (
                 results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
             )
-            sum_hp += results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
+            sum_hp += (
+                results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
+            )
             sum_hp += (
                 results["Pipe1_ret.HeatOut.Hydraulic_power"]
                 - results["Pipe1_ret.HeatIn.Hydraulic_power"]
@@ -257,7 +275,6 @@ class TestHeadLoss(TestCase):
         #         pipe_wall_roughness,
         #         temperature,
         #         )
-        
 
         # velocities = results[f"{pipes[0]}.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
         # plt.plot(v_points, p_points)
@@ -347,8 +364,7 @@ class TestHeadLoss(TestCase):
 
         if pipe not in ["Pipe4", "Pipe4_ret"]:  # kvr fix indent is wrong
             np.testing.assert_allclose(
-                -results[f"{pipes[0]}.dH"][0],
-                dh_manual_linear, rtol=1e-5, atol=1e-7
+                -results[f"{pipes[0]}.dH"][0], dh_manual_linear, rtol=1e-5, atol=1e-7
             )
 
     def test_gas_network_head_loss(self):
@@ -509,7 +525,7 @@ class TestHeadLoss(TestCase):
         Gas network: Test the head loss approximation.
 
         Checks:
-        - 
+        -......
         """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
@@ -574,7 +590,6 @@ class TestHeadLoss(TestCase):
             # dH_manual_linear = a*Q + b
             # Then use this linear function to calculate the head loss
             delta_dh_theory = darcy_weisbach.head_loss(
-
                 v_points[1],
                 pipe_diameter,
                 pipe_length,

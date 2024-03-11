@@ -261,15 +261,15 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][ii_line] = (
-                        pipe_linear_line_segment_var_name
-                    )
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
                     self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
                         initialized_vars[9][pipe_linear_line_segment_var_name]
                     )
                     self.__pipe_linear_line_segment_var_bounds[
-                        pipe_linear_line_segment_var_name] = initialized_vars[10][pipe_linear_line_segment_var_name]
-
+                        pipe_linear_line_segment_var_name
+                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
             if neighbour and pipe_name not in self.hot_pipes:
@@ -421,12 +421,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         demand_insulation_class_var_name = (
                             f"{dmnd}__demand_insulation_class_{insl.name_insulation_level}"
                         )
-                        
+
                         if demand_insulation_class_var_name in (
                             self.__demand_insulation_class_map[dmnd].values()
                         ):
                             raise Exception(f"Resolve duplicate insulation: {insl}.")
-                        
+
                         self.__demand_insulation_class_map[dmnd][
                             insl
                         ] = demand_insulation_class_var_name

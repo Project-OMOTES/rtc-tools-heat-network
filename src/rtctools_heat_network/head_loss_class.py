@@ -386,7 +386,7 @@ class HeadLossClass:
             self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
             if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                # Add pipe head loss linear line segment 
+                # Add pipe head loss linear line segment
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 self.__pipe_linear_line_segment_var[pipe_name] = {}
                 self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
@@ -403,20 +403,18 @@ class HeadLossClass:
                             dtype = discharge_type[1]
                             line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                        pipe_linear_line_segment_var_name = (
-                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
-                        )  # start line segment numbering from 1 up to "n_linearization_lines"
+                        pipe_linear_line_segment_var_name = f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"  # start line segment numbering from 1 up to "n_linearization_lines"
 
                         self._pipe_linear_line_segment_map[pipe_name][
                             ii_line
                         ] = pipe_linear_line_segment_var_name
-                        self.__pipe_linear_line_segment_var[pipe_name][pipe_linear_line_segment_var_name] = (
-                            ca.MX.sym(pipe_linear_line_segment_var_name)
-                        )
+                        self.__pipe_linear_line_segment_var[pipe_name][
+                            pipe_linear_line_segment_var_name
+                        ] = ca.MX.sym(pipe_linear_line_segment_var_name)
                         self.__pipe_linear_line_segment_var_bounds[pipe_name][
                             pipe_linear_line_segment_var_name
                         ] = (0.0, 1.0)
-                
+
         return (
             (
                 self.__pipe_head_bounds[f"{pipe_name}.{commodity_type}In.H"]
@@ -698,8 +696,9 @@ class HeadLossClass:
             else:
                 return expr
 
-        elif (head_loss_option == HeadLossOption.LINEARIZED_DW
-              or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        elif (
+            head_loss_option == HeadLossOption.LINEARIZED_DW
+            or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             n_linear_lines = network_settings["n_linearization_lines"]
             n_timesteps = len(optimization_problem.times())
@@ -732,7 +731,9 @@ class HeadLossClass:
                     is_disconnected_vec = ca.repmat(is_disconnected, len(a))
                 else:
                     # is_disconnected_vec = is_disconnected
-                    is_disconnected_vec = np.ones((len(a) * discharge.size1(), 1), dtype=float) * is_disconnected
+                    is_disconnected_vec = (
+                        np.ones((len(a) * discharge.size1(), 1), dtype=float) * is_disconnected
+                    )
 
                 a_vec = np.repeat(a, discharge.size1())
                 b_vec = np.repeat(b, discharge.size1())
@@ -747,7 +748,7 @@ class HeadLossClass:
                 else:
                     big_m_lin = big_m
                     constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
-                
+
                 # add ons for multiple lines equality constraints -------------------
 
                 constraints = []
@@ -814,12 +815,12 @@ class HeadLossClass:
                                     (
                                         head_loss_vec[ii_start:ii_end]
                                         - (
-                                            a_vec[ii_start:ii_end]
-                                            * discharge_vec[ii_start:ii_end]
+                                            a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
                                             + b_vec[ii_start:ii_end]
                                         )
                                         + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        + big_m_lin * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                        + big_m_lin
+                                        * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
                                     )
                                     / constraint_nominal[ii_start:ii_end],
                                     0.0,
@@ -837,12 +838,12 @@ class HeadLossClass:
                                     (
                                         head_loss_vec[ii_start:ii_end]
                                         - (
-                                            a_vec[ii_start:ii_end]
-                                            * discharge_vec[ii_start:ii_end]
+                                            a_vec[ii_start:ii_end] * discharge_vec[ii_start:ii_end]
                                             + b_vec[ii_start:ii_end]
                                         )
                                         - is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        - big_m_lin * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
+                                        - big_m_lin
+                                        * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
                                     )
                                     / constraint_nominal[ii_start:ii_end],
                                     -np.inf,
@@ -855,8 +856,6 @@ class HeadLossClass:
                 if isinstance(discharge, float):
                     ret = ret[0]
                 return ret
-            return []
-
 
     def _hydraulic_power(
         self,
@@ -1048,7 +1047,10 @@ class HeadLossClass:
             else:
                 return abs(hydraulic_power_linearized)
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW or HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+        elif (
+            head_loss_option == HeadLossOption.LINEARIZED_DW
+            or HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+        ):
             n_lines = network_settings["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
@@ -1116,7 +1118,8 @@ class HeadLossClass:
         else:
             assert (
                 head_loss_option == HeadLossOption.LINEARIZED_DW
-                or head_loss_option == HeadLossOption.LINEAR or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                or head_loss_option == HeadLossOption.LINEAR
+                or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
             ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
 
     def _pipe_head_loss_path_constraints(self, optimization_problem, _ensemble_member):
