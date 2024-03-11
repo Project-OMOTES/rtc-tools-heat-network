@@ -19,8 +19,8 @@ logger = logging.getLogger("rtctools_heat_network")
 class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
+        HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+        HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
     }
     """
     This class is used to model the physics of a gas network with its assets. We model
@@ -55,12 +55,12 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        When ``HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
@@ -68,7 +68,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
@@ -84,7 +84,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         Note that the inherited options ``head_loss_option`` and
         ``minimize_head_losses`` are changed from their default values to
-        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+        ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` and ``False`` respectively.
 
         The ``n_linearization_lines`` is the number of lines used when a curve is approximated by
         multiple linear lines.
@@ -97,7 +97,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             "network_type": NetworkSettings.NETWORK_TYPE_GAS,
             "maximum_velocity": 15.0,
             "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEAR,
+            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             "minimize_head_losses": False,
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
@@ -116,6 +116,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         self.__gas_flow_direct_bounds = {}
         self._gas_pipe_to_flow_direct_map = {}
 
+        # Still to be implemented
         # Boolean path-variable to determine whether flow is going through a pipe.
         # self.__gas_pipe_disconnect_var = {}
         # self.__gas_pipe_disconnect_var_bounds = {}
@@ -123,9 +124,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         # Boolean variables for the linear line segment options per pipe.
         # TDOD: change name to _gas_pipe_...
-        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
-        self.__pipe_linear_line_segment_var_bounds = {}
-        self._pipe_linear_line_segment_map = {}
+        self.__gas_pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__gas_pipe_linear_line_segment_var_bounds = {}
+        self._gas_pipe_linear_line_segment_map = {}
 
         super().__init__(*args, **kwargs)
 
@@ -189,17 +190,17 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 initialized_vars[8] != {}
                 and initialized_vars[9] != {}
                 and initialized_vars[10] != {}
-            ):
-                self._pipe_linear_line_segment_map[pipe_name] = {}
+            ):  # Variables needed to indicate if a linear line segment is active
+                self._gas_pipe_linear_line_segment_map[pipe_name] = {}
                 for ii_line in range(self.gas_network_settings["n_linearization_lines"] * 2):
                     pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
-                    self._pipe_linear_line_segment_map[pipe_name][
+                    self._gas_pipe_linear_line_segment_map[pipe_name][
                         ii_line
                     ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                    self.__gas_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
                         initialized_vars[9][pipe_linear_line_segment_var_name]
                     )
-                    self.__pipe_linear_line_segment_var_bounds[
+                    self.__gas_pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
@@ -266,8 +267,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         variables = super().path_variables.copy()
         variables.extend(self.__gas_pipe_head_loss_var.values())
         variables.extend(self.__gas_flow_direct_var.values())
-        # variables.extend(self.__gas_pipe_disconnect_var.values())
-        variables.extend(self.__pipe_linear_line_segment_var.values())
+        # variables.extend(self.__gas_pipe_disconnect_var.values())  # still to be implemented
+        variables.extend(self.__gas_pipe_linear_line_segment_var.values())
 
         return variables
 
@@ -275,10 +276,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         All variables that only can take integer values should be added to this function.
         """
-        # if (variable in self.__gas_flow_direct_var or variable in self.__gas_pipe_disconnect_var):
         if (
             variable in self.__gas_flow_direct_var
-            or variable in self.__pipe_linear_line_segment_var
+            or variable in self.__gas_pipe_linear_line_segment_var
         ):
             return True
         else:
@@ -302,10 +302,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         bounds = super().bounds()
 
         bounds.update(self.__gas_flow_direct_bounds)
-        # bounds.update(self.__gas_pipe_disconnect_var_bounds)
+        # bounds.update(self.__gas_pipe_disconnect_var_bounds)  # still to be implemented
         bounds.update(self.__gas_pipe_head_loss_bounds)
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
-        bounds.update(self.__pipe_linear_line_segment_var_bounds)
+        bounds.update(self.__gas_pipe_linear_line_segment_var_bounds)
 
         for k, v in self.__gas_pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -664,7 +664,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
             # least double (i.e. >= 2.0). And because we do not want Big-Ms to
             # be overly tight, we include an additional factor of 2.
-            # big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
             big_m = 2.0 * 2.0 * max_head_loss
 
             constraints.append(
@@ -675,55 +674,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
             )
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
-
-            # -------------------------------------------------------------------------------
-            # This is probably not needed. Issue max gas flow limit? Still to comfirm
-
-            # pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
-            # is_line_segment_active = []
-
-            # for ii_line, ii_line_var in pipe_linear_line_segment.items():
-            #     # Create integer variable to activated/deactivate (1/0) a linear line segment
-            #     is_line_segment_active_var = self.state_vector(ii_line_var)
-
-            #     # Linear line segment activation variable for each time step of demand profile
-            #     is_line_segment_active.append(is_line_segment_active_var)
-            # constraints.append(
-            #     (
-            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[0]) * big_m) / big_m,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[0] * big_m) / big_m, 0.0, np.inf))
-
-            # constraints.append(
-            #     (
-            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[1]) * big_m) / big_m,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[1] * big_m) / big_m, 0.0, np.inf))
-
-            # constraints.append(
-            #     (
-            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[2]) * big_m) / big_m,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[2] * big_m) / big_m, 0.0, np.inf))
-
-            # constraints.append(
-            #     (
-            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[3]) * big_m) / big_m,
-            #         0.0,
-            #         np.inf,
-            #     )
-            # )
-            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[3] * big_m) / big_m, 0.0, np.inf))
-            # --------------------------------------------------------------------------------
 
         return constraints
 
@@ -839,7 +789,10 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                         network_type=self.gas_network_settings["network_type"],
                         pressure=parameters[f"{pipe}.pressure"],
                     )
-                    if self.gas_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
+                    if (
+                        self.gas_network_settings["head_loss_option"]
+                        == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                    ):
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_gas_pipe_to_head_loss_map[pipe]][inds]

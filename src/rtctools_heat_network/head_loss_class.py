@@ -57,7 +57,7 @@ class HeadLossOption(IntEnum):
 
            dH = H_{down} - H_{up}
 
-    LINEARIZED_DW
+    LINEARIZED_N_LINES_WEAK_INEQUALITY
         Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
@@ -73,7 +73,7 @@ class HeadLossOption(IntEnum):
 
            .. image:: /images/DWlinearization.PNG
 
-    LINEAR
+    LINEARIZED_ONE_LINE_EQUALITY
         This option uses a linear head loss formulation.
         A single constraint of the type
 
@@ -100,8 +100,8 @@ class HeadLossOption(IntEnum):
 
     NO_HEADLOSS = 1
     CQ2_INEQUALITY = 2
-    LINEARIZED_DW = 3  # LINEARIZED_N_LINES_WEAK_INEQUALITY
-    LINEAR = 4  # LINEARIZED_ONE_LINE_EQUALITY
+    LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
+    LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
     LINEARIZED_N_LINES_EQUALITY = 6
 
@@ -261,7 +261,8 @@ class HeadLossClass:
         +--------------------------------+-----------+-----------------------------------+
         | ``wall_roughness``             | ``float`` | ``0.0002`` m                      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
+        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* &              |
+        |                                |           |LINEARIZED_ONE_LINE_EQUALITY)      |
         +--------------------------------+-----------+-----------------------------------+
 
         The ``minimum_pressure_far_point`` gives the minimum pressure
@@ -287,7 +288,7 @@ class HeadLossClass:
         """
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
-        valve is present, a .LINEAR global head loss option could mean a
+        valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
         .CQ2_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
@@ -386,12 +387,12 @@ class HeadLossClass:
             self.__pipe_head_loss_bounds[head_loss_var] = (0.0, np.inf)
 
             if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                # Add pipe head loss linear line segment
+                # Add pipe head loss linear line segment variables
                 self._pipe_linear_line_segment_map[pipe_name] = {}
                 self.__pipe_linear_line_segment_var[pipe_name] = {}
                 self.__pipe_linear_line_segment_var_bounds[pipe_name] = {}
-                # We need to creat linear line segments for the + and - volumetric flow rate
-                # possibilites
+                # We need to creat linear line segments for the - and + volumetric flow rate
+                # possibilites. Line number 1, 2, N for the - & + side is created
                 discharge_type = ["neg_discharge", "pos_discharge"]
                 line_number = 0
                 for dtype in discharge_type:
@@ -403,7 +404,10 @@ class HeadLossClass:
                             dtype = discharge_type[1]
                             line_number = ii_line + 1 - network_settings["n_linearization_lines"]
 
-                        pipe_linear_line_segment_var_name = f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"  # start line segment numbering from 1 up to "n_linearization_lines"
+                        # start line segment numbering from 1 up to "n_linearization_lines"
+                        pipe_linear_line_segment_var_name = (
+                            f"{pipe_name}__pipe_linear_line_segment_num_{line_number}_{dtype}"
+                        )
 
                         self._pipe_linear_line_segment_map[pipe_name][
                             ii_line
@@ -593,7 +597,7 @@ class HeadLossClass:
         except KeyError:
             has_control_valve = False
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
@@ -696,7 +700,7 @@ class HeadLossClass:
                 return expr
 
         elif (
-            head_loss_option == HeadLossOption.LINEARIZED_DW
+            head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             n_linear_lines = network_settings["n_linearization_lines"]
@@ -748,41 +752,8 @@ class HeadLossClass:
                     big_m_lin = big_m
                     constraint_nominal = (constraint_nominal * big_m_lin) ** 0.5
 
-                # add ons for multiple lines equality constraints -------------------
-
                 constraints = []
-                # if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                #     # pipe_linear_line_segment: will containt variables of negative and positive
-                #     # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
-                #     # linear lines then pipe_linear_line_segment will have 2 * 2 variables
-                #     # Order of linear line variables:
-                #     #  - negative discharge line_1, line_2 ..._line_N
-                #     #  - positve discharge line_1, line_2 ..._line_N
-                #     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
-                #     is_line_segment_active = []
 
-                #     for ii_line, ii_line_var in pipe_linear_line_segment.items():
-                #         # Create integer variable to activated/deactivate (1/0) a linear line segment
-                #         is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
-
-                #         # Linear line segment activation variable for each time step of demand profile
-                #         is_line_segment_active.append(is_line_segment_active_var)
-
-                #     # Calculate constraint to enforce that only 1 linear line segment can be active
-                #     # per time step for the current pipe
-                #     for itstep in range(n_timesteps):
-                #         is_line_segment_active_sum_per_timestep = 0.0
-                #         for ii_line in range(len(pipe_linear_line_segment)):
-
-                #             is_line_segment_active_sum_per_timestep = (
-                #                 is_line_segment_active_sum_per_timestep
-                #                 + is_line_segment_active[ii_line][itstep]
-                #             )
-                #         # Enforce only 1 line line segment to be active for per timestep for all
-                #         # timsteps
-                #         constraints.append(
-                #             (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
-                #         )
                 # Add weak inequality constraint, value >= 0.0 for all linear lines
                 constraints.append(
                     (
@@ -1001,7 +972,7 @@ class HeadLossClass:
             * optimization_problem.variable_nominal(f"{pipe}.Q")
         )
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
             # calc)
             ff = darcy_weisbach.friction_factor(
@@ -1081,7 +1052,7 @@ class HeadLossClass:
                 return abs(hydraulic_power_linearized)
 
         elif (
-            head_loss_option == HeadLossOption.LINEARIZED_DW
+            head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             or HeadLossOption.LINEARIZED_N_LINES_EQUALITY
         ):
             n_lines = network_settings["n_linearization_lines"]
@@ -1150,10 +1121,11 @@ class HeadLossClass:
                 return abs(max_hydraulic_power_linearized)
         else:
             assert (
-                head_loss_option == HeadLossOption.LINEARIZED_DW
-                or head_loss_option == HeadLossOption.LINEAR
+                head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                or head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                 or head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-            ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
+            ), "This method only caters for head_loss_option: "
+            "LINEARIZED_ONE_LINE_EQUALITY & LINEARIZED_N_LINES_WEAK_INEQUALITY."
 
     def _pipe_head_loss_path_constraints(self, optimization_problem, _ensemble_member):
         """

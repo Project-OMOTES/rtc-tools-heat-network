@@ -26,8 +26,8 @@ logger = logging.getLogger("rtctools_heat_network")
 class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
+        HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+        HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
     }
     """
     This class is used to model the physics of a heat district network with its assets. We model
@@ -62,12 +62,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        When ``HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
@@ -75,7 +75,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
@@ -91,7 +91,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         Note that the inherited options ``head_loss_option`` and
         ``minimize_head_losses`` are changed from their default values to
-        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+        ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` and ``False`` respectively.
 
         The ``n_linearization_lines`` is the number of lines used when a curve is approximated by
         multiple linear lines.
@@ -104,7 +104,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
             "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEAR,
+            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             "minimize_head_losses": False,
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
@@ -623,8 +623,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             if (
-                self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR
-                or self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+                self.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                or self.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
                 g.append(
                     self._hn_head_loss_class._hpwr_minimization_goal_class(
@@ -2115,10 +2117,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         head_loss_option = heat_network_settings["head_loss_option"]
 
-        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
+        if (
+            head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            and parameters[f"{pipe}.has_control_valve"]
+        ):
             # If there is a control valve present, we use the more accurate
             # Darcy-Weisbach inequality formulation.
-            head_loss_option = HeadLossOption.LINEARIZED_DW
+            head_loss_option = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
 
         return head_loss_option
 
@@ -2871,7 +2876,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     head_loss_target = self._hn_head_loss_class._hn_pipe_head_loss(
                         pipe, self, options, self.heat_network_settings, parameters, q, None
                     )
-                    if self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
+                    if (
+                        self.heat_network_settings["head_loss_option"]
+                        == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                    ):
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
