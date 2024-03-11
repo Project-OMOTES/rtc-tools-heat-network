@@ -558,6 +558,7 @@ class TestHeadLoss(TestCase):
                 results["Pipe1.GasOut.H"] - results["Pipe1.GasIn.H"],
                 results["Pipe1.dH"],
             )
+            np.testing.assert_allclose(-results["Pipe1.dH"], results["Pipe1.__head_loss"])
 
             pipes = ["Pipe1"]
             v_max = solution.gas_network_settings["maximum_velocity"]
@@ -598,6 +599,13 @@ class TestHeadLoss(TestCase):
             a = delta_dh_theory / delta_volumetric_flow
             b = delta_dh_theory - a * delta_volumetric_flow
             dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+
+            # Gas flow balance
+            np.testing.assert_allclose(
+                results["GasDemand_a2d8.Gas_demand_mass_flow"],
+                solution.get_timeseries(f"GasDemand_a2d8.target_gas_demand").values,
+            )
+            # demand_matching_test(solution, results)  # still to be updated for gas demand
 
             # Check that the aproximated head loss matches the maunally calculated value
             # kvr this is broken after merge

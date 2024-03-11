@@ -658,7 +658,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             flow_dir = self.__state_vector_scaled(
                 self._gas_pipe_to_flow_direct_map[pipe], ensemble_member
             )
-
+           
             # Note that the Big-M should _at least_ cover the maximum
             # distance between `head_loss` and `dh`. If `head_loss` can be at
             # most 1.0 (= `max_head_loss`), that means our Big-M should be at
@@ -666,7 +666,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # be overly tight, we include an additional factor of 2.
             # big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
             big_m = 2.0 * 2.0 * max_head_loss
-            
+
             constraints.append(
                 (
                     (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
@@ -675,6 +675,56 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
             )
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
+
+            # -------------------------------------------------------------------------------
+            # This is probalby not needed. Issue max gas flow limit?
+            
+            # pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+            # is_line_segment_active = []
+
+            # for ii_line, ii_line_var in pipe_linear_line_segment.items():
+            #     # Create integer variable to activated/deactivate (1/0) a linear line segment
+            #     is_line_segment_active_var = self.state_vector(ii_line_var)
+
+            #     # Linear line segment activation variable for each time step of demand profile
+            #     is_line_segment_active.append(is_line_segment_active_var)
+            # constraints.append(
+            #     (
+            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[0]) * big_m) / big_m,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[0] * big_m) / big_m, 0.0, np.inf))
+
+            # constraints.append(
+            #     (
+            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[1]) * big_m) / big_m,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[1] * big_m) / big_m, 0.0, np.inf))
+
+            # constraints.append(
+            #     (
+            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[2]) * big_m) / big_m,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[2] * big_m) / big_m, 0.0, np.inf))
+
+            # constraints.append(
+            #     (
+            #         (-dh - head_loss + (1 - flow_dir) * big_m + (1 - is_line_segment_active[3]) * big_m) / big_m,
+            #         0.0,
+            #         np.inf,
+            #     )
+            # )
+            # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[3] * big_m) / big_m, 0.0, np.inf))
+
+            # --------------------------------------------------------------------------------
 
         return constraints
 
