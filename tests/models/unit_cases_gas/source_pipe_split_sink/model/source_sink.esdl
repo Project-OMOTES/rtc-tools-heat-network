@@ -18,7 +18,7 @@
         <port xsi:type="esdl:InPort" id="540de366-8c1e-481d-8cfe-fdc1c881860b" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="In" connectedTo="3c0edd70-8a95-4ca0-a363-9e455bedcdda"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.087417614082575" lon="4.46645736694336"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe1" outerDiameter="0.45" id="a5aa96d4-f192-48ef-9f88-b9b2f06e952a" diameter="DN300" length="737.68">
+      <asset xsi:type="esdl:Pipe" name="Pipe1" outerDiameter="0.45" id="a5aa96d4-f192-48ef-9f88-b9b2f06e952a" diameter="DN300" length="700.0">
         <port xsi:type="esdl:InPort" id="29c0dc88-8d44-47e4-b5f8-a74e836e903e" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="In" connectedTo="6e9b7534-46eb-43f4-a7a5-0aaeb30c1c30"/>
         <port xsi:type="esdl:OutPort" id="68cf7875-2a39-41b9-80f0-2f9cd4d5257b" connectedTo="1e5ad94f-f3ed-4b92-9c87-07dbedec46cb" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="Out"/>
         <geometry xsi:type="esdl:Line">
@@ -39,7 +39,7 @@
           <point xsi:type="esdl:Point" lat="52.08800434089691" lon="4.455181360244752"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe3" outerDiameter="0.45" id="13f16a06-a2e2-4d3a-a1a5-68ea0edfb59c" diameter="DN300" length="769.67">
+      <asset xsi:type="esdl:Pipe" name="Pipe3" outerDiameter="0.45" id="13f16a06-a2e2-4d3a-a1a5-68ea0edfb59c" diameter="DN300" length="700.00">
         <port xsi:type="esdl:InPort" id="19a2a857-2328-4d08-8603-8afbd082c7d1" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="In" connectedTo="7be3f6a6-231e-4492-a486-aaa9bd5cf3dc"/>
         <port xsi:type="esdl:OutPort" id="3c0edd70-8a95-4ca0-a363-9e455bedcdda" connectedTo="540de366-8c1e-481d-8cfe-fdc1c881860b" carrier="aebcaaae-484a-4a61-a91a-6b83c663aa48" name="Out"/>
         <geometry xsi:type="esdl:Line">

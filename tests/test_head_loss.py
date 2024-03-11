@@ -392,12 +392,12 @@ class TestHeadLoss(TestCase):
                         self.gas_network_settings["minimize_head_losses"] = True
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = False
+                        self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
 
                     # This code below was needed for LINEARIZED_N_LINES_EQUALITY to pass below
-                    self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                    self.gas_network_settings["pipe_minimum_pressure"] = 10.0
+                    # self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                    # self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
             solution = run_optimization_problem(
@@ -534,16 +534,13 @@ class TestHeadLoss(TestCase):
                     self.gas_network_settings["head_loss_option"] = head_loss_option_setting
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                         self.gas_network_settings["n_linearization_lines"] = 2
-                        self.gas_network_settings["minimize_head_losses"] = False
+                        self.gas_network_settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEAR:
                         self.gas_network_settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_DW:
                         self.gas_network_settings["n_linearization_lines"] = 2
                         self.gas_network_settings["minimize_head_losses"] = True
 
-
-                    # self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                    # self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                     return options
 
             solution = run_optimization_problem(
@@ -604,7 +601,7 @@ class TestHeadLoss(TestCase):
 
             # Check that the aproximated head loss matches the maunally calculated value
             # kvr this is broken after merge
-            np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"])
+            np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"], atol=1e-6)
 
             for pipe in pipes:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]

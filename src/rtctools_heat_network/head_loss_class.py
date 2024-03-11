@@ -766,9 +766,7 @@ class HeadLossClass:
                         is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
 
                         # Linear line segment activation variable for each time step of demand profile
-                        is_line_segment_active.append(
-                            is_line_segment_active_var #ca.repmat(is_line_segment_active_var, n_timesteps)
-                        )
+                        is_line_segment_active.append(is_line_segment_active_var)
 
                     # Calculate constraint to enforce that only 1 linear line segment can be active
                     # per time step for the current pipe
@@ -802,9 +800,13 @@ class HeadLossClass:
                 # big_m_lin = big_m_lin * 20000 # This was needed to get the 1 pipe gas network working when I specify maximum pipe press
                 if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                     # Add equality constraint, value == 0.0 for all linear lines
-                    # Loop twice due linear lines exsiting for positive and negative discharge
+                    # Loop twice due to linear lines exsiting for positive and negative discharge
+                    # ii==0: this is the linear lines for the negative discharge possibility
+                    # ii==1: this is the linear lines for the postive discharge possibility
                     for ii in range(2):
                         for ii_line in range(n_linear_lines):
+                            ii_line_used = (ii * 2) + ii_line
+
                             ii_start = (ii_line + 2 * ii) * n_timesteps
                             ii_end = ii_start + n_timesteps
                             constraints.append(
@@ -817,7 +819,7 @@ class HeadLossClass:
                                             + b_vec[ii_start:ii_end]
                                         )
                                         + is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        + big_m_lin * (1 - is_line_segment_active[ii_line][0:n_timesteps])
+                                        + big_m_lin * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
                                     )
                                     / constraint_nominal[ii_start:ii_end],
                                     0.0,
@@ -826,6 +828,8 @@ class HeadLossClass:
                             )
                     for ii in range(2):
                         for ii_line in range(n_linear_lines):
+                            ii_line_used = (ii * 2) + ii_line
+
                             ii_start = (ii_line + 2 * ii) * n_timesteps
                             ii_end = ii_start + n_timesteps
                             constraints.append(
@@ -838,7 +842,7 @@ class HeadLossClass:
                                             + b_vec[ii_start:ii_end]
                                         )
                                         - is_disconnected_vec[ii_start:ii_end] * big_m_lin
-                                        - big_m_lin * (1 - is_line_segment_active[ii_line][0:n_timesteps])
+                                        - big_m_lin * (1 - is_line_segment_active[ii_line_used][0:n_timesteps])
                                     )
                                     / constraint_nominal[ii_start:ii_end],
                                     -np.inf,

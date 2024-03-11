@@ -300,7 +300,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         bounds = super().bounds()
 
-        # bounds.update(self.__gas_flow_direct_bounds)
+        bounds.update(self.__gas_flow_direct_bounds)
         # bounds.update(self.__gas_pipe_disconnect_var_bounds)
         bounds.update(self.__gas_pipe_head_loss_bounds)
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
@@ -621,7 +621,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 max_discharge = self.gas_network_settings["maximum_velocity"] * area
 
                 is_topo_disconnected = int(parameters[f"{pipe}.diameter"] == 0.0)
-
+                
                 constraints.extend(
                     self._gn_head_loss_class._hn_pipe_head_loss(
                         pipe,
@@ -666,6 +666,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             # be overly tight, we include an additional factor of 2.
             # big_m = 1.1 * max_head_loss  # TODO why is this smaller big_m needed?
             big_m = 2.0 * 2.0 * max_head_loss
+            
             constraints.append(
                 (
                     (-dh - head_loss + (1 - flow_dir) * big_m) / big_m,
