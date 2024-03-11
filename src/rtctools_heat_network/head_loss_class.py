@@ -569,7 +569,6 @@ class HeadLossClass:
             area = parameters[f"{pipe}.area"]
             maximum_velocity = network_settings["maximum_velocity"]
 
-        # TODO: add commodity temperature to a gas network
         try:
             # Only heat networks have a temperature attribute in the pipes, otherwise we will use
             # a default temperature for gas networks
@@ -752,38 +751,38 @@ class HeadLossClass:
                 # add ons for multiple lines equality constraints -------------------
 
                 constraints = []
-                if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                    # pipe_linear_line_segment: will containt variables of negative and positive
-                    # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
-                    # linear lines then pipe_linear_line_segment will have 2 * 2 variables
-                    # Order of linear line variables:
-                    #  - negative discharge line_1, line_2 ..._line_N
-                    #  - positve discharge line_1, line_2 ..._line_N
-                    pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
-                    is_line_segment_active = []
+                # if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                #     # pipe_linear_line_segment: will containt variables of negative and positive
+                #     # discharge possibilites for the pipe. This implies if a pipe is linearized with 2
+                #     # linear lines then pipe_linear_line_segment will have 2 * 2 variables
+                #     # Order of linear line variables:
+                #     #  - negative discharge line_1, line_2 ..._line_N
+                #     #  - positve discharge line_1, line_2 ..._line_N
+                #     pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+                #     is_line_segment_active = []
 
-                    for ii_line, ii_line_var in pipe_linear_line_segment.items():
-                        # Create integer variable to activated/deactivate (1/0) a linear line segment
-                        is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
+                #     for ii_line, ii_line_var in pipe_linear_line_segment.items():
+                #         # Create integer variable to activated/deactivate (1/0) a linear line segment
+                #         is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
 
-                        # Linear line segment activation variable for each time step of demand profile
-                        is_line_segment_active.append(is_line_segment_active_var)
+                #         # Linear line segment activation variable for each time step of demand profile
+                #         is_line_segment_active.append(is_line_segment_active_var)
 
-                    # Calculate constraint to enforce that only 1 linear line segment can be active
-                    # per time step for the current pipe
-                    for itstep in range(n_timesteps):
-                        is_line_segment_active_sum_per_timestep = 0.0
-                        for ii_line in range(len(pipe_linear_line_segment)):
+                #     # Calculate constraint to enforce that only 1 linear line segment can be active
+                #     # per time step for the current pipe
+                #     for itstep in range(n_timesteps):
+                #         is_line_segment_active_sum_per_timestep = 0.0
+                #         for ii_line in range(len(pipe_linear_line_segment)):
 
-                            is_line_segment_active_sum_per_timestep = (
-                                is_line_segment_active_sum_per_timestep
-                                + is_line_segment_active[ii_line][itstep]
-                            )
-                        # Enforce only 1 line line segment to be active for per timestep for all
-                        # timsteps
-                        constraints.append(
-                            (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
-                        )
+                #             is_line_segment_active_sum_per_timestep = (
+                #                 is_line_segment_active_sum_per_timestep
+                #                 + is_line_segment_active[ii_line][itstep]
+                #             )
+                #         # Enforce only 1 line line segment to be active for per timestep for all
+                #         # timsteps
+                #         constraints.append(
+                #             (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
+                #         )
                 # Add weak inequality constraint, value >= 0.0 for all linear lines
                 constraints.append(
                     (
@@ -797,11 +796,45 @@ class HeadLossClass:
                         np.inf,
                     ),
                 )
-                # big_m_lin = big_m_lin * 2000000.0  # kvr ???? added this
-                # big_m_lin = big_m_lin * 20000 # This was needed to get the 1 pipe gas network working when I specify maximum pipe press
                 if head_loss_option == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # Add constraints for piece-wise linear equality
+
+                    # Populate variable indicating if a linear line segment is active (1) or not (0)
+                    # pipe_linear_line_segment: will contain variables of negative and positive
+                    # discharge possibilites for the pipe. This implies if a pipe is linearized
+                    # with N = 2 linear lines then pipe_linear_line_segment will have 2 * 2
+                    # variables
+                    # Order of linear line variables:
+                    #  - negative discharge line_1, line_2
+                    #  - positve discharge line_1, line_2
+                    pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
+                    is_line_segment_active = []
+
+                    for _, ii_line_var in pipe_linear_line_segment.items():
+                        # Create integer variable to activate/deactivate (1/0) a linear line
+                        # segment
+                        is_line_segment_active_var = optimization_problem.state_vector(ii_line_var)
+
+                        # Linear line segment activation variable for each time step of demand
+                        # profile
+                        is_line_segment_active.append(is_line_segment_active_var)
+
+                    # Calculate constraint to enforce that only 1 linear line segment can be active
+                    # per time step for the current pipe for the entire time horizon
+                    for itstep in range(n_timesteps):
+                        is_line_segment_active_sum_per_timestep = 0.0
+                        for ii_line in range(len(pipe_linear_line_segment)):
+
+                            is_line_segment_active_sum_per_timestep = (
+                                is_line_segment_active_sum_per_timestep
+                                + is_line_segment_active[ii_line][itstep]
+                            )
+                        constraints.append(
+                            (is_line_segment_active_sum_per_timestep, 1.0, 1.0),
+                        )
+
                     # Add equality constraint, value == 0.0 for all linear lines
-                    # Loop twice due to linear lines exsiting for positive and negative discharge
+                    # Loop twice due to linear lines exsiting for negative and positive discharge
                     # ii==0: this is the linear lines for the negative discharge possibility
                     # ii==1: this is the linear lines for the postive discharge possibility
                     for ii in range(2):

@@ -677,7 +677,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             constraints.append(((dh - head_loss + flow_dir * big_m) / big_m, 0.0, np.inf))
 
             # -------------------------------------------------------------------------------
-            # This is probalby not needed. Issue max gas flow limit?
+            # This is probably not needed. Issue max gas flow limit? Still to comfirm
 
             # pipe_linear_line_segment = self._pipe_linear_line_segment_map[pipe]
             # is_line_segment_active = []
@@ -723,7 +723,6 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             #     )
             # )
             # constraints.append(((dh - head_loss + flow_dir * big_m + is_line_segment_active[3] * big_m) / big_m, 0.0, np.inf))
-
             # --------------------------------------------------------------------------------
 
         return constraints
