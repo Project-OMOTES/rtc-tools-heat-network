@@ -201,8 +201,8 @@ class TestHeadLoss(TestCase):
 
     def test_heat_network_pipe_split_head_loss(self):
         """
-        Heat network: test the piecewise linear inequality constraint of the head loss
-        approximation.
+        Heat network: test the piecewise linear weak inequality and equality constraints of the
+        head loss approximation.
 
         Checks:
         - That the head_loss() function does return the expected theoretical dH at a data point
@@ -210,13 +210,21 @@ class TestHeadLoss(TestCase):
         - That the head_loss() function does return a value smaller than a manual linearly
         approximated dH at a data point in the middle of the 1st line segment (dH curve is
         approximated with 5 linear lines)
-        - That for the dH value approximated by the code is conservative, in other word greater
+        - That for the dH value approximated by the code is conservative, in other words greater
         than the theoretical value
+        - Compare the optimized dH to the linear calculated value to ensure the specified
+        constraint for the head loss linearization is satisfied.
+        - For LINEARIZED_N_LINES_EQUALITY:
+            - That only one linear line is active for the applicable pipes
+            - That the linearized dH value is constraint is satisfied
+            - Pipe 4 for has a zero flow rate, but its dH should be the same as pipe 2
         """
         import models.source_pipe_split_sink.src.double_pipe_heat as example
         from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
 
         base_folder = Path(example.__file__).resolve().parent.parent
+
+        # Specify the head loss linearizations to be tested
         for head_loss_option_setting in [
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
             HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
@@ -250,6 +258,7 @@ class TestHeadLoss(TestCase):
             demand_matching_test(solution, results)
 
             pipes = ["Pipe1", "Pipe2", "Pipe3", "Pipe4"]
+            # Only evaluate 1 pipe and 1 timestep for now to reduce the test case computational time
             ipipe = 0
             itime = 0
             v_max = solution.heat_network_settings["maximum_velocity"]
@@ -262,7 +271,6 @@ class TestHeadLoss(TestCase):
                 v_max,
                 solution.heat_network_settings["n_linearization_lines"] + 1,
             )
-            # v_inspect = v_points[0] + (v_points[1] - v_points[0]) / 2.0
             v_inspect = (
                 results[f"{pipes[ipipe]}.HeatIn.Q"][itime]
                 / solution.parameters(0)[f"{pipes[ipipe]}.area"]
@@ -317,7 +325,8 @@ class TestHeadLoss(TestCase):
 
             if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
                 # Check:
-                #  - That only one linear line is active for a pipe
+                #  - That only one linear line is active for the applicable pipes
+                #  - That the linearized dH value is constraint is satisfied
                 #  - Pipe 4 for has a zero flow rate, but its dH should be the same as pipe 2
                 for pipe in pipes:
                     # Check that only one linear line segment is active for the head loss
@@ -364,12 +373,13 @@ class TestHeadLoss(TestCase):
 
     def test_gas_network_head_loss(self):
         """
-        Gas network: Test the head loss approximation.
+        Gas network: Test the head loss approximation
 
         Checks:
         - head loss variable vs manually calcuated value
-        - linear equality constraint
-        - linear inequality constraint with 2 linear segments
+        - that the approximated head loss matches the manually calculated value
+        - that linearized dH satisfies the specified constraint
+        - that only one linear line segment is active for the head loss linearization
         """
 
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
@@ -379,6 +389,7 @@ class TestHeadLoss(TestCase):
 
         linear_head_loss_equality = 0.0
 
+        # Specify the head loss linearizations to be tested
         for head_loss_option_setting in [
             HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
@@ -394,7 +405,7 @@ class TestHeadLoss(TestCase):
 
                     self.gas_network_settings["head_loss_option"] = head_loss_option_setting
                     if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
-                        # This setting is below is not needed for the optmiizer, but is used in the
+                        # This setting is below is not needed for the optmizer, but is used in the
                         # test below.
                         self.gas_network_settings["n_linearization_lines"] = 1  # dot not delete
                         self.gas_network_settings["minimize_head_losses"] = True
@@ -409,9 +420,6 @@ class TestHeadLoss(TestCase):
                         self.gas_network_settings["minimize_head_losses"] = True
                         self.gas_network_settings["minimum_velocity"] = 0.0
 
-                    # This code below was needed for LINEARIZED_N_LINES_EQUALITY to pass below
-                    # self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                    # self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
             solution = run_optimization_problem(
@@ -478,16 +486,12 @@ class TestHeadLoss(TestCase):
             elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
                 np.testing.assert_array_less(-results[f"{pipes[0]}.dH"], linear_head_loss_equality)
             elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                # TODO: check why this fails when the timeseries input length is changed? and why
-                # only timestep index 1 passes?
                 # Check that the approximated head loss matches the manually calculated value
-                # This is now completely failing
-
-                # kvr this is completely broken after the merge
                 np.testing.assert_allclose(dh_manual_linear[1], -results[f"{pipes[0]}.dH"][1])
 
             for pipe in pipes:
                 velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                # linearized dH satisfies the specified constraint
                 np.testing.assert_array_less(
                     darcy_weisbach.head_loss(
                         velocities[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
@@ -520,10 +524,14 @@ class TestHeadLoss(TestCase):
 
     def test_gas_network_pipe_split_head_loss(self):
         """
-        Gas network: Test the head loss approximation.
+        Gas network: Test the head loss approximation for a parallel pipe network.
 
         Checks:
-        -......
+        - The head loss variable dH and __head_loss
+        - That the gas demand is satisfied
+        - Check that the aproximated head loss matches the maunally calculated value
+        - That the linearized dH head loss contraint is satisfied
+        - That only one linear line segment is active for the head loss linearization
         """
 
         import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
@@ -531,6 +539,7 @@ class TestHeadLoss(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
+        # Specify the head loss linearizations to be tested
         for head_loss_option_setting in [
             HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
         ]:
@@ -579,7 +588,6 @@ class TestHeadLoss(TestCase):
             v_max = solution.gas_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
             pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
-            # TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
             temperature = 20.0
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
             v_points = [0.0, v_max / solution.gas_network_settings["n_linearization_lines"]]
@@ -619,10 +627,9 @@ class TestHeadLoss(TestCase):
                 results["GasDemand_a2d8.Gas_demand_mass_flow"],
                 solution.get_timeseries("GasDemand_a2d8.target_gas_demand").values,
             )
-            # demand_matching_test(solution, results)  # still to be updated for gas demand
+            # demand_matching_test(solution, results)  # TODO still to be updated for gas networks
 
             # Check that the aproximated head loss matches the maunally calculated value
-            # kvr this is broken after merge
             np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"], atol=1e-6)
 
             for pipe in pipes:
