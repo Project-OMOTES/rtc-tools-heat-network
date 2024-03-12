@@ -436,10 +436,12 @@ class SettingsStaged:
 
         self._stage = stage
         self.__boolean_bounds = boolean_bounds
+
         if self._stage == 1:
             self.heat_network_settings["minimum_velocity"] = 0.0
             self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
             self.heat_network_settings["minimize_head_losses"] = False
+
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
@@ -447,6 +449,7 @@ class SettingsStaged:
         options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
+            self.heat_network_settings["minimum_velocity"] = 0.0
 
         return options
 
