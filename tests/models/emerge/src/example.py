@@ -122,7 +122,7 @@ class EmergeTest(
     #     """
     #     goals = super().path_goals().copy()
     #
-    #     for s in self.heat_network_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
+    #     for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
     #         goals.append(MaxHydrogenProduction(s))
     #
     #     return goals
@@ -131,10 +131,10 @@ class EmergeTest(
 
         goals = super().goals().copy()
 
-        for asset_name in self.heat_network_components["electricity_demand"]:
+        for asset_name in self.energy_system_components["electricity_demand"]:
             goals.append(MaxRevenue(asset_name))
 
-        for asset_name in self.heat_network_components["gas_demand"]:
+        for asset_name in self.energy_system_components["gas_demand"]:
             goals.append(MaxRevenue(asset_name))
 
 
@@ -157,7 +157,7 @@ class EmergeTest(
     def times(self, variable=None):
         return super().times(variable)[:25]
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         """
         This function does not add anything at the moment but during debugging we use this.
 
@@ -165,7 +165,7 @@ class EmergeTest(
         -------
         Options dict for the physics modelling
         """
-        options = super().heat_network_options()
+        options = super().energy_system_options()
         options["minimum_velocity"] = 0.0
         options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = False

@@ -17,7 +17,7 @@ class Demand(_NonStorageComponent, _FluidPropertiesComponent):
             ),
         )
 
-        self.component_type = "demand"
+        self.component_type = "heat_demand"
 
         self.Q_nominal = 1.0
 

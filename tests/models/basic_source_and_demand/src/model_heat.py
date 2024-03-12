@@ -1,10 +1,15 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import Demand, Pipe, Pump, Source
+from rtctools_heat_network.pycml.component_library.milp import (
+    HeatDemand,
+    HeatPipe,
+    HeatSource,
+    Pump,
+)
 
 
 class Model(_Model):
     """
-    Very simple model of a heat network consisting of a source, pump, pipe and demand for testing
+    Very simple model of a milp network consisting of a source, pump, pipe and demand for testing
     head loss.
     """
 
@@ -21,7 +26,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Source,
+            HeatSource,
             "source",
             Heat_source=dict(min=0.0e5, max=1.8e5, nominal=0.9e5),
             HeatOut=dict(Heat=dict(max=5e5)),
@@ -29,11 +34,11 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Demand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers
+            HeatDemand, "demand", HeatIn=dict(Heat=dict(max=5e5)), **supply_return_modifiers
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_hot",
             length=1000.0,
             diameter=0.15,
@@ -44,7 +49,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_cold",
             length=1000.0,
             diameter=0.15,

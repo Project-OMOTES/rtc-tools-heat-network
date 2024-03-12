@@ -13,7 +13,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
     """
     Tests for end scenario sizing with annualized costs in a small network with optional assets.
 
-    This class tests two models for a heat network: with
+    This class tests two models for a milp network: with
     and without annualized costs. It asserts the following:
     1. Under some conditions, the objective value of the annualized model is equal to the solution
     from the non annualized one.
@@ -85,8 +85,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         # # Assertion 1: Model for annualized objective value with discount=0 and
         # # technical life 1 year matches the objective value of the non-discounted problem
         np.testing.assert_allclose(
-            solution__annualized_modified_param.objective_value,
-            solution_run_ates.objective_value,
+            solution__annualized_modified_param.objective_value, solution_run_ates.objective_value
         )
 
         # Assertion 2: Undiscounted problem has a lower objective value than the discocunted one
@@ -98,7 +97,8 @@ class TestEndScenarioSizingAnnualized(TestCase):
 
         results = solution_annualized_cost.extract_results()
         heat_producers = [1, 2]
-        decimal = 3
+        # Number of decimal positions for test accuracy
+        decimal = 4
         for i in heat_producers:
             investment_and_installation_cost = (
                 results[f"HeatProducer_{i}__investment_cost"]

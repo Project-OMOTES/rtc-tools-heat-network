@@ -36,6 +36,9 @@ class MinimizeProduction(Goal):
 
     order = 1
 
+    def __init__(self):
+        self.function_nominal = 1e6
+
     def function(self, optimization_problem, ensemble_member):
         return optimization_problem.state("source.Heat_source")
 
@@ -51,7 +54,10 @@ class SourcePipeSink(
         super().__init__(*args, **kwargs)
 
     def path_goals(self):
-        return [TargetDemandGoal(self), MinimizeProduction()]
+        g = super().path_goals().copy()
+        g.append(TargetDemandGoal(self))
+        g.append(MinimizeProduction())
+        return g
 
     def post(self):
         super().post()
@@ -59,10 +65,22 @@ class SourcePipeSink(
 
 class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
-        options["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-        options["minimize_head_losses"] = True
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.heat_network_settings["head_loss_option"] = (
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        )
+        self.heat_network_settings["n_linearization_lines"] = 5
+        self.heat_network_settings["minimize_head_losses"] = True
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+
+        return options
+
+    def solver_options(self):
+        options = super().solver_options()
+        # options["solver"] = "gurobi"
 
         return options
 

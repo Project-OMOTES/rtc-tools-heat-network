@@ -38,7 +38,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -62,8 +62,8 @@ class HeatProblem(
 
 
 class HeatProblemTvar(HeatProblem):
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         # We set a low maximum velocity to force the optimization to select a dT of more then 20 deg
         # this is to avoid specifying a new demand profile
         self.heat_network_settings["maximum_velocity"] = 0.25
@@ -125,7 +125,6 @@ class QTHProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblemTvar)
     sol = run_optimization_problem(
         HeatProblem,
         esdl_file_name="1a.esdl",

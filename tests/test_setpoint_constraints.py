@@ -20,7 +20,9 @@ class TestSetpointConstraints(TestCase):
         changes allowed of X times over a desired window length.
 
         Checks:
-        - That setpoint does not change over windowlength if 0 is specified
+        - That setpoint does not change over windowlength if 0 is specified.
+        - That setpoint does not change over windowlength if 0 is specified via the
+        ESDLAdditionalVarsMixin.
         - That setpoint indeed changes once if 1 is specified.
 
         """
@@ -51,6 +53,32 @@ class TestSetpointConstraints(TestCase):
         )
         results_4 = _heat_problem_4.extract_results()
 
+        # Here we check whehter the ESDLAdditionalVarsMixin is working as intended when
+        # a constraint for the setpoints is specified
+        import models.unit_cases.case_3a_setpoint.src.run_3a as run_3a
+        from models.unit_cases.case_3a_setpoint.src.run_3a import HeatProblem
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+
+        sol_esdl_setpoints = run_optimization_problem(
+            HeatProblem,
+            base_folder=base_folder,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results_4 = _heat_problem_4.extract_results()
+
+        esdl_results = sol_esdl_setpoints.extract_results()
+        np.testing.assert_array_less(
+            abs(
+                esdl_results["GeothermalSource_b702.Heat_source"][2:]
+                - esdl_results["GeothermalSource_b702.Heat_source"][1:-1]
+            ),
+            1.0e-6,
+        )
+
         # Check that solution has one setpoint change
         a = abs(
             results_3["GeothermalSource_b702.Heat_source"][2:]
@@ -71,8 +99,8 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_2_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         2 changes/year.
@@ -107,8 +135,8 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_0_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         0 changes/year.
@@ -141,8 +169,8 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
+        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         1 changes over multiple window sizes.

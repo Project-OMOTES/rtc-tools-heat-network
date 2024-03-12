@@ -40,9 +40,9 @@ class MinimizeSourcesHeatCostGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
+        self.function_range = (0.0, 1.0e6)
         self.source = source
-        self.function_nominal = 1.0e7
+        self.function_nominal = 1.0e6
 
     def function(self, optimization_problem, ensemble_member):
         return (
@@ -56,7 +56,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -67,9 +67,9 @@ class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
         for s in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("heat_buffer", []),
         ]:
             goals.append(MinimizeSourcesHeatCostGoal(s))
 
@@ -89,8 +89,8 @@ class HeatProblem(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0
         options["neglect_pipe_heat_losses"] = True
         options["heat_loss_disconnected_pipe"] = False
@@ -103,7 +103,7 @@ class HeatProblem(
         # might want to do optimization over shorter periods of time where this would lead to
         # infeasibility. In this case we do want the cyclic behaviour, therefore we add it to the
         # problem.
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[0] - stored_heat[-1]), 0.0, 0.0))
 
@@ -122,7 +122,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
+        demands = self.energy_system_components.get("heat_demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 
@@ -162,3 +162,4 @@ if __name__ == "__main__":
         input_timeseries_file="Warmte_test.csv",
     )
     results = solution.extract_results()
+    print("Finished")

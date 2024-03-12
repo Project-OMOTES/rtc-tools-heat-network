@@ -33,11 +33,11 @@ Tags/fiters: {tag: "output_esdl_id, value: id}
 # Temp code below for electrolyzer
 # Settings for the reading excel files and creating a influxDB
 # raw_data_files_folder = (
-#     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\"
+#     "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\unit_cases_electricity\\"
 #     "electrolyzer\\input\\Dummy_values\\"
 # )
 raw_data_files_folder = (
-    "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\tests\\models\\unit_cases_electricity\\"
+    "C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\tests\\models\\unit_cases_electricity\\"
     "electrolyzer\\input\\Profiles\\"
 )
 # input_energy_system_id = "15174819-d1af-4ba6-9f1d-2cd07991f14a"

@@ -47,7 +47,7 @@ class _GoalsAndOptions:
         """
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["gas_demand"]:
+        for demand in self.energy_system_components["gas_demand"]:
             target = self.get_timeseries(f"{demand}.target_gas_demand")
             state = f"{demand}.Gas_demand_mass_flow"
 
@@ -91,5 +91,5 @@ if __name__ == "__main__":
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
     )
-    r = elect.extract_results()
+    results = elect.extract_results()
     a = 1
