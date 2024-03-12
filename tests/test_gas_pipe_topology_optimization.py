@@ -30,7 +30,9 @@ class TestGasNetwork(TestCase):
         class GasNetworkProblem(HeatProblem):
             def energy_system_options(self):
                 options = super().energy_system_options()
-                self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                )
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
 

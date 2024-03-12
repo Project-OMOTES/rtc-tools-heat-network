@@ -330,13 +330,15 @@ class TestDisconnectablePipe(TestCase):
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
         def energy_system_options(self):
             options = super().energy_system_options()
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+            self.heat_network_settings["head_loss_option"] = (
+                HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+            )
             return options
 
     def test_disconnected_pipe_darcy_weisbach(self):
         """
         Just a sanity check that the head loss constraints for disconnectable
-        pipes works with LINEAR as well as LINEARIZED_DW.
+        pipes works with LINEARIZED_ONE_LINE_EQUALITY as well as LINEARIZED_N_LINES_WEAK_INEQUALITY.
 
         Checks:
         - That the flow is equal for both types of head loss constraint settings.

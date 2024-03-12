@@ -58,7 +58,7 @@ class HeadLossOption(IntEnum):
 
            dH = H_{down} - H_{up}
 
-    LINEARIZED_DW
+    LINEARIZED_N_LINES_WEAK_INEQUALITY
         Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
@@ -74,7 +74,7 @@ class HeadLossOption(IntEnum):
 
            .. image:: /images/DWlinearization.PNG
 
-    LINEAR
+    LINEARIZED_ONE_LINE_EQUALITY
         This option uses a linear head loss formulation.
         A single constraint of the type
 
@@ -101,8 +101,8 @@ class HeadLossOption(IntEnum):
 
     NO_HEADLOSS = 1
     CQ2_INEQUALITY = 2
-    LINEARIZED_DW = 3
-    LINEAR = 4
+    LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
+    LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
 
 
@@ -240,11 +240,14 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         +--------------------------------+-----------+-----------------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
         +--------------------------------+-----------+-----------------------------------+
-        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
+        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* &              |
+        |                                |           |LINEARIZED_ONE_LINE_EQUALITY)      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s (LINEARIZED_DW)       |
+        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s                       |
+        |                                |           |LINEARIZED_N_LINES_WEAK_INEQUALITY |
         +--------------------------------+-----------+-----------------------------------+
-        | ``n_linearization_lines``      | ``int``   | ``5`` (LINEARIZED_DW)             |
+        | ``n_linearization_lines``      | ``int``   | ``5``                             |
+        |                                |           |LINEARIZED_N_LINES_WEAK_INEQUALITY |
         +--------------------------------+-----------+-----------------------------------+
         | ``minimize_head_losses``       | ``bool``  | ``True``                          |
         +--------------------------------+-----------+-----------------------------------+
@@ -270,12 +273,12 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        When ``HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
@@ -283,7 +286,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
@@ -322,7 +325,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         """
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
-        valve is present, a .LINEAR global head loss option could mean a
+        valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
         .CQ2_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
@@ -512,7 +515,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
@@ -604,7 +607,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             else:
                 return expr
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             n_lines = heat_network_options["n_linearization_lines"]
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
@@ -763,7 +766,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             * self.variable_nominal(f"{pipe}.Q")
         )
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
             # calc)
             ff = darcy_weisbach.friction_factor(
@@ -837,7 +840,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             else:
                 return abs(hydraulic_power_linearized)
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             n_lines = heat_network_options["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
@@ -902,9 +905,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 return abs(max_hydraulic_power_linearized)
         else:
             assert (
-                head_loss_option == HeadLossOption.LINEARIZED_DW
-                or head_loss_option == HeadLossOption.LINEAR
-            ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
+                head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                or head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            ), "This method only caters for head_loss_option: LINEARIZED_ONE_LINE_EQUALITY &"
+            "LINEARIZED_N_LINES_WEAK_INEQUALITY."
 
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
         """
@@ -1029,7 +1033,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._hn_pipe_head_loss(pipe, options, parameters, q, None)
-                    if options["head_loss_option"] == HeadLossOption.LINEAR:
+                    if options["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
@@ -1069,8 +1073,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             g.append(self._hn_minimization_goal_class(self))
 
             if (
-                options["head_loss_option"] == HeadLossOption.LINEAR
-                or options["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+                options["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                or options["head_loss_option"] == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
                 g.append(self._hpwr_minimization_goal_class(self))
 

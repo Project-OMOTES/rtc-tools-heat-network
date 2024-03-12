@@ -35,7 +35,7 @@ class Base(DoublePipeBase):
 class LinearEqualityHeadLossMixin:
     def heat_network_options(self):
         options = super().heat_network_options()
-        options["head_loss_option"] = HeadLossOption.LINEAR
+        options["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
         return options
 
 

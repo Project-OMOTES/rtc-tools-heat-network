@@ -122,14 +122,14 @@ r"""Unit tests for the MILP test case of a source, a pipe, a sink"""
     - Model: basic_source_and_demand
     - Check:
         - TestHeadLossCalculation: test_scalar_return_type: Run optim for each head loss option
-        (HeadLossOption.LINEAR, HeadLossOption.CQ2_INEQUALITY, HeadLossOption.LINEARIZED_DW) and
+        (HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY, HeadLossOption.CQ2_INEQUALITY, HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY) and
         check the numerical head loss calculation.
         This is done by specififying the the flow rate for a pipe (pipe_hot) in 3 different ways
         (1 flow rate value, array with 1 flow rate and array with 3 flow rates) and checking that
         the head loss function returns 1 float value or an array of float values (array length the
         same as the input flow rate array length) 
         - TestHeadLossOptions: test_no_head_loss_mixing_options: Set options["head_loss_option"] = 
-        HeadLossOption.LINEAR, then set pipe head loss option->HeadLossOption.NO_HEADLOSS
+        HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY, then set pipe head loss option->HeadLossOption.NO_HEADLOSS
         - TestHeadLossOptions: test_no_head_loss: HeatProblemPyCML and QTHProblemPyCML # Test if a
         model with NO_HEADLOSS set runs without issues
 r"""
@@ -200,10 +200,10 @@ r"""
         - test_disconnected_pipe_darcy_weisbach
             """
             Just a sanity check that the head loss constraints for disconnectable
-            pipes works with LINEAR as well as LINEARIZED_DW.
+            pipes works with LINEARIZED_ONE_LINE_EQUALITY as well as LINEARIZED_N_LINES_WEAK_INEQUALITY.
             """
             - Check that: volumetric flow rate in a pipe for the disconnectable scenario with
-            HeadLossOption.LINEAR and HeadLossOption.LINEARIZED_DW are the same 
+            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY and HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY are the same 
 
 r"""
 ....
@@ -213,9 +213,9 @@ r"""
 - test_hydraulic_power.py:
     - Model: pipe_test
     Match heat demand while minimizing the sources with 3 different head loss linearization settings:
-        Scenario 1. LINEARIZED_DW (1 line segment)
-        Scenario 2. LINEAR
-        Scenario 3. LINEARIZED_DW (default line segments = 5)
+        Scenario 1. LINEARIZED_N_LINES_WEAK_INEQUALITY (1 line segment)
+        Scenario 2. LINEARIZED_ONE_LINE_EQUALITY
+        Scenario 3. LINEARIZED_N_LINES_WEAK_INEQUALITY (default line segments = 5)
     - Check:
         - For all scenarios (unless stated otherwise): 
             - check that the hydraulic power variable  (based on linearized setting) > numerically calculated (post processed)

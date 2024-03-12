@@ -852,7 +852,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
         """
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
-        valve is present, a .LINEAR global head loss option would mean a
+        valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option would mean a
         .CQ2_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
@@ -861,7 +861,10 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
 
         head_loss_option = heat_network_options["head_loss_option"]
 
-        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
+        if (
+            head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            and parameters[f"{pipe}.has_control_valve"]
+        ):
             # If there is a control valve present, we use the more accurate
             # C*Q^2 inequality formulation.
             head_loss_option = HeadLossOption.CQ2_INEQUALITY
@@ -877,7 +880,7 @@ class QTHMixin(_HeadLossMixin, BaseComponentTypeMixin, CollocatedIntegratedOptim
                 pass
             elif theta < 1.0:
                 # Not fully non-linear yet, so use the linear formulation instead
-                head_loss_option = HeadLossOption.LINEAR
+                head_loss_option = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         return head_loss_option
 

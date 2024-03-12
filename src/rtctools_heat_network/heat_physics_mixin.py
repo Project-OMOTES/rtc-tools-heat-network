@@ -26,8 +26,8 @@ logger = logging.getLogger("rtctools_heat_network")
 class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationProblem):
     __allowed_head_loss_options = {
         HeadLossOption.NO_HEADLOSS,
-        HeadLossOption.LINEAR,
-        HeadLossOption.LINEARIZED_DW,
+        HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+        HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
     }
     """
     This class is used to model the physics of a milp district network with its assets. We model
@@ -62,12 +62,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        When ``HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
@@ -75,7 +75,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
@@ -91,7 +91,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         Note that the inherited options ``head_loss_option`` and
         ``minimize_head_losses`` are changed from their default values to
-        ``HeadLossOption.LINEAR`` and ``False`` respectively.
+        ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` and ``False`` respectively.
 
         The ``n_linearization_lines`` is the number of lines used when a curve is approximated by
         multiple linear lines.
@@ -104,7 +104,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
             "maximum_velocity": 2.5,
             "minimum_velocity": 0.005,
-            "head_loss_option": HeadLossOption.LINEAR,
+            "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             "minimize_head_losses": False,
             "n_linearization_lines": 5,
             "pipe_minimum_pressure": -np.inf,
@@ -160,6 +160,11 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         self.__demand_insulation_class_var_bounds = {}
         self.__demand_insulation_class_map = {}
         self.__demand_insulation_class_result = {}
+
+        # Boolean variables for the linear line segment options per pipe.
+        self.__pipe_linear_line_segment_var = {}  # value 0/1: line segment - not active/active
+        self.__pipe_linear_line_segment_var_bounds = {}
+        self._pipe_linear_line_segment_map = {}
 
         # Variable of selected network temperature
         self.__temperature_regime_var = {}
@@ -247,6 +252,24 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self.__pipe_head_loss_nominals[head_loss_var] = initialized_vars[6]
             if initialized_vars[7] != {}:
                 self.__pipe_head_loss_bounds[head_loss_var] = initialized_vars[7]
+
+            if (
+                initialized_vars[8] != {}
+                and initialized_vars[9] != {}
+                and initialized_vars[10] != {}
+            ):
+                self._pipe_linear_line_segment_map[pipe_name] = {}
+                for ii_line in range(self.heat_network_settings["n_linearization_lines"] * 2):
+                    pipe_linear_line_segment_var_name = initialized_vars[8][ii_line]
+                    self._pipe_linear_line_segment_map[pipe_name][
+                        ii_line
+                    ] = pipe_linear_line_segment_var_name
+                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    )
+                    self.__pipe_linear_line_segment_var_bounds[
+                        pipe_linear_line_segment_var_name
+                    ] = initialized_vars[10][pipe_linear_line_segment_var_name]
 
             neighbour = self.has_related_pipe(pipe_name)
             if neighbour and pipe_name not in self.hot_pipes:
@@ -397,10 +420,12 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         demand_insulation_class_var_name = (
                             f"{dmnd}__demand_insulation_class_{insl.name_insulation_level}"
                         )
+
                         if demand_insulation_class_var_name in (
                             self.__demand_insulation_class_map[dmnd].values()
                         ):
                             raise Exception(f"Resolve duplicate insulation: {insl}.")
+
                         self.__demand_insulation_class_map[dmnd][
                             insl
                         ] = demand_insulation_class_var_name
@@ -477,9 +502,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
     def demand_insulation_classes(self, demand_insulation: str) -> List[DemandInsulationClass]:
         """
         If the returned List is:
-        - empty: use the demand insualtion properties from the model
-        - len() == 1: use these demand insualtion properties to overrule that of the model
-        - len() > 1: decide between the demand insualtion class options.
+        - empty: use the demand insulation properties from the model
+        - len() == 1: use these demand insulation properties to overrule that of the model
+        - len() > 1: decide between the demand insulation class options.
 
         """
         return []
@@ -515,6 +540,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         variables.extend(self.__check_valve_status_var.values())
         variables.extend(self.__control_valve_direction_var.values())
         variables.extend(self.__demand_insulation_class_var.values())
+        variables.extend(self.__pipe_linear_line_segment_var.values())
         variables.extend(self.__temperature_regime_var.values())
         variables.extend(self.__carrier_selected_var.values())
         variables.extend(self.__disabled_hex_var.values())
@@ -531,6 +557,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             or variable in self.__check_valve_status_var
             or variable in self.__control_valve_direction_var
             or variable in self.__demand_insulation_class_var
+            or variable in self.__pipe_linear_line_segment_var
             or variable in self.__carrier_selected_var
             or variable in self.__disabled_hex_var
         ):
@@ -561,6 +588,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         bounds.update(self.__control_valve_direction_var_bounds)
         bounds.update(self.__buffer_t0_bounds)
         bounds.update(self.__demand_insulation_class_var_bounds)
+        bounds.update(self.__pipe_linear_line_segment_var_bounds)
         bounds.update(self._pipe_heat_loss_var_bounds)
         bounds.update(self.__temperature_regime_var_bounds)
         bounds.update(self.__carrier_selected_var_bounds)
@@ -594,8 +622,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             )
 
             if (
-                self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR
-                or self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+                self.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                or self.heat_network_settings["head_loss_option"]
+                == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
                 g.append(
                     self._hn_head_loss_class._hpwr_minimization_goal_class(
@@ -2085,10 +2115,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         """
         head_loss_option = heat_network_settings["head_loss_option"]
 
-        if head_loss_option == HeadLossOption.LINEAR and parameters[f"{pipe}.has_control_valve"]:
+        if (
+            head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            and parameters[f"{pipe}.has_control_valve"]
+        ):
             # If there is a control valve present, we use the more accurate
             # Darcy-Weisbach inequality formulation.
-            head_loss_option = HeadLossOption.LINEARIZED_DW
+            head_loss_option = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
 
         return head_loss_option
 
@@ -2840,7 +2873,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     head_loss_target = self._hn_head_loss_class._hn_pipe_head_loss(
                         pipe, self, options, self.heat_network_settings, parameters, q, None
                     )
-                    if self.heat_network_settings["head_loss_option"] == HeadLossOption.LINEAR:
+                    if (
+                        self.heat_network_settings["head_loss_option"]
+                        == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                    ):
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
