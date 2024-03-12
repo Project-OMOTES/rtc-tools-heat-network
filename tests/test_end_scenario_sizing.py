@@ -319,7 +319,10 @@ class TestEndScenarioSizing(TestCase):
             pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
-            velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+            if pipe_diameter > 0.0:
+                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+            else:
+                velocities = results[f"{pipe}.Q"]  # should be zero
             for ii in range(len(results[f"{pipe}.dH"])):
                 if velocities[ii] > 0 and pipe_diameter > 0:
                     np.testing.assert_array_less(
@@ -339,5 +342,6 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestEndScenarioSizing()
-    a.test_end_scenario_sizing()
+    # a.test_end_scenario_sizing()
+    a.test_end_scenario_sizing_head_loss()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
