@@ -256,7 +256,6 @@ class _AssetToComponentBase:
                 "ates",
                 "heat_exchanger",
                 "heat_pump",
-                "heat_pump_elec",
             }
         }
 
