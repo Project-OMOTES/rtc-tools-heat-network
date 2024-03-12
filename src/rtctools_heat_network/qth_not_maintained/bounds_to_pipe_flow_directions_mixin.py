@@ -22,7 +22,7 @@ class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
         super().pre()
 
         bounds = self.bounds()
-        components = self.heat_network_components
+        components = self.energy_system_components
         pipes = components["pipe"]
 
         # Determine implied pipe directions from model bounds (that are
@@ -62,5 +62,5 @@ class BoundsToPipeFlowDirectionsMixin(BaseComponentTypeMixin):
         """
         This function returns a dict with the variable name for the implied direction variable.
         """
-        pipes = self.heat_network_components["pipe"]
+        pipes = self.energy_system_components["pipe"]
         return {p: f"{p}__implied_direction" for p in pipes}

@@ -1,20 +1,25 @@
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
-from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
-from rtctools_heat_network.pycml.component_library.heat.heat_four_port import HeatFourPort
+from rtctools_heat_network.pycml.component_library.milp._internal import BaseAsset
+from rtctools_heat_network.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
 
 
-class HeatPump(HeatFourPort, BaseAsset):
+class HeatExchanger(HeatFourPort, BaseAsset):
     """
-    The heatpump component is used to model a water-water heatpump.
-    A constant COP is used to model the electricity use of the heatpump. A power cap is set
-    on the primary side to model physical constraints on the amount of heat transfer.
+    The milp exchanger component is used to model the exchange of thermal power between two
+    hydraulically decoupled systems. A constant efficiency is used to model milp losses and a
+    maximum power is set on the primary side to model physical constraints on the amount of milp
+    transfer.
 
-    The heat to discharge constraints are set in the HeatMixin. The primary side is modelled as a
+    The milp to discharge constraints are set in the HeatMixin. The primary side is modelled as a
     demand, meaning it consumes energy from the primary network and gives it to the secondary side,
-    where the secondary side acts like a source to the secondary network. This also means that heat
+    where the secondary side acts like a source to the secondary network. This also means that milp
     can only flow from primary to secondary.
+
+    To avoid unphysical milp transfer the HeatMixin sets constraints on the temperatures on both
+    sides in the case of varying temperature. We also allow a heat_exchanger to be disabled on
+    certain time-steps to then allow these temperature constraints to be also disabled.
     """
 
     def __init__(self, name, **modifiers):
@@ -26,27 +31,26 @@ class HeatPump(HeatFourPort, BaseAsset):
             ),
         )
 
-        self.component_type = "heat_pump"
+        self.component_type = "heat_exchanger"
         self.efficiency = nan
-        self.COP = nan  # TODO: maybe set this to a standard value if not set in esdl.
-        self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+
         self.nominal = (
             self.Secondary.Q_nominal * self.Secondary.rho * self.Secondary.cp * self.Secondary.dT
         )
-        self.pump_efficiency = 0.5
-        self.elec_power_nominal = self.nominal / self.COP
 
-        # Assumption: heat in/out and added is nonnegative
+        self.price = nan
+        self.minimum_pressure_drop = 1.0e5  # 1 bar of pressure drop
+        self.pump_efficiency = 0.5
+
+        # Assumption: milp in/out and added is nonnegative
 
         self.add_variable(Variable, "Primary_heat", min=0.0)
         self.add_variable(Variable, "Secondary_heat", min=0.0)
         self.add_variable(Variable, "Heat_flow", nominal=self.nominal)
-        self.add_variable(Variable, "Power_elec", min=0.0)
-        self.add_variable(Variable, "dH_prim", max=0.0)
-        self.add_variable(Variable, "dH_sec", min=0.0)
+        self.add_variable(Variable, "dH_prim")
+        self.add_variable(Variable, "dH_sec")
 
         # Hydraulically decoupled so Heads remain the same
-        # #TODO: can't these two equations be moved to the non_storagecomponent?
         self.add_equation(self.dH_prim - (self.Primary.HeatOut.H - self.Primary.HeatIn.H))
         self.add_equation(
             (
@@ -65,7 +69,7 @@ class HeatPump(HeatFourPort, BaseAsset):
         )
 
         self.add_equation(
-            ((self.Primary_heat + self.Power_elec - self.Secondary_heat) / self.nominal)
+            ((self.Primary_heat * self.efficiency - self.Secondary_heat) / self.nominal)
         )
 
         self.add_equation(

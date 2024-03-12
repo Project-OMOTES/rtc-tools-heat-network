@@ -33,7 +33,7 @@ class Pipe(_NonStorageComponent, _FluidPropertiesComponent):
         self.area = 0.25 * pi * self.diameter**2
         self.temperature = nan
 
-        # Parameters determining the heat loss
+        # Parameters determining the milp loss
         # All of these have default values in the library function
         self.insulation_thickness = nan
         self.conductivity_insulation = nan

@@ -73,8 +73,8 @@ class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
         self.heat_network_settings["n_linearization_lines"] = 5
         self.heat_network_settings["minimize_head_losses"] = True
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
 
         return options
 

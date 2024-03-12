@@ -13,7 +13,7 @@ from .network_common import NetworkSettings
 def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_HEAT, pressure=0.0):
     """
     The kinematic viscosity is determined as a function of the fluid used.
-    - If the network type is a heat network, the used fluid is water for which the kinematic
+    - If the network type is a milp network, the used fluid is water for which the kinematic
     viscosity barely changes with pressure, thus determined at a fixed pressure (0.5MPa) and a
     temperature [K] based on the network information.
     - If the fluid is hydrogen or gas, the kinematic viscosity is calculated using CoolProp for

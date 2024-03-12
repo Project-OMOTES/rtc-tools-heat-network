@@ -14,12 +14,12 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestAtes(TestCase):
     def test_ates(self):
         """
-        Checks the constraints concerning the heat to discharge and energy conservation
-        for the ates. The heat loss model used are tested and the typical cyclic constraint that
+        Checks the constraints concerning the milp to discharge and energy conservation
+        for the ates. The milp loss model used are tested and the typical cyclic constraint that
         will be applied in most use cases.
 
         Checks:
-        - the heat loss is computed as expected (loss coef * stored heat [J])
+        - the milp loss is computed as expected (loss coef * stored milp [J])
         - checks that the efficiency causes less energy discharged than charged
         - cyclic storage behaviour
         - standard energy conservation, etc.
@@ -50,7 +50,7 @@ class TestAtes(TestCase):
         summed_charge = np.sum(np.clip(heat_ates, 0.0, np.inf))
         summed_discharge = np.abs(np.sum(np.clip(heat_ates, -np.inf, 0.0)))
 
-        # Test if the heat loss is as expected
+        # Test if the milp loss is as expected
         coeff = solution.parameters(0)["ATES_033c.heat_loss_coeff"]
         np.testing.assert_allclose(heat_loss, coeff * stored_heat)
         np.testing.assert_array_less(summed_discharge, summed_charge)

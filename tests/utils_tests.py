@@ -4,9 +4,9 @@ import numpy as np
 
 
 def demand_matching_test(solution, results):
-    """ "Test function to check whether the heat demand of each consumer is matched"""
+    """ "Test function to check whether the milp demand of each consumer is matched"""
     len_times = 0.0
-    for d in solution.heat_network_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         if len(solution.times()) > 0:
             len_times = len(solution.times())
         else:
@@ -58,7 +58,7 @@ def _get_component_temperatures(solution, results, component, side=None):
 
 def heat_to_discharge_test(solution, results):
     """
-    Test to check if the discharge and heat flow are correlated as how the constraints are intented:
+    Test to check if the discharge and milp flow are correlated as how the constraints are intented:
     - demand clusters: HeatIn should be smaller or equal to discharge multiplied with the supply
     temperature due to potential heatlosses in the network, HeatOut should be fixed at the return
     temperature.
@@ -72,7 +72,7 @@ def heat_to_discharge_test(solution, results):
     """
     test = TestCase()
     tol = 1.0e-2
-    for d in solution.heat_network_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         # return_id = solution.parameters(0)[f"{d}.T_return_id"]
@@ -103,7 +103,7 @@ def heat_to_discharge_test(solution, results):
             expr=all(results[f"{d}.Heat_demand"] <= results[f"{d}.Q"] * rho * cp * dt + tol)
         )
 
-    for d in solution.heat_network_components.get("source", []):
+    for d in solution.energy_system_components.get("heat_source", []):
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
         # dt = solution.parameters(0)[f"{d}.dT"]
@@ -128,8 +128,8 @@ def heat_to_discharge_test(solution, results):
         )
 
     for d in [
-        *solution.heat_network_components.get("ates", []),
-        *solution.heat_network_components.get("buffer", []),
+        *solution.energy_system_components.get("ates", []),
+        *solution.energy_system_components.get("heat_buffer", []),
     ]:
         cp = solution.parameters(0)[f"{d}.cp"]
         rho = solution.parameters(0)[f"{d}.rho"]
@@ -197,9 +197,9 @@ def heat_to_discharge_test(solution, results):
         )
 
     for d in [
-        *solution.heat_network_components.get("heat_exchanger", []),
-        *solution.heat_network_components.get("heat_pump", []),
-        *solution.heat_network_components.get("heat_pump_elec", []),
+        *solution.energy_system_components.get("heat_exchanger", []),
+        *solution.energy_system_components.get("heat_pump", []),
+        *solution.energy_system_components.get("heat_pump_elec", []),
     ]:
         for p in ["Primary", "Secondary"]:
             cp = solution.parameters(0)[f"{d}.{p}.cp"]
@@ -229,7 +229,7 @@ def heat_to_discharge_test(solution, results):
                 np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
 
-    for p in solution.heat_network_components.get("pipe", []):
+    for p in solution.energy_system_components.get("heat_pipe", []):
         cp = solution.parameters(0)[f"{p}.cp"]
         rho = solution.parameters(0)[f"{p}.rho"]
         carrier_id = solution.parameters(0)[f"{p}.carrier_id"]
@@ -276,13 +276,13 @@ def heat_to_discharge_test(solution, results):
             results[f"{p}.HeatIn.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in heat to discharge",
+            err_msg=f"{p} has mismatch in milp to discharge",
         )
         np.testing.assert_allclose(
             results[f"{p}.HeatOut.Heat"][indices],
             results[f"{p}.Q"][indices] * rho * cp * temperature,
             atol=tol,
-            err_msg=f"{p} has mismatch in heat to discharge",
+            err_msg=f"{p} has mismatch in milp to discharge",
         )
 
 
@@ -290,28 +290,28 @@ def energy_conservation_test(solution, results):
     """Test to check if the energy is conserved at each timestep"""
     energy_sum = np.zeros(len(solution.times()))
 
-    for d in solution.heat_network_components.get("demand", []):
+    for d in solution.energy_system_components.get("heat_demand", []):
         energy_sum -= results[f"{d}.Heat_demand"]
 
-    for d in solution.heat_network_components.get("buffer", []):
+    for d in solution.energy_system_components.get("heat_buffer", []):
         energy_sum -= results[f"{d}.Heat_buffer"]
 
-    for d in solution.heat_network_components.get("source", []):
+    for d in solution.energy_system_components.get("heat_source", []):
         energy_sum += results[f"{d}.Heat_source"]
 
-    for d in solution.heat_network_components.get("ates", []):
+    for d in solution.energy_system_components.get("ates", []):
         energy_sum -= results[f"{d}.Heat_ates"]
 
-    for d in solution.heat_network_components.get("heat_exchanger", []):
+    for d in solution.energy_system_components.get("heat_exchanger", []):
         energy_sum -= results[f"{d}.Primary_heat"] - results[f"{d}.Secondary_heat"]
 
-    for d in solution.heat_network_components.get("heat_pump", []):
+    for d in solution.energy_system_components.get("heat_pump", []):
         energy_sum += results[f"{d}.Power_elec"]
 
-    for d in solution.heat_network_components.get("heat_pump_elec", []):
+    for d in solution.energy_system_components.get("heat_pump_elec", []):
         energy_sum += results[f"{d}.Power_elec"]
 
-    for p in solution.heat_network_components.get("pipe", []):
+    for p in solution.energy_system_components.get("heat_pipe", []):
         energy_sum -= abs(results[f"{p}.HeatIn.Heat"] - results[f"{p}.HeatOut.Heat"])
         if f"{p}__is_disconnected" in results.keys():
             p_discon = results[f"{p}__is_disconnected"].copy()
