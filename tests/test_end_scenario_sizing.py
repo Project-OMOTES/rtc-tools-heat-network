@@ -319,7 +319,7 @@ class TestEndScenarioSizing(TestCase):
 
         demand_matching_test(solution, results)
 
-        pipes = solution.heat_network_components.get("pipe")
+        pipes = solution.energy_system_components.get("heat_pipe")
         for pipe in pipes:
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
             pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
