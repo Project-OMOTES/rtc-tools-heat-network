@@ -20,10 +20,10 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
-    def heat_network_components_get(self, list_types: list) -> list:
+    def energy_system_components_get(self, list_types: list) -> list:
         components = []
         for component_type in list_types:
-            components.extend(self.heat_network_components.get(component_type))
+            components.extend(self.energy_system_components.get(component_type))
         components = list(set(components))
         return components
 
