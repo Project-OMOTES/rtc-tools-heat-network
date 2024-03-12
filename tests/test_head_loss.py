@@ -255,7 +255,7 @@ class TestHeadLoss(TestCase):
             )
             results = solution.extract_results()
 
-            # demand_matching_test(solution, results)
+            demand_matching_test(solution, results)
 
             pipes = ["Pipe1", "Pipe2", "Pipe3", "Pipe4"]
             # Only evaluate 1 pipe and 1 timestep for now to reduce the test case computational time
@@ -750,7 +750,7 @@ if __name__ == "__main__":
     a = TestHeadLoss()
     a.test_heat_network_head_loss()
     a.test_heat_network_pipe_split_head_loss()
-    # a.test_gas_network_head_loss()
-    # a.test_gas_network_pipe_split_head_loss()
-    # a.test_gas_substation()
+    a.test_gas_network_head_loss()
+    a.test_gas_network_pipe_split_head_loss()
+    a.test_gas_substation()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
