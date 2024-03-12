@@ -375,8 +375,8 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
     Opex*timehorizon
     """
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
 
         options["discounted_annualized_cost"] = True
 
