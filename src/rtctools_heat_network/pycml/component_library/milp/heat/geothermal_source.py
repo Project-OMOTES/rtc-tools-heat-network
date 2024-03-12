@@ -1,9 +1,9 @@
 from numpy import nan
 
-from .source import Source
+from .heat_source import HeatSource
 
 
-class GeothermalSource(Source):
+class GeothermalSource(HeatSource):
     """
     The geothermal source component is used to model geothermal doublets. It is equivilent to a
     normal source with the only difference being in the modelling of doublets. The main reason for

@@ -74,13 +74,13 @@ class TestEndScenarioSizing(TestCase):
         demand_matching_test(self.solution, self.results)
 
         # Check whether cyclic ates constraint is working
-        for a in self.solution.heat_network_components.get("ates", []):
+        for a in self.solution.energy_system_components.get("ates", []):
             stored_heat = self.results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = self.solution.parameters(0)["peak_day_index"]
-        for b in self.solution.heat_network_components.get("buffer", []):
+        for b in self.solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = self.results[f"{b}.Heat_buffer"]
             for i in range(len(self.solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -89,13 +89,13 @@ class TestEndScenarioSizing(TestCase):
         obj = 0.0
         years = self.solution.parameters(0)["number_of_years"]
         for asset in [
-            *self.solution.heat_network_components.get("source", []),
-            *self.solution.heat_network_components.get("ates", []),
-            *self.solution.heat_network_components.get("buffer", []),
-            *self.solution.heat_network_components.get("demand", []),
-            *self.solution.heat_network_components.get("heat_exchanger", []),
-            *self.solution.heat_network_components.get("heat_pump", []),
-            *self.solution.heat_network_components.get("pipe", []),
+            *self.solution.energy_system_components.get("heat_source", []),
+            *self.solution.energy_system_components.get("ates", []),
+            *self.solution.energy_system_components.get("heat_buffer", []),
+            *self.solution.energy_system_components.get("heat_demand", []),
+            *self.solution.energy_system_components.get("heat_exchanger", []),
+            *self.solution.energy_system_components.get("heat_pump", []),
+            *self.solution.energy_system_components.get("heat_pipe", []),
         ]:
             obj += self.results[f"{self.solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += (
@@ -118,7 +118,13 @@ class TestEndScenarioSizing(TestCase):
         - demand matching
         - Check if TCO goal included the desired cost components.
 
-        - Compare objective value of staged approach without staged approach
+        - Compare objective value of staged approach wit non-staged approach
+
+        Compare solution time of 3 scenarios on how to run the optimisation:
+        - Staged approach should be solved faster than the unstaged approaches
+        - Unstaged approaches, using the general function run_optimization_problem and the
+        function run_end_scenario_sizing with staged_pipe_optimization to False should have
+        comparable computation times.
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
@@ -158,13 +164,13 @@ class TestEndScenarioSizing(TestCase):
         demand_matching_test(solution_staged, results)
 
         # Check whether cyclic ates constraint is working
-        for a in solution_staged.heat_network_components.get("ates", []):
+        for a in solution_staged.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution_staged.parameters(0)["peak_day_index"]
-        for b in solution_staged.heat_network_components.get("buffer", []):
+        for b in solution_staged.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution_staged.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -173,13 +179,13 @@ class TestEndScenarioSizing(TestCase):
         obj = 0.0
         years = solution_staged.parameters(0)["number_of_years"]
         for asset in [
-            *solution_staged.heat_network_components.get("source", []),
-            *solution_staged.heat_network_components.get("ates", []),
-            *solution_staged.heat_network_components.get("buffer", []),
-            *solution_staged.heat_network_components.get("demand", []),
-            *solution_staged.heat_network_components.get("heat_exchanger", []),
-            *solution_staged.heat_network_components.get("heat_pump", []),
-            *solution_staged.heat_network_components.get("pipe", []),
+            *solution_staged.energy_system_components.get("heat_source", []),
+            *solution_staged.energy_system_components.get("ates", []),
+            *solution_staged.energy_system_components.get("heat_buffer", []),
+            *solution_staged.energy_system_components.get("heat_demand", []),
+            *solution_staged.energy_system_components.get("heat_exchanger", []),
+            *solution_staged.energy_system_components.get("heat_pump", []),
+            *solution_staged.energy_system_components.get("heat_pipe", []),
         ]:
             obj += results[f"{solution_staged._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution_staged._asset_variable_operational_cost_map[asset]}"] * years
@@ -209,9 +215,10 @@ class TestEndScenarioSizing(TestCase):
                 solution_staged._priorities_output[3][4]["mip_dual_bound"] - 1e-6,
                 solution_unstaged.objective_value,
             )
-        # checking time spend on optimisation approaches, the difference between the unstaged
-        # approaches should be smaller than the difference with the staged approach. The staged
-        # approach should be quickest in solving.
+        # checking time spend on optimisation approaches, the difference between the two unstaged
+        # approaches should be smaller than the difference with the staged and unstaged approach.
+        # The staged approach should be quickest in solving. The two unstaged approaches should
+        # have comparable computation time.
         solution_time_unstaged = sum([i[1] for i in solution_unstaged._priorities_output])
         solution_time_unstaged_2 = sum([i[1] for i in solution_unstaged_2._priorities_output])
         solution_time_staged = sum([i[1] for i in solution_staged._priorities_output])
@@ -271,13 +278,13 @@ class TestEndScenarioSizing(TestCase):
         demand_matching_test(solution, results)
 
         # Check whether cyclic ates constraint is working
-        for a in solution.heat_network_components.get("ates", []):
+        for a in solution.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.heat_network_components.get("buffer", []):
+        for b in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):

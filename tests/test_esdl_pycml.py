@@ -16,7 +16,7 @@ class TestESDL(TestCase):
         specified model. The model consists out of a source, pipe and demand
 
         Checks:
-        - that the heat demand is equal.
+        - that the milp demand is equal.
 
         """
         import models.basic_source_and_demand.src.heat_comparison as heat_comparison

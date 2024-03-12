@@ -125,8 +125,8 @@ class _MinimizeHeadLosses(Goal):
         parameters = optimization_problem.parameters(ensemble_member)
         options = optimization_problem.heat_network_options()
 
-        pumps = optimization_problem.heat_network_components.get("pump", [])
-        sources = optimization_problem.heat_network_components.get("source", [])
+        pumps = optimization_problem.energy_system_components.get("pump", [])
+        sources = optimization_problem.energy_system_components.get("heat_source", [])
 
         for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
@@ -139,7 +139,7 @@ class _MinimizeHeadLosses(Goal):
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for p in optimization_problem.heat_network_components["pipe"]:
+        for p in optimization_problem.energy_system_components["pipe"]:
             if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
                 sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
                 sum_ += optimization_problem.state(sym_name)
@@ -172,7 +172,7 @@ class _MinimizeHydraulicPower(Goal):
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+        for pipe in optimization_problem.energy_system_components.get("pipe", []):
             if (
                 not parameters[f"{pipe}.has_control_valve"]
                 and not parameters[f"{pipe}.length"] == 0.0
@@ -217,7 +217,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         head_loss_values = {
             options["head_loss_option"],
         }
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
@@ -229,7 +229,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         +--------------------------------+-----------+-----------------------------------+
         | Option                         | Type      | Default value                     |
@@ -375,7 +375,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             max_pressure > min_pressure
         ), "The global maximum pressure must be larger than the minimum one."
         if np.isfinite(min_pressure) or np.isfinite(max_pressure):
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["pipe"]:
                 # No elevation data available yet. Assume 0 mDAT for now.
                 pipe_elevation = 0.0
                 min_head = min_pressure * 10.2 + pipe_elevation
@@ -387,7 +387,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             length = parameters[f"{p}.length"]
             if length < 0.0:
                 raise ValueError("Pipe length has to be larger than or equal to zero")
@@ -914,7 +914,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         """
         constraints = []
 
-        for pipe in self.heat_network_components.get("pipe", []):
+        for pipe in self.energy_system_components.get("pipe", []):
             dh = self.state(f"{pipe}.dH")
             h_down = self.state(f"{pipe}.HeatOut.H")
             h_up = self.state(f"{pipe}.HeatIn.H")
@@ -935,7 +935,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         constraints = []
 
         options = self.heat_network_options()
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
@@ -1002,7 +1002,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_minimization_goal_class.priority
         ):
-            components = self.heat_network_components
+            components = self.energy_system_components
 
             rtol = 1e-5
             atol = 1e-4

@@ -196,10 +196,10 @@ class EndScenarioSizing(
         except KeyError:
             return super().variable_nominal(variable)
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         # TODO: make empty placeholder in HeatProblem we don't know yet how to put the global
         #  constraints in the ESDL e.g. min max pressure
-        options = super().heat_network_options()
+        options = super().energy_system_options()
         options["maximum_temperature_der"] = np.inf
         options["heat_loss_disconnected_pipe"] = True
         # options.update(self._override_hn_options)
@@ -209,7 +209,7 @@ class EndScenarioSizing(
         goals = super().path_goals().copy()
         bounds = self.bounds()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             # target = self.get_timeseries(f"{demand}.target_heat_demand_peak")
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             if bounds[f"{demand}.HeatIn.Heat"][1] < max(target.values):
@@ -241,11 +241,11 @@ class EndScenarioSizing(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
 
-        for b in self.heat_network_components.get("buffer", {}):
+        for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
             symbol_stored_heat = self.state_vector(f"{b}.Stored_heat")
             constraints.append((symbol_stored_heat[self.__indx_max_peak], 0.0, 0.0))
@@ -332,7 +332,7 @@ class EndScenarioSizing(
         # Optimized ESDL
         self._write_updated_esdl(self.get_energy_system_copy())
 
-        for d in self.heat_network_components.get("demand", []):
+        for d in self.energy_system_components.get("heat_demand", []):
             realized_demand = results[f"{d}.Heat_demand"]
             target = self.get_timeseries(f"{d}.target_heat_demand").values
             timesteps = np.diff(self.get_timeseries(f"{d}.target_heat_demand").times)
@@ -443,8 +443,8 @@ class SettingsStaged:
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         if self._stage == 1:
             options["neglect_pipe_heat_losses"] = True
 
@@ -508,7 +508,7 @@ def run_end_scenario_sizing_no_heat_losses(
     **kwargs,
 ):
     """
-    This function is used to run end_scenario_sizing problem without heat losses. This is a
+    This function is used to run end_scenario_sizing problem without milp losses. This is a
     simplification from the fully staged approach allowing users to more quickly iterate over
     results.
 
@@ -547,12 +547,12 @@ def run_end_scenario_sizing(
     """
     This function is used to run end_scenario_sizing problem. There are a few variations of the
     same basic class. The main functionality this function adds is the staged approach, where
-    we first solve without heat_losses, to then solve the same problem with heat losses but
+    we first solve without heat_losses, to then solve the same problem with milp losses but
     constraining the problem to only allow for the earlier found pipe classes and one size up.
 
-    This staged approach is done to speed up the problem, as the problem without heat losses is
-    much faster as it avoids inequality big_m constraints for the heat to discharge on pipes. The
-    one size up possibility is to avoid infeasibilities in compensating for the heat losses.
+    This staged approach is done to speed up the problem, as the problem without milp losses is
+    much faster as it avoids inequality big_m constraints for the milp to discharge on pipes. The
+    one size up possibility is to avoid infeasibilities in compensating for the milp losses.
 
     Parameters
     ----------
@@ -599,8 +599,8 @@ def run_end_scenario_sizing(
                 first_pipe_class = False
 
         for asset in [
-            *solution.heat_network_components.get("source", []),
-            *solution.heat_network_components.get("buffer", []),
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("heat_buffer", []),
         ]:
             var_name = f"{asset}_aggregation_count"
             lb = results[var_name][0]
@@ -611,14 +611,14 @@ def run_end_scenario_sizing(
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
 
-        for p in solution.heat_network_components.get("pipe", []):
+        for p in solution.energy_system_components.get("heat_pipe", []):
             if p in solution.hot_pipes and parameters[f"{p}.area"] > 0.0:
                 lb = []
                 ub = []
                 bounds_pipe = bounds[f"{p}__flow_direct_var"]
                 for i in range(len(t)):
                     r = results[f"{p}__flow_direct_var"][i]
-                    # bound to roughly represent 4km of heat losses in pipes
+                    # bound to roughly represent 4km of milp losses in pipes
                     lb.append(
                         r
                         if abs(results[f"{p}.Q"][i] / parameters[f"{p}.area"]) > 2.5e-2

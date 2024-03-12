@@ -1,11 +1,12 @@
-from ._internal import HeatComponent
+from rtctools_heat_network.pycml.component_library.milp._internal import HeatComponent
+
 from .heat_port import HeatPort
 
 
 class HeatTwoPort(HeatComponent):
     """
     The HeatTwoPort component is used as a base for interaction with one hydraulically coupled
-    system. As heat networks are closed systems we always need two ports to model both the in and
+    system. As milp networks are closed systems we always need two ports to model both the in and
     out going flow in the system.
     """
 

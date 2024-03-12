@@ -48,7 +48,7 @@ WATT_TO_KILO_WATT = 1.0e3
 
 # -------------------------------------------------------------------------------------------------
 # Step 1:
-# Match the target heat demand specified
+# Match the target milp demand specified
 class TargetDemandGoal(Goal):
     def __init__(self, state, target, priority=1, order=2):
         self.state = state
@@ -67,7 +67,7 @@ class TargetDemandGoal(Goal):
 # -------------------------------------------------------------------------------------------------
 # TODO: create a variable such that this can be used as an option. Currently this is not used
 # Step 2:
-# Minimize the total heat produced
+# Minimize the total milp produced
 class MinimizeSourcesHeatGoal(Goal):
     def __init__(self, source, nominal=1e7, func_range_bound=1.0e8, priority=2, order=1):
         self.target_max = 0.0
@@ -85,13 +85,13 @@ class MinimizeSourcesHeatGoal(Goal):
 
 # -------------------------------------------------------------------------------------------------
 # Step 3:
-# After an optim has been done with all availabe heat source (optional, default excluded), then use
-# the merit order of heat source (something like [3, 1, 2]), which is the order of priority per
-# heat source available for use. Minimize then heat source use with lowest priority 3, then heat
+# After an optim has been done with all availabe milp source (optional, default excluded), then use
+# the merit order of milp source (something like [3, 1, 2]), which is the order of priority per
+# milp source available for use. Minimize then milp source use with lowest priority 3, then milp
 # source with prioity 2 etc
 class MinimizeSourcesHeatGoalMerit(Goal):
     """
-    Apply constraints to enforce esdl specified heat producer merit order usage
+    Apply constraints to enforce esdl specified milp producer merit order usage
     """
 
     def __init__(self, source, prod_priority, func_range_bound, nominal, order=1):
@@ -119,14 +119,14 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
         if False:
-            for source in self.heat_network_components.get("source", []):
+            for source in self.energy_system_components.get("heat_source", []):
                 goals.append(
                     MinimizeSourcesHeatGoal(
                         source,
@@ -151,15 +151,15 @@ class NetworkSimulator(
     """
     Goal priorities are:
     1. Match target demand specified
-    2. Optional (default = excluded): minimize total heat produced by all producers
+    2. Optional (default = excluded): minimize total milp produced by all producers
     3. Minimize producer usage based on merit order specified. First use producer with order 1, then
        use producer with order 2 etc.
 
     Notes:
-    - Currently only yearly heat demand profiles (hourly) can be used, which is then converted to
+    - Currently only yearly milp demand profiles (hourly) can be used, which is then converted to
       dialy averages
     - Currently the ATES does not have a merit order assigned.
-    - The ATES has a time horizon cyclic contraints specified, and it is not allowed to deliver heat
+    - The ATES has a time horizon cyclic contraints specified, and it is not allowed to deliver milp
       in the 1st time step
     """
 
@@ -191,21 +191,21 @@ class NetworkSimulator(
     def path_goals(self):
         goals = super().path_goals().copy()
         # TODO: add other producer assets
-        # assets_to_include = ["source", "ates"] # TODO: add other assets in the future
-        assets_to_include = ["source"]
+        # assets_to_include = ["heat_source", "ates"] # TODO: add other assets in the future
+        assets_to_include = ["heat_source"]
 
         number_of_source_producers = 0
         for prod_asset in assets_to_include:
             number_of_source_producers = number_of_source_producers + len(
-                self.heat_network_components[prod_asset]
+                self.energy_system_components[prod_asset]
             )
 
         producer_merit = self.producer_merit_controls()
         for prod_asset in assets_to_include:
-            # Priority 1 & 2 reserved for target demand goal & minimize heat source (without merit
+            # Priority 1 & 2 reserved for target demand goal & minimize milp source (without merit
             # order)
             index_start_of_priority = 3
-            for src in self.heat_network_components[prod_asset]:
+            for src in self.energy_system_components[prod_asset]:
                 index_s = producer_merit["producer_name"].index(f"{src}")
                 producer_priority = (
                     index_start_of_priority
@@ -223,8 +223,8 @@ class NetworkSimulator(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
         self.heat_network_settings["minimize_head_losses"] = True
@@ -234,12 +234,12 @@ class NetworkSimulator(
     def constraints(self, ensemble_member):
         """
         Add equality constraints to enforce a cyclic energy balance [J] between the end and the
-        start of the time horizon used as well an inequality constraint to enforce no heat supply
+        start of the time horizon used as well an inequality constraint to enforce no milp supply
         [W] to the netwok in the 1st time step
         """
         constraints = super().constraints(ensemble_member)
 
-        for ates in self.heat_network_components.get("ates", []):
+        for ates in self.energy_system_components.get("ates", []):
             stored_heat_joules = self.__state_vector_scaled(f"{ates}.Stored_heat", ensemble_member)
             heat_ates_watts = self.__state_vector_scaled(f"{ates}.Heat_ates", ensemble_member)
             constraints.append(
@@ -324,8 +324,8 @@ class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
     def times(self, variable=None) -> np.ndarray:
         return super().times(variable)[:5]
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
 
         options["heat_loss_disconnected_pipe"] = False
 
