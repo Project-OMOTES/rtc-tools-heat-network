@@ -282,6 +282,11 @@ class EndScenarioSizing(
             return success, log_level
 
     def priority_started(self, priority):
+        goals_print = set()
+        for goal in [*self.path_goals(), *self.goals()]:
+            if goal.priority == priority:
+                goals_print.update([str(type(goal))])
+        logger.info(f"{goals_print}")
         self.__priority = priority
         self.__priority_timer = time.time()
 
@@ -370,8 +375,8 @@ class EndScenarioSizingDiscounted(EndScenarioSizing):
     Opex*timehorizon
     """
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
 
         options["discounted_annualized_cost"] = True
 
@@ -383,6 +388,27 @@ class EndScenarioSizingDiscountedHIGHS(EndScenarioSizingDiscounted):
 
 
 class EndScenarioSizingDiscountedGurobi(SolverGurobi, EndScenarioSizingDiscounted):
+    pass
+
+
+class EndScenarioSizingHeadLoss(EndScenarioSizing):
+    """
+    EndScenarioSizing optimisation including the linearised inequality DarcyWeisbach Head loss
+    relations
+
+    The minimize_head_losses setting can be set to False as the pumping costs can be included in
+    the TCO, it does require a price profile to be added to the electricity carrier, else it should
+     be set to True.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+        self.heat_network_settings["minimize_head_losses"] = True
+
+
+class EndScenarioSizingHeadLossDiscounted(EndScenarioSizingHeadLoss, EndScenarioSizingDiscounted):
     pass
 
 
@@ -399,12 +425,23 @@ class SettingsStaged:
     _stage = 0
 
     def __init__(
-        self, stage=None, boolean_bounds=None, priorities_output: list = None, *args, **kwargs
+        self,
+        stage=None,
+        boolean_bounds: list = None,
+        priorities_output: list = None,
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
         self._stage = stage
         self.__boolean_bounds = boolean_bounds
+
+        if self._stage == 1:
+            self.heat_network_settings["minimum_velocity"] = 0.0
+            self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+            self.heat_network_settings["minimize_head_losses"] = False
+
         if self._stage == 2 and priorities_output:
             self._priorities_output = priorities_output
 
@@ -446,6 +483,26 @@ class EndScenarioSizingDiscountedStagedHIGHS(EndScenarioSizingDiscountedStaged):
 
 
 class EndScenarioSizingDiscountedStagedGurobi(SolverGurobi, EndScenarioSizingDiscountedStaged):
+    pass
+
+
+class EndScenarioSizingHeadLossStaged(SettingsStaged, EndScenarioSizingHeadLoss):
+    pass
+
+
+class EndScenarioSizingHeadLossStagedGurobi(SolverGurobi, EndScenarioSizingHeadLossStaged):
+    pass
+
+
+class EndScenarioSizingHeadLossDiscountedStaged(
+    SettingsStaged, EndScenarioSizingHeadLossDiscounted
+):
+    pass
+
+
+class EndScenarioSizingHeadLossDiscountedStagedGurobi(
+    SolverGurobi, EndScenarioSizingHeadLossDiscountedStaged
+):
     pass
 
 
