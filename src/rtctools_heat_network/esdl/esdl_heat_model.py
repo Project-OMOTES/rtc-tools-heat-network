@@ -1209,13 +1209,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasProducer"}
 
+        density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
-            density=self.get_density(asset.name, asset.out_ports[0].carrier),
+            density=density_value,
             Gas_source_mass_flow=dict(
                 min=0.0,
-                max=self._get_connected_q_max(asset),
-                nominal=self._get_connected_q_nominal(asset),
+                max=self._get_connected_q_max(asset) * density_value,
+                nominal=self._get_connected_q_nominal(asset) * density_value,
             ),
             **self._get_cost_figure_modifiers(asset),
         )
