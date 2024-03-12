@@ -72,6 +72,10 @@ class MaxRevenue(Goal):
         ----------
         source : string of the source name that is going to be minimized
         """
+        self.target_max = 0.0
+        self.function_range = (0.0, 1.0e8)
+        self.function_nominal = 1.0e7
+
         self.asset_name = asset_name
 
     def function(
@@ -90,6 +94,24 @@ class MaxRevenue(Goal):
         The negative hydrogen production state of the optimization problem.
         """
         return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
+
+class MinCost(Goal):
+
+    priority = 1
+
+    order = 1
+
+    def __init__(self, asset_name: str):
+        self.target_max = 0.0
+        self.function_range = (0.0, 1.0e8)
+        self.function_nominal = 1.0e7
+
+        self.asset_name = asset_name
+
+    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int) -> ca.MX:
+
+        return (optimization_problem.extra_variable(f"{self.asset_name}__fixed_operational_cost", ensemble_member)
+                + optimization_problem.extra_variable(f"{self.asset_name}__variable_operational_cost", ensemble_member))
 
 class EmergeTest(
     ESDLAdditionalVarsMixin,
@@ -133,10 +155,18 @@ class EmergeTest(
 
         for asset_name in self.energy_system_components["electricity_demand"]:
             goals.append(MaxRevenue(asset_name))
+            goals.append(MinCost(asset_name))
 
         for asset_name in self.energy_system_components["gas_demand"]:
             goals.append(MaxRevenue(asset_name))
+            goals.append(MinCost(asset_name))
 
+        for asset_name in [*self.energy_system_components.get("electricity_source", []),
+                           *self.energy_system_components.get("gas_tank_storage", []),
+                           #TODO: battery
+                           *self.energy_system_components.get("electrolyzer", []),
+                           *self.energy_system_components.get("heat_pump_elec", [])]:
+            goals.append(MinCost(asset_name))
 
 
 
@@ -180,7 +210,7 @@ if __name__ == "__main__":
         esdl_file_name="emerge.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_with_PV.csv",
+        input_timeseries_file="timeseries.csv",
     )
     results = elect.extract_results()
     a = 1
