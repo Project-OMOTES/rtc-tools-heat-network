@@ -78,15 +78,15 @@ class _QTHBase(
 
 
 class QTHFixedDeltaTemperature(_QTHBase):
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         assert options["demand_temperature_option"] == DemandTemperatureOption.FIXED_DT
         return options
 
 
 class QTHMinReturnMaxDeltaT(_QTHBase):
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["demand_temperature_option"] = DemandTemperatureOption.MIN_RETURN_MAX_DT
         return options
 

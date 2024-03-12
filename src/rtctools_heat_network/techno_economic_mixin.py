@@ -79,13 +79,13 @@ class TechnoEconomicMixin(
             self._electricity_cable_topo_cost_map[asset_name], ensemble_member
         )
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
         """
 
-        options = PhysicsMixin.heat_network_options(self)
-        options.update(FinancialMixin.heat_network_options(self))
+        options = PhysicsMixin.energy_system_options(self)
+        options.update(FinancialMixin.energy_system_options(self))
         # problem with abstractmethod
         options["include_asset_is_realized"] = False
 

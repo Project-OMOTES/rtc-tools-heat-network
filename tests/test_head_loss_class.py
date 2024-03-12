@@ -62,7 +62,7 @@ class TestHeadLossCalculation(TestCase):
                 Model, head_loss_option=h, base_folder=base_folder, input_folder=input_folder
             )
 
-            options = m.heat_network_options()
+            options = m.energy_system_options()
             parameters = m.parameters(0)
             heat_network_settings["head_loss_option"] = h
 

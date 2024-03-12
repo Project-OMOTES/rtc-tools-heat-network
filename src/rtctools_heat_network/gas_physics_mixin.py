@@ -151,7 +151,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         bounds = self.bounds()
 
-        for pipe_name in self.heat_network_components.get("gas_pipe", []):
+        for pipe_name in self.energy_system_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
             # Note we always use the gas network type for the naming of variables, independent of
             # the gas mixture used.
@@ -185,9 +185,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
             self._gas_pipe_to_flow_direct_map[pipe_name] = flow_dir_var
             self.__gas_flow_direct_var[flow_dir_var] = ca.MX.sym(flow_dir_var)
 
-            # Fix the directions that are already implied by the bounds on heat
-            # Nonnegative heat implies that flow direction Boolean is equal to one.
-            # Nonpositive heat implies that flow direction Boolean is equal to zero.
+            # Fix the directions that are already implied by the bounds on milp
+            # Nonnegative milp implies that flow direction Boolean is equal to one.
+            # Nonpositive milp implies that flow direction Boolean is equal to zero.
 
             q_in_lb = _get_min_bound(bounds[f"{pipe_name}.GasIn.Q"][0])
             q_in_ub = _get_max_bound(bounds[f"{pipe_name}.GasIn.Q"][1])
@@ -210,9 +210,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self.__maximum_total_head_loss = self.__get_maximum_total_head_loss()
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         """
 
@@ -313,8 +313,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         the lowest one of them.
         """
 
-        options = self.heat_network_options()
-        components = self.heat_network_components
+        options = self.energy_system_options()
+        components = self.energy_system_components
 
         if self.gas_network_settings["head_loss_option"] == HeadLossOption.NO_HEADLOSS:
             # Undefined, and all constraints using this methods value should
@@ -363,7 +363,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         constraints = []
 
-        for node, connected_pipes in self.heat_network_topology.gas_nodes.items():
+        for node, connected_pipes in self.energy_system_topology.gas_nodes.items():
             q_sum = 0.0
             q_nominals = []
 
@@ -407,15 +407,15 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         The directions are set based upon the directions of how thermal power propegates. This is
         done based upon the sign of the Heat variable. Where positive Heat means a positive
-        direction and negative heat means a negative direction. By default, positive is defined from
+        direction and negative milp means a negative direction. By default, positive is defined from
         HeatIn to HeatOut.
 
         Finally, a minimum flow can be set. This can sometimes be useful for numerical stability.
         """
         constraints = []
 
-        # Also ensure that the discharge has the same sign as the heat.
-        for p in self.heat_network_components.get("gas_pipe", []):
+        # Also ensure that the discharge has the same sign as the milp.
+        for p in self.energy_system_components.get("gas_pipe", []):
             flow_dir_var = self._gas_pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
 
@@ -430,7 +430,7 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
             )
 
-            # Note we only need one on the heat as the desired behaviour is propegated by the
+            # Note we only need one on the milp as the desired behaviour is propegated by the
             # constraints heat_in - heat_out - heat_loss == 0.
             constraints.append(
                 (
@@ -447,8 +447,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                 )
             )
 
-        # Pipes that are connected in series should have the same heat direction.
-        for pipes in self.heat_network_topology.pipe_series:
+        # Pipes that are connected in series should have the same milp direction.
+        for pipes in self.energy_system_topology.pipe_series:
             if len(pipes) <= 1:
                 continue
 
@@ -474,9 +474,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         constraints = []
 
-        options = self.heat_network_options()
+        options = self.energy_system_options()
         parameters = self.parameters(ensemble_member)
-        components = self.heat_network_components
+        components = self.energy_system_components
         # Set the head loss according to the direction in the pipes. Note that
         # the `.__head_loss` symbol is always positive by definition, but that
         # `.dH` is not (positive when flow is negative, and vice versa).
@@ -715,14 +715,14 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         specify operations between consecutive goals. Here we set some parameter attributes after
         the optimization is completed.
         """
-        options = self.heat_network_options()
+        options = self.energy_system_options()
 
         if (
             self.gas_network_settings["minimize_head_losses"]
             and self.gas_network_settings["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._gn_head_loss_class._hn_minimization_goal_class.priority
         ):
-            components = self.heat_network_components
+            components = self.energy_system_components
 
             rtol = 1e-5
             atol = 1e-4

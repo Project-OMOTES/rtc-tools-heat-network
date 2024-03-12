@@ -3,18 +3,18 @@ import math
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
+from rtctools_heat_network.pycml.component_library.milp._internal.heat_component import BaseAsset
 
-from ._internal.heat_component import BaseAsset
 from .heat_two_port import HeatTwoPort
 
 
-class Buffer(HeatTwoPort, BaseAsset):
+class HeatBuffer(HeatTwoPort, BaseAsset):
     """
-    The buffer component is to model heat storage in a tank. This means that we model a tank of hot
-    water being filled and radiating heat away (heat loss) over the hot surfaces. We assume that the
+    The buffer component is to model milp storage in a tank. This means that we model a tank of hot
+    water being filled and radiating milp away (milp loss) over the hot surfaces. We assume that the
     hot surfaces are those in contact with hot water.
 
-    Like all storage assets we enforce that they must be connected as a demand. The heat to
+    Like all storage assets we enforce that they must be connected as a demand. The milp to
     discharge constraints are set in the HeatMixin, where we use a big_m formulation to enforce the
     correct constraints depending on whether the buffer is charging or discharging.
     """
@@ -22,7 +22,7 @@ class Buffer(HeatTwoPort, BaseAsset):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "buffer"
+        self.component_type = "heat_buffer"
 
         self.Q_nominal = 1.0
         self.T_supply = nan
@@ -58,12 +58,12 @@ class Buffer(HeatTwoPort, BaseAsset):
             self.volume * (1 - self.min_fraction_tank_volume) * self.dT * self.cp * self.rho
         )
 
-        # Stored_heat is the heat that is contained in the buffer.
-        # Heat_buffer is the amount of heat added to or extracted from the buffer
+        # Stored_heat is the milp that is contained in the buffer.
+        # Heat_buffer is the amount of milp added to or extracted from the buffer
         # per timestep.
-        # HeatHot (resp. HeatCold) is the amount of heat added or extracted from
+        # HeatHot (resp. HeatCold) is the amount of milp added or extracted from
         # the hot (resp. cold) line.
-        # As by construction the cold line should have zero heat, we fix HeatCold to zero.
+        # As by construction the cold line should have zero milp, we fix HeatCold to zero.
         # Thus Heat_buffer = HeatHot = der(Stored_heat).
         # We connect a buffer as an demand, meaning that flow and Heat_buffer are positive under
         # charging and negative under discharge

@@ -40,7 +40,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -48,8 +48,8 @@ class _GoalsAndOptions:
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         # options["heat_loss_disconnected_pipe"] = False
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["include_electric_cable_power_loss"] = True
@@ -84,7 +84,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
 
 # this goal will minimise the electricty use and thus minimise the use of the heatpump, should use
-# the heatsource at the secondary side of the heatpump as much as possible to provide heat for
+# the heatsource at the secondary side of the heatpump as much as possible to provide milp for
 # that heating demand.
 class MinimizeElectricityGoal(Goal):
     priority = 2
@@ -112,13 +112,13 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        s = self.heat_network_components["source"]
+        s = self.energy_system_components["heat_source"]
         goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = True
 
@@ -175,20 +175,20 @@ class HeatProblem2(
     def read(self):
         super().read()
 
-        for d in self.heat_network_components["demand"]:
+        for d in self.energy_system_components["heat_demand"]:
             new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        s = self.heat_network_components["source"]
+        s = self.energy_system_components["heat_source"]
         goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 
@@ -220,14 +220,14 @@ class ElectricityProblem(
     def read(self):
         super().read()
 
-        for d in self.heat_network_components["demand"]:
+        for d in self.energy_system_components["heat_demand"]:
             new_timeseries = self.get_timeseries(f"{d}.target_heat_demand").values * 0.01
             self.set_timeseries(f"{d}.target_heat_demand", new_timeseries)
 
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["heat_pump_elec"]:
+        for s in self.energy_system_components["heat_pump_elec"]:
             goals.append(MinimizeElectricityGoal(s))
 
         return goals
@@ -252,8 +252,8 @@ class ElectricityProblem(
     # def pipe_classes(self, p):
     #     return self._override_pipe_classes.get(p, [])
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = False
 

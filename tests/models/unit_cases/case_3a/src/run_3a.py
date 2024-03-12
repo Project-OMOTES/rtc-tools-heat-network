@@ -98,13 +98,13 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
-        # for s in self.heat_network_components["source"]:
+        # for s in self.energy_system_components["heat_source"]:
         #     try:
         #         target_flow_rate = parameters[f"{s}.target_flow_rate"]
         #         goals.append(ConstantGeothermalSource(self, s, target_flow_rate))
@@ -113,8 +113,8 @@ class _GoalsAndOptions:
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         # options["neglect_pipe_heat_losses"] = False
@@ -132,7 +132,7 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -146,8 +146,8 @@ class HeatProblem(
         # gurobi_options["MIPgap"] = 0.0001
         return options
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         # options["heat_loss_disconnected_pipe"] = False
         options["neglect_pipe_heat_losses"] = True
@@ -165,7 +165,7 @@ class HeatProblemSetPointConstraints(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -186,7 +186,7 @@ class HeatProblemTvarsup(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -236,7 +236,7 @@ class HeatProblemTvarret(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesFlowGoal(s))
 
         return goals
@@ -296,15 +296,15 @@ class HeatProblemProdProfile(
     def read(self):
         super().read()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
             new_timeseries = np.ones(len(demand_timeseries.values)) * 1
             ind_hlf = int(len(demand_timeseries.values) / 2)
             new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
             self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
 
         return options
@@ -312,13 +312,13 @@ class HeatProblemProdProfile(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
@@ -334,19 +334,19 @@ class QTHProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesQTHGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         from rtctools_heat_network.head_loss_class import HeadLossOption
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS

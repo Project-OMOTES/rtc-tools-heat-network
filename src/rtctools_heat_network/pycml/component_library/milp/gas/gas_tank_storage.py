@@ -1,7 +1,7 @@
 from numpy import nan
 
 from rtctools_heat_network.pycml import Variable
-from rtctools_heat_network.pycml.component_library.heat._internal import BaseAsset
+from rtctools_heat_network.pycml.component_library.milp._internal import BaseAsset
 
 from .gas_base import GasPort
 from .._internal.gas_component import GasComponent

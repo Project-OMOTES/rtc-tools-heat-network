@@ -1,11 +1,11 @@
 from rtctools_heat_network.pycml import ControlInput, Model as _Model
-from rtctools_heat_network.pycml.component_library.heat import (
-    Buffer,
-    Demand,
+from rtctools_heat_network.pycml.component_library.milp import (
+    HeatBuffer,
+    HeatDemand,
+    HeatPipe,
+    HeatSource,
     Node,
-    Pipe,
     Pump,
-    Source,
 )
 
 
@@ -32,7 +32,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Source,
+            HeatSource,
             "source",
             Heat_source=dict(min=0.75e5, max=1.25e5, nominal=1e5),
             HeatOut=dict(Heat=dict(max=2e5)),
@@ -40,11 +40,11 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Demand, "demand", HeatIn=dict(Heat=dict(max=2e5)), **supply_return_modifiers
+            HeatDemand, "demand", HeatIn=dict(Heat=dict(max=2e5)), **supply_return_modifiers
         )
 
         self.add_variable(
-            Buffer,
+            HeatBuffer,
             "buffer",
             Heat_buffer=dict(min=-1e6, max=1e6, nominal=1e5),
             height=10,
@@ -54,7 +54,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_sourcebuffer_hot",
             length=1000.0,
             diameter=0.15,
@@ -65,7 +65,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_bufferdemand_hot",
             length=1000.0,
             diameter=0.15,
@@ -76,7 +76,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_buffer_hot",
             disconnectable=True,
             length=10.0,
@@ -91,7 +91,7 @@ class Model(_Model):
         self.add_variable(Node, "node_buffer_cold", n=3)
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_sourcebuffer_cold",
             length=1000.0,
             diameter=0.15,
@@ -102,7 +102,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_bufferdemand_cold",
             length=1000.0,
             diameter=0.15,
@@ -113,7 +113,7 @@ class Model(_Model):
         )
 
         self.add_variable(
-            Pipe,
+            HeatPipe,
             "pipe_buffer_cold",
             disconnectable=True,
             length=10.0,

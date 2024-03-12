@@ -29,8 +29,8 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class TestGasProblem(GasProblem):
-            def heat_network_options(self):
-                options = super().heat_network_options()
+            def energy_system_options(self):
+                options = super().energy_system_options()
                 self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
                 self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
@@ -46,7 +46,7 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
         results = heat_problem.extract_results()
 
         # Test head at node
-        for node, connected_pipes in heat_problem.heat_network_topology.gas_nodes.items():
+        for node, connected_pipes in heat_problem.energy_system_topology.gas_nodes.items():
             discharge_sum = 0.0
 
             for i_conn, (_pipe, orientation) in connected_pipes.items():

@@ -34,7 +34,7 @@ class TestHeatLossUValues(TestCase):
 
     def test_more_insulation_is_less_heat_loss(self):
         """
-        Check that the u values are smaller (thus less heat loss) when we increase the thickness
+        Check that the u values are smaller (thus less milp loss) when we increase the thickness
         of the insulation layers. Check that if we increase the conductivity the u values get
         larger.
 

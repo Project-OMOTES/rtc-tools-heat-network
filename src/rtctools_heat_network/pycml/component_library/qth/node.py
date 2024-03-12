@@ -20,7 +20,7 @@ class Node(QTHComponent):
         self.add_variable(Variable, "H")
 
         # Because the orientation of the connected pipes are important to
-        # setup the heat conservation, these constraints are added in the
+        # setup the milp conservation, these constraints are added in the
         # mixin.
 
         for i in range(1, self.n + 1):

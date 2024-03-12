@@ -101,13 +101,13 @@ class HeatBufferNoHistory(HeatBuffer):
 
 class HeatBufferHistory(HeatBuffer):
     """
-    Problem in which we force a certain amount of artificial heat to be stored at t0 at the buffer
+    Problem in which we force a certain amount of artificial milp to be stored at t0 at the buffer
     to check correct optimization logic functioning.
     """
 
     def history(self, ensemble_member: int):
         """
-        Forcing an amount of "artificial" heat to be extracted from the buffer at t=0.
+        Forcing an amount of "artificial" milp to be extracted from the buffer at t=0.
 
         Parameters
         ----------

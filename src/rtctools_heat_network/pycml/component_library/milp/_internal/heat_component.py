@@ -5,7 +5,7 @@ from rtctools_heat_network.pycml import Component
 
 class HeatComponent(Component):
     """
-    Base heat component nothing to add here yet.
+    Base milp component nothing to add here yet.
     """
 
     def __init__(self, name, **modifiers):
