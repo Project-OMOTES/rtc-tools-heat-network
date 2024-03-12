@@ -104,7 +104,13 @@ class TestEndScenarioSizing(TestCase):
         - demand matching
         - Check if TCO goal included the desired cost components.
 
-        - Compare objective value of staged approach without staged approach
+        - Compare objective value of staged approach wit non-staged approach
+
+        Compare solution time of 3 scenarios on how to run the optimisation:
+        - Staged approach should be solved faster than the unstaged approaches
+        - Unstaged approaches, using the general function run_optimization_problem and the
+        function run_end_scenario_sizing with staged_pipe_optimization to False should have
+        comparable computation times.
 
         Missing:
         - Link ATES t0 utilization to state of charge at end of year for optimizations over one
@@ -201,9 +207,10 @@ class TestEndScenarioSizing(TestCase):
                 solution._priorities_output[3][4]["mip_dual_bound"] - 1e-6,
                 solution_unstaged.objective_value,
             )
-        # checking time spend on optimisation approaches, the difference between the unstaged
-        # approaches should be smaller than the difference with the staged approach. The staged
-        # approach should be quickest in solving.
+        # checking time spend on optimisation approaches, the difference between the two unstaged
+        # approaches should be smaller than the difference with the staged and unstaged approach.
+        # The staged approach should be quickest in solving. The two unstaged approaches should
+        # have comparable computation time.
         solution_time_unstaged = sum([i[1] for i in solution_unstaged._priorities_output])
         solution_time_unstaged_2 = sum([i[1] for i in solution_unstaged_2._priorities_output])
         solution_time_staged = sum([i[1] for i in solution._priorities_output])
