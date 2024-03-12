@@ -308,8 +308,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             )
 
             # Realized revenue
-            if (asset_name) in [*self.heat_network_components.get("electricity_demand", []),
-                                *self.heat_network_components.get("gas_demand", [])]:
+            if (asset_name) in [*self.energy_system_components.get("electricity_demand", []),
+                                *self.energy_system_components.get("gas_demand", [])]:
 
                 carrier_name = None
                 for id, attr in self.get_electricity_carriers().items():
@@ -1231,8 +1231,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         # TODO: add fixed price default from ESDL in case no price profile is defined.
         parameters = self.parameters(ensemble_member)
 
-        for demand in [*self.heat_network_components.get("gas_demand", []),
-                       *self.heat_network_components.get("electricity_demand", [])]:
+        for demand in [*self.energy_system_components.get("gas_demand", []),
+                       *self.energy_system_components.get("electricity_demand", [])]:
 
             carrier_name = None
             for id, attr in self.get_electricity_carriers().items():
@@ -1244,12 +1244,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             assert carrier_name is not None
             price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
-            if demand in self.heat_network_components.get("gas_demand", []):
+            if demand in self.energy_system_components.get("gas_demand", []):
                 energy_flow = self.__state_vector_scaled(
                     f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
                 )
 
-            elif demand in self.heat_network_components.get("electricity_demand", []):
+            elif demand in self.energy_system_components.get("electricity_demand", []):
                 energy_flow = self.__state_vector_scaled(
                     f"{demand}.Electricity_demand", ensemble_member
                 )

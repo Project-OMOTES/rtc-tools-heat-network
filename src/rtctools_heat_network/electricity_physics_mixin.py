@@ -375,7 +375,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{elec_demand}.ElectricityIn.I")
             power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
             current_in = self.state(f"{elec_demand}.ElectricityIn.I")
-            if self.heat_network_options()["include_electric_cable_power_loss"]:
+            if self.energy_system_options()["include_electric_cable_power_loss"]:
                 constraints.append(
                     (
                         (power_in - min_voltage * current_in)
