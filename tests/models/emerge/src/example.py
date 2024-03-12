@@ -137,6 +137,9 @@ class EmergeTest(
         for asset_name in self.heat_network_components["gas_demand"]:
             goals.append(MaxRevenue(asset_name))
 
+
+
+
         return goals
 
     def solver_options(self):
@@ -174,10 +177,10 @@ class EmergeTest(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge.esdl",
+        esdl_file_name="EMERGE_2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
+        input_timeseries_file="timeseries_with_PV.csv",
     )
     results = elect.extract_results()
     a = 1
