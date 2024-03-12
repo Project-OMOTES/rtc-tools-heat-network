@@ -20,6 +20,13 @@ class BaseComponentTypeMixin:
         """
         raise NotImplementedError
 
+    def energy_system_components_get(self, list_types: list) -> list:
+        components = []
+        for component_type in list_types:
+            components.extend(self.energy_system_components.get(component_type))
+        components = list(set(components))
+        return components
+
     @property
     @abstractmethod
     def energy_system_topology(self) -> Topology:

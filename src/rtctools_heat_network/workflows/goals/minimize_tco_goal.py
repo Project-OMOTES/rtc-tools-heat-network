@@ -40,7 +40,6 @@ class MinimizeTCO(Goal):
                 "heat_source",
                 "ates",
                 "heat_pump",
-                "heat_pump_elec",
                 "pump",
                 "heat_exchanger",
                 "heat_buffer",

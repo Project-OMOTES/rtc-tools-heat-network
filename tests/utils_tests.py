@@ -199,7 +199,6 @@ def heat_to_discharge_test(solution, results):
     for d in [
         *solution.energy_system_components.get("heat_exchanger", []),
         *solution.energy_system_components.get("heat_pump", []),
-        *solution.energy_system_components.get("heat_pump_elec", []),
     ]:
         for p in ["Primary", "Secondary"]:
             cp = solution.parameters(0)[f"{d}.{p}.cp"]
@@ -306,9 +305,6 @@ def energy_conservation_test(solution, results):
         energy_sum -= results[f"{d}.Primary_heat"] - results[f"{d}.Secondary_heat"]
 
     for d in solution.energy_system_components.get("heat_pump", []):
-        energy_sum += results[f"{d}.Power_elec"]
-
-    for d in solution.energy_system_components.get("heat_pump_elec", []):
         energy_sum += results[f"{d}.Power_elec"]
 
     for p in solution.energy_system_components.get("heat_pipe", []):
