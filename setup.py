@@ -1,6 +1,6 @@
 """Heat network models for RTC-Tools 2.
 
-Includes Modelica models and their accompanying Mixins for heat networks.
+Includes Modelica models and their accompanying Mixins for milp networks.
 """
 
 import sys
@@ -37,7 +37,7 @@ if sys.version_info > (3, 11):
     sys.exit(f"Sorry, Python 3.8 to 3.10 is required. You are using {sys.version_info}")
 
 setup(
-    name="rtc-tools-heat-network",
+    name="rtc-tools-milp-network",
     version=versioneer.get_version(),
     description=DOCLINES[0],
     long_description=long_description,
@@ -50,7 +50,7 @@ setup(
     "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
     "Thijs van der Klauw",
     license="LGPLv3",
-    keywords="heat network optimization rtc tools",
+    keywords="milp network optimization rtc tools",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
     packages=find_packages("src"),
     package_dir={"": "src"},

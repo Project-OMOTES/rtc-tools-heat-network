@@ -48,7 +48,7 @@ class _GoalsAndOptions:
         """
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["electricity_demand"]:
+        for demand in self.energy_system_components["electricity_demand"]:
             target = self.get_timeseries(f"{demand}.target_electricity_demand")
             state = f"{demand}.Electricity_demand"
 
@@ -56,8 +56,8 @@ class _GoalsAndOptions:
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["include_electric_cable_power_loss"] = True
 
         return options
@@ -93,7 +93,7 @@ class ElectricityProblemMaxCurr(
     def read(self):
         super().read()
 
-        for d in self.heat_network_components["electricity_demand"]:
+        for d in self.energy_system_components["electricity_demand"]:
             new_timeseries = self.get_timeseries(f"{d}.target_electricity_demand").values * 50
             self.set_timeseries(f"{d}.target_electricity_demand", new_timeseries)
 
@@ -107,7 +107,7 @@ class ElectricityProblemMaxCurr(
         """
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["electricity_demand"]:
+        for demand in self.energy_system_components["electricity_demand"]:
             target = self.get_timeseries(f"{demand}.target_electricity_demand")
             state = f"{demand}.Electricity_demand"
 

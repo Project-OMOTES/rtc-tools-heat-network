@@ -9,7 +9,7 @@ from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 class MinimizeTCO(Goal):
     """
-    Minimize the Total Cost of Ownership (TCO) for a heat network.
+    Minimize the Total Cost of Ownership (TCO) for a milp network.
 
     This goal aims to minimize the sum of operational, fixed operational,
     investment, and installation costs over a specified
@@ -37,52 +37,52 @@ class MinimizeTCO(Goal):
 
         default_asset_type_maps = {
             "operational": {
-                "source",
+                "heat_source",
                 "ates",
                 "heat_pump",
                 "pump",
                 "heat_exchanger",
-                "buffer",
+                "heat_buffer",
             },
             "fixed_operational": {
-                "source",
+                "heat_source",
                 "ates",
-                "buffer",
+                "heat_buffer",
                 "heat_pump",
                 "heat_exchanger",
                 "heat_exchanger_elec",
                 "pump",
             },
             "investment": {
-                "source",
+                "heat_source",
                 "ates",
-                "buffer",
-                "demand",
+                "heat_buffer",
+                "heat_demand",
                 "heat_exchanger",
                 "heat_pump",
-                "pipe",
+                "heat_pipe",
                 "heat_exchanger_elec",
                 "pump",
             },
             "installation": {
-                "source",
+                "heat_source",
                 "ates",
-                "buffer",
-                "demand",
+                "heat_buffer",
+                "heat_demand",
                 "heat_exchanger",
                 "heat_pump",
-                "pipe",
+                "heat_pipe",
                 "heat_exchanger_elec",
                 "pump",
             },
             "annualized": {
-                "source",
+                "heat_source",
                 "ates",
-                "buffer",
-                "demand",
+                "heat_buffer",
+                "heat_demand",
                 "heat_exchanger",
                 "heat_pump",
-                "pipe",
+                "heat_pipe",
                 "heat_exchanger_elec",
                 "pump",
             },  # TODO: confirm inclusion of "heat_exchanger_elec" & "pump"  in "annualized"
@@ -116,14 +116,14 @@ class MinimizeTCO(Goal):
                             "fixed_operational", "investment", "installation")
             asset_types (Set[str]): Set of asset types to consider for cost calculation.
             cost_type_map (Dict[str, Any]): Mapping of assets to their respective costs.
-            options (Dict[str, Any]): Options dictionary from heat_network_options
+            options (Dict[str, Any]): Options dictionary from energy_system_options
 
         Returns:
             MX object: CasADi expression with total cost for the given asset types.
         """
         obj = 0.0
         for asset_type in asset_types:
-            for asset in optimization_problem.heat_network_components.get(asset_type, []):
+            for asset in optimization_problem.energy_system_components.get(asset_type, []):
                 extra_var = optimization_problem.extra_variable(cost_type_map[asset])
                 if options["discounted_annualized_cost"]:
                     # We only want the operational cost for a single year when we use
@@ -140,7 +140,7 @@ class MinimizeTCO(Goal):
         """
         Calculate the objective function value for the optimization problem.
 
-        This method sums up the various costs associated with the heat network assets.
+        This method sums up the various costs associated with the milp network assets.
 
         Args:
             optimization_problem (TechnoEconomicMixin): The optimization problem instance.
@@ -150,7 +150,7 @@ class MinimizeTCO(Goal):
             MX object: CasADi expression with the total cost objective function value.
         """
 
-        options = optimization_problem.heat_network_options()
+        options = optimization_problem.energy_system_options()
 
         cost_type_maps = {
             "operational": optimization_problem._asset_variable_operational_cost_map,

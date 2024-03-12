@@ -1,6 +1,5 @@
 from rtctools_heat_network.pycml import Connector, Variable
-
-from ._internal import HeatComponent
+from rtctools_heat_network.pycml.component_library.milp._internal import HeatComponent
 
 
 class HeatPort(HeatComponent, Connector):

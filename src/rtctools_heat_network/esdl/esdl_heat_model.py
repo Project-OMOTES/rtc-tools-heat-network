@@ -6,12 +6,10 @@ import CoolProp as cP
 
 import esdl
 
-from rtctools_heat_network.pycml.component_library.heat import (
+from rtctools_heat_network.pycml.component_library.milp import (
     ATES,
-    Buffer,
     CheckValve,
     ControlValve,
-    Demand,
     ElectricityCable,
     ElectricityDemand,
     ElectricityNode,
@@ -24,13 +22,15 @@ from rtctools_heat_network.pycml.component_library.heat import (
     GasSubstation,
     GasTankStorage,
     GeothermalSource,
+    HeatBuffer,
+    HeatDemand,
     HeatExchanger,
+    HeatPipe,
     HeatPump,
     HeatPumpElec,
+    HeatSource,
     Node,
-    Pipe,
     Pump,
-    Source,
     WindPark,
 )
 
@@ -81,7 +81,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
     @property
     def _rho_cp_modifiers(self) -> Dict:
         """
-        For giving the density, rho, in kg/m3 and specic heat, cp, in J/(K*kg)
+        For giving the density, rho, in kg/m3 and specic milp, cp, in J/(K*kg)
 
         Returns
         -------
@@ -193,14 +193,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
             )
             logger.warning(warning_msg)
 
-    def convert_buffer(self, asset: Asset) -> Tuple[Type[Buffer], MODIFIERS]:
+    def convert_heat_buffer(self, asset: Asset) -> Tuple[Type[HeatBuffer], MODIFIERS]:
         """
         This function converts the buffer object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
-        - Setting the dimensions of the buffer needed for heat loss computation. Currently, assume
+        - Setting the dimensions of the buffer needed for milp loss computation. Currently, assume
         cylinder with height equal to radius.
-        - setting a minimum fill level and minimum asscociated heat
+        - setting a minimum fill level and minimum asscociated milp
         - Setting a maximum stored energy based on the size.
         - Setting a cap on the thermal power.
         - Setting the state (enabled, disabled, optional)
@@ -223,7 +223,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         return_temperature = temperature_modifiers["T_return"]
 
         # Assume that:
-        # - the capacity is the relative heat that can be stored in the buffer;
+        # - the capacity is the relative milp that can be stored in the buffer;
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
         if asset.attributes["capacity"] and asset.attributes["volume"]:
@@ -305,9 +305,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return Buffer, modifiers
+        return HeatBuffer, modifiers
 
-    def convert_demand(self, asset: Asset) -> Tuple[Type[Demand], MODIFIERS]:
+    def convert_heat_demand(self, asset: Asset) -> Tuple[Type[HeatDemand], MODIFIERS]:
         """
         This function converts the demand object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -343,7 +343,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             **self._get_cost_figure_modifiers(asset),
         )
 
-        return Demand, modifiers
+        return HeatDemand, modifiers
 
     def convert_node(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
         """
@@ -396,12 +396,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return Node, modifiers
 
-    def convert_pipe(self, asset: Asset) -> Tuple[Union[Type[Pipe], Type[GasPipe]], MODIFIERS]:
+    def convert_heat_pipe(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatPipe], Type[GasPipe]], MODIFIERS]:
         """
         This function converts the pipe object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
-        - Setting the dimensions of the pipe needed for heat loss computation. Currently, assume
+        - Setting the dimensions of the pipe needed for milp loss computation. Currently, assume
         cylinder with height equal to radius.
         - setting if a pipe is disconnecteable for the optimization.
         - Setting the isolative properties of the pipe.
@@ -458,7 +460,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         temperature = temperature_modifiers["temperature"]
 
-        # Compute the maximum heat flow based on an assumed maximum velocity
+        # Compute the maximum milp flow based on an assumed maximum velocity
         area = math.pi * diameter**2 / 4.0
         q_max = area * self.v_max
         q_nominal = area * self.v_nominal
@@ -466,7 +468,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self._set_q_nominal(asset, q_nominal)
 
         # TODO: This might be an underestimation. We need to add the total
-        #  heat losses in the system to get a proper upper bound. Maybe move
+        #  milp losses in the system to get a proper upper bound. Maybe move
         #  calculation of Heat bounds to the HeatMixin?
         hfr_max = 2.0 * (
             self.rho * self.cp * q_max * temperature
@@ -510,7 +512,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if "T_ground" in asset.attributes.keys():
             modifiers["T_ground"] = asset.attributes["T_ground"]
 
-        return Pipe, modifiers
+        return HeatPipe, modifiers
 
     def convert_pump(self, asset: Asset) -> Tuple[Type[Pump], MODIFIERS]:
         """
@@ -587,14 +589,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"{asset.name} has a primary side supply temperature, "
                 f"{params_t['Primary']['T_supply']}, that is higher than the secondary supply , "
                 f"{params_t['Secondary']['T_supply']}. This is not possible as the HEX can only "
-                "transfer heat from primary to secondary."
+                "transfer milp from primary to secondary."
             )
             assert params_t["Primary"]["T_supply"] >= params_t["Secondary"]["T_supply"]
         if params_t["Primary"]["T_return"] < params_t["Secondary"]["T_return"]:
             logger.error(
                 f"{asset.name} has a primary side return temperature that is lower than the "
                 f"secondary return temperature. This is not possible as the HEX can only transfer "
-                f"heat from primary to secondary."
+                f"milp from primary to secondary."
             )
             assert params_t["Primary"]["T_return"] >= params_t["Secondary"]["T_return"]
 
@@ -754,7 +756,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         elif len(asset.in_ports) == 3:
             return HeatPumpElec, modifiers
 
-    def convert_source(self, asset: Asset) -> Tuple[Type[Source], MODIFIERS]:
+    def convert_heat_source(self, asset: Asset) -> Tuple[Type[HeatSource], MODIFIERS]:
         """
         This function converts the Source object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -791,7 +793,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert max_supply > 0.0
 
         # get price per unit of energy,
-        # assume cost of 1. if nothing is given (effectively heat loss minimization)
+        # assume cost of 1. if nothing is given (effectively milp loss minimization)
 
         co2_coefficient = 1.0
         if hasattr(asset.attributes["KPIs"], "kpi"):
@@ -849,14 +851,14 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
             return GeothermalSource, modifiers
         else:
-            return Source, modifiers
+            return HeatSource, modifiers
 
     def convert_ates(self, asset: Asset) -> Tuple[Type[ATES], MODIFIERS]:
         """
         This function converts the ATES object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
 
-        - Setting the heat loss coefficient based upon the efficiency. Here we assume that this
+        - Setting the milp loss coefficient based upon the efficiency. Here we assume that this
         efficiency is realized in 100 days.
         - Setting a caps on the thermal power.
         - Similar as for the geothermal source we use the aggregation count to model the amount

@@ -5,14 +5,14 @@ from rtctools_heat_network.pycml import Variable
 from ._non_storage_component import _NonStorageComponent
 
 
-class Source(_NonStorageComponent):
+class HeatSource(_NonStorageComponent):
     """
     The source component is there to insert thermal power (Heat) into the network.
 
-    The heat to discharge constraints are set in the HeatMixin. We enforce that the outgoing
+    The milp to discharge constraints are set in the HeatMixin. We enforce that the outgoing
     temperature of the source matches the absolute thermal power, Q * cp * rho * T_sup == Heat,
     similar as with the demands. This allows us to guarantee that the flow can always carry, as
-    the heat losses further downstream in the network are over-estimated with T_ret where in
+    the milp losses further downstream in the network are over-estimated with T_ret where in
     reality this temperature drops. It also implicitly assumes that the temperature drops in the
     network are small and thus satisfy minimum temperature requirements.
     """
@@ -29,13 +29,13 @@ class Source(_NonStorageComponent):
             ),
         )
 
-        self.component_type = "source"
+        self.component_type = "heat_source"
 
         self.price = nan  # TODO: delete not needed anymore
         self.co2_coeff = 1.0
         self.pump_efficiency = 0.5
 
-        # Assumption: heat in/out and added is nonnegative
+        # Assumption: milp in/out and added is nonnegative
         # Heat in the return (i.e. cold) line is zero
         self.add_variable(Variable, "Heat_source", min=0.0, nominal=self.Heat_nominal)
         self.add_variable(Variable, "Emission", min=0.0, nominal=self.Heat_nominal)

@@ -66,7 +66,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
         heat_to_discharge_fac = 1 / (self.rho * self.cp * (supply_temperature - return_temperature))
 
         # Assume that:
-        # - the capacity is the relative heat that can be stored in the buffer;
+        # - the capacity is the relative milp that can be stored in the buffer;
         # - the tanks are always at least `min_fraction_tank_volume` full;
         # - same height as radius to compute dimensions.
         min_fraction_tank_volume = self.min_fraction_tank_volume
@@ -312,7 +312,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
                 maximum_temperature = self.maximum_temperature
 
         # get price per unit of energy,
-        # assume cost of 1. if nothing is given (effectively heat loss minimization)
+        # assume cost of 1. if nothing is given (effectively milp loss minimization)
         price = 1.0
         if "costInformation" in asset.attributes.keys():
             if hasattr(asset.attributes["costInformation"], "variableOperationalCosts"):

@@ -15,13 +15,13 @@ def heat_loss_u_values_pipe(
     neighbour: bool = True,
 ) -> Tuple[float, float]:
     """
-    Calculate the U_1 and U_2 heat loss values for a pipe based for either
-    single- or multi-layer insulation. The heat loss calculation for two parallel pipes in the
+    Calculate the U_1 and U_2 milp loss values for a pipe based for either
+    single- or multi-layer insulation. The milp loss calculation for two parallel pipes in the
     ground is based on the literature of Benny Böhm:
-        - Original reference (paid article): B. Bohm, On transient heat losses from buried district
+        - Original reference (paid article): B. Bohm, On transient milp losses from buried district
         heating pipes, International Journal of Energy Research 24, 1311 (2000))
         - Used in Master's degree: Jort de Boer, Optimization of a District Heating Network with the
-        focus on heat loss, TU Delft Mechanical, Maritime and Materials Engineering, 2018,
+        focus on milp loss, TU Delft Mechanical, Maritime and Materials Engineering, 2018,
         http://resolver.tudelft.nl/uuid:7be9fcdd-49e4-4e0c-b36c-69d8b713a874 (access to pdf)
 
     If the `insulation_thicknesses` is provided as a list, the length should be
@@ -38,7 +38,7 @@ def heat_loss_u_values_pipe(
     :param pipe_distance:       Distance between pipeline feed and return pipeline centers [m].
                                 Default of None means 2 * outer diameter
 
-    :return: U-values (U_1 / U_2) for heat losses of pipes [W/(m*K)]
+    :return: U-values (U_1 / U_2) for milp losses of pipes [W/(m*K)]
     """
 
     if insulation_thicknesses is None:
@@ -64,7 +64,7 @@ def heat_loss_u_values_pipe(
         pipe_distance = 2 * diam_outer
     depth_center = depth + 0.5 * diam_outer
 
-    # NOTE: We neglect the heat resistance due to convection inside the pipe,
+    # NOTE: We neglect the milp resistance due to convection inside the pipe,
     # i.e. we assume perfect mixing, or that this resistance is much lower
     # than the resistance of the outer insulation layers.
 
@@ -104,14 +104,14 @@ def pipe_heat_loss(
     temp: float = None,
 ):
     """
-    The heat losses have three components:
+    The milp losses have three components:
 
     - dependency on the pipe temperature
     - dependency on the ground temperature
     - dependency on temperature difference between the supply/return line.
 
     This latter term assumes that the supply and return lines lie close
-    to, and thus influence, each other. I.e., the supply line loses heat
+    to, and thus influence, each other. I.e., the supply line loses milp
     that is absorbed by the return line. Note that the term dtemp is
     positive when the pipe is in the supply line and negative otherwise.
     """
@@ -154,7 +154,7 @@ def pipe_heat_loss(
     else:
         dtemp = 0
 
-    # if no return/supply pipes can be linked to eachother, the influence of the heat of the
+    # if no return/supply pipes can be linked to eachother, the influence of the milp of the
     # neighbouring pipes can also not be determined and thus no influence is assumed
     # (distance between pipes to infinity)
     # This results in Rneighbour -> 0 and therefore u2->0, u1-> 1/(Rsoil+Rins)
