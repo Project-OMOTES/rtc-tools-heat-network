@@ -56,19 +56,19 @@ class TestEndScenarioSizing(TestCase):
         # Check the cost breakdown, check whether all the enabled assets are in the cost breakdown
         # Check that computation time is within expected bounds
 
-        # Check whehter the heat demand is matched
-        for d in solution.heat_network_components.get("demand", []):
+        # Check whehter the milp demand is matched
+        for d in solution.energy_system_components.get("heat_demand", []):
             target = solution.get_timeseries(f"{d}.target_heat_demand").values
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check whether cyclic ates constraint is working
-        for a in solution.heat_network_components.get("ates", []):
+        for a in solution.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.heat_network_components.get("buffer", []):
+        for b in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):
@@ -77,13 +77,13 @@ class TestEndScenarioSizing(TestCase):
         obj = 0.0
         years = solution.parameters(0)["number_of_years"]
         for asset in [
-            *solution.heat_network_components.get("source", []),
-            *solution.heat_network_components.get("ates", []),
-            *solution.heat_network_components.get("buffer", []),
-            *solution.heat_network_components.get("demand", []),
-            *solution.heat_network_components.get("heat_exchanger", []),
-            *solution.heat_network_components.get("heat_pump", []),
-            *solution.heat_network_components.get("pipe", []),
+            *solution.energy_system_components.get("heat_source", []),
+            *solution.energy_system_components.get("ates", []),
+            *solution.energy_system_components.get("heat_buffer", []),
+            *solution.energy_system_components.get("heat_demand", []),
+            *solution.energy_system_components.get("heat_exchanger", []),
+            *solution.energy_system_components.get("heat_pump", []),
+            *solution.energy_system_components.get("heat_pipe", []),
         ]:
             obj += results[f"{solution._asset_fixed_operational_cost_map[asset]}"] * years
             obj += results[f"{solution._asset_variable_operational_cost_map[asset]}"] * years
@@ -272,13 +272,13 @@ class TestEndScenarioSizing(TestCase):
             np.testing.assert_allclose(target, results[f"{d}.Heat_demand"])
 
         # Check whether cyclic ates constraint is working
-        for a in solution.heat_network_components.get("ates", []):
+        for a in solution.energy_system_components.get("ates", []):
             stored_heat = results[f"{a}.Stored_heat"]
             np.testing.assert_allclose(stored_heat[0], stored_heat[-1], atol=1.0)
 
         # Check whether buffer tank is only active in peak day
         peak_day_indx = solution.parameters(0)["peak_day_index"]
-        for b in solution.heat_network_components.get("buffer", []):
+        for b in solution.energy_system_components.get("heat_buffer", []):
             heat_buffer = results[f"{b}.Heat_buffer"]
             for i in range(len(solution.times())):
                 if i < peak_day_indx or i > (peak_day_indx + 23):

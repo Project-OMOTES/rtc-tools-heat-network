@@ -67,7 +67,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -87,13 +87,13 @@ class HeatProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         options["heat_loss_disconnected_pipe"] = True
         self.heat_network_settings["minimum_velocity"] = 0.0001
 
@@ -116,7 +116,7 @@ class QTHProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for s in self.heat_network_components["source"]:
+        for s in self.energy_system_components["heat_source"]:
             goals.append(MinimizeSourcesQTHGoal(s))
 
         return goals

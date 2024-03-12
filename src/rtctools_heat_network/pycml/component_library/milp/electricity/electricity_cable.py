@@ -22,7 +22,7 @@ class ElectricityCable(ElectricityTwoPort, BaseAsset):
 
         self.length = 1.0
 
-        # Powerloss with inequality in the heat-mixin
+        # Powerloss with inequality in the milp-mixin
         # values for NAYY 4x50 SE
         # from: https://pandapower.readthedocs.io/en/v2.6.0/std_types/basic.html
         self.max_current = nan

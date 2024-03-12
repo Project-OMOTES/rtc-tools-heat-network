@@ -1,16 +1,16 @@
 # Maps the component type to the default variable name which can be set as range goal.
 # Used for default manual input configuration using get_goals_and_options_class
 map_comp_type_to_rangegoal_variable = {
-    "demand": ".Heat_demand",
-    "source": ".Heat_source",
+    "heat_demand": ".Heat_demand",
+    "heat_source": ".Heat_source",
     "heat_pump": ".Secondary_heat",
 }
 
 
 # These variables are the default 'control' variables of a component. Used for setpoint constraints.
 map_comp_type_to_control_variable = {
-    "demand": ".Heat_demand",
-    "source": ".Heat_source",
+    "heat_demand": ".Heat_demand",
+    "heat_source": ".Heat_source",
     "geothermal": ".Heat_source",
     "heat_pump": [
         ".Power_elec",
@@ -52,13 +52,13 @@ map_comp_type_to_milp_result_variables = {
     ),
     # Heat: (),
     "ates": set(),
-    "buffer": {"Stored_heat", "Heat_buffer", "Heat_loss"}.union(heat_two_port_vars),
+    "heat_buffer": {"Stored_heat", "Heat_buffer", "Heat_loss"}.union(heat_two_port_vars),
     "check_valve": {"dH"}.union(heat_two_port_vars),
     "control_valve": {"dH"}.union(heat_two_port_vars),
-    "demand": {"Heat_demand"}.union(heat_two_port_vars),
+    "heat_demand": {"Heat_demand"}.union(heat_two_port_vars),
     "geothermal": {"Heat_source", "dH"}.union(heat_two_port_vars),
     "node": {"H"},
-    "pipe": {"dH", "params.Heat_loss", "params.temperature"}.union(heat_two_port_vars),
+    "heat_pipe": {"dH", "params.Heat_loss", "params.temperature"}.union(heat_two_port_vars),
     "pump": {"dH"}.union(heat_two_port_vars),
-    "source": {"Heat_source", "dH"}.union(heat_two_port_vars),
+    "heat_source": {"Heat_source", "dH"}.union(heat_two_port_vars),
 }

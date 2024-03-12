@@ -152,7 +152,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         results_max_charging_rate = {}
         results_max_discharging_rate = {}
 
-        for buffer in _sort_numbered(self.heat_network_components.get("buffer", [])):
+        for buffer in _sort_numbered(self.energy_system_components.get("heat_buffer", [])):
             if buffer in self._minimize_size_buffers:
                 max_size_var = self._max_buffer_heat_map[buffer]
                 results_buffers_size[buffer] = float(results[max_size_var][0]) / (
@@ -169,7 +169,7 @@ class ScenarioOutput(TechnoEconomicMixin):
             else:
                 results_buffers_placed[buffer] = "-"
 
-            (_, hot_orient), _ = self.heat_network_topology.buffers[buffer]
+            (_, hot_orient), _ = self.energy_system_topology.buffers[buffer]
             q = hot_orient * results[f"{buffer}.HeatIn.Q"]
             inds_charging = q > 0
             inds_discharging = q < 0
@@ -190,10 +190,10 @@ class ScenarioOutput(TechnoEconomicMixin):
                 max_charging_rate=results_max_charging_rate[buffer],
                 max_discharging_rate=results_max_discharging_rate[buffer],
             )
-            for buffer in self.heat_network_components.get("buffer", [])
+            for buffer in self.energy_system_components.get("heat_buffer", [])
         ]
 
-        for source in _sort_numbered(self.heat_network_components["source"]):
+        for source in _sort_numbered(self.energy_system_components["heat_source"]):
             if source in self._minimize_size_sources:
                 max_size_var = self._max_source_heat_map[source]
                 results_sources_size[source] = float(results[max_size_var][0]) / 10.0**3
@@ -215,7 +215,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 result_placed=results_sources_placed[source],
                 result_size=results_sources_size[source],
             )
-            for source in self.heat_network_components["source"]
+            for source in self.energy_system_components["heat_source"]
         ]
 
         # Format the pipe results
@@ -494,7 +494,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         # Cost breakdowns per polygon areas (can consist of several assets of differents types)
         # Notes:
         # - OPEX KPIs are taken into account for energy sources only.
-        # - We assume that all energy produced outside of the the subarea comes in via a heat
+        # - We assume that all energy produced outside of the the subarea comes in via a milp
         #   exchanger that is part of the subarea.
         # TODO: Investigate if no cost in the ESDL then this breaks ESDL visibility
         total_energy_produced_locally_wh = {}
@@ -510,7 +510,7 @@ class ScenarioOutput(TechnoEconomicMixin):
 
             kpis = esdl.KPIs(id=str(uuid.uuid4()))
             # Here we make a breakdown of the produced energy in the subarea. Where we assume that
-            # all energy produced outside of the the subarea comes in via a heat exchanger that is
+            # all energy produced outside of the the subarea comes in via a milp exchanger that is
             # part of the subarea.
             energy_breakdown = {}
             for asset in subarea.asset:
@@ -556,9 +556,9 @@ class ScenarioOutput(TechnoEconomicMixin):
                     ][0]
 
                     # Calculate the total energy [Wh] consumed/produced in an are.
-                    # Note: heat losses of buffers, ATES' and pipes are included in the area energy
+                    # Note: milp losses of buffers, ATES' and pipes are included in the area energy
                     # consumption
-                    if asset_name in self.heat_network_components.get("source", []):
+                    if asset_name in self.energy_system_components.get("heat_source", []):
                         try:
                             total_energy_produced_locally_wh[subarea.name] += np.sum(
                                 results[f"{asset_name}.Heat_source"][1:]
@@ -571,23 +571,23 @@ class ScenarioOutput(TechnoEconomicMixin):
                                 * (self.times()[1:] - self.times()[0:-1])
                                 / 3600.0
                             )
-                    if asset_name in self.heat_network_components.get("demand", []):
+                    if asset_name in self.energy_system_components.get("heat_demand", []):
                         flow_variable = results[f"{asset_name}.Heat_demand"][1:]
-                    elif asset_name in self.heat_network_components.get("buffer", []):
+                    elif asset_name in self.energy_system_components.get("heat_buffer", []):
                         flow_variable = results[f"{asset_name}.Heat_buffer"][1:]
-                    elif asset_name in self.heat_network_components.get("ates", []):
+                    elif asset_name in self.energy_system_components.get("ates", []):
                         flow_variable = results[f"{asset_name}.Heat_ates"][1:]
-                    elif asset_name in self.heat_network_components.get("pipe", []):
+                    elif asset_name in self.energy_system_components.get("heat_pipe", []):
                         flow_variable = (
                             np.ones(len(self.times())) * results[f"{asset_name}__hn_heat_loss"]
                         )
                     else:
                         flow_variable = ""
                     if (
-                        asset_name in self.heat_network_components.get("demand", [])
-                        or asset_name in self.heat_network_components.get("buffer", [])
-                        or asset_name in self.heat_network_components.get("ates", [])
-                        or asset_name in self.heat_network_components.get("pipe", [])
+                        asset_name in self.energy_system_components.get("heat_demand", [])
+                        or asset_name in self.energy_system_components.get("heat_buffer", [])
+                        or asset_name in self.energy_system_components.get("ates", [])
+                        or asset_name in self.energy_system_components.get("heat_pipe", [])
                     ):
                         try:
                             total_energy_consumed_locally_wh[subarea.name] += np.sum(
@@ -778,16 +778,16 @@ class ScenarioOutput(TechnoEconomicMixin):
         for _, attributes in self.esdl_assets.items():
             name = attributes.name
             if name in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("buffer", []),
+                *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("heat_buffer", []),
             ]:
                 asset = _name_to_asset(name)
                 asset_placement_var = self._asset_aggregation_count_var_map[name]
                 placed = np.round(results[asset_placement_var][0]) >= 1.0
                 max_size = results[self._asset_max_size_map[name]][0]
 
-                if asset in self.heat_network_components.get("buffer", []):
+                if asset in self.energy_system_components.get("heat_buffer", []):
                     asset.capacity = max_size
                     asset.volume = max_size / (
                         parameters[f"{name}.cp"]
@@ -901,13 +901,13 @@ class ScenarioOutput(TechnoEconomicMixin):
             # )
 
             for asset_name in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("demand", []),
-                *self.heat_network_components.get("pipe", []),
-                *self.heat_network_components.get("buffer", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("heat_pump", []),
+                *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("heat_demand", []),
+                *self.energy_system_components.get("heat_pipe", []),
+                *self.energy_system_components.get("heat_buffer", []),
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_pump", []),
             ]:
                 profiles = ProfileManager()
                 profiles.profile_type = "DATETIME_LIST"
@@ -1080,7 +1080,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                     #     source_profile=prof_loaded_from_influxdb
                     # )
                     # file_path_setting = (
-                    #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-heat-network\\{asset_name}.xlsx"
+                    #     f"C:\\Projects_gitlab\\NWN_dev\\rtc-tools-milp-network\\{asset_name}.xlsx"
                     # )
                     # excel_prof_saved.save_excel(
                     #     file_path=file_path_setting,
