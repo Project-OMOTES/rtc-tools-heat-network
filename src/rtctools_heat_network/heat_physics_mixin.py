@@ -362,7 +362,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
-        ) in self.heat_network_topology.ates.items():
+        ) in self.energy_system_topology.ates.items():
 
             ates_temp_disc_var_name = f"{ates}__temperature_ates_disc"
             self.__ates_temperature_disc_var[ates_temp_disc_var_name] = ca.MX.sym(
@@ -1785,7 +1785,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for b, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.heat_network_topology.ates}.items():
+        ) in {**self.energy_system_topology.ates}.items():
 
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
@@ -2051,7 +2051,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
-        ) in {**self.heat_network_topology.ates}.items():
+        ) in {**self.energy_system_topology.ates}.items():
 
             ates_dt_charging = self.state(f"{ates}.Temperature_change_charging")
             ates_dt_loss = self.state(f"{ates}.Temperature_loss")

@@ -50,7 +50,7 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e5)
+        self.function_range = (0.0, 1.0e4)
         self.source = source
         self.function_nominal = 1e0
 
@@ -90,14 +90,14 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.energy_system_components.get("demand"):
+        for demand in self.energy_system_components.get("heat_demand"):
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
         for s in [
-            *self.energy_system_components.get("source"),
+            *self.energy_system_components.get("heat_source"),
             *self.energy_system_components.get("heat_pump"),
         ]:
             goals.append(MinimizeCostHeatGoal(s))
@@ -119,10 +119,10 @@ class _GoalsAndOptions:
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.05
+        highs_options["mip_rel_gap"] = 0.01
         # options["solver"] = "gurobi"
         # gurobi_options = options["gurobi"] = {}
-        # gurobi_options["MIPgap"] = 0.05
+        # gurobi_options["MIPgap"] = 0.01
         # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
@@ -225,7 +225,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.energy_system_components.get("demand", [])
+        demands = self.energy_system_components.get("heat_demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 
