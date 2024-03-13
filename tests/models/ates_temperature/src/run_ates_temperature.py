@@ -50,7 +50,7 @@ class MinimizeCostHeatGoal(Goal):
 
     def __init__(self, source):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e4)
+        self.function_range = (0.0, 1.0e5)
         self.source = source
         self.function_nominal = 1e0
 
@@ -119,10 +119,10 @@ class _GoalsAndOptions:
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.01
+        highs_options["mip_rel_gap"] = 0.05
         # options["solver"] = "gurobi"
         # gurobi_options = options["gurobi"] = {}
-        # gurobi_options["MIPgap"] = 0.01
+        # gurobi_options["MIPgap"] = 0.05
         # gurobi_options["OptimalityTol"] = 1.e-3
 
         return options
@@ -198,6 +198,8 @@ class HeatProblem(
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
+            # stored_volume only to be used if temperature loss ates is also dependent on
+            # stored_volume instead of stored_heat
             constraints.append((heat_ates[0], 0.0, 0.0))
             ates_temperature_disc = self.__state_vector_scaled(
                 f"{a}__temperature_ates_disc", ensemble_member
@@ -355,12 +357,9 @@ if __name__ == "__main__":
     results = sol.extract_results()
     print("T_ates: ", results["ATES_cb47.Temperature_ates"])
     print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
-    print("T_ates_40: ", results["ATES_cb47__temperature_disc_40.0"])
-    print("T_ates_45: ", results["ATES_cb47__temperature_disc_45.0"])
-    print("T_ates_50: ", results["ATES_cb47__temperature_disc_50.0"])
-    print("T_ates_55: ", results["ATES_cb47__temperature_disc_55.0"])
-    print("T_ates_60: ", results["ATES_cb47__temperature_disc_60.0"])
-    print("T_ates_65: ", results["ATES_cb47__temperature_disc_65.0"])
-    print("T_ates_70: ", results["ATES_cb47__temperature_disc_70.0"])
+    for i in range(0,7):
+        print(f"T_ates_{40+i*2} :",  results[f"ATES_cb47__temperature_disc_{40+i*2}.0"])
+        print(f"T_carrier_{40 + i * 2} :", results[f"41770304791669983859190_{40 + i * 2}.0"])
+
     print(f"time: {time.time() - t0}")
     a = 1

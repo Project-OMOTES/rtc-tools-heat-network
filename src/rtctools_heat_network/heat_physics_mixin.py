@@ -1742,23 +1742,24 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
 
             # discretized tempeature should alwyas be smaller or equal to ATES temperature
-            constraints.append((ates_temperature - ates_temperature_disc, 0.0, 0.0))
+            constraints.append((ates_temperature - ates_temperature_disc, 0.0, np.inf))
 
             # ensures it does not select the lowest temperature, but the closest temperature
             # supplytemperature needs to be reducing
             # TODO: this could use ordering strategy
-            # for temperature in supply_temperatures[:-1]:
-            #     temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
-            #     next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
-            #     constraints.append(
-            #         (
-            #             ates_temperature
-            #             - ates_temperature_disc
-            #             - temp_selected * (temperature - next_temp),
-            #             -np.inf,
-            #             0.0,
-            #         )
-            #     )
+            #requires equally spaced temperature options.
+            for temperature in supply_temperatures[:-1]:
+                temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
+                next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
+                constraints.append(
+                    (
+                        ates_temperature
+                        - ates_temperature_disc
+                        - temp_selected * (temperature - next_temp),
+                        -np.inf,
+                        0.0,
+                    )
+                )
 
             if len(supply_temperatures) == 0:
                 constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
@@ -3313,6 +3314,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # heat_ates is dit -> als je temperatuur hoger is kan je >= heat_ates realiseren
 
                     # sup_temperature_is_selected = self.state(f"{sup_carrier}_{temperature}")
+                    #TODO: these variable temperature ordering should be move to a general part for
+                    # variable network temperatures
                     temperature_var = self.state(f"{sup_carrier}_temperature")
                     ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
 
