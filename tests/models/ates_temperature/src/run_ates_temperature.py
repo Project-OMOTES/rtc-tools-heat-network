@@ -90,19 +90,19 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components.get("demand"):
+        for demand in self.energy_system_components.get("demand"):
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
         for s in [
-            *self.heat_network_components.get("source"),
-            *self.heat_network_components.get("heat_pump"),
+            *self.energy_system_components.get("source"),
+            *self.energy_system_components.get("heat_pump"),
         ]:
             goals.append(MinimizeCostHeatGoal(s))
 
-        # for ates in self.heat_network_components.get("ates", []):
+        # for ates in self.energy_system_components.get("ates", []):
         #     goals.append(MinimizeATESStored_heat(ates))
 
         return goals
@@ -110,7 +110,7 @@ class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
 
-        # for ates in self.heat_network_components.get("ates", []):
+        # for ates in self.energy_system_components.get("ates", []):
         #     goals.append(MinimizeATESStored_heat(ates))
 
         return goals
@@ -145,8 +145,8 @@ class HeatProblem(
 
         return goals
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
+    def energy_system_options(self):
+        options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0001
         options["heat_loss_disconnected_pipe"] = (
             False  # required since we want to disconnect HP & HEX
@@ -178,8 +178,8 @@ class HeatProblem(
         # demand without loading/unloading ates.
         sum_disabled_vars = 0
         for asset in [
-            *self.heat_network_components.get("heat_pump"),
-            *self.heat_network_components.get("heat_exchanger"),
+            *self.energy_system_components.get("heat_pump"),
+            *self.energy_system_components.get("heat_exchanger"),
         ]:
             disabled_var = self.state(f"{asset}__disabled")
             sum_disabled_vars += disabled_var
@@ -195,7 +195,7 @@ class HeatProblem(
     def constraints(self, ensemble_member):
         constraints = super().constraints(ensemble_member)
 
-        for a in self.heat_network_components.get("ates", []):
+        for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             heat_ates = self.state_vector(f"{a}.Heat_ates")
             constraints.append((stored_heat[0] - stored_heat[-1], 0.0, 0.0))
@@ -225,7 +225,7 @@ class HeatProblem(
         """
         super().read()
 
-        demands = self.heat_network_components.get("demand", [])
+        demands = self.energy_system_components.get("demand", [])
         new_datastore = DataStore(self)
         new_datastore.reference_datetime = self.io.datetimes[0]
 
