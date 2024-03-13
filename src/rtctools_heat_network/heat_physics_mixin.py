@@ -566,6 +566,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         options["neglect_pipe_heat_losses"] = False
         options["heat_loss_disconnected_pipe"] = True
         options["include_demand_insulation_options"] = False
+        options["include_ates_temperature_options"] = False
 
         return options
 
@@ -1727,6 +1728,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         constraints = []
         parameters = self.parameters(ensemble_member)
+        options = self.heat_network_options()
+
 
         for b, (
             (hot_pipe, _hot_pipe_orientation),
@@ -1744,26 +1747,25 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             # discretized tempeature should alwyas be smaller or equal to ATES temperature
             constraints.append((ates_temperature - ates_temperature_disc, 0.0, np.inf))
 
-            # ensures it does not select the lowest temperature, but the closest temperature
-            # supplytemperature needs to be reducing
-            # TODO: this could use ordering strategy
-            #requires equally spaced temperature options.
-            for temperature in supply_temperatures[:-1]:
-                temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
-                next_temp = supply_temperatures[supply_temperatures.index(temperature) + 1]
-                constraints.append(
-                    (
-                        ates_temperature
-                        - ates_temperature_disc
-                        - temp_selected * (temperature - next_temp),
-                        -np.inf,
-                        0.0,
+            if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
+                # ensures it selects the closest temperature
+                # supplytemperature needs to be reducing
+                # TODO: this could use ordering strategy
+                big_m = max(supply_temperatures)
+                for temperature in supply_temperatures[1:]:
+                    temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
+                    prev_temp = supply_temperatures[supply_temperatures.index(temperature) - 1]
+                    constraints.append(
+                        (
+                            ates_temperature
+                            - ates_temperature_disc
+                            - temp_selected * (prev_temp - temperature)
+                            - (1 - temp_selected) * big_m,
+                            -np.inf,
+                            0.0,
+                        )
                     )
-                )
 
-            if len(supply_temperatures) == 0:
-                constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
-            else:
                 """
                 This function adds constraints to ensure that only one temperature level is active
                 for the ates temperature. Furthermore, it sets the
@@ -1782,13 +1784,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                             np.inf,
                         )
                     )
-                    # constraints.append(
-                    #     (
-                    #         (temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m),
-                    #         -np.inf,
-                    #         0.0,
-                    #     )
-                    # )
+                    constraints.append(
+                        (
+                            (temperature - ates_temperature_disc - (1.0 - temp_selected) * big_m),
+                            -np.inf,
+                            0.0,
+                        )
+                    )
                 if len(supply_temperatures) > 0:
                     constraints.append((variable_sum, 1.0, 1.0))
 
@@ -1843,6 +1845,8 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         np.inf,
                     )
                 )
+            else:
+                constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
 
         return constraints
 
@@ -1991,6 +1995,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
         bounds = self.bounds()
+        options = self.heat_network_options()
 
         for ates, (
             (hot_pipe, _hot_pipe_orientation),
@@ -2003,10 +2008,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
-            if len(supply_temperatures) == 0:
-                constraints.append((ates_dt_charging, 0.0, 0.0))
-                constraints.append((ates_dt_loss, 0.0, 0.0))
-            else:
+            if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 soil_temperature = parameters[f"{ates}.T_amb"]
                 ates_temperature_loss_nominal = self.variable_nominal(f"{ates}.Temperature_loss")
                 ates_dt_charging_nominal = self.variable_nominal(
@@ -2129,7 +2131,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                                 0.0,
                             )
                         )
-
+            else:
+                constraints.append((ates_dt_charging, 0.0, 0.0))
+                constraints.append((ates_dt_loss, 0.0, 0.0))
         return constraints
 
     def __ates_heat_losses_path_constraints(self, ensemble_member):
@@ -2146,6 +2150,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints = []
         parameters = self.parameters(ensemble_member)
         bounds = self.bounds()
+        options = self.heat_network_options()
 
         for ates in self.heat_network_components.get("ates", []):
             heat_loss_nominal = self.variable_nominal(f"{ates}.Heat_loss")
@@ -2158,17 +2163,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
 
-            if len(supply_temperatures) == 0:
-                # no temperature states available
-                coeff_efficiency_ates = parameters[f"{ates}.heat_loss_coeff"]
-                constraints.append(
-                    (
-                        (heat_loss - stored_heat * coeff_efficiency_ates) / heat_loss_nominal,
-                        0.0,
-                        0.0,
-                    )
-                )
-            else:
+            if options["include_ates_temperature_options"] and len(supply_temperatures) != 0:
                 big_m_heatloss = 2 * heat_loss_nominal
                 for ates_temperature in supply_temperatures:
                     ates_temperature_is_selected = self.state(
@@ -2203,6 +2198,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     #             -np.inf,
                     #      0.0)
                     # )
+            else:
+                # no temperature states available
+                coeff_efficiency_ates = parameters[f"{ates}.heat_loss_coeff"]
+                constraints.append(
+                    (
+                        (heat_loss - stored_heat * coeff_efficiency_ates) / heat_loss_nominal,
+                        0.0,
+                        0.0,
+                    )
+                )
 
         return constraints
 

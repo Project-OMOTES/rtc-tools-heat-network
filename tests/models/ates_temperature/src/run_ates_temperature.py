@@ -153,6 +153,7 @@ class HeatProblem(
         )
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         options["neglect_pipe_heat_losses"] = True
+        options["include_ates_temperature_options"] = True
         return options
 
     def temperature_carriers(self):
@@ -234,6 +235,7 @@ class HeatProblem(
                 for demand in demands
             )
 
+            #TODO: check if ordering is possible for ates temperature over time
             day_step = 28
 
             # TODO: the approach of picking one peak day was introduced for a network with a tree
@@ -355,11 +357,12 @@ if __name__ == "__main__":
     )
     # sol._write_updated_esdl()
     results = sol.extract_results()
+    print(f"time: {time.time() - t0}")
     print("T_ates: ", results["ATES_cb47.Temperature_ates"])
     print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
-    for i in range(0,7):
-        print(f"T_ates_{40+i*2} :",  results[f"ATES_cb47__temperature_disc_{40+i*2}.0"])
-        print(f"T_carrier_{40 + i * 2} :", results[f"41770304791669983859190_{40 + i * 2}.0"])
+    for i in range(0,21):
+        print(f"T_ates_{40+i*1.5} :",  results[f"ATES_cb47__temperature_disc_{40+i*1.5}.0"])
+        print(f"T_carrier_{40 + i * 1.5} :", results[f"41770304791669983859190_{40 + i * 1.5}.0"])
 
-    print(f"time: {time.time() - t0}")
+
     a = 1
