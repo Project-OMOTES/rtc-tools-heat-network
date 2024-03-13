@@ -76,14 +76,14 @@ class TestMILPElectricSourceSink(TestCase):
         biggerthen = all(v_out >= (v_min - tol) * np.ones(len(v_out)))
         self.assertTrue(biggerthen)
 
-        for source in solution.heat_network_components.get("electricity_source", []):
+        for source in solution.energy_system_components.get("electricity_source", []):
             np.testing.assert_allclose(
                 results[f"{source}.Electricity_source"],
                 results[f"{source}.ElectricityOut.Power"],
                 atol=1.0e-6,
             )
 
-        for demand in solution.heat_network_components.get("electricity_demand", []):
+        for demand in solution.energy_system_components.get("electricity_demand", []):
             np.testing.assert_allclose(
                 results[f"{demand}.Electricity_demand"],
                 results[f"{demand}.ElectricityIn.Power"],
@@ -189,7 +189,7 @@ class TestMILPElectricSourceSink(TestCase):
         )
         self.assertTrue(biggerthen)
 
-        for demand in solution.heat_network_components.get("electricity_demand", []):
+        for demand in solution.energy_system_components.get("electricity_demand", []):
             np.testing.assert_allclose(
                 results[f"{demand}.ElectricityIn.V"],
                 parameters[f"{demand}.min_voltage"],

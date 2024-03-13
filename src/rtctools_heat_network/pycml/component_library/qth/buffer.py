@@ -11,7 +11,7 @@ class Buffer(_FluidPropertiesComponent):
     def __init__(self, name, **modifiers):
         super().__init__(name, **modifiers)
 
-        self.component_type = "buffer"
+        self.component_type = "heat_buffer"
 
         self.Q_nominal = 1.0
         self.head_loss = 0.0
@@ -68,7 +68,7 @@ class Buffer(_FluidPropertiesComponent):
         # Buffer is modelled with an hot and a cold tank.
         # The hot tank is connected to the supply line, while the cold one to the return line.
         # The total volume of the system is constant.
-        # Assumption: constant density and heat capacity
+        # Assumption: constant density and milp capacity
         # Q_hot_pipe is positive when the buffer is charging, negative if discharching.
         # Note that, as volume is constant, the amount of hot and cold water discharged
         # must be equal.

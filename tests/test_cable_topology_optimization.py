@@ -36,7 +36,7 @@ class TestElectricityTopo(TestCase):
 
         results = heat_problem.extract_results()
 
-        for demand in heat_problem.heat_network_components.get("electricity_demand", []):
+        for demand in heat_problem.energy_system_components.get("electricity_demand", []):
             target = heat_problem.get_timeseries(f"{demand}.target_electricity_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Electricity_demand"])
 

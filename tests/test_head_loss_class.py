@@ -32,7 +32,7 @@ class TestHeadLossCalculation(TestCase):
                 "network_type": NetworkSettings.NETWORK_TYPE_HEAT,
                 "maximum_velocity": 2.5,
                 "minimum_velocity": 0.005,
-                "head_loss_option": HeadLossOption.LINEAR,
+                "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             }
 
             def _hn_get_pipe_head_loss_option(self, heat_network_settings, *args, **kwargs):
@@ -54,24 +54,24 @@ class TestHeadLossCalculation(TestCase):
         }
 
         for h in [
-            HeadLossOption.LINEAR,
+            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             HeadLossOption.CQ2_INEQUALITY,
-            HeadLossOption.LINEARIZED_DW,
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
         ]:
             m = run_optimization_problem(
                 Model, head_loss_option=h, base_folder=base_folder, input_folder=input_folder
             )
 
-            options = m.heat_network_options()
+            options = m.energy_system_options()
             parameters = m.parameters(0)
             heat_network_settings["head_loss_option"] = h
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot", m, options, heat_network_settings, parameters, 0.1
             )
             self.assertIsInstance(ret, float)
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot",
                 m,
                 options,
@@ -82,7 +82,7 @@ class TestHeadLossCalculation(TestCase):
             self.assertIsInstance(ret, np.ndarray)
             self.assertEqual(len(ret), 1)
 
-            ret = m._head_loss_class._hn_pipe_head_loss(
+            ret = m._hn_head_loss_class._hn_pipe_head_loss(
                 "pipe_hot",
                 m,
                 options,
@@ -117,7 +117,7 @@ class TestHeadLossCalculation(TestCase):
 #         class Model(HeatPython):
 #             def heat_network_options(self):
 #                 options = super().heat_network_options()
-#                 options["head_loss_option"] = HeadLossOption.LINEAR
+#                 options["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 #                 return options
 
 #             def _hn_get_pipe_head_loss_option(self, *args, **kwargs):

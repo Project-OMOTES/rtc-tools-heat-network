@@ -315,7 +315,7 @@ class ESDLMixin(
         return self._esdl_assets
 
     @property
-    def esdl_carriers(self) -> Dict[str, Dict[str, Any]]:
+    def esdl_carriers(self, type=None) -> Dict[str, Dict[str, Any]]:
         """
         property method to retrieve the esdl carriers which are a private attribute of the class.
 
@@ -323,7 +323,25 @@ class ESDLMixin(
         -------
         A dict with the id of the carrier and the attributes in the value
         """
+
         return self._esdl_carriers
+
+    def esdl_carriers_typed(self, type=None) -> Dict[str, Dict[str, Any]]:
+        """
+        property method to retrieve the esdl carriers which are a private attribute of the class.
+
+        Returns
+        -------
+        A dict with the id of the carrier and the attributes in the value
+        """
+        if type is None:
+            return self._esdl_carriers
+        else:
+            carriers = {}
+            for id, attr in self._esdl_carriers.items():
+                if attr["type"] == type:
+                    carriers[id] = attr
+        return carriers
 
     def get_energy_system_copy(self) -> esdl.esdl.EnergySystem:
         """
@@ -404,27 +422,27 @@ class ESDLMixin(
     def esdl_heat_model_options(self) -> Dict:
         """
         function to spedifically return the needed HeatMixin options needed for the conversion
-        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+        from ESDL to pycml. This case velocities used to set nominals and caps on the milp.
 
         Returns
         -------
         dict with estimated and maximum velocity
         """
-        heat_network_options = self.heat_network_options()
-        v_nominal = heat_network_options["estimated_velocity"]
+        energy_system_options = self.energy_system_options()
+        v_nominal = energy_system_options["estimated_velocity"]
         v_max = self.heat_network_settings["maximum_velocity"]
         return dict(v_nominal=v_nominal, v_max=v_max)
 
     def esdl_qth_model_options(self) -> Dict:
         """
         function to spedifically return the needed HeatMixin options needed for the conversion
-        from ESDL to pycml. This case velocities used to set nominals and caps on the heat.
+        from ESDL to pycml. This case velocities used to set nominals and caps on the milp.
 
         Returns
         -------
         dict with estimated and maximum velocity
         """
-        heat_network_options = self.heat_network_options()
+        heat_network_options = self.energy_system_options()
         kwargs = {}
         kwargs["v_nominal"] = heat_network_options["estimated_velocity"]
         kwargs["v_max"] = self.heat_network_settings["maximum_velocity"]
@@ -515,11 +533,11 @@ class ESDLMixin(
         None
         """
         super().read()
-        heat_network_components = self.heat_network_components
+        energy_system_components = self.energy_system_components
         esdl_carriers = self.esdl_carriers
         io = self.io
         self.__profile_reader.read_profiles(
-            heat_network_components=heat_network_components,
+            energy_system_components=energy_system_components,
             io=io,
             esdl_asset_id_to_name_map=self.esdl_asset_id_to_name_map,
             esdl_assets=self.esdl_assets,
@@ -634,15 +652,15 @@ class _ESDLInputDataConfig:
     production profiles.
     """
 
-    def __init__(self, id_map: Dict, heat_network_components: Dict) -> None:
+    def __init__(self, id_map: Dict, energy_system_components: Dict) -> None:
         # TODO: change naming source and demand to heat_source and heat_demand throughout code
         self.__id_map = id_map
-        self._sources = set(heat_network_components.get("source", []))
-        self._demands = set(heat_network_components.get("demand", []))
-        self._electricity_sources = set(heat_network_components.get("electricity_source", []))
-        self._electricity_demands = set(heat_network_components.get("electricity_demand", []))
-        self._gas_sources = set(heat_network_components.get("gas_source", []))
-        self._gas_demands = set(heat_network_components.get("gas_demand", []))
+        self._sources = set(energy_system_components.get("heat_source", []))
+        self._demands = set(energy_system_components.get("heat_demand", []))
+        self._electricity_sources = set(energy_system_components.get("electricity_source", []))
+        self._electricity_demands = set(energy_system_components.get("electricity_demand", []))
+        self._gas_sources = set(energy_system_components.get("gas_source", []))
+        self._gas_demands = set(energy_system_components.get("gas_demand", []))
 
     def variable(self, pi_header: Any) -> str:
         """
@@ -683,13 +701,13 @@ class _ESDLInputDataConfig:
         else:
             logger.warning(
                 f"Could not identify '{component_name}' as either source or demand. "
-                f"Using neutral suffix '.target_heat' for its heat timeseries."
+                f"Using neutral suffix '.target_heat' for its milp timeseries."
             )
             suffix = ".target_heat"
 
         # Note that the qualifier id (if any specified) refers to the profile
         # element of the respective ESDL asset->in_port. For now we just
-        # assume that only heat demand timeseries are set in the XML file.
+        # assume that only milp demand timeseries are set in the XML file.
         return f"{component_name}{suffix}"
 
     def pi_variable_ids(self, variable):

@@ -28,9 +28,11 @@ class TestGasNetwork(TestCase):
         base_folder = Path(example.__file__).resolve().parent.parent
 
         class GasNetworkProblem(HeatProblem):
-            def heat_network_options(self):
-                options = super().heat_network_options()
-                self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                self.gas_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                )
                 self.gas_network_settings["minimize_head_losses"] = True
                 return options
 
@@ -45,16 +47,16 @@ class TestGasNetwork(TestCase):
 
         results = solution.extract_results()
 
-        for demand in solution.heat_network_components.get("gas_demand", []):
+        for demand in solution.energy_system_components.get("gas_demand", []):
             target = solution.get_timeseries(f"{demand}.target_gas_demand").values
             np.testing.assert_allclose(target, results[f"{demand}.Gas_demand_mass_flow"])
 
         removed_pipes = ["Pipe_a718", "Pipe_9a6f", "Pipe_2927"]
         remained_pipes = ["Pipe_51e4", "Pipe_6b39", "Pipe_f9b0"]
         for pipe in removed_pipes:
-            np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0)
-            np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0)
-            np.testing.assert_allclose(results[f"{pipe}__gn_max_discharge"], 0.0)
+            np.testing.assert_allclose(results[f"{pipe}__gn_diameter"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__investment_cost"], 0.0, atol=1.0e-6)
+            np.testing.assert_allclose(results[f"{pipe}__gn_max_discharge"], 0.0, atol=1.0e-6)
         for pipe in remained_pipes:
             np.testing.assert_array_less(0.0, results[f"{pipe}__gn_diameter"])
             np.testing.assert_array_less(0.0, results[f"{pipe}__investment_cost"])

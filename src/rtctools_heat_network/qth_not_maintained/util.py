@@ -8,11 +8,11 @@ from .. import __version__
 
 def run_heat_network_optimization(heat_class, qht_class, *args, log_level=logging.INFO, **kwargs):
     """
-    This function is meant to run the milp heat class and qth non-linear class sequentially. Both
+    This function is meant to run the milp milp class and qth non-linear class sequentially. Both
     solve the same network, but the qth class is constrained with the flow direction found in the
-    heat optimization. This allows to approximate the full mixed integer non-linear optimization
+    milp optimization. This allows to approximate the full mixed integer non-linear optimization
     with much faster computational times. Note that this does not guarantee optimality, however
-    given that the milp heat optimization is reasonably close and conservative it can guarantee
+    given that the milp milp optimization is reasonably close and conservative it can guarantee
     feasibility.
     """
     logger = logging.getLogger("rtctools_heat_network")
@@ -30,12 +30,12 @@ def run_heat_network_optimization(heat_class, qht_class, *args, log_level=loggin
         q_out = results[p + ".HeatOut.Q"]
 
         if not heat_problem.parameters(0)[p + ".disconnectable"]:
-            # Flow direction is directly related to the sign of the heat
+            # Flow direction is directly related to the sign of the milp
             direction_pipe = (q_in >= 0.0).astype(int) * 2 - 1
         elif heat_problem.parameters(0)[p + ".disconnectable"]:
             direction_pipe = (q_in >= 0.0).astype(int) * 2 - 1
-            # Disconnect a pipe when the heat entering the component is only used
-            # to account for its heat losses. There are three cases in which this
+            # Disconnect a pipe when the milp entering the component is only used
+            # to account for its milp losses. There are three cases in which this
             # can happen.
             direction_pipe[((q_in > 0.0) & (q_out < 0.0))] = 0
             direction_pipe[((q_in < 0.0) & (q_out > 0.0))] = 0
@@ -47,18 +47,18 @@ def run_heat_network_optimization(heat_class, qht_class, *args, log_level=loggin
         cold_pipe = heat_problem.hot_to_cold_pipe(p)
         directions[cold_pipe] = directions[p]
 
-    for v in heat_problem.heat_network_components.get("check_valve", []):
+    for v in heat_problem.energy_system_components.get("check_valve", []):
         status_valve = (results[f"{v}__status_var"]).round().astype(int)
         directions[v] = Timeseries(times, status_valve)
 
-    for v in heat_problem.heat_network_components.get("control_valve", []):
+    for v in heat_problem.energy_system_components.get("control_valve", []):
         directions_valve = (results[f"{v}__flow_direct_var"]).round().astype(int) * 2 - 1
         directions[v] = Timeseries(times, directions_valve)
 
     buffer_target_discharges = {}
     parameters = heat_problem.parameters(0)
 
-    for b in heat_problem.heat_network_components.get("buffer", []):
+    for b in heat_problem.energy_system_components.get("buffer", []):
         cp = parameters[f"{b}.cp"]
         rho = parameters[f"{b}.rho"]
         heat_flow_rate_to_discharge = 1 / (cp * rho * parameters[f"{b}.dT"])

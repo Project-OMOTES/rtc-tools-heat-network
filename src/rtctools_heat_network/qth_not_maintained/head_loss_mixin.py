@@ -58,7 +58,7 @@ class HeadLossOption(IntEnum):
 
            dH = H_{down} - H_{up}
 
-    LINEARIZED_DW
+    LINEARIZED_N_LINES_WEAK_INEQUALITY
         Just like ``CQ2_INEQUALITY``, this option adds inequality constraints:
 
         .. math::
@@ -74,7 +74,7 @@ class HeadLossOption(IntEnum):
 
            .. image:: /images/DWlinearization.PNG
 
-    LINEAR
+    LINEARIZED_ONE_LINE_EQUALITY
         This option uses a linear head loss formulation.
         A single constraint of the type
 
@@ -101,8 +101,8 @@ class HeadLossOption(IntEnum):
 
     NO_HEADLOSS = 1
     CQ2_INEQUALITY = 2
-    LINEARIZED_DW = 3
-    LINEAR = 4
+    LINEARIZED_N_LINES_WEAK_INEQUALITY = 3
+    LINEARIZED_ONE_LINE_EQUALITY = 4
     CQ2_EQUALITY = 5
 
 
@@ -125,8 +125,8 @@ class _MinimizeHeadLosses(Goal):
         parameters = optimization_problem.parameters(ensemble_member)
         options = optimization_problem.heat_network_options()
 
-        pumps = optimization_problem.heat_network_components.get("pump", [])
-        sources = optimization_problem.heat_network_components.get("source", [])
+        pumps = optimization_problem.energy_system_components.get("pump", [])
+        sources = optimization_problem.energy_system_components.get("heat_source", [])
 
         for p in pumps:
             sum_ += optimization_problem.state(f"{p}.dH")
@@ -139,7 +139,7 @@ class _MinimizeHeadLosses(Goal):
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for p in optimization_problem.heat_network_components["pipe"]:
+        for p in optimization_problem.energy_system_components["pipe"]:
             if not parameters[f"{p}.has_control_valve"] and not parameters[f"{p}.length"] == 0.0:
                 sym_name = optimization_problem._hn_pipe_to_head_loss_map[p]
                 sum_ += optimization_problem.state(sym_name)
@@ -172,7 +172,7 @@ class _MinimizeHydraulicPower(Goal):
 
         assert options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
 
-        for pipe in optimization_problem.heat_network_components.get("pipe", []):
+        for pipe in optimization_problem.energy_system_components.get("pipe", []):
             if (
                 not parameters[f"{pipe}.has_control_valve"]
                 and not parameters[f"{pipe}.length"] == 0.0
@@ -217,7 +217,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         head_loss_values = {
             options["head_loss_option"],
         }
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             head_loss_values.add(self._hn_get_pipe_head_loss_option(p, options, parameters))
 
         if HeadLossOption.NO_HEADLOSS in head_loss_values and len(head_loss_values) > 1:
@@ -229,7 +229,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
     def heat_network_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
 
         +--------------------------------+-----------+-----------------------------------+
         | Option                         | Type      | Default value                     |
@@ -240,11 +240,14 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         +--------------------------------+-----------+-----------------------------------+
         | ``head_loss_option``           | ``enum``  | ``HeadLossOption.CQ2_INEQUALITY`` |
         +--------------------------------+-----------+-----------------------------------+
-        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* & LINEAR)      |
+        | ``estimated_velocity``         | ``float`` | ``1.0`` m/s (CQ2_* &              |
+        |                                |           |LINEARIZED_ONE_LINE_EQUALITY)      |
         +--------------------------------+-----------+-----------------------------------+
-        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s (LINEARIZED_DW)       |
+        | ``maximum_velocity``           | ``float`` | ``2.5`` m/s                       |
+        |                                |           |LINEARIZED_N_LINES_WEAK_INEQUALITY |
         +--------------------------------+-----------+-----------------------------------+
-        | ``n_linearization_lines``      | ``int``   | ``5`` (LINEARIZED_DW)             |
+        | ``n_linearization_lines``      | ``int``   | ``5``                             |
+        |                                |           |LINEARIZED_N_LINES_WEAK_INEQUALITY |
         +--------------------------------+-----------+-----------------------------------+
         | ``minimize_head_losses``       | ``bool``  | ``True``                          |
         +--------------------------------+-----------+-----------------------------------+
@@ -270,12 +273,12 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         ``estimated_velocity`` determines the `C` in :math:`\Delta H \ge C
         \cdot Q^2`.
 
-        When ``HeadLossOption.LINEARIZED_DW`` is used, the
+        When ``HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY`` is used, the
         ``maximum_velocity`` needs to be set. The Darcy-Weisbach head loss
         relationship from :math:`v = 0` until :math:`v = \text{maximum_velocity}`
         will then be linearized using ``n_linearization`` lines.
 
-        When ``HeadLossOption.LINEAR`` is used, the wall roughness at
+        When ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q`. For pipes that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
@@ -283,7 +286,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         When ``HeadLossOption.CQ2_EQUALITY`` is used, the wall roughness at
         ``estimated_velocity`` determines the `C` in :math:`\Delta H = C \cdot
         Q^2`. Note that this formulation is non-convex. At `theta < 1` we
-        therefore use the formulation ``HeadLossOption.LINEAR``. For pipes
+        therefore use the formulation ``HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY``. For pipes
         that contain a control valve, the formulation of
         ``HeadLossOption.CQ2_INEQUALITY`` is used.
 
@@ -322,7 +325,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         """
         The global user head loss option is not necessarily the same as the
         head loss option for a specific pipe. For example, when a control
-        valve is present, a .LINEAR global head loss option could mean a
+        valve is present, a .LINEARIZED_ONE_LINE_EQUALITY global head loss option could mean a
         .CQ2_INEQUALITY formulation should be used instead.
 
         See also the explanation of `head_loss_option` (and its values) in
@@ -375,7 +378,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             max_pressure > min_pressure
         ), "The global maximum pressure must be larger than the minimum one."
         if np.isfinite(min_pressure) or np.isfinite(max_pressure):
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["pipe"]:
                 # No elevation data available yet. Assume 0 mDAT for now.
                 pipe_elevation = 0.0
                 min_head = min_pressure * 10.2 + pipe_elevation
@@ -387,7 +390,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         if head_loss_option not in HeadLossOption.__members__.values():
             raise Exception(f"Head loss option '{head_loss_option}' does not exist")
 
-        for p in self.heat_network_components.get("pipe", []):
+        for p in self.energy_system_components.get("pipe", []):
             length = parameters[f"{p}.length"]
             if length < 0.0:
                 raise ValueError("Pipe length has to be larger than or equal to zero")
@@ -512,7 +515,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         temperature = parameters[f"{pipe}.temperature"]
         has_control_valve = parameters[f"{pipe}.has_control_valve"]
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             assert not has_control_valve
 
             ff = darcy_weisbach.friction_factor(
@@ -604,7 +607,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             else:
                 return expr
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             n_lines = heat_network_options["n_linearization_lines"]
 
             a, b = darcy_weisbach.get_linear_pipe_dh_vs_q_fit(
@@ -763,7 +766,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             * self.variable_nominal(f"{pipe}.Q")
         )
 
-        if head_loss_option == HeadLossOption.LINEAR:
+        if head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
             # Uitlized maximum_velocity instead of estimated_velocity (used in head loss linear
             # calc)
             ff = darcy_weisbach.friction_factor(
@@ -837,7 +840,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             else:
                 return abs(hydraulic_power_linearized)
 
-        elif head_loss_option == HeadLossOption.LINEARIZED_DW:
+        elif head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             n_lines = heat_network_options["n_linearization_lines"]
             a_coef, b_coef = darcy_weisbach.get_linear_pipe_power_hydraulic_vs_q_fit(
                 rho,
@@ -902,9 +905,10 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
                 return abs(max_hydraulic_power_linearized)
         else:
             assert (
-                head_loss_option == HeadLossOption.LINEARIZED_DW
-                or head_loss_option == HeadLossOption.LINEAR
-            ), "This method only caters for head_loss_option: LINEAR & LINEARIZED_DW."
+                head_loss_option == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                or head_loss_option == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+            ), "This method only caters for head_loss_option: LINEARIZED_ONE_LINE_EQUALITY &"
+            "LINEARIZED_N_LINES_WEAK_INEQUALITY."
 
     def __pipe_head_loss_path_constraints(self, _ensemble_member):
         """
@@ -914,7 +918,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         """
         constraints = []
 
-        for pipe in self.heat_network_components.get("pipe", []):
+        for pipe in self.energy_system_components.get("pipe", []):
             dh = self.state(f"{pipe}.dH")
             h_down = self.state(f"{pipe}.HeatOut.H")
             h_up = self.state(f"{pipe}.HeatIn.H")
@@ -935,7 +939,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
         constraints = []
 
         options = self.heat_network_options()
-        components = self.heat_network_components
+        components = self.energy_system_components
 
         # Convert minimum pressure at far point from bar to meter (water) head
         min_head_loss = options["minimum_pressure_far_point"] * 10.2
@@ -1002,7 +1006,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             and options["head_loss_option"] != HeadLossOption.NO_HEADLOSS
             and priority == self._hn_minimization_goal_class.priority
         ):
-            components = self.heat_network_components
+            components = self.energy_system_components
 
             rtol = 1e-5
             atol = 1e-4
@@ -1029,7 +1033,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
 
                     q = results[f"{pipe}.Q"][inds]
                     head_loss_target = self._hn_pipe_head_loss(pipe, options, parameters, q, None)
-                    if options["head_loss_option"] == HeadLossOption.LINEAR:
+                    if options["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
                         head_loss = np.abs(results[f"{pipe}.dH"][inds])
                     else:
                         head_loss = results[self._hn_pipe_to_head_loss_map[pipe]][inds]
@@ -1069,8 +1073,8 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             g.append(self._hn_minimization_goal_class(self))
 
             if (
-                options["head_loss_option"] == HeadLossOption.LINEAR
-                or options["head_loss_option"] == HeadLossOption.LINEARIZED_DW
+                options["head_loss_option"] == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                or options["head_loss_option"] == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             ):
                 g.append(self._hpwr_minimization_goal_class(self))
 

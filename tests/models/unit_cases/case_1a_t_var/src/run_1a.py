@@ -11,6 +11,8 @@ from rtctools.util import run_optimization_problem
 
 from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
+from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
+from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
@@ -35,7 +37,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -62,6 +64,12 @@ class HeatProblem(
 
 
 if __name__ == "__main__":
-    sol = run_optimization_problem(HeatProblem)
+    sol = run_optimization_problem(
+        HeatProblem,
+        esdl_file_name="1a.esdl",
+        esdl_parser=ESDLFileParser,
+        profile_reader=ProfileReaderFromFile,
+        input_timeseries_file="timeseries_import.xml",
+    )
     results = sol.extract_results()
     a = 1
