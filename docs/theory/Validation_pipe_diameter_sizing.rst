@@ -4,7 +4,7 @@ Pipe diameter sizing
 ====================
 
 This chapter describes the (physical) validation of sizing the pipe diameter in a network. It also provides an overview
-of the assumptions made for the Optimizer in the current version of the Design Toolkit (PoC optimizer of January 23 2024)
+of the assumptions made for the Optimizer in the current version of the Design Toolkit (PoC optimizer `v0.4.5 <https://github.com/Project-OMOTES/rtc-tools-heat-network/releases/tag/0.4.5>`_, accessed January 23 2024)
 with respect to the sizing of the pipe diameter in a network. We only consider here networks that contain sources, demands and pipes. We do not consider storage.
 
 Please note that the Toolkit is currently in active development, and as such, certain assumptions may be subject to refinement over time. 
@@ -20,8 +20,7 @@ Chapter :ref:`chp_approach` states that "For operational optimization high prior
 and fast model over a perfectly accurate one." To accomplish this, one cannot model practice accurately and thus has
 to make assumptions.
 Nevertheless, it is necessary to know the assumptions made as well as what they mean in terms of accuracy.
-For that reason, we list the assumptions made in the current PoC optimizer (date of writing is January 23 2024)
-implemented for optimizing pipe diameters in a network. We distinguish between different categories.
+For that reason, we list the assumptions (made in the PoC optimizer v0.4.5) for optimizing pipe diameters in a network. We distinguish between different categories.
 
 .. _subsec_V_Pipe_basic_attributes:
 
@@ -44,30 +43,43 @@ pipe/insulation material and thickness in the "basic attributes" input list of t
 Even though the user has currently freedom to fill in all sorts of input parameters for the pipes,
 the optimizer routine takes precedence over some user specified parameters than others. We list them here:
 
-* If the user specifies a nominal diameter (DN size), "Diameter", it takes precedence over potential user specified "Inner Diameter".
-* If the user specifies a non-zero "Diameter", the insulation and inner diameter properties from the EDR asset library for Steel S1 library for that DN size will be used (more on this in :ref:`subsec_V_Pipe_classes`), otherwise the inner diameter is fixed and won't be optimized. 
-* If the user specifies no DN size ("Inner diameter") or "Inner Diameter" or a "Material" specified, the diameter and insulation properties of the DN200 in EDR asset library for Steel S1 pipes are used. However, the routine will determinate the optimization with an error, so best is to specify a DN size.
-* If the user specifies no a "Diameter" or "Inner Diameter", but a "Material", the insulation thicknesses and conductivities are taken from esdl references (esdl.MatterReference & esdl.CompoundMatter) instead from the Steel S1 library.
-* If the user specifies no insulation thickness, so no "Material" or "pipe class", the solver assumes that the thickness is equal to half the inner diameter of the pipe.
-* The optimizer routine does not consider any specified "Outer Diameter" by the user. Instead it assume that the outer diameter is the "Inner Diameter" plus the sum of the thicknesses of all insulation layers.
-* The minimum length of a pipeline is 25 m. If a user specifies a shorter length in the model set-up, the optimizer assume that those pipes have a length of 25 m.
+
+1. Nominal Diameter (DN Size):
+
+* The user-specified nominal diameter (referred to as "Diameter") takes precedence over the potential user-specified "Inner Diameter".
+
+2. Non-Zero Diameter:
+
+* If the user specifies a non-zero "Diameter," the insulation and inner diameter properties from the EDR asset library for Steel S1 pipes (specifically for that DN size) will be used (more on this in :ref:`subsec_V_Pipe_classes`).
+* Otherwise, if the user specifies no "Diameter," the inner diameter remains fixed and won't be optimized.
+
+3. No DN Size or Material Specified:
+
+* If the user specifies neither a DN size ("Inner diameter") nor a specific "Material," the diameter and insulation properties of the DN200 in the EDR asset library for Steel S1 pipes are used.
+* However, the optimization routine will encounter an error in this case, so it's advisable to specify a DN size.
+
+4. Material Specification:
+
+* If the user specifies a "Material" but doesn't provide a "Diameter" or "Inner Diameter," the insulation thicknesses and conductivities are taken from esdl references (esdl.MatterReference & esdl.CompoundMatter) instead of relying on the Steel S1 library.
+
+5. Insulation Thickness Assumption:
+
+* When no insulation thickness, material, or pipe class is specified, the solver assumes that the thickness is equal to half the inner diameter of the pipe.
+
+6. Outer Diameter Ignored:
+
+* The optimizer routine does not consider any specified "Outer Diameter" provided by the user. 
+* Instead, it assumes that the outer diameter is the sum of the "Inner Diameter" and the thicknesses of all insulation layers.
+
+7. Minimum Pipeline Length:
+
+* The minimum length of a pipeline is set to 25 meters. If a user specifies a shorter length during model setup, the optimizer assumes that those pipes have a length of 25 meters.
 
 Important to note is that:
 
-* The optimizer routine assumes that the pipes always come in pairs: one supply pipe and one return pipe that are placed parallel to each other in the subsoil. 
-* The optimizer routine only optimizes the pipe diameter if the both the supply and the return pipe of a pipe pair is set to "optional". The routine will determinate the optimization with an error if only one pipe in a pair has been set to "optional".
 * The minimum specified DN size in a pipe pair by the user is the maximum DN size considered by the optimizer routine. 
     * Thus, the result for the diameter of a pipe pair can only be that specified DN size or one of the smaller sizes from the EDR asset library for Steel S1 library.
     * For example, if the user specifies DN1000 for the supply pipe and DN500 for the return pipe in a pipe pair, the maximum considered DN size is DN500.
-
-.. _subsec_V_Network_topologies:
-
-Network topologies
-^^^^^^^^^^^^^^^^^^
-
-The optimizer routine assumes that the pipes always come in pairs: one supply pipe and one return pipe that are placed parallel to each other.
-This means that the return line cannot have a different routing than the supply line.
-Also, when optimizing the pipe diameters, the optimization result is that the supply and return pipe in a pair have the same diameter.
 
 .. _subsec_V_Pipe_classes:
 
@@ -85,8 +97,6 @@ with insulation series 1.
 These pipes are steel pipes with a PUR layer for insulation and a PE casing.
 
 
-.. improve: allow user to specify insulation class: 1, 2 or 3.
-
 The library contains the following properties for several DN sizes:
 
 * **name**: Type of material inner pipe - insulation class - DN size.
@@ -102,6 +112,17 @@ In general, the conductivity for PUR increases over time. This is not taken in a
 
 The properties for the different insulation classes can be found in Chapter :ref:`chp_logstor`.
 
+.. _subsec_V_Network_topologies:
+
+Network topologies
+^^^^^^^^^^^^^^^^^^
+
+The optimizer routine assumes that the pipes always come in pairs: one supply pipe and one return pipe that are placed parallel to each other in the subsoil.
+This means that the return line cannot have a different routing than the supply line.
+The optimizer routine only optimizes the pipe diameter if the both the supply and the return pipe of a pipe pair is set to "optional". 
+The routine will determinate the optimization with an error if only one pipe in a pair has been set to "optional".
+Also, when optimizing the pipe diameters, the optimization result is that the supply and return pipe in a pair have the same diameter.
+
 .. _subsec_V_Network_temperatures:
 
 Network temperatures
@@ -115,7 +136,6 @@ Regarding network temperatures (supply and return) the optimizer routine assumes
 * Calculations are done for the relative heat between the supply and return lines. This relative heat is only transported over the supply line.
 * The network temperature should be in the range 20 to 130 :math:`^\circ C`.
 
-.. The default temperature is 0.0?
 
 .. _subsec_V_Flow:
 
@@ -125,7 +145,7 @@ Flow
 Regarding flows, the optimizer routine assumes the following:
 
 * Minimum flow velocity, :math:`v_{min}`, is 0.0 m/s.
-* Maximum flow velocity, :math:`v_{max}` is 3.0 m/s. Not that this assumption accounts for all diameters, while in practice, small DN sizes (like DN40, DN50, DN65) have lower maximum velocity criteria.
+* Maximum flow velocity, :math:`v_{max}` is 3.0 m/s. Note that this assumption accounts for all diameters, while in practice, small DN sizes (like DN40, DN50, DN65) have lower maximum velocity criteria.
 * Maximum discharge is computed based in the maximum velocity, thus :math:`\dot{V}_{max}` =  :math:`v_{max} A`, with :math:`A` the cross-sectional area of the pipe.
 
 The minimum flow velocity of 0.0 m/s means that return flows are not allowed. 
@@ -140,7 +160,7 @@ The optimizer routine assumes that no head loss over the pipe, thus :math:`\Delt
 However, in practice the smaller the pipe diameter, the larger the losses and the more it costs to pump. 
 And not only that, the rule of thumb is that the pressure loss over a pipe may not exceed 100 Pa/m for the main lines of heating networks, 
 which gives a good balance between heat loss and pumping costs. Instead the routine limits the velocity of the flow instead of the 
-pressure drop as indicates in Section :ref:`subsec_V_Flow`.
+pressure drop as indicated in Section :ref:`subsec_V_Flow`.
 
 Not accounting for the head loss means that the length of the pipe only influences the investment and/or installation costs and no pumping costs 
 are included in the optimization.
@@ -189,8 +209,8 @@ Ground properties
 ^^^^^^^^^^^^^^^^^
 
 The conductivity for the ground or soil is influenced a lot by all different factors depending on the type of soil and
-for example moist level. The NEN norm specifies that usually a value between 1.5 - 2 W/mK is used for wet soil and about 1.0 W/mK for dry soil.
-By default, the optimizer routine assume a value of 2.3 W/mK for the conductivity of the soil.
+for example moist level. The NEN norm :cite:p:`NEN-EN13941+A1` specifies that usually a value between 1.5 - 2 W/mK is used for wet soil and about 1.0 W/mK for dry soil.
+By default, the optimizer routine assume a value of 2.3 W/mK for the conductivity of the soil. This default value cannot be changed by the Design Toolkit user in the current version.
 Moreover, it assumes that the temperature of the soil, :math:`T_g` = 10.0 :math:`^{\circ} C`.
 
 .. _subsec_V_Pipe_conf_subsoil:
@@ -200,7 +220,7 @@ Pipe configuration in subsoil
 
 The optimizer routine assumes that the pipes always come in pairs: one supply pipe and one return pipe that are placed parallel to each other in the subsoil.
 It also assumes that the supply and return pipes have the exact same properties.
-As the user, in the current version, cannot specify a distance between the two parallel pipe, it assumes that the distance from center to center,
+As the user, in the current version, cannot specify a distance between the two parallel pipes, it assumes that the distance from center to center,
 :math:`C`, twice the outer pipe diameter, :math:`D_{outer}` is, i.e:
 
 .. math::
@@ -208,7 +228,7 @@ As the user, in the current version, cannot specify a distance between the two p
 
     {C} = 2 D_{outer}
 
-With other words, it assumes that the is a distance of one pipe outer diameter between the supply and the return pipe in a pipe pair.
+In other words, it assumes that the is a distance of one pipe outer diameter between the supply and the return pipe in a pipe pair.
 
 Furthermore, the optimizer assumes that the pipes are buried and the depth of burial to the top of pipe, :math:`z^{\prime}`, is 1.0 m.
 Users cannot specify the depth of burial to the top of pipe themselves in the current version.
@@ -233,7 +253,7 @@ These are the heat losses through:
 * Neighboring pipelines
 
 The optimizer routine does not account for losses at the surface (interface subsoil and the atmosphere).
-However, for completeness, we mention here that it does assume a heat transfer coefficient at surface of 15.4 W/m\ :sup:`2`/K
+However, for completeness even-though it does not affect any results, we mention here that it does assume a heat transfer coefficient at surface of 15.4 W/m\ :sup:`2`/K.
 
 The optimizer computes the heat loss, :math:`Q_{loss}` as 
 
@@ -280,10 +300,10 @@ As the description above shows, :math:`U_1` and :math:`U_2` are constant values 
 
 The optimizer routine neglects the heat resistance due to convection inside the pipe, i.e. it assumes perfect mixing,
 or that this resistance is much lower than the resistance of the outer insulation layers.
-With other words, the heat loss is only a function of the temperature difference between the supply and return pipe, which are assumed to be constant over time.
+In other words, the heat loss is only a function of the temperature difference between the supply and return pipe, which are assumed to be constant over time.
 Thus, the heat loss does not depends on the flow rates or the amount of heat transported during a certain amount of time.
 
-The insulance of the soil is determined by:
+The thermal insulance of the soil is determined by:
 
 .. math::
     :label: heatloss_pipe_Rg
@@ -326,7 +346,7 @@ In which:
 
     :math:`C`: is the distance between the center of the pipes [m].
 
-Assuming that all temperatures supply and return temperatures are fixed (no degrade in temperature due to losses),
+Assuming that all supply and return temperatures are fixed (no degrade in temperature due to losses),
 and fluid properties do not dependent on temperature,
 e.g. to linearize the problem, has several consequences:
 
@@ -378,7 +398,7 @@ In which:
 
  
 In the current version, the routine take the one-year time series provided by the user and assumes that it holds for every year
-in the modeled systems' lifetime of 30 years. This is the default value, which is not changeable by the user in the current version and it also holds for all assets in a network. 
+in the modeled systems' lifetime of 30 years. This is the default value, which is not changeable by the Design Toolkit user in the current version and it also holds for all assets in a network. 
 It then multiplies the fixed operational cost with the number of years for which the system is optimized (i.e. 30 years).
 Note that this version of the optimizer routine does not consider any discount rate over the lifetime of the system. 
 
@@ -452,8 +472,6 @@ Note that
 * the optimizer routine ignores installation costs specified by the user for return pipes.
 
 
-.. The asset size is fixed (state==1): in this case the investment cost is set based on the upper bound of the size.
-
 The total investment costs, :math:`C_{install,tot}`, of the whole system are computed by:
 
 .. _eq_invest_cost:
@@ -484,8 +502,6 @@ In which:
 The optimizer assumes thus that the investment costs scale with the maximum size of the assets, i.e. the profiles of the assets provided by the user.  
 This is also the case when the total heat demand of the system is lower than what the source(s) can deliver per time step.
 
-.. Specifically for demands, the optimizer routine sets the investment cost based on the maximum demand as often the size of the demand is not separately specified.
-
 The total variable operational expenditure (opex), :math:`C_{var,opex,tot}`, are the cost that depend on the operation of the asset. These cost are computed as:
 
 .. math::
@@ -508,11 +524,6 @@ Note that the variable opex is only computed based on the heat losses in the sup
 In this version of the optimizer routine, only the variable operational cost for sources where they scale with the thermal energy production are supported.
 For more information on the time step, see Section :ref:`subsec_V_Profiles_and_time_steps`. 
 
-.. Total heat loss, computed with final diameter?
-.. (109172.85920502 +10000000)*0.02*8760
-.. However, time steps are five days, which the user does not know. The user specifies the profile of the heat source per time step. W per hour.
-
-
 The total fixed operational expenditure (opex), :math:`C_{fixed,opex,tot}`, is computed by:
 
 .. _eq_fixed_opex_cost:
@@ -520,7 +531,7 @@ The total fixed operational expenditure (opex), :math:`C_{fixed,opex,tot}`, is c
 .. math::
     :label: fixed_opex_cost
 
-    C_{fixed,opex,tot} = C_{fixed,opex,source}  P_{max,source}
+    C_{fixed,opex,tot} = C_{fixed,opex,source}  P_{source,max}
 
 In which:
 
@@ -528,22 +539,14 @@ In which:
 
 The user, before running an optimization, needs to specify the maximum potential heat supply of the source (constant or a hourly profile).
 Note that if the source provides less heat than its maximum potential, it will not results in less fixed opex costs. 
-With other words, the fixed operational costs are computed as if independently of its operation. 
+In other words, the fixed operational costs are computed as if independently of its operation. 
 Thus the user needs to be aware that,
 because the fixed operational costs scale with the chosen size of the source, 
 the larger the overestimation of the source by the user the bigger the influence of the (pipeline diameter) optimization.
-.. It is also considered in the optimization as a one in a lifetime occurring cost.
-.. Optimally, the user accounts for the head demands in the system and all losses.
 
 In practice, the supplied heat is a function of mass flow rate and temperature. The source supplies at a certain temperature.
 This can vary according to some profile. If the demand is lower than what the source potentially can deliver,
 the mass flow rate needs to lower.
-
-.. By knowing the properties for a range of DN sizes, it can determine which DN size leads to the lowest cost.
-.. This cost depends on the investment cost of the pipe which is typically in euro/m
-.. and the more heat losses, the higher the operational cost of the source (so looking from a system perspective).
-
-.. heat_mixin contains variables named "sum". This is not desired.
 
 
 .. _sec_Validations:
@@ -571,14 +574,13 @@ heating demand, while the pipes are set to "optional" such that the optimizer ro
     are "optional".
 
 
-Furthermore, we compare the optimizer results with simulations results of a similar hydraulic model.
+Furthermore, we compare the optimizer results with simulation results of a similar hydraulic model.
 We simulate the flow and heat transfer in a simple source-pipe-demand model with the Deltares software WANDA.
-The numerical models in the WANDA software contains a high level of the physics of flow and heat transport through piping systems.
+The numerical models in the WANDA software contains detailed physics of flow and heat transport through piping systems.
 Also, WANDA has been validated against measurements for flows in pipes. 
 Detailed information can be found in the `WANDA manual <https://publicwiki.deltares.nl/display/WANDA/Wanda+User+Manual>`_.
 
-As Chapter :ref:`chp_approach` has already stated, in design optimization high priority is given to a stable, robust,
-and fast model over a perfectly accurate one. For that reason, it certainly does not require the same level as physics as simulation models,
+As Chapter :ref:`chp_approach` has already stated, in design optimization high priority is given to a stable, robust, fast and 'easy-to-solve' model over a perfectly accurate one. For that reason, it certainly does not require the same level of physics as simulation models,
 but it is essential to understand what assumptions are valid.
 
 We perform a series of steady-state simulations
@@ -623,13 +625,13 @@ Consequently, a WANDA model (and optimizer model) with a pipe that experiences a
 Time step validation
 ^^^^^^^^^^^^^^^^^^^^
 
-As we explained in :ref:`subsec_V_Profiles_and_time_steps`, the optimizer routine averages the, by the user provided, one year hourly demand profiles to five-day averages plus the one day (24 hours) that contains the peak hour.
+As we explained in :ref:`subsec_V_Profiles_and_time_steps`, the optimizer routine averages the user provided one year hourly demand profiles to five-day averages plus the one day (24 hours) that contains the peak hour.
 This means that the number of time steps considered is 97 time steps (365 (days per year)/5+24(peak day)). 
 The benefit of having only 97 time steps is less computational time than without averaging.
 However, the question is whether this affects the pipe diameter sizing results. 
 To check this, we compare the optimization results for 5-day averaging (hard-coded in the current version), 1-day averaging and a 365-day averaging for the simple pipe diameter sizing problem. 
 In all cases, the peak day is included in the time series. We do this for the same simple network of one heat source connected to one heating demand with a supply and a return as we described in Section 
-:ref:`sec_V_pipe_D_validation_physics`, but with the demand profile depict in :numref:`fig_heating_demand_profile`.
+:ref:`sec_V_pipe_D_validation_physics`, but with the demand profile depicted in :numref:`fig_heating_demand_profile`.
 
 .. _fig_heating_demand_profile:
 
@@ -858,13 +860,13 @@ With the WANDA simulations, it was not possible to obtain results for diameters 
 The results show that the larger the pipe diameter, the lower the pumping energy needed, while heat losses are more dominant for bigger pipe diameters. 
 For the simulated case that a pipe diameter of DN150 requires the minimum total energy.
 
-The results with insulation shows a different relation between the energy required and the different pipe diameters. 
+The results with insulation show a different relation between the energy required and the different pipe diameters. 
 The required pumping energy is the highest for the smallest simulated diameter, due to the friction of the fluid with the pipe.
 From about DN250 and larger, the pumping energy becomes more or less negligible compared to the heat losses. The results show that the heat losses do not increase monotonically.
-This is because the isolation thicknesses do vary over the different diameters. 
+This is because the insulation thicknesses do vary over the different diameters. 
 
 :numref:`V_physics_validation` also shows the optimal solution found by the optimizer routine, namely DN200, which is due to the maximum velocity criterium of 3.0 m/s as :numref:`V_physics_validation_temperature` shows. 
-On the other hand, the WANDA steady-state results show that the least about of energy is needed for DN500. That is because the difference in optimization: energy vs costs. 
+On the other hand, the WANDA steady-state results show that the least amount of energy is needed for DN500. That is because the difference in optimization: energy vs costs. 
 So it depends on how the costs for the extra required energy outweigh the costs of a larger pipe diameter. We investigate that in the next subsection.
 
 .. _V_physics_validation:
@@ -889,7 +891,7 @@ So it depends on how the costs for the extra required energy outweigh the costs 
 Cost validation
 ^^^^^^^^^^^^^^^
 
-:numref:`fig_physics_validation_costs` shows the the costs for different diameters according to the setup of the optimizer with and without insulation. 
+:numref:`fig_physics_validation_costs` shows the costs for different diameters according to the setup of the optimizer with and without insulation. 
 
 .. _fig_physics_validation_costs:
 
@@ -908,7 +910,7 @@ For the simulated cases with WANDA, the smallest simulated diameter DN125 requir
 On the other hand, the optimizer routine determines a minimum diameter of DN200 as we have shown before in :numref:`V_physics_validation`. 
 This is due to the minimum velocity criterium applied to the optimization.
 
-Not that we have only considered the demand peak hour. 
+Note that we have only considered the demand peak hour. 
 Typically, the cost associated with the heat losses will be at least an order higher in summer when the demand for heat is low, which could affect this cost figure.
 
 
@@ -918,13 +920,13 @@ Typically, the cost associated with the heat losses will be at least an order hi
 Insulation class validation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's have a look at the computation of heat losses and the effect of isolation classes (S1, S2 and S3) of pipes on the heat losses.
+Let's have a look at the computation of heat losses and the effect of the insulation classes (S1, S2 and S3) of pipes on the heat losses.
 We do this as follows. First, we determine with the optimizer the optimal pipe diameter for two different cases. 
 In the first one the Heating Demand is 10 MW. In the second one the Heating Demand is 90 MW. 
-This will results in two different optimal diameters. We use the same cost figures as :numref:`table_cost_param_time_step_val`. 
+This will result in two different optimal diameters. We use the same cost figures as :numref:`table_cost_param_time_step_val`. 
 We also have the same input parameters as in
-:numref:`table_pg_param_time_step_val`, but instead of a Demand profile we provide a year profile met hourly demand of 10 W for the first case and 90 MW for the second case.
-The reason that we are not choosing a higher demand for the second case is that the catalog of Logstore only goes up to DN500 for isolation class S3. 
+:numref:`table_pg_param_time_step_val`, but instead of a Demand profile we provide a year profile with hourly demand of 10 W for the first case and 90 MW for the second case.
+The reason that we are not choosing a higher demand for the second case is that the catalog of Logstore only goes up to DN500 for the insulation class S3. 
 A higher demand will result in a velocity larger than 3 m/s (criterium of the optimizer) for a DN 500 pipe given the temperature difference of 40 degree Celcius. 
 The optimizer results are depicted in :numref:`table_results_heat_losses_opt`.
 
@@ -962,7 +964,7 @@ Yet, the variable opex cost is an order higher for the 90 MW case compared to th
 This is because the heat delivered by the source to match the demand is dominant over the extra costs due to the heat losses in these cases.
 
 Next, we perform steady-state WANDA simulations for the same input parameters and the inner diameter as obtained with the optimizer routine. 
-We compare those results with the optimizer results. :numref:`table_results_iso_classes_opt` depict the WANDA results for both cases for different insulation classes.
+We compare those results with the optimizer results. :numref:`table_results_iso_classes_opt` depicts the WANDA results for both cases for different insulation classes.
 
 
 .. unlogical errors: choosing a too high investment cost for the demand (0.02 or higher) leads to infeasible results.
@@ -971,7 +973,7 @@ We compare those results with the optimizer results. :numref:`table_results_iso_
 
 .. _table_results_iso_classes_opt:
 
-.. table:: Results of the WANDA steady-state for three isolation classes of the supply and return pipes -2.5 km.
+.. table:: Results of the WANDA steady-state for three insulation classes of the supply and return pipes -2.5 km.
 
     +------------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+
     | Parameter case               | 10 MW-S1                 | 10 MW-S2                 | 10 MW-S3                 | 90  MW-S1                | 90 MW-S2                 | 90 MW-S3                 |
@@ -991,9 +993,9 @@ We compare those results with the optimizer results. :numref:`table_results_iso_
     |:math:`C_{var,opex,hour}` [M€]| 0.202                    | 0.202                    | 0.201                    | 1.802                    | 1.802                    | 1.801                    |
     +------------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+
 
-What stand out from the results is that the heat losses are only about 1 percent of the heat demand for the worse insulation class S1 and about 0.5 percent for class S3.
+What stands out from the results is that the heat losses are only about 1 percent of the heat demand for the worse insulation class S1 and about 0.5 percent for class S3.
 This is also reflected by the total variable opex cost for one year, which only slightly improves for higher insulation classes. 
-However, in practice one would that the investment costs of pipes cost more than those with a lower class. 
+However, in practice one would expect that the investment costs of pipes cost more than those with a lower class. 
 The question is then whether the gain in less heat losses outweigh the extra investment costs needed for pipes with higher insulation classes. 
 However, since we do the validations based on the available data for the pipe classes present for the optimizer routine, which assumes prices irrespective of the pipe classes, we cannot make this comparison here.
 Also note that the temperature in the pipes barely drop over the distance of the pipes. This is also reflected in the variable cost for 1 hour in winter during peak hour
@@ -1003,7 +1005,7 @@ This changes is if we have a longer pipe line, for instance from the Maasvlakte 
 
 .. _table_results_iso_classes_opt_25_km:
 
-.. table:: Results of the WANDA steady-state for three isolation classes of the supply and return pipes of 25 km for the peak hour.
+.. table:: Results of the WANDA steady-state for three insulation classes of the supply and return pipes of 25 km for the peak hour.
 
     +------------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+
     | Parameter case               | 10 MW-S1                 | 10 MW-S2                 | 10 MW-S3                 | 90  MW-S1                | 90 MW-S2                 | 90 MW-S3                 |
@@ -1022,7 +1024,7 @@ This changes is if we have a longer pipe line, for instance from the Maasvlakte 
     +------------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+
     
 The results for 10 MW show a more dominant drop in temperature of the 25 km long pipes compared to those of 2.5 km. 
-Because of this it does make more sense to insulate the pipes with a higher class. 
+Because of this it does make more sense to insulate longer pipes with a higher class. 
 The reason that this drop is more dominant for the 10 MW case compared to the 90 MW is that the amount of heat loss is more or less the same in the absolute sense, but higher compared to the heat delivered to the demand in the relative sense.
 
 Moreover, be aware that the velocity in these cases are quite high, because we have optimized the pipe diameter based on the peak hour, and heat losses will become more dominant for lower velocities. 
@@ -1036,7 +1038,7 @@ What generally is applied in practice is that source deliver heat at a higher su
 
 .. _table_results_iso_classes_opt_25_km_summer:
 
-.. table:: Results of the WANDA steady-state for three isolation classes of the supply and return pipes - 25 km - summer.
+.. table:: Results of the WANDA steady-state for three insulation classes of the supply and return pipes - 25 km - summer.
 
     +------------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+--------------------------+
     | Parameter case               | 1 MW-S1                  | 1 MW-S2                  | 1 MW-S3                  | 9 MW-S1                  | 9 MW-S2                  | 9 MW-S3                  |
@@ -1057,16 +1059,6 @@ What generally is applied in practice is that source deliver heat at a higher su
 
 These results show the application range of the optimizer routine. The optimizer routine is less applicable when heat losses are dominant, e.g. low flow velocities and large distances. 
 For transport networks, the relative heat losses are often small, but for distribution networks (up to houses) heat losses are generally more dominant. 
-
-
-..    How different are heat losses in WANDA compared to the optimizer, using two sets of assumptions: 
-.. 1) same constant ground surface temp as in optimizer, Ts_source = 73 C to guarantee 70 C at consumers; Tr_demand side = 40 C.. This mimics 70/40 condition in optimizer. 
-.. 2) Monthly average ground surface temps; Ts_source = 73 C to guarantee 70 C at consumers; Tr_demand side = 40 C.. This mimics 70/40 condition in optimizer. 
-.. 3) same as 2) with insulation class 2. 
-
-.. Compare heat losses: I would expect large errors in heat loss, since the heat loss in the return pipe is completely neglected.
-
-.. !!!!!!!WRONG get_series for temperatures!!!!!!!!!!!!!!
 
 
 .. _sec_V_pipe_D_symbols:
@@ -1115,34 +1107,3 @@ Parameter                                                       Description     
 :math:`t_{lifetime}`                                            Lifetime of the system                                    y
 =============================================================== ========================================================= =======================
 
-
-
-
-.. Add heat loss to average heating demand every time step. 
-
-.. (10+2)*24
-.. 10+2*12+10+2+12
-
-.. heat_loss = (length * (u_1 - u_2) * temperature
-            - (length * (u_1 - u_2) * temperature_ground)
-            + (length * u_2 * dtemp))
-
-.. for i in range(1, len(times)):
-..    cost += 0.02 * (Heat_source[i]) * (
-..        timesteps[i - 1])
-
-.. Pipe1_ret.Heat_loss': 55900.48302654336,
-.. 'Pipe1.Heat_loss': 139283.82130167822
-
-.. install = 100000(demand) + 1000000(source) 
-.. invest = 2500*2*1126.4 (DN150) + 0.025 * 1.2E7(source) + 0.01 * 1E7(demand)
-.. fixed_opex =  0.06  1.2E7 (source)
-.. This means that the optimizer routine does not compute the variable opex cost (Equation :numref:`variable_opex_cost`), which depend on the heat losses in the pipes, based on the optimization result, but on the initial input provided by the user.
-
-.. C_{var,opex,tot} = \sum_i 0.02 (Q_{demand,i}+Q_{loss,sup,i}+Q_{loss,ret,i}) dt_i
-
-
-
-
-
-.. Pipe 'Pipe1'' has both 'material' and 'diameter' specified. Insulation properties of DN800 will be used.
