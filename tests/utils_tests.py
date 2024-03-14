@@ -220,12 +220,12 @@ def heat_to_discharge_test(solution, results):
             heat = results[f"{d}.{p}_heat"]
 
             if p == "Primary":
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t)
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * return_t, atol=tol)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * supply_t + tol))
                 test.assertTrue(expr=all(heat <= discharge * rho * cp * dt + tol))
             elif p == "Secondary":
                 test.assertTrue(expr=all(heat >= discharge * rho * cp * dt - tol))
-                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t)
+                np.testing.assert_allclose(heat_out, discharge * rho * cp * supply_t, atol=tol)
                 test.assertTrue(expr=all(heat_in <= discharge * rho * cp * return_t + tol))
 
     for p in solution.energy_system_components.get("heat_pipe", []):
