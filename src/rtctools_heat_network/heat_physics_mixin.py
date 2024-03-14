@@ -1772,16 +1772,17 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
            flow in the ATES. This will result in a longer time for the extraction of heat from the
            ATES to empty it, which will again result in more heat losses.
 
-        During unloading of the ATES, the temperature of the pipe should be the same as the
-        discretized temperature of the ATES. During loading the temperature of the carrier/pipe
-        should larger or equal to the discretized temperature of the ates.
+        During discharging of the ATES, the temperature of the pipe should be the same as the
+        discretized temperature of the ATES. During charging the temperature of the carrier/pipe
+        should be larger or equal to the discretized temperature of the ates, since one does not
+        want to reduce the temperature during charging.
         """
 
         constraints = []
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
 
-        for b, (
+        for ates_asset, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
         ) in {**self.energy_system_topology.ates}.items():
@@ -1789,10 +1790,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             flow_dir_var = self._pipe_to_flow_direct_map[hot_pipe]
             is_buffer_charging = self.state(flow_dir_var) * _hot_pipe_orientation
 
-            sup_carrier = parameters[f"{b}.T_supply_id"]
+            sup_carrier = parameters[f"{ates_asset}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            ates_temperature = self.state(f"{b}.Temperature_ates")
-            ates_temperature_disc = self.state(f"{b}__temperature_ates_disc")
+            ates_temperature = self.state(f"{ates_asset}.Temperature_ates")
+            ates_temperature_disc = self.state(f"{ates_asset}__temperature_ates_disc")
 
             # discretized tempeature should alwyas be smaller or equal to ATES temperature
             constraints.append((ates_temperature - ates_temperature_disc, 0.0, np.inf))
@@ -1803,7 +1804,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 # TODO: this could use ordering strategy
                 big_m = max(supply_temperatures)
                 for temperature in supply_temperatures[1:]:
-                    temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
+                    temp_selected = self.state(f"{ates_asset}__temperature_disc_{temperature}")
                     prev_temp = supply_temperatures[supply_temperatures.index(temperature) - 1]
                     constraints.append(
                         (
@@ -1824,7 +1825,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 """
                 variable_sum = 0.0
                 for temperature in supply_temperatures:
-                    temp_selected = self.state(f"{b}__temperature_disc_{temperature}")
+                    temp_selected = self.state(f"{ates_asset}__temperature_disc_{temperature}")
                     variable_sum += temp_selected
                     big_m = 2.0 * max(supply_temperatures)
                     constraints.append(
@@ -1896,7 +1897,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     )
                 )
             else:
-                constraints.append((parameters[f"{b}.T_supply"] - ates_temperature_disc, 0.0, 0.0))
+                constraints.append(
+                    (parameters[f"{ates_asset}.T_supply"] - ates_temperature_disc, 0.0, 0.0)
+                )
 
         return constraints
 
@@ -2172,10 +2175,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         # )
                         constraints.append(
                             (
-                                (
-                                    ates_dt_loss_vec
-                                    - big_m * (1.0 * np.ones(len(a)) - is_buffer_charging_vec)
-                                )
+                                (ates_dt_loss - big_m * (1.0 - is_buffer_charging))
                                 / ates_temperature_loss_nominal,
                                 -np.inf,
                                 0.0,
@@ -3344,7 +3344,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            if len(supply_temperatures) != 0:
+            if len(supply_temperatures) > 0:
                 big_m = 2.0 * max(supply_temperatures)
                 min_dt = abs(min(np.diff(supply_temperatures)))
 

@@ -90,10 +90,8 @@ class ATES(HeatTwoPort, BaseAsset):
         self.add_variable(
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
         )
-        # For nicer constraint coefficient scaling, we shift a bit more error into
-        # the state vector entry of `Heat_loss`. In other words, with a factor of
-        # 10.0, we aim for a state vector entry of ~0.1 (instead of 1.0)
-        self._heat_loss_error_to_state_factor = 1  # 10.0
+
+        self._heat_loss_error_to_state_factor = 1
         self._nominal_heat_loss = (
             self.Stored_heat.nominal * self.heat_loss_coeff * self._heat_loss_error_to_state_factor
         )
