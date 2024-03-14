@@ -235,12 +235,9 @@ class HeatProblem(
                 for demand in demands
             )
 
-            #TODO: check if ordering is possible for ates temperature over time
+            # TODO: check if ordering is possible for ates temperature over time
             day_step = 28
 
-            # TODO: the approach of picking one peak day was introduced for a network with a tree
-            #  layout and all big sources situated at the root of the tree. It is not guaranteed
-            #  that an optimal solution is reached in different network topologies.
             nr_of_days = len(total_demand) // (24 * day_step)
             new_date_times = list()
             for day in range(0, nr_of_days):
@@ -360,9 +357,8 @@ if __name__ == "__main__":
     print(f"time: {time.time() - t0}")
     print("T_ates: ", results["ATES_cb47.Temperature_ates"])
     print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
-    for i in range(0,21):
-        print(f"T_ates_{40+i*1.5} :",  results[f"ATES_cb47__temperature_disc_{40+i*1.5}.0"])
+    for i in range(0, 21):
+        print(f"T_ates_{40+i*1.5} :", results[f"ATES_cb47__temperature_disc_{40+i*1.5}.0"])
         print(f"T_carrier_{40 + i * 1.5} :", results[f"41770304791669983859190_{40 + i * 1.5}.0"])
-
 
     a = 1

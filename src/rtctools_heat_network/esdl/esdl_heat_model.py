@@ -620,7 +620,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         prim_heat = dict(
             HeatIn=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
-                Hydraulic_power = dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
+                Hydraulic_power=dict(nominal=params_q["Primary"]["Q_nominal"] * 16.0e5),
             ),
             HeatOut=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
@@ -637,7 +637,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         sec_heat = dict(
             HeatIn=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
-                Hydraulic_power = dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
+                Hydraulic_power=dict(nominal=params_q["Secondary"]["Q_nominal"] * 16.0e5),
             ),
             HeatOut=dict(
                 Heat=dict(min=-max_heat_transport, max=max_heat_transport, nominal=max_power / 2.0),
@@ -909,8 +909,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
         q_max_ates = hfr_discharge_max / (cp * rho * dt)
 
         q_nominal = min(
-                self._get_connected_q_nominal(asset),
-                q_max_ates * asset.attributes["aggregationCount"])
+            self._get_connected_q_nominal(asset), q_max_ates * asset.attributes["aggregationCount"]
+        )
 
         modifiers = dict(
             technical_life=self.get_asset_attribute_value(

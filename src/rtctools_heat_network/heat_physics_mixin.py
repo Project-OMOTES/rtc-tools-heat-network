@@ -1781,7 +1781,6 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         parameters = self.parameters(ensemble_member)
         options = self.energy_system_options()
 
-
         for b, (
             (hot_pipe, _hot_pipe_orientation),
             (_cold_pipe, _cold_pipe_orientation),
@@ -3368,7 +3367,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     # constraints.append(
                     #     ((temperature - ates_temp - big_m * (1. - ordering)), -np.inf, 0.))
 
-                    #TODO: these variable temperature ordering should be move to a general part for
+                    # TODO: these variable temperature ordering should be move to a general part for
                     # variable network temperatures
                     temperature_var = self.state(f"{sup_carrier}_temperature")
                     ordering_disc_carr = self.state(f"{sup_carrier}__{temperature}_ordering_disc")
