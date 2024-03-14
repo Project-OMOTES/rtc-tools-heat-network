@@ -3344,7 +3344,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             sup_carrier = parameters[f"{ates}.T_supply_id"]
             supply_temperatures = self.temperature_regimes(sup_carrier)
-            if len(supply_temperatures) > 0:
+            if len(supply_temperatures) > 1:
                 big_m = 2.0 * max(supply_temperatures)
                 min_dt = abs(min(np.diff(supply_temperatures)))
 

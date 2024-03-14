@@ -129,6 +129,7 @@ class TestAtesTemperature(TestCase):
             (ates_stored_heat[1:] - ates_stored_heat[:-1]) / (times[1:] - times[:-1]),
             atol=tol,
         )
+        # TODO: potentially update example such that the commented checks will also hold.
         # np.testing.assert_array_less(heat_pump_sec, geo_source)
 
         charging = np.array([int(val > 0) for val in heat_ates])

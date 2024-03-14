@@ -355,10 +355,4 @@ if __name__ == "__main__":
     # sol._write_updated_esdl()
     results = sol.extract_results()
     print(f"time: {time.time() - t0}")
-    print("T_ates: ", results["ATES_cb47.Temperature_ates"])
-    print("T_ates_disc: ", results["ATES_cb47__temperature_ates_disc"])
-    for i in range(0, 21):
-        print(f"T_ates_{40+i*1.5} :", results[f"ATES_cb47__temperature_disc_{40+i*1.5}.0"])
-        print(f"T_carrier_{40 + i * 1.5} :", results[f"41770304791669983859190_{40 + i * 1.5}.0"])
-
     a = 1
