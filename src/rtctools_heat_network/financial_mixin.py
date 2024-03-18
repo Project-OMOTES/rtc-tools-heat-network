@@ -145,22 +145,22 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             # TODO: set the nominal values below
-            # elif asset_name in [*self.energy_system_components.get("gas_tank_storage", [])]:
-            #     nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
-            #     nominal_variable_operational = nominal_fixed_operational
-            #     nominal_investment = nominal_fixed_operational
-            # elif asset_name in [*self.heat_network_components.get("electricity_demand", [])]:
-            #     nominal_fixed_operational = bounds[f"{asset_name}.Electricity_demand"][1]
-            #     nominal_variable_operational = nominal_fixed_operational
-            #     nominal_investment = nominal_fixed_operational
-            # elif asset_name in [*self.heat_network_components.get("electrolyzer", [])]:
-            #     nominal_fixed_operational = bounds[f"{asset_name}.Gas_mass_flow_out"][1]
-            #     nominal_variable_operational = nominal_fixed_operational
-            #     nominal_investment = nominal_fixed_operational
-            # elif asset_name in [*self.heat_network_components.get("wind_park", [])]:
-            #     nominal_fixed_operational = bounds[f"{asset_name}.Set_point"][1]
-            #     nominal_variable_operational = nominal_fixed_operational
-            #     nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("gas_tank_storage", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Stored_gas_mass"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("electricity_demand", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Electricity_demand"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("electrolyzer", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Power_consumed"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("wind_park", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Set_point"][1]
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
             else:
                 logger.warning(
                     f"Asset {asset_name} has type for which "

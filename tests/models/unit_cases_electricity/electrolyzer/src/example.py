@@ -159,7 +159,7 @@ class MILPProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         MILPProblem,
-        esdl_file_name="h2_nostorage.esdl",
+        esdl_file_name="h2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
