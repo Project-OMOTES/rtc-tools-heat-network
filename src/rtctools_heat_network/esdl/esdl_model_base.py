@@ -86,7 +86,7 @@ class _ESDLModelBase(_Model):
         #     a
         #     for a in assets.values()
         #     if (
-        #         a.asset_type == "Pipe"
+        #         a.asset_type == "heat_pipe"
         #         and a.id not in skip_asset_ids
         #         and isinstance(a.in_ports[0].carrier, esdl.HeatCommodity)
         #     )
@@ -185,7 +185,7 @@ class _ESDLModelBase(_Model):
                         else:
                             raise Exception(
                                 f"{asset.name} has total of 5 ports, but no proper split between "
-                                f"heat(4) and electricity (1) ports"
+                                f"milp(4) and electricity (1) ports"
                             )
 
                 else:

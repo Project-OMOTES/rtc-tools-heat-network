@@ -41,7 +41,7 @@ class MinimizeSourcesHeatGoal(Goal):
 
     def function(self, optimization_problem, ensemble_member):
         obj = 0.0
-        for source in optimization_problem.heat_network_components.get("source", []):
+        for source in optimization_problem.energy_system_components.get("heat_source", []):
             obj += optimization_problem.state(f"{source}.Heat_source")
 
         return obj
@@ -51,7 +51,7 @@ class _GoalsAndOptions:
     def path_goals(self):
         goals = super().path_goals().copy()
 
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
 
@@ -76,7 +76,7 @@ class HeatProblem(
         global head_loss_setting, n_linearization_lines_setting
         super().__init__(*args, **kwargs)
         self.heat_network_settings["head_loss_option"] = head_loss_setting
-        if head_loss_setting == HeadLossOption.LINEARIZED_DW:
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
         self.heat_network_settings["minimize_head_losses"] = True
 
@@ -84,7 +84,7 @@ class HeatProblem(
         super().pre()
         global ThermalDemand
         # Making modifications to the target
-        for demand in self.heat_network_components["demand"]:
+        for demand in self.energy_system_components["heat_demand"]:
             target = self.get_timeseries(f"{demand}.target_heat_demand")
 
             # Manually set Demand
@@ -97,6 +97,17 @@ class HeatProblem(
                 target.values,
                 0,
             )
+
+    # Added for case where head loss is modelled via DW
+    def heat_network_options(self):
+        global head_loss_setting, n_linearization_lines_setting
+        options = super().heat_network_options()
+        self.heat_network_settings["head_loss_option"] = head_loss_setting
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+            self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
+        self.heat_network_settings["minimize_head_losses"] = True
+
+        return options
 
     @property
     def esdl_assets(self):

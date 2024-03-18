@@ -56,16 +56,16 @@ class PhysicsMixin(
 
         super().__init__(*args, **kwargs)
 
-    def heat_network_options(self):
+    def energy_system_options(self):
         r"""
-        Returns a dictionary of heat network specific options.
+        Returns a dictionary of milp network specific options.
         """
 
         # options = super().heat_network_options()
 
-        options = HeatPhysicsMixin.heat_network_options(self)
-        options.update(ElectricityPhysicsMixin.heat_network_options(self))
-        options.update(GasPhysicsMixin.heat_network_options(self))
+        options = HeatPhysicsMixin.energy_system_options(self)
+        options.update(ElectricityPhysicsMixin.energy_system_options(self))
+        options.update(GasPhysicsMixin.energy_system_options(self))
 
         return options
 
@@ -155,14 +155,14 @@ class PhysicsMixin(
         """
         assert windowsize_hr > 0
         assert windowsize_hr % 1 == 0
-        assert component_name in sum(self.heat_network_components.values(), [])
+        assert component_name in sum(self.energy_system_components.values(), [])
 
         # Find the component type
         comp_type = next(
             iter(
                 [
                     comptype
-                    for comptype, compnames in self.heat_network_components.items()
+                    for comptype, compnames in self.energy_system_components.items()
                     for compname in compnames
                     if compname == component_name
                 ]
@@ -232,7 +232,7 @@ class PhysicsMixin(
                 # behavior of limited setpoint changes.
                 constraints.append(((setpointchanges - expression), 0.0, np.inf))
 
-            # Constraints for the allowed heat rate of the component.
+            # Constraints for the allowed milp rate of the component.
             # Made 2 constraints which each do or do not constrain the value
             # of the setpoint_is_free var the value of the
             # backward_heat_expression. So the discrete variable does or does

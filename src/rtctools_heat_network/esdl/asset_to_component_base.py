@@ -78,24 +78,24 @@ class _AssetToComponentBase:
         "ElectricityProducer": "electricity_source",
         "Electrolyzer": "electrolyzer",
         "Bus": "electricity_node",
-        "GenericConsumer": "demand",
+        "GenericConsumer": "heat_demand",
         "HeatExchange": "heat_exchanger",
-        "HeatingDemand": "demand",
+        "HeatingDemand": "heat_demand",
         "HeatPump": "heat_pump",
-        "GasHeater": "source",
+        "GasHeater": "heat_source",
         "GasProducer": "gas_source",
         "GasDemand": "gas_demand",
         "GasConversion": "gas_substation",
         "GasStorage": "gas_tank_storage",
-        "GenericProducer": "source",
-        "GeothermalSource": "source",
-        "HeatProducer": "source",
-        "ResidualHeatSource": "source",
+        "GenericProducer": "heat_source",
+        "GeothermalSource": "heat_source",
+        "HeatProducer": "heat_source",
+        "ResidualHeatSource": "heat_source",
         "GenericConversion": "heat_exchanger",
         "Joint": "node",
-        "Pipe": "pipe",
+        "Pipe": "heat_pipe",
         "Pump": "pump",
-        "HeatStorage": "buffer",
+        "HeatStorage": "heat_buffer",
         "Sensor": "skip",
         "Valve": "control_valve",
         "WindPark": "electricity_source",
@@ -223,7 +223,7 @@ class _AssetToComponentBase:
         This function checks if the pipe is connected to specific assets (e.g. source) and if so
         returns true. The true here means that we will later make a is_disconnected variable
         allowing for optionally disconnecting a pipe from the optimization meaning it will not have
-        any flow, but also avoiding the need to compensate the heat losses for that pipe.
+        any flow, but also avoiding the need to compensate the milp losses for that pipe.
 
         Parameters
         ----------
@@ -251,12 +251,11 @@ class _AssetToComponentBase:
             for k, v in self.component_map.items()
             if v
             in {
-                "source",
-                "buffer",
+                "heat_source",
+                "heat_buffer",
                 "ates",
                 "heat_exchanger",
                 "heat_pump",
-                "heat_pump_elec",
             }
         }
 

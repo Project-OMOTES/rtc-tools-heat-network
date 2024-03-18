@@ -20,11 +20,10 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         super().read()
 
         for asset in [
-            *self.heat_network_components.get("source", []),
-            *self.heat_network_components.get("ates", []),
-            *self.heat_network_components.get("buffer", []),
-            *self.heat_network_components.get("heat_pump", []),
-            *self.heat_network_components.get("heat_pump_elec", []),
+            *self.energy_system_components.get("heat_source", []),
+            *self.energy_system_components.get("ates", []),
+            *self.energy_system_components.get("heat_buffer", []),
+            *self.energy_system_components.get("heat_pump", []),
         ]:
             esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
             for constraint in esdl_asset.attributes.get("constraint", []):
@@ -73,12 +72,12 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
             temperature_options = self.__temperature_options[carrier]
         except KeyError:
             for asset in [
-                *self.heat_network_components.get("source", []),
-                *self.heat_network_components.get("ates", []),
-                *self.heat_network_components.get("buffer", []),
-                *self.heat_network_components.get("heat_pump", []),
-                *self.heat_network_components.get("heat_exchanger", []),
-                *self.heat_network_components.get("demand", []),
+                *self.energy_system_components.get("heat_source", []),
+                *self.energy_system_components.get("ates", []),
+                *self.energy_system_components.get("heat_buffer", []),
+                *self.energy_system_components.get("heat_pump", []),
+                *self.energy_system_components.get("heat_exchanger", []),
+                *self.energy_system_components.get("heat_demand", []),
             ]:
                 esdl_asset = self.esdl_assets[self.esdl_asset_name_to_id_map[asset]]
                 parameters = self.parameters(0)

@@ -17,9 +17,9 @@ class TestHydraulicPower(TestCase):
         """
         Check the workings for the hydraulic power variable.
 
-        Scenario 1. LINEARIZED_DW (1 line segment)
-        Scenario 2. LINEAR
-        Scenario 3. LINEARIZED_DW (default line segments = 5)
+        Scenario 1. LINEARIZED_N_LINES_WEAK_INEQUALITY (1 line segment)
+        Scenario 2. LINEARIZED_ONE_LINE_EQUALITY
+        Scenario 3. LINEARIZED_N_LINES_WEAK_INEQUALITY (default line segments = 5)
 
         Checks:
         - For all scenarios (unless stated otherwise):
@@ -87,13 +87,13 @@ class TestHydraulicPower(TestCase):
         ]
         # ----------------------------------------------------------------------------------------
         # 3 MILP simulations with the only difference being the linear head loss setting:
-        # - LINEARIZED_DW (1 line segment)
-        # - LINEAR
-        # - LINEARIZED_DW (default line segments = 5)
+        # - LINEARIZED_N_LINES_WEAK_INEQUALITY (1 line segment)
+        # - LINEARIZED_ONE_LINE_EQUALITY
+        # - LINEARIZED_N_LINES_WEAK_INEQUALITY (default line segments = 5)
         # ----------------------------------------------------------------------------------------
-        # Run MILP with LINEARIZED_DW head loss setting and 1 line segement
+        # Run MILP with LINEARIZED_N_LINES_WEAK_INEQUALITY head loss setting and 1 line segement
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)
-        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_DW
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         run_hydraulic_power.n_linearization_lines_setting = 1
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):
@@ -135,9 +135,9 @@ class TestHydraulicPower(TestCase):
             rtol=1e-2,
         )
         # ----------------------------------------------------------------------------------------
-        # Rerun MILP with LINEAR head loss setting
+        # Rerun MILP with LINEARIZED_ONE_LINE_EQUALITY head loss setting
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)  # empty df
-        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEAR
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):
             run_hydraulic_power.manual_set_pipe_length = run_hydraulic_power.comp_vars_vals[
@@ -168,7 +168,8 @@ class TestHydraulicPower(TestCase):
         # Hydraulic hydraulic =  delta pressure * Q = f(Q^3), where delta pressure = f(Q^2)
         # The predicted hydraulic power should be the same when the delta pressure is approximated
         # by a linear segment, via 2 different head loss setting options. Head loss setting =
-        # HeadLossOption.LINEAR and HeadLossOption.LINEARIZED_DW (with 1 linear segment)
+        # HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY and
+        # HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY (with 1 linear segment)
         np.testing.assert_allclose(
             hydraulic_power_post_process_linear,
             hydraulic_power_post_process_dw_1,
@@ -178,14 +179,15 @@ class TestHydraulicPower(TestCase):
         # Hydraulic hydraulic =  delta pressure * Q = f(Q^3)
         # The predicted hydraulic power should be the same if it is approximated by a linear segment
         # , via 2 different head loss setting options. Head loss setting =
-        # HeadLossOption.LINEAR and HeadLossOption.LINEARIZED_DW (with 1 linear segment)
+        # HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY and
+        # HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY (with 1 linear segment)
         np.testing.assert_allclose(
             hydraulic_power_linear, hydraulic_power_dw_1, err_msg="Values should be the same"
         )
         # ----------------------------------------------------------------------------------------
         # Rerun MILP with DW head loss setting, and default line segments
         run_hydraulic_power.df_MILP = pd.DataFrame(columns=standard_columns_specified)  # empty df
-        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_DW
+        run_hydraulic_power.head_loss_setting = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         run_hydraulic_power.n_linearization_lines_setting = 5
 
         for val in range(0, len(run_hydraulic_power.comp_vars_vals["pipe_length"])):

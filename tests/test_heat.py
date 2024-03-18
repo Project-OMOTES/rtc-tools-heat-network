@@ -15,10 +15,10 @@ from utils_tests import demand_matching_test, energy_conservation_test, heat_to_
 class TestHeat(TestCase):
     def test_heat_loss(self):
         """
-        This is a test to check whether the network (pipes) are dissipating heat as we expect.
+        This is a test to check whether the network (pipes) are dissipating milp as we expect.
 
         Checks:
-        - Check that the produced heat is strictly higher than the consumed heat
+        - Check that the produced milp is strictly higher than the consumed milp
         - Check for energy conservation in the network
 
         """
@@ -40,7 +40,7 @@ class TestHeat(TestCase):
         source = results["source.Heat_source"]
         demand = results["demand.Heat_demand"]
 
-        # With non-zero heat losses in pipes, the demand should always be
+        # With non-zero milp losses in pipes, the demand should always be
         # strictly lower than what is produced.
         np.testing.assert_array_less(demand, source)
 
@@ -50,19 +50,19 @@ class TestHeat(TestCase):
 
     def test_zero_heat_loss(self):
         """
-        Check the optimiziation function when the zero heat loss is used.
+        Check the optimiziation function when the zero milp loss is used.
 
         Checks:
         - Should check that produced equals consumed.
-        - Should check the heat loss variable being zero
+        - Should check the milp loss variable being zero
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
         class Model(SourcePipeSink):
-            def heat_network_options(self):
-                options = super().heat_network_options()
+            def energy_system_options(self):
+                options = super().energy_system_options()
                 options["neglect_pipe_heat_losses"] = True
 
                 return options
@@ -81,7 +81,7 @@ class TestHeat(TestCase):
         results = case.extract_results()
         parameters = case.parameters(0)
 
-        for pipe in case.heat_network_components.get("pipe", []):
+        for pipe in case.energy_system_components.get("heat_pipe", []):
             np.testing.assert_allclose(results[f"{pipe}__hn_heat_loss"], 0.0)
             np.testing.assert_allclose(parameters[f"{pipe}.Heat_loss"], 0.0)
 
@@ -104,11 +104,11 @@ class TestMinMaxPressureOptions(TestCase):
         # We want to force the dynamic pressure in the system to be higher
         # than 12 - 4 = 8 bar (typical upper and lower bounds). We make the
         # pipes smaller in diameter/area to accomplish this. We also adjust
-        # the minimum heat delivered by the source, such that a maximum
+        # the minimum milp delivered by the source, such that a maximum
         # pressure range can force this to go lower than usual.
         def parameters(self, ensemble_member):
             parameters = super().parameters(ensemble_member)
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.diameter"] = 0.04
                 parameters[f"{p}.area"] = 0.25 * 3.14159265 * parameters[f"{p}.diameter"] ** 2
             return parameters
@@ -122,8 +122,8 @@ class TestMinMaxPressureOptions(TestCase):
             return []
 
     class MinPressure(SmallerPipes):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             assert "pipe_minimum_pressure" in self.heat_network_settings
             self.heat_network_settings["pipe_minimum_pressure"] = (
                 TestMinMaxPressureOptions.min_pressure
@@ -131,15 +131,15 @@ class TestMinMaxPressureOptions(TestCase):
             return options
 
     class MaxPressure(SmallerPipes):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             assert "pipe_maximum_pressure" in self.heat_network_settings
             options["pipe_maximum_pressure"] = TestMinMaxPressureOptions.max_pressure
             return options
 
     class MinMaxPressure(SmallerPipes):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             self.heat_network_settings["pipe_minimum_pressure"] = (
                 TestMinMaxPressureOptions.min_pressure
             )
@@ -198,7 +198,7 @@ class TestMinMaxPressureOptions(TestCase):
             max_head = -np.inf
 
             results = case.extract_results()
-            for p in case.heat_network_components["pipe"]:
+            for p in case.energy_system_components["heat_pipe"]:
                 min_head_in = min(results[f"{p}.HeatIn.H"])
                 min_head_out = min(results[f"{p}.HeatOut.H"])
                 min_head = min([min_head, min_head_in, min_head_out])
@@ -241,12 +241,12 @@ class TestDisconnectablePipe(TestCase):
 
     class ModelConnected(SourcePipeSink):
         # We allow the pipe to be disconnectable. We need to be sure that
-        # the solution is still feasible (source delivering no heat), so we
+        # the solution is still feasible (source delivering no milp), so we
         # lower the lower bound.
 
         def parameters(self, ensemble_member):
             parameters = super().parameters(ensemble_member)
-            for p in self.heat_network_components["pipe"]:
+            for p in self.energy_system_components["heat_pipe"]:
                 parameters[f"{p}.disconnectable"] = True
             return parameters
 
@@ -268,14 +268,14 @@ class TestDisconnectablePipe(TestCase):
 
             return constraints
 
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             options["heat_loss_disconnected_pipe"] = False
             return options
 
     class ModelDisconnectedNoHeatLoss(ModelDisconnected):
-        def heat_network_options(self):
-            options = super().heat_network_options()
+        def energy_system_options(self):
+            options = super().energy_system_options()
             options["heat_loss_disconnected_pipe"] = False
             return options
 
@@ -328,15 +328,17 @@ class TestDisconnectablePipe(TestCase):
         np.testing.assert_allclose(q_connected[2:], q_disconnected[2:])
 
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
-        def heat_network_options(self):
-            options = super().heat_network_options()
-            self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+        def energy_system_options(self):
+            options = super().energy_system_options()
+            self.heat_network_settings["head_loss_option"] = (
+                HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+            )
             return options
 
     def test_disconnected_pipe_darcy_weisbach(self):
         """
         Just a sanity check that the head loss constraints for disconnectable
-        pipes works with LINEAR as well as LINEARIZED_DW.
+        pipes works with LINEARIZED_ONE_LINE_EQUALITY as well as LINEARIZED_N_LINES_WEAK_INEQUALITY.
 
         Checks:
         - That the flow is equal for both types of head loss constraint settings.

@@ -61,7 +61,7 @@ class HeatPython(
     CollocatedIntegratedOptimizationProblem,
 ):
     """
-    Problem using simple python model for a heat network with a source, pump, pipe and demand.
+    Problem using simple python model for a milp network with a source, pump, pipe and demand.
     """
 
     def __init__(self, *args, **kwargs):

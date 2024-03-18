@@ -12,7 +12,7 @@ logger = logging.getLogger("rtctools_heat_network")
 
 class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
     """
-    This class is used to make the heat network component information easily accesible in the
+    This class is used to make the milp network component information easily accesible in the
     heat_mixin. This is achieved by creating a heat_network_components dict where the assets are
     sorted by asset_type. Furthermore, the topology object is created in which for specific assets
     the connections with directions are saved for later use in the constraints.
@@ -24,18 +24,18 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
 
     def pre(self):
         """
-        In this function the topology object of the heat network is constructed. Meaning that for
+        In this function the topology object of the milp network is constructed. Meaning that for
         nodes, busses and storage assets their relevant information on the positive flow direction
         and connections on the ports is gathered and stored in the topology object.
         """
-        components = self.heat_network_components
+        components = self.energy_system_components
         nodes = components.get("node", [])
         busses = components.get("electricity_node", [])
         gas_nodes = components.get("gas_node", [])
-        buffers = components.get("buffer", [])
+        buffers = components.get("heat_buffer", [])
         atess = components.get("ates", [])
         try:
-            pipes = components["pipe"]
+            pipes = components["heat_pipe"]
             cables = components.get("electricity_cable", [])
             gas_pipes = components.get("gas_pipe", [])
         except KeyError:
@@ -150,11 +150,11 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         # QTH models. It is only about figuring out which pipes are
         # related direction-wise.
         # For Heat models, only hot pipes are allowed to be part of pipe
-        # series, as the cold part is zero heat by construction.
+        # series, as the cold part is zero milp by construction.
         if heat_network_model_type == "QTH":
             alias_relation = self.alias_relation
         elif heat_network_model_type == "Heat":
-            # There is no proper AliasRelation yet (because there is heat loss in pipes).
+            # There is no proper AliasRelation yet (because there is milp loss in pipes).
             # So we build one, as that is the easiest way to figure out which pipes are
             # connected to each other in series. We do this by making a temporary/shadow
             # discharge (".Q") variable per pipe, as that way we can share the processing
@@ -304,9 +304,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         super().pre()
 
     @property
-    def heat_network_components(self) -> Dict[str, Set[str]]:
+    def energy_system_components(self) -> Dict[str, Set[str]]:
         """
-        This method return a dict with the heat network assets ordered per asset type.
+        This method return a dict with the milp network assets ordered per asset type.
         """
         if self.__hn_component_types is None:
             # Create the dictionary once after that it will be available
@@ -327,9 +327,9 @@ class ModelicaComponentTypeMixin(BaseComponentTypeMixin):
         return self.__hn_component_types
 
     @property
-    def heat_network_topology(self) -> Topology:
+    def energy_system_topology(self) -> Topology:
         """
-        This method returns the topology object of the heat network. Which contains specific assets
+        This method returns the topology object of the milp network. Which contains specific assets
         with directions on the ports that are needed in the constraints.
         """
         return self.__topology

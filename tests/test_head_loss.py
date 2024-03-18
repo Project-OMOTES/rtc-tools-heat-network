@@ -12,15 +12,17 @@ from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.network_common import NetworkSettings
 
+from utils_tests import demand_matching_test
+
 
 class TestHeadLoss(TestCase):
     """
-    Test case for a heat network and a gas network consisting out of a source, pipe(s) and a sink
+    Test case for a milp network and a gas network consisting out of a source, pipe(s) and a sink
     """
 
     def test_heat_network_head_loss(self):
         """
-        Heat network: test the piecewise linear inequality constraint of the head loss
+        Heat network: test the piecewise linear equality and inequality constraints of the head loss
         approximation.
 
         Checks:
@@ -38,112 +40,346 @@ class TestHeadLoss(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        # Added for case where head loss is modelled via DW
-        class SourcePipeSinkDW(SourcePipeSink):
-            def heat_network_options(self):
-                options = super().heat_network_options()
-                self.heat_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
-                self.heat_network_settings["n_linearization_lines"] = 5
-                self.heat_network_settings["minimize_head_losses"] = True
+        for head_loss_option_setting in [
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
+        ]:
+            # Added for case where head loss is modelled via DW
+            class SourcePipeSinkDW(SourcePipeSink):
+                def energy_system_options(self):
+                    options = super().energy_system_options()
 
-                return options
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
 
-        solution = run_optimization_problem(
-            SourcePipeSinkDW,
-            base_folder=base_folder,
-            esdl_file_name="sourcesink.esdl",
-            esdl_parser=ESDLFileParser,
-            profile_reader=ProfileReaderFromFile,
-            input_timeseries_file="timeseries_import.csv",
-        )
-        results = solution.extract_results()
+                    if (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
+                        self.gas_network_settings["head_loss_option"] = (
+                            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                        )
+                        self.gas_network_settings["n_linearization_lines"] = 5
+                        self.heat_network_settings["minimize_head_losses"] = True
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        self.heat_network_settings["head_loss_option"] = (
+                            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
+                        )
+                        self.heat_network_settings["minimize_head_losses"] = True
+                        self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
-        pipes = ["Pipe1", "Pipe1_ret"]
-        v_max = solution.heat_network_settings["maximum_velocity"]
-        pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
-        pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
-        temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
-        pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
-        v_points = [0.0, v_max / solution.heat_network_settings["n_linearization_lines"]]
-        v_inspect = v_points[0] + (v_points[1] - v_points[0]) / 2.0
+                    return options
 
-        # Theoretical head loss calc, dH =
-        # friction_factor * 8 * pipe_length * volumetric_flow^2 / ( pipe_diameter^5 * g * pi^2)
-        dh_theory = (
-            darcy_weisbach.friction_factor(
-                v_inspect,
-                pipe_diameter,
-                pipe_wall_roughness,
-                temperature,
+            solution = run_optimization_problem(
+                SourcePipeSinkDW,
+                base_folder=base_folder,
+                esdl_file_name="sourcesink.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.csv",
             )
-            * 8.0
-            * pipe_length
-            * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
-            / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
-        )
-        # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
-        # dH_manual_linear = a*Q + b
-        # Then use this linear function to calculate the head loss
-        delta_dh_theory = darcy_weisbach.head_loss(
-            v_points[1], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
-        ) - darcy_weisbach.head_loss(
-            v_points[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
-        )
+            results = solution.extract_results()
 
-        delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
-            v_points[0] * np.pi * pipe_diameter**2 / 4.0
-        )
-
-        a = delta_dh_theory / delta_volumetric_flow
-        b = delta_dh_theory - a * delta_volumetric_flow
-        dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
-
-        dh_milp_head_loss_function = darcy_weisbach.head_loss(
-            v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
-        )
-
-        np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
-        np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
-
-        pump_power = results["source.Pump_power"]
-        pump_power_post_process = (
-            results["source.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results["source.Q"]
-        )
-
-        # The pump power should be overestimated compared to the actual head loss due to the fact
-        # that we are linearizing a third order equation for hydraulic power instead of the second
-        # order for head loss.
-        np.testing.assert_array_less(pump_power_post_process, pump_power)
-
-        sum_hp = (
-            results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
-        )
-        sum_hp += results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
-        sum_hp += (
-            results["Pipe1_ret.HeatOut.Hydraulic_power"]
-            - results["Pipe1_ret.HeatIn.Hydraulic_power"]
-        )
-
-        np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
-
-        for pipe in pipes:
-            velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
-            for ii in range(len(results[f"{pipe}.dH"])):
-                np.testing.assert_array_less(
-                    darcy_weisbach.head_loss(
-                        velocities[ii], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
-                    ),
-                    abs(results[f"{pipe}.dH"][ii]),
+            pipes = ["Pipe1"]
+            for itime in range(len(results[f"{pipes[0]}.dH"])):
+                v_max = solution.heat_network_settings["maximum_velocity"]
+                pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+                pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+                temperature = solution.parameters(0)[f"{pipes[0]}.temperature"]
+                pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+                v_points = np.linspace(
+                    0.0,
+                    v_max,
+                    solution.heat_network_settings["n_linearization_lines"] + 1,
                 )
+                v_inspect = (
+                    results[f"{pipes[0]}.Q"][itime] / solution.parameters(0)[f"{pipes[0]}.area"]
+                )
+                idx = []
+                linearized_idx = []
+                idx.append(
+                    (results["Pipe1.Q"][itime] / solution.parameters(0)["Pipe1.area"]) >= v_points
+                )
+                idx.append(
+                    (results["Pipe1.Q"][itime] / solution.parameters(0)["Pipe1.area"]) < v_points
+                )
+                linearized_idx.append(np.where(idx[0])[0][-1])
+                linearized_idx.append(np.where(idx[1])[0][0])
+
+                # Theoretical head loss calc, dH =
+                # friction_factor * 8 * pipe_length * volumetric_flow^2 / ( pipe_diameter^5 * g *
+                # pi^2)
+                dh_theory = (
+                    darcy_weisbach.friction_factor(
+                        v_inspect,
+                        pipe_diameter,
+                        pipe_wall_roughness,
+                        temperature,
+                    )
+                    * 8.0
+                    * pipe_length
+                    * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
+                    / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
+                )
+                # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+                # dH_manual_linear = a*Q + b
+                # Then use this linear function to calculate the head loss
+                delta_dh_theory = darcy_weisbach.head_loss(
+                    v_points[linearized_idx[1]],
+                    pipe_diameter,
+                    pipe_length,
+                    pipe_wall_roughness,
+                    temperature,
+                ) - darcy_weisbach.head_loss(
+                    v_points[linearized_idx[0]],
+                    pipe_diameter,
+                    pipe_length,
+                    pipe_wall_roughness,
+                    temperature,
+                )
+
+                delta_volumetric_flow = (
+                    v_points[linearized_idx[1]] * np.pi * pipe_diameter**2 / 4.0
+                ) - (v_points[linearized_idx[0]] * np.pi * pipe_diameter**2 / 4.0)
+
+                a = delta_dh_theory / delta_volumetric_flow
+                b = delta_dh_theory - a * delta_volumetric_flow
+                dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+
+                dh_milp_head_loss_function = darcy_weisbach.head_loss(
+                    v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                )
+
+                np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
+                np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+
+                if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                    np.testing.assert_array_less(
+                        dh_manual_linear, -results[f"{pipes[0]}.dH"][itime] + 1e-6
+                    )
+                elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    np.testing.assert_allclose(
+                        -results[f"{pipes[0]}.dH"][itime], dh_manual_linear, rtol=1e-5, atol=1e-7
+                    )
+
+            for pipe in pipes:
+                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                for ii in range(len(results[f"{pipe}.dH"])):
+                    np.testing.assert_array_less(
+                        darcy_weisbach.head_loss(
+                            velocities[ii],
+                            pipe_diameter,
+                            pipe_length,
+                            pipe_wall_roughness,
+                            temperature,
+                        ),
+                        -results[f"{pipe}.dH"][ii],
+                    )
+
+            pump_power = results["source.Pump_power"]
+            pump_power_post_process = (
+                results["source.dH"] / GRAVITATIONAL_CONSTANT * 1.0e5 * results["source.Q"]
+            )
+
+            # The pump power should be overestimated compared to the actual head loss due to the
+            # fact that we are linearizing a third order equation for hydraulic power instead of
+            # the second order for head loss.
+            np.testing.assert_array_less(pump_power_post_process, pump_power)
+
+            sum_hp = (
+                results["demand.HeatOut.Hydraulic_power"] - results["demand.HeatIn.Hydraulic_power"]
+            )
+            sum_hp += (
+                results["Pipe1.HeatOut.Hydraulic_power"] - results["Pipe1.HeatIn.Hydraulic_power"]
+            )
+            sum_hp += (
+                results["Pipe1_ret.HeatOut.Hydraulic_power"]
+                - results["Pipe1_ret.HeatIn.Hydraulic_power"]
+            )
+
+            np.testing.assert_allclose(abs(sum_hp), pump_power, atol=1.0e-3)
+
+    def test_heat_network_pipe_split_head_loss(self):
+        """
+        Heat network: test the piecewise linear weak inequality and equality constraints of the
+        head loss approximation.
+
+        Checks:
+        - That the head_loss() function does return the expected theoretical dH at a data point
+        in the middle of the 1st line segment (dH curve is approximated with 5 linear lines)
+        - That the head_loss() function does return a value smaller than a manual linearly
+        approximated dH at a data point in the middle of the 1st line segment (dH curve is
+        approximated with 5 linear lines)
+        - That for the dH value approximated by the code is conservative, in other words greater
+        than the theoretical value
+        - Compare the optimized dH to the linear calculated value to ensure the specified
+        constraint for the head loss linearization is satisfied.
+        - For LINEARIZED_N_LINES_EQUALITY:
+            - That only one linear line is active for the applicable pipes
+            - That the linearized dH value is constraint is satisfied
+            - Pipe 4 for has a zero flow rate, but its dH should be the same as pipe 2
+        """
+        import models.source_pipe_split_sink.src.double_pipe_heat as example
+        from models.source_pipe_split_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        # Specify the head loss linearizations to be tested
+        for head_loss_option_setting in [
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
+        ]:
+            # Added for case where head loss is modelled via DW
+            class SourcePipeSinkDW(SourcePipeSink):
+                def energy_system_options(self):
+                    options = super().energy_system_options()
+
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
+
+                    self.heat_network_settings["head_loss_option"] = head_loss_option_setting
+
+                    self.heat_network_settings["n_linearization_lines"] = 2
+                    self.heat_network_settings["minimum_velocity"] = 0.0
+                    self.heat_network_settings["minimize_head_losses"] = True
+
+                    return options
+
+            solution = run_optimization_problem(
+                SourcePipeSinkDW,
+                base_folder=base_folder,
+                esdl_file_name="sourcesink.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_import.csv",
+            )
+            results = solution.extract_results()
+
+            demand_matching_test(solution, results)
+
+            pipes = ["Pipe1", "Pipe2", "Pipe3", "Pipe4"]
+            # Only evaluate 1 pipe and 1 timestep for now to reduce the test case computational time
+            ipipe = 0
+            itime = 0
+            v_max = solution.heat_network_settings["maximum_velocity"]
+            pipe_diameter = solution.parameters(0)[f"{pipes[ipipe]}.diameter"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            temperature = solution.parameters(0)[f"{pipes[ipipe]}.temperature"]
+            pipe_length = solution.parameters(0)[f"{pipes[ipipe]}.length"]
+            v_points = np.linspace(
+                0.0,
+                v_max,
+                solution.heat_network_settings["n_linearization_lines"] + 1,
+            )
+            v_inspect = (
+                results[f"{pipes[ipipe]}.HeatIn.Q"][itime]
+                / solution.parameters(0)[f"{pipes[ipipe]}.area"]
+            )
+
+            # Theoretical head loss calc, dH =
+            # friction_factor * 8 * pipe_length * volumetric_flow^2 / ( pipe_diameter^5 * g * pi^2)
+            dh_theory = (
+                darcy_weisbach.friction_factor(
+                    v_inspect,
+                    pipe_diameter,
+                    pipe_wall_roughness,
+                    temperature,
+                )
+                * 8.0
+                * pipe_length
+                * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
+                / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
+            )
+            # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+            # dH_manual_linear = a*Q + b
+            # Then use this linear function to calculate the head loss
+            delta_dh_theory = darcy_weisbach.head_loss(
+                v_points[1], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+            ) - darcy_weisbach.head_loss(
+                v_points[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+            )
+
+            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
+                v_points[0] * np.pi * pipe_diameter**2 / 4.0
+            )
+
+            a = delta_dh_theory / delta_volumetric_flow
+            b = delta_dh_theory - a * delta_volumetric_flow
+            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+
+            dh_milp_head_loss_function = darcy_weisbach.head_loss(
+                v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+            )
+
+            np.testing.assert_allclose(dh_theory, dh_milp_head_loss_function)
+            np.testing.assert_array_less(dh_milp_head_loss_function, dh_manual_linear)
+
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                np.testing.assert_array_less(
+                    dh_manual_linear, -results[f"{pipes[ipipe]}.dH"][itime] + 1e-6
+                )
+            elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                np.testing.assert_allclose(
+                    -results[f"{pipes[ipipe]}.dH"][itime], dh_manual_linear, rtol=1e-5, atol=1e-7
+                )
+
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                # Check:
+                #  - That only one linear line is active for the applicable pipes
+                #  - That the linearized dH value is constraint is satisfied
+                #  - Pipe 4 for has a zero flow rate, but its dH should be the same as pipe 2
+                for pipe in pipes:
+                    # Check that only one linear line segment is active for the head loss
+                    # linearization
+                    if pipe not in ["Pipe4"]:  # Pipe 4 has no flow rate
+                        np.testing.assert_allclose(
+                            results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
+                            0.0,
+                        )
+                        np.testing.assert_allclose(
+                            results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
+                            0.0,
+                        )
+                        np.testing.assert_allclose(
+                            results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                            0.0,
+                        )
+                        np.testing.assert_allclose(
+                            results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
+                            1.0,
+                        )
+                        np.testing.assert_allclose(
+                            results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                            0.0,
+                        )
+
+                    if pipe not in ["Pipe4", "Pipe4_ret"]:
+                        velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                        for ii in range(len(results[f"{pipe}.dH"])):
+                            np.testing.assert_array_less(
+                                darcy_weisbach.head_loss(
+                                    velocities[ii],
+                                    pipe_diameter,
+                                    pipe_length,
+                                    pipe_wall_roughness,
+                                    temperature,
+                                ),
+                                abs(results[f"{pipe}.dH"][ii]),
+                            )
+                    elif pipe in ["Pipe4", "Pipe4_ret"]:
+                        np.testing.assert_allclose(
+                            results["Pipe2.dH"][ii], results[f"{pipe}.dH"][ii]
+                        )
 
     def test_gas_network_head_loss(self):
         """
-        Gas network: Test the head loss approximation.
+        Gas network: Test the head loss approximation
 
         Checks:
         - head loss variable vs manually calcuated value
-        - linear equality constraint
-        - linear inequality constraint with 2 linear segments
+        - that the approximated head loss matches the manually calculated value
+        - that linearized dH satisfies the specified constraint
+        - that only one linear line segment is active for the head loss linearization
         """
 
         import models.unit_cases_gas.source_sink.src.run_source_sink as example
@@ -153,28 +389,37 @@ class TestHeadLoss(TestCase):
 
         linear_head_loss_equality = 0.0
 
+        # Specify the head loss linearizations to be tested
         for head_loss_option_setting in [
-            HeadLossOption.LINEAR,
-            HeadLossOption.LINEARIZED_DW,
+            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY,
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
         ]:
 
             class TestSourceSink(GasProblem):
-                def heat_network_options(self):
-                    options = super().heat_network_options()
-                    self.gas_network_settings["minimize_head_losses"] = True
+                def energy_system_options(self):
+                    options = super().energy_system_options()
 
                     nonlocal head_loss_option_setting
                     head_loss_option_setting = head_loss_option_setting
 
-                    if head_loss_option_setting == HeadLossOption.LINEAR:
-                        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEAR
-                        self.gas_network_settings["n_linearization_lines"] = 1
-                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_DW:
-                        self.gas_network_settings["head_loss_option"] = HeadLossOption.LINEARIZED_DW
+                    self.gas_network_settings["head_loss_option"] = head_loss_option_setting
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
+                        # This setting is below is not needed for the optmizer, but is used in the
+                        # test below.
+                        self.gas_network_settings["n_linearization_lines"] = 1  # dot not delete
+                        self.gas_network_settings["minimize_head_losses"] = True
+                    elif (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
                         self.gas_network_settings["n_linearization_lines"] = 2
+                        self.gas_network_settings["minimize_head_losses"] = True
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        self.gas_network_settings["n_linearization_lines"] = 2
+                        self.gas_network_settings["minimize_head_losses"] = True
+                        self.gas_network_settings["minimum_velocity"] = 0.0
 
-                    self.gas_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                    self.gas_network_settings["pipe_minimum_pressure"] = 10.0
                     return options
 
             solution = run_optimization_problem(
@@ -186,7 +431,6 @@ class TestHeadLoss(TestCase):
                 input_timeseries_file="timeseries.csv",
             )
             results = solution.extract_results()
-            parameters = solution.parameters(0)
 
             # Check the head loss variable
             np.testing.assert_allclose(
@@ -197,7 +441,7 @@ class TestHeadLoss(TestCase):
             pipes = ["Pipe_4abc"]
             v_max = solution.gas_network_settings["maximum_velocity"]
             pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
-            pipe_wall_roughness = solution.heat_network_options()["wall_roughness"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
             # TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
             temperature = 20.0
             pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
@@ -214,7 +458,7 @@ class TestHeadLoss(TestCase):
                 pipe_wall_roughness,
                 temperature,
                 network_type=NetworkSettings.NETWORK_TYPE_GAS,
-                pressure=parameters[f"{pipes[0]}.pressure"],
+                pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
             ) - darcy_weisbach.head_loss(
                 v_points[0],
                 pipe_diameter,
@@ -222,7 +466,7 @@ class TestHeadLoss(TestCase):
                 pipe_wall_roughness,
                 temperature,
                 network_type=NetworkSettings.NETWORK_TYPE_GAS,
-                pressure=parameters[f"{pipes[0]}.pressure"],
+                pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
             )
 
             delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
@@ -233,15 +477,224 @@ class TestHeadLoss(TestCase):
             b = delta_dh_theory - a * delta_volumetric_flow
             dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
 
-            # Check that the aproximated head loss matches the maunally calculated value
-            np.testing.assert_allclose(dh_manual_linear, -results["Pipe_4abc.dH"])
-
             # Check that the head loss approximation with 2 linear lines (inequality constraints
             # is < than the linear equality head loss constraint
-            if head_loss_option_setting == HeadLossOption.LINEAR:
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
+                # Check that the aproximated head loss matches the manually calculated value
+                np.testing.assert_allclose(dh_manual_linear, -results[f"{pipes[0]}.dH"])
                 linear_head_loss_equality = dh_manual_linear
-            elif head_loss_option_setting == HeadLossOption.LINEARIZED_DW:
-                np.testing.assert_array_less(-results["Pipe_4abc.dH"], linear_head_loss_equality)
+            elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                np.testing.assert_array_less(-results[f"{pipes[0]}.dH"], linear_head_loss_equality)
+            elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                # Check that the approximated head loss matches the manually calculated value
+                np.testing.assert_allclose(dh_manual_linear[1], -results[f"{pipes[0]}.dH"][1])
+
+            for pipe in pipes:
+                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                # linearized dH satisfies the specified constraint
+                np.testing.assert_array_less(
+                    darcy_weisbach.head_loss(
+                        velocities[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    ),
+                    -results[f"{pipe}.dH"][0],
+                )
+                if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # Check that only one linear line segment is active for the head loss
+                    # linearization
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
+                        1.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                        0.0,
+                    )
+
+    def test_gas_network_pipe_split_head_loss(self):
+        """
+        Gas network: Test the head loss approximation for a parallel pipe network.
+
+        Checks:
+        - The head loss variable dH and __head_loss
+        - That the gas demand is satisfied
+        - Check that the aproximated head loss matches the maunally calculated value
+        - That the linearized dH head loss contraint is satisfied
+        - That only one linear line segment is active for the head loss linearization. Data points
+        exists on both the 1st and 2nd linear line segment
+
+        Notes:
+        - The gas demand profile values have been chosen such that 2 data points are present on
+        each of the two linearized head loss lines
+        """
+
+        import models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink as example
+        from models.unit_cases_gas.source_pipe_split_sink.src.run_source_sink import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        # Specify the head loss linearizations to be tested
+        for head_loss_option_setting in [
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
+        ]:
+
+            class TestSourceSink(GasProblem):
+                def energy_system_options(self):
+                    options = super().energy_system_options()
+                    self.gas_network_settings["minimum_velocity"] = 0.0
+
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
+
+                    self.gas_network_settings["head_loss_option"] = head_loss_option_setting
+                    if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                        # do not change in value below, see notes above
+                        self.gas_network_settings["n_linearization_lines"] = 2
+                        self.gas_network_settings["minimize_head_losses"] = True
+                    # if statements below are currently not used, potential use in the future
+                    elif head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
+                        self.gas_network_settings["minimize_head_losses"] = True
+                    elif (
+                        head_loss_option_setting
+                        == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+                    ):
+                        self.gas_network_settings["n_linearization_lines"] = 2
+                        self.gas_network_settings["minimize_head_losses"] = True
+
+                    return options
+
+            solution = run_optimization_problem(
+                TestSourceSink,
+                base_folder=base_folder,
+                esdl_file_name="source_sink.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries.csv",
+            )
+            results = solution.extract_results()
+
+            # Check the head loss variable
+            np.testing.assert_allclose(
+                results["Pipe1.GasOut.H"] - results["Pipe1.GasIn.H"],
+                results["Pipe1.dH"],
+            )
+            np.testing.assert_allclose(-results["Pipe1.dH"], results["Pipe1.__head_loss"])
+
+            pipes = ["Pipe1"]
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            temperature = 20.0
+            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            v_points = np.linspace(
+                0.0,
+                v_max,
+                solution.gas_network_settings["n_linearization_lines"] + 1,
+            )
+            v_inspect = results[f"{pipes[0]}.GasOut.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
+
+            # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+            # dH_manual_linear = a*Q + b
+            # Then use this linear function to calculate the head loss
+            delta_dh_theory = []
+            delta_volumetric_flow = []
+            a = []
+            b = []
+            dh_manual_linear = []
+            for ii in range(solution.gas_network_settings["n_linearization_lines"]):
+                delta_dh_theory.append(
+                    darcy_weisbach.head_loss(
+                        v_points[ii + 1],
+                        pipe_diameter,
+                        pipe_length,
+                        pipe_wall_roughness,
+                        temperature,
+                        network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                        pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+                    )
+                    - darcy_weisbach.head_loss(
+                        v_points[ii],
+                        pipe_diameter,
+                        pipe_length,
+                        pipe_wall_roughness,
+                        temperature,
+                        network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                        pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+                    )
+                )
+
+                delta_volumetric_flow.append(
+                    (v_points[ii + 1] * np.pi * pipe_diameter**2 / 4.0)
+                    - (v_points[ii] * np.pi * pipe_diameter**2 / 4.0)
+                )
+
+                a.append(delta_dh_theory[ii] / delta_volumetric_flow[ii])
+                b.append(sum(delta_dh_theory[0:ii]) - a[ii] * sum(delta_volumetric_flow[0:ii]))
+
+            # dh for the 2 data point on the 1st linear line segment
+            dh_manual_linear.append(a[0] * (v_inspect[0] * np.pi * pipe_diameter**2 / 4.0) + b[0])
+            dh_manual_linear.append(a[0] * (v_inspect[1] * np.pi * pipe_diameter**2 / 4.0) + b[0])
+            # dh for the 2 data point on the 2nd linear line segment
+            dh_manual_linear.append(a[1] * (v_inspect[2] * np.pi * pipe_diameter**2 / 4.0) + b[1])
+            dh_manual_linear.append(a[1] * (v_inspect[3] * np.pi * pipe_diameter**2 / 4.0) + b[1])
+
+            # Gas flow balance
+            np.testing.assert_allclose(
+                results["GasDemand_a2d8.Gas_demand_mass_flow"],
+                solution.get_timeseries("GasDemand_a2d8.target_gas_demand").values,
+            )
+            # demand_matching_test(solution, results)  # TODO still to be updated for gas networks
+
+            # Check that the aproximated head loss matches the maunally calculated value
+            np.testing.assert_allclose(dh_manual_linear, -results["Pipe1.dH"], atol=1e-6)
+
+            for pipe in pipes:
+                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                np.testing.assert_array_less(
+                    darcy_weisbach.head_loss(
+                        velocities[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    ),
+                    -results[f"{pipe}.dH"][0],
+                )
+
+                # Check that only one linear line segment is active for the head loss linearization
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
+                    0.0,
+                )
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
+                    0.0,
+                )
+                # Gas demand for the 1st 2 timesteps fall on the 1st linear line segment
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][0:2],
+                    1.0,
+                )
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"][2:4],
+                    0.0,
+                )
+                # Gas demand for the last 2 timesteps fall on the 2nd linear line segment
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][0:2],
+                    0.0,
+                )
+                np.testing.assert_allclose(
+                    results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"][2:4],
+                    1.0,
+                )
 
     def test_gas_substation(self):
         """
@@ -270,7 +723,7 @@ class TestHeadLoss(TestCase):
 
         assert parameters["Pipe1.pressure"] != parameters["Pipe2.pressure"]
 
-        for pipe in solution.heat_network_components.get("gas_pipe", []):
+        for pipe in solution.energy_system_components.get("gas_pipe", []):
             dh = results[f"{pipe}.dH"]
             vel = results[f"{pipe}.Q"] / (np.pi * (parameters[f"{pipe}.diameter"] / 2.0) ** 2)
             for i in range(len(solution.times())):
@@ -281,7 +734,7 @@ class TestHeadLoss(TestCase):
                         solution.gas_network_settings["maximum_velocity"],
                         parameters[f"{pipe}.diameter"],
                         parameters[f"{pipe}.length"],
-                        solution.heat_network_options()["wall_roughness"],
+                        solution.energy_system_options()["wall_roughness"],
                         20.0,
                         network_type=NetworkSettings.NETWORK_TYPE_GAS,
                         pressure=parameters[f"{pipe}.pressure"],
@@ -296,5 +749,8 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestHeadLoss()
     a.test_heat_network_head_loss()
+    a.test_heat_network_pipe_split_head_loss()
     a.test_gas_network_head_loss()
+    a.test_gas_network_pipe_split_head_loss()
+    a.test_gas_substation()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
