@@ -57,7 +57,8 @@ class RevenueGoal(Goal):
 
         return -sum
 
-
+# DO NOT DELETE, this goal is only there to debug physics of electrolyzer and to be able to run
+# without financial computations.
 class MaxH2Goal(Goal):
     priority = 1
 
