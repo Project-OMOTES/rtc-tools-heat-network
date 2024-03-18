@@ -471,7 +471,10 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 parameters[f"{asset}.b_eff_coefficient"],
                 parameters[f"{asset}.c_eff_coefficient"],
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=1.0,
+                electrical_power_min=min(
+                    parameters[f"{asset}.minimum_load"],
+                    0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
+                ),
                 electrical_power_max=self.bounds()[f"{asset}.ElectricityIn.Power"][1],
             )
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
