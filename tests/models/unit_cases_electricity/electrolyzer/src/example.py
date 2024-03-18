@@ -14,6 +14,7 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class RevenueGoal(Goal):
@@ -57,38 +58,55 @@ class RevenueGoal(Goal):
 
         return -sum
 
+class maxH2Goal(Goal):
+    priority = 1
+
+    order = 1
+
+    def function(self, optimization_problem, ensemble_member):
+        sum = 0.0
+
+        for asset in [
+            *optimization_problem.energy_system_components.get("electrolyzer", []),
+        ]:
+            sum = optimization_problem.state(
+                f"{asset}.Gas_mass_flow_out"
+            )
+
+        return -sum
+
 
 class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
 
-        # TODO: these goals should incorperate the timestep
-        for demand in self.energy_system_components.get("electricity_demand", []):
-            carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            )
-            price_profile = f"{carrier_name}.price_profile"
-            # price_profile = f"{demand}.electricity_price"
-            state = f"{demand}.Electricity_demand"
-            nominal = self.variable_nominal(state) * np.median(
-                self.get_timeseries(price_profile).values
-            )
-
-            goals.append(RevenueGoal(state, price_profile, nominal))
-
-        for demand in self.energy_system_components.get("gas_demand", []):
-            # Code below: When profile is assigned to carrier instead of using .csv file
-            carrier_name = (
-                self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
-            )
-            price_profile = f"{carrier_name}.price_profile"
-            # price_profile = f"{demand}.gas_price"
-            state = f"{demand}.Gas_demand_mass_flow"
-            nominal = self.variable_nominal(state) * np.median(
-                self.get_timeseries(price_profile).values
-            )
-
-            goals.append(RevenueGoal(state, price_profile, nominal))
+        # # TODO: these goals should incorperate the timestep
+        # for demand in self.energy_system_components.get("electricity_demand", []):
+        #     carrier_name = (
+        #         self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+        #     )
+        #     price_profile = f"{carrier_name}.price_profile"
+        #     # price_profile = f"{demand}.electricity_price"
+        #     state = f"{demand}.Electricity_demand"
+        #     nominal = self.variable_nominal(state) * np.median(
+        #         self.get_timeseries(price_profile).values
+        #     )
+        #
+        #     goals.append(RevenueGoal(state, price_profile, nominal))
+        #
+        # for demand in self.energy_system_components.get("gas_demand", []):
+        #     # Code below: When profile is assigned to carrier instead of using .csv file
+        #     carrier_name = (
+        #         self.esdl_assets[self.esdl_asset_name_to_id_map[demand]].in_ports[0].carrier.name
+        #     )
+        #     price_profile = f"{carrier_name}.price_profile"
+        #     # price_profile = f"{demand}.gas_price"
+        #     state = f"{demand}.Gas_demand_mass_flow"
+        #     nominal = self.variable_nominal(state) * np.median(
+        #         self.get_timeseries(price_profile).values
+        #     )
+        #
+        #     goals.append(RevenueGoal(state, price_profile, nominal))
 
         return goals
 
@@ -108,7 +126,7 @@ class _GoalsAndOptions:
 
 class MILPProblem(
     _GoalsAndOptions,
-    TechnoEconomicMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
@@ -117,11 +135,13 @@ class MILPProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
+        goals.append(maxH2Goal())
+
         return goals
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
+        options["solver"] = "gurobi"
 
         return options
 
@@ -139,7 +159,7 @@ class MILPProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         MILPProblem,
-        esdl_file_name="h2.esdl",
+        esdl_file_name="h2_nostorage.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",
