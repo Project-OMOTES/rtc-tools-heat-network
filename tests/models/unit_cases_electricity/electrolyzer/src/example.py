@@ -126,7 +126,7 @@ class _GoalsAndOptions:
 
 class MILPProblem(
     _GoalsAndOptions,
-    PhysicsMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     GoalProgrammingMixin,
     ESDLMixin,
