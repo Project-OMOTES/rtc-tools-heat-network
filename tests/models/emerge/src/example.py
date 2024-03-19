@@ -5,6 +5,7 @@ import numpy as np
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
+from rtctools.optimization.goal_programming_mixin import GoalProgrammingMixin
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
@@ -73,9 +74,9 @@ class MaxRevenue(Goal):
         ----------
         source : string of the source name that is going to be minimized
         """
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
-        self.function_nominal = 1.0e7
+        # self.target_max = 0
+        # self.function_range = (-1.0e9, 1.0e9)
+        # self.function_nominal = 1.0e7
 
         self.asset_name = asset_name
 
@@ -94,6 +95,7 @@ class MaxRevenue(Goal):
         -------
         The negative hydrogen production state of the optimization problem.
         """
+        #TODO: not yet scaled
         return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
 
 class MinCost(Goal):
@@ -104,7 +106,7 @@ class MinCost(Goal):
 
     def __init__(self, asset_name: str):
         self.target_max = 0.0
-        self.function_range = (0.0, 1.0e8)
+        self.function_range = (0.0, 1.0e9)
         self.function_nominal = 1.0e7
 
         self.asset_name = asset_name
@@ -116,7 +118,7 @@ class MinCost(Goal):
 
 class EmergeTest(
     ESDLAdditionalVarsMixin,
-    PhysicsMixin,
+    TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -135,43 +137,56 @@ class EmergeTest(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
 
-    def path_goals(self):
-        """
-        This function adds the minimization goal for minimizing the heat production.
+    # def path_goals(self):
+    #     """
+    #     This function adds the minimization goal for minimizing the heat production.
+    #
+    #     Returns
+    #     -------
+    #     The appended list of goals
+    #     """
+    #     goals = super().path_goals().copy()
+    #
+    #     for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
+    #         goals.append(MaxHydrogenProduction(s))
+    #
+    #     return goals
 
-        Returns
-        -------
-        The appended list of goals
-        """
-        goals = super().path_goals().copy()
+    def goals(self):
 
-        for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
-            goals.append(MaxHydrogenProduction(s))
+        goals = super().goals().copy()
+
+        for asset_name in self.energy_system_components["electricity_demand"]:
+            goals.append(MaxRevenue(asset_name))
+            # goals.append(MinCost(asset_name))
+
+        for asset_name in self.energy_system_components["gas_demand"]:
+            goals.append(MaxRevenue(asset_name))
+            # goals.append(MinCost(asset_name))
+
+        # for asset_name in [*self.energy_system_components.get("electricity_source", []),
+        #                    *self.energy_system_components.get("gas_tank_storage", []),
+        #                    #TODO: battery
+        #                    *self.energy_system_components.get("electrolyzer", []),
+        #                    *self.energy_system_components.get("heat_pump_elec", [])]:
+        #     goals.append(MinCost(asset_name))
+
+
 
         return goals
 
-    # def goals(self):
-    #
-    #     goals = super().goals().copy()
-    #
-    #     for asset_name in self.energy_system_components["electricity_demand"]:
-    #         goals.append(MaxRevenue(asset_name))
-    #         # goals.append(MinCost(asset_name))
-    #
-    #     for asset_name in self.energy_system_components["gas_demand"]:
-    #         goals.append(MaxRevenue(asset_name))
-    #         # goals.append(MinCost(asset_name))
-    #
-    #     # for asset_name in [*self.energy_system_components.get("electricity_source", []),
-    #     #                    *self.energy_system_components.get("gas_tank_storage", []),
-    #     #                    #TODO: battery
-    #     #                    *self.energy_system_components.get("electrolyzer", []),
-    #     #                    *self.energy_system_components.get("heat_pump_elec", [])]:
-    #     #     goals.append(MinCost(asset_name))
-    #     #
-    #
-    #
-    #     return goals
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for gs in self.energy_system_components.get("gas_tank_storage", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
+            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((storage_t0, 0.0, 0.0))
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
+            gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((gas_flow_t0, 0.0, 0.0))
+
+        return constraints
 
     def solver_options(self):
         """
@@ -185,8 +200,8 @@ class EmergeTest(
         options["solver"] = "gurobi"
         return options
 
-    # def times(self, variable=None):
-    #     return super().times(variable)[:25]
+    def times(self, variable=None):
+        return super().times(variable)[:25]
 
     def energy_system_options(self):
         """
@@ -208,10 +223,10 @@ class EmergeTest(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="h2.esdl",
+        esdl_file_name="emerge.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries_h2.csv",
+        input_timeseries_file="timeseries.csv",
     )
     results = elect.extract_results()
     a = 1

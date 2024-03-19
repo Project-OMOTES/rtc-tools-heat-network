@@ -481,6 +481,11 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
+            var_name = self.__asset_is_switched_on_map[asset]
+            asset_is_switched_on = self.state(var_name)
+
+            gass_mass_out_max = linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
+            big_m = gass_mass_out_max * 2
             nominal = (
                 self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                 * min(linear_coef_a)
@@ -489,7 +494,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) / nominal,
+                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect - (1 - asset_is_switched_on) * big_m) / nominal,
                         -np.inf,
                         0.0,
                     ),
@@ -498,8 +503,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
 
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
             # input below the minimum operating value
-            var_name = self.__asset_is_switched_on_map[asset]
-            asset_is_switched_on = self.state(var_name)
+
 
             big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
             constraints.append(

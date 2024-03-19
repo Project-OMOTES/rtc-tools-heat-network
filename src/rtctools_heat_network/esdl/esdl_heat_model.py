@@ -101,7 +101,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "T",
                 273.15 + temperature,
                 "P",
-                carrier.pressure,
+                carrier.pressure*1e5,
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
         elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
@@ -110,7 +110,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "T",
                 273.15 + temperature,
                 "P",
-                carrier.pressure,
+                carrier.pressure*1e5,
                 str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
             )
         else:
@@ -1216,7 +1216,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             Q_nominal=self._get_connected_q_nominal(asset),
             id_mapping_carrier=id_mapping,
-            Gas_demand_mass_flow=dict(min=0., max=asset.attributes["power"]*hydrogen_specfic_energy),
+            # Gas_demand_mass_flow=dict(min=0., max=asset.attributes["power"]*hydrogen_specfic_energy),
             density=self.get_density(asset.name, asset.in_ports[0].carrier),
             GasIn=dict(
                 Q=dict(
@@ -1344,7 +1344,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Q_nominal=self._get_connected_q_nominal(asset),
             density=self.get_density(asset.name, asset.in_ports[0].carrier),
             volume=asset.attributes["workingVolume"],
-            Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"], max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
+            # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"], max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
             # TODO: Fix -> Gas network is currenlty non-limiting, mass flow is decoupled from the
             # volumetric flow
             # Gas_tank_flow=dict(

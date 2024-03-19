@@ -2,8 +2,8 @@
 <esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="Untitled EnergySystem" version="4" id="415d9426-dae2-4194-88ad-607793871425" description="">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="7997daa8-8ded-4f31-96b2-6842510f43f2">
     <carriers xsi:type="esdl:Carriers" id="6e119417-37a2-4dfd-a493-95f4b68d0235">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" voltage="132000.0" name="Elec"/>
-      <carrier xsi:type="esdl:GasCommodity" id="14831e6c-c3bb-4763-8300-9658a365ee54" pressure="30.0" name="Hydrogen"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" voltage="50000.0" name="Elec"/>
+      <carrier xsi:type="esdl:GasCommodity" id="14831e6c-c3bb-4763-8300-9658a365ee54" pressure="15.0" name="Hydrogen"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="791c9938-3b6c-47b3-bcc5-0328ffd687bd" name="Untitled Instance">
@@ -70,7 +70,7 @@
         <port xsi:type="esdl:OutPort" id="c3a78fa8-b482-4bcd-bad2-fd4c971b2565" connectedTo="f613dd95-9882-45a3-a569-4cd723444c90 1ab8ab85-2824-4606-a2ac-709596d8367b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.5992941670283" lon="3.750457763671875"/>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_ec1a" id="ec1a89cf-c7fb-4574-a93b-048b9d06640a" innerDiameter="50.0" length="7646.2">
+      <asset xsi:type="esdl:Pipe" name="Pipe_ec1a" id="ec1a89cf-c7fb-4574-a93b-048b9d06640a" diameter="DN1200" length="7646.2">
         <port xsi:type="esdl:InPort" id="5e660a4f-e8ca-4e9d-8568-6292d36b5994" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="5e58c0e2-5db4-4f6a-8aab-2c880d499c14"/>
         <port xsi:type="esdl:OutPort" id="73a0c91a-a167-4a3d-b7e3-7603d32db9ac" connectedTo="272d0690-117e-4f69-bd34-ed24b2dc6f0b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -78,7 +78,7 @@
           <point xsi:type="esdl:Point" lat="52.5992941670283" lon="3.750457763671875"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_97ee" id="97ee0a46-1a47-4bec-b131-c0a13246f298" innerDiameter="50.0" length="5839.7">
+      <asset xsi:type="esdl:Pipe" name="Pipe_97ee" id="97ee0a46-1a47-4bec-b131-c0a13246f298" diameter="DN1200" length="5839.7">
         <port xsi:type="esdl:InPort" id="f613dd95-9882-45a3-a569-4cd723444c90" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="c3a78fa8-b482-4bcd-bad2-fd4c971b2565"/>
         <port xsi:type="esdl:OutPort" id="0e6e6a7d-5b9a-42ff-8902-4e8db530b248" connectedTo="b2bd6049-3e2e-443c-aa36-ba893135cf82" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -86,7 +86,7 @@
           <point xsi:type="esdl:Point" lat="52.566334145326486" lon="3.8177490234375004"/>
         </geometry>
       </asset>
-      <asset xsi:type="esdl:Pipe" name="Pipe_910d" id="910d3cd0-715a-423c-b67a-52fb967c85b4" innerDiameter="50.0" length="64730.1">
+      <asset xsi:type="esdl:Pipe" name="Pipe_910d" id="910d3cd0-715a-423c-b67a-52fb967c85b4" diameter="DN1200" length="64730.1">
         <port xsi:type="esdl:InPort" id="1ab8ab85-2824-4606-a2ac-709596d8367b" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="c3a78fa8-b482-4bcd-bad2-fd4c971b2565"/>
         <port xsi:type="esdl:OutPort" id="f0b7ab61-b983-45ed-9274-887ccaadfce0" connectedTo="121a1b8d-758b-4b35-92fa-894435965e85" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Line" CRS="WGS84">
