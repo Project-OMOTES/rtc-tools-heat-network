@@ -18,6 +18,7 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -115,7 +116,7 @@ class MinCost(Goal):
 
 class EmergeTest(
     ESDLAdditionalVarsMixin,
-    TechnoEconomicMixin,
+    PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
     ESDLMixin,
@@ -134,43 +135,43 @@ class EmergeTest(
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
 
-    # def path_goals(self):
-    #     """
-    #     This function adds the minimization goal for minimizing the heat production.
-    #
-    #     Returns
-    #     -------
-    #     The appended list of goals
-    #     """
-    #     goals = super().path_goals().copy()
-    #
-    #     for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
-    #         goals.append(MaxHydrogenProduction(s))
-    #
-    #     return goals
+    def path_goals(self):
+        """
+        This function adds the minimization goal for minimizing the heat production.
 
-    def goals(self):
+        Returns
+        -------
+        The appended list of goals
+        """
+        goals = super().path_goals().copy()
 
-        goals = super().goals().copy()
-
-        for asset_name in self.energy_system_components["electricity_demand"]:
-            goals.append(MaxRevenue(asset_name))
-            goals.append(MinCost(asset_name))
-
-        for asset_name in self.energy_system_components["gas_demand"]:
-            goals.append(MaxRevenue(asset_name))
-            goals.append(MinCost(asset_name))
-
-        for asset_name in [*self.energy_system_components.get("electricity_source", []),
-                           *self.energy_system_components.get("gas_tank_storage", []),
-                           #TODO: battery
-                           *self.energy_system_components.get("electrolyzer", []),
-                           *self.energy_system_components.get("heat_pump_elec", [])]:
-            goals.append(MinCost(asset_name))
-
-
+        for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
+            goals.append(MaxHydrogenProduction(s))
 
         return goals
+
+    # def goals(self):
+    #
+    #     goals = super().goals().copy()
+    #
+    #     for asset_name in self.energy_system_components["electricity_demand"]:
+    #         goals.append(MaxRevenue(asset_name))
+    #         # goals.append(MinCost(asset_name))
+    #
+    #     for asset_name in self.energy_system_components["gas_demand"]:
+    #         goals.append(MaxRevenue(asset_name))
+    #         # goals.append(MinCost(asset_name))
+    #
+    #     # for asset_name in [*self.energy_system_components.get("electricity_source", []),
+    #     #                    *self.energy_system_components.get("gas_tank_storage", []),
+    #     #                    #TODO: battery
+    #     #                    *self.energy_system_components.get("electrolyzer", []),
+    #     #                    *self.energy_system_components.get("heat_pump_elec", [])]:
+    #     #     goals.append(MinCost(asset_name))
+    #     #
+    #
+    #
+    #     return goals
 
     def solver_options(self):
         """
@@ -181,11 +182,11 @@ class EmergeTest(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "highs"
+        options["solver"] = "gurobi"
         return options
 
-    def times(self, variable=None):
-        return super().times(variable)[:25]
+    # def times(self, variable=None):
+    #     return super().times(variable)[:25]
 
     def energy_system_options(self):
         """
@@ -207,10 +208,10 @@ class EmergeTest(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         EmergeTest,
-        esdl_file_name="emerge.esdl",
+        esdl_file_name="h2.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
-        input_timeseries_file="timeseries.csv",
+        input_timeseries_file="timeseries_h2.csv",
     )
     results = elect.extract_results()
     a = 1
