@@ -1214,6 +1214,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         TODO: Description revenue constraints
         """
         constraints = []
+        # TODO: this workflow is still work in progress and this part of code still needs to be
+        #  finalised
 
         # TODO: add fixed price default from ESDL in case no price profile is defined.
         parameters = self.parameters(ensemble_member)

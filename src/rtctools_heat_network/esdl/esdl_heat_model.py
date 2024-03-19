@@ -1213,7 +1213,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         id_mapping = asset.global_properties["carriers"][asset.in_ports[0].carrier.id][
             "id_number_mapping"
         ]
-
+        #DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
 
         modifiers = dict(
@@ -1342,6 +1342,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasStorage"}
 
+        # DO not remove due usage in future
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
 
         modifiers = dict(

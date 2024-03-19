@@ -375,7 +375,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{elec_demand}.ElectricityIn.I")
             power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
             current_in = self.state(f"{elec_demand}.ElectricityIn.I")
-            # if self.energy_system_options()["include_electric_cable_power_loss"]:
+
             constraints.append(
                 (
                     (power_in - min_voltage * current_in)
@@ -457,7 +457,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         This functions add the constraints for the gas mass flow production based as a functions of
         electrical power input. This production is approximated by an electrolyzer efficience curve
-        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized.
+        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized. If
+        the load becomes lower than the minimum load both the gass_mass_flow and the electricity
+        power should be 0.
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
