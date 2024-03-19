@@ -58,6 +58,24 @@ class RevenueGoal(Goal):
         return -sum
 
 
+# DO NOT DELETE, this goal is only there to debug physics of electrolyzer and to be able to run
+# without financial computations.
+class MaxH2Goal(Goal):
+    priority = 1
+
+    order = 1
+
+    def function(self, optimization_problem, ensemble_member):
+        sum = 0.0
+
+        for asset in [
+            *optimization_problem.energy_system_components.get("electrolyzer", []),
+        ]:
+            sum = optimization_problem.state(f"{asset}.Gas_mass_flow_out")
+
+        return -sum
+
+
 class _GoalsAndOptions:
     def goals(self):
         goals = super().goals().copy()
@@ -121,7 +139,7 @@ class MILPProblem(
 
     def solver_options(self):
         options = super().solver_options()
-        # options["solver"] = "gurobi"
+        options["solver"] = "highs"
 
         return options
 

@@ -244,6 +244,8 @@ class EndScenarioSizing(
         for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
             constraints.append(((stored_heat[-1] - stored_heat[0]), 0.0, np.inf))
+            ates_temperature = self.state_vector(f"{a}.Temperature_ates")
+            constraints.append(((ates_temperature[-1] - ates_temperature[0]), 0.0, np.inf))
 
         for b in self.energy_system_components.get("heat_buffer", {}):
             vars = self.state_vector(f"{b}.Heat_buffer")
