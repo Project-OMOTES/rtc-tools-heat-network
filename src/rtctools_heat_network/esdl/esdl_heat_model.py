@@ -101,7 +101,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "T",
                 273.15 + temperature,
                 "P",
-                carrier.pressure * 1e5,
+                carrier.pressure * 1.0e5,
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
         elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
@@ -110,7 +110,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 "T",
                 273.15 + temperature,
                 "P",
-                carrier.pressure * 1e5,
+                carrier.pressure * 1.0e5,
                 str(NetworkSettings.NETWORK_TYPE_HYDROGEN).upper(),
             )
         else:
