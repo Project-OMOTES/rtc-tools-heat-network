@@ -180,7 +180,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             electricity_source = self.__state_vector_scaled(
                 f"{wp}.Electricity_source", ensemble_member
             )
-            max = self.bounds()[f"{wp}.Electricity_source"][1].values
+            # TODO: [: len(self.times())] should be removed once the emerge test is properly
+            # time-sampled.
+            max = self.bounds()[f"{wp}.Electricity_source"][1].values[: len(self.times())]
             nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
 
             constraints.append(((set_point * max - electricity_source) / nominal, 0.0, 0.0))
@@ -375,6 +377,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{elec_demand}.ElectricityIn.I")
             power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
             current_in = self.state(f"{elec_demand}.ElectricityIn.I")
+
             constraints.append(
                 (
                     (power_in - min_voltage * current_in)
@@ -456,7 +459,9 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
         """
         This functions add the constraints for the gas mass flow production based as a functions of
         electrical power input. This production is approximated by an electrolyzer efficience curve
-        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized.
+        (energy/gas mass vs electrical power input, [Ws/kg] vs [W]) which is then linearized. If
+        the load becomes lower than the minimum load both the gass_mass_flow and the electricity
+        power should be 0.
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
@@ -471,7 +476,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 parameters[f"{asset}.b_eff_coefficient"],
                 parameters[f"{asset}.c_eff_coefficient"],
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=min(
+                electrical_power_min=max(
                     parameters[f"{asset}.minimum_load"],
                     0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
                 ),
@@ -480,6 +485,13 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             power_consumed_vect = ca.repmat(power_consumed, len(linear_coef_a))
             gas_mass_flow_out_vect = ca.repmat(gas_mass_flow_out, len(linear_coef_a))
             gass_mass_out_linearized_vect = linear_coef_a * power_consumed_vect + linear_coef_b
+            var_name = self.__asset_is_switched_on_map[asset]
+            asset_is_switched_on = self.state(var_name)
+
+            gass_mass_out_max = (
+                linear_coef_a[-1] * self.bounds()[f"{asset}.Power_consumed"][1] + linear_coef_b[-1]
+            )
+            big_m = gass_mass_out_max * 2
             nominal = (
                 self.variable_nominal(f"{asset}.Gas_mass_flow_out")
                 * min(linear_coef_a)
@@ -488,17 +500,26 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraints.extend(
                 [
                     (
-                        (gas_mass_flow_out_vect - gass_mass_out_linearized_vect) / nominal,
+                        (
+                            gas_mass_flow_out_vect
+                            - gass_mass_out_linearized_vect
+                            - (1 - asset_is_switched_on) * big_m
+                        )
+                        / nominal,
                         -np.inf,
                         0.0,
                     ),
                 ]
             )
+            constraints.append(
+                ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((gas_mass_flow_out - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            )
 
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
             # input below the minimum operating value
-            var_name = self.__asset_is_switched_on_map[asset]
-            asset_is_switched_on = self.state(var_name)
 
             big_m = self.bounds()[f"{asset}.ElectricityIn.Power"][1] * 1.5 * 10.0
             constraints.append(

@@ -20,6 +20,7 @@ class ElectricityDemand(ElectricityComponent, BaseAsset):
         self.component_type = "electricity_demand"
         self.min_voltage = nan
         self.elec_power_nominal = nan
+        self.id_mapping_carrier = -1
 
         self.add_variable(ElectricityPort, "ElectricityIn")
         self.add_variable(Variable, "Electricity_demand", min=0.0, nominal=self.elec_power_nominal)

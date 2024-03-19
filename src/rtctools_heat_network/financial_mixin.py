@@ -75,6 +75,12 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         self.__annualized_capex_var_bounds = {}
         self.__annualized_capex_var_nominals = {}
 
+        # Variable for realized revenue
+        self._asset_revenue_map = {}
+        self.__asset_revenue_var = {}
+        self.__asset_revenue_nominals = {}
+        self.__asset_revenue_bounds = {}
+
         super().__init__(*args, **kwargs)
 
     def pre(self):
@@ -301,6 +307,37 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 else 1.0e2
             )
 
+            # Realized revenue
+            if (asset_name) in [
+                *self.energy_system_components.get("electricity_demand", []),
+                *self.energy_system_components.get("gas_demand", []),
+            ]:
+
+                carrier_name = None
+                for _id, attr in self.get_electricity_carriers().items():
+                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
+                        carrier_name = attr["name"]
+                for _id, attr in self.get_gas_carriers().items():
+                    if attr["id_number_mapping"] == parameters[f"{asset_name}.id_mapping_carrier"]:
+                        carrier_name = attr["name"]
+                if carrier_name is not None:
+                    asset_revenue_var = f"{asset_name}__revenue"
+                    self._asset_revenue_map[asset_name] = asset_revenue_var
+                    self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(asset_revenue_var)
+                    self.__asset_revenue_bounds[asset_revenue_var] = (
+                        0.0,
+                        np.inf,
+                    )
+                    self.__asset_revenue_nominals[asset_revenue_var] = (
+                        max(
+                            np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
+                            * nominal_fixed_operational,
+                            1.0e2,
+                        )
+                        if nominal_fixed_operational is not None
+                        else 1.0e2
+                    )
+
         for asset in [
             *self.energy_system_components.get("heat_source", []),
             *self.energy_system_components.get("heat_demand", []),
@@ -459,7 +496,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
     @abstractmethod
     def get_electricity_carriers(self, type=None):
         """
-        This function should return the dict with all the electricity carriers in it.
+        This function should return the mapping between the pipe and all the possible pipe classes
+        available for that pipe.
 
         Returns
         -------
@@ -480,15 +518,25 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         return NotImplementedError
 
     @abstractmethod
-    def get_heat_carriers(self, type=None):
+    def get_gas_carriers(self, type=None):
         """
-        This function should return a dict with all the milp carriers in it.
+        This function should return all the gas carriers
 
         Returns
         -------
 
         """
+        return NotImplementedError
 
+    @abstractmethod
+    def get_heat_carriers(self, type=None):
+        """
+        This function should return all the heat carriers
+
+        Returns
+        -------
+
+        """
         return NotImplementedError
 
     @abstractmethod
@@ -515,6 +563,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         variables.extend(self.__asset_installation_cost_var.values())
         variables.extend(self.__asset_variable_operational_cost_var.values())
         variables.extend(self.__annualized_capex_var.values())
+        variables.extend(self.__asset_revenue_var.values())
         return variables
 
     @property
@@ -554,6 +603,8 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             return self.__cumulative_investments_made_in_eur_nominals[variable]
         elif variable in self.__annualized_capex_var_nominals:
             return self.__annualized_capex_var_nominals[variable]
+        elif variable in self.__asset_revenue_nominals:
+            return self.__asset_revenue_nominals[variable]
         else:
             return super().variable_nominal(variable)
 
@@ -570,6 +621,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         bounds.update(self.__asset_is_realized_bounds)
         bounds.update(self.__cumulative_investments_made_in_eur_bounds)
         bounds.update(self.__annualized_capex_var_bounds)
+        bounds.update(self.__asset_revenue_bounds)
         return bounds
 
     @staticmethod
@@ -1157,6 +1209,55 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         return constraints
 
+    def __revenue_constraints(self, ensemble_member):
+        """
+        TODO: Description revenue constraints
+        """
+        constraints = []
+        # TODO: this workflow is still work in progress and this part of code still needs to be
+        #  finalised
+
+        # TODO: add fixed price default from ESDL in case no price profile is defined.
+        parameters = self.parameters(ensemble_member)
+
+        for demand in [
+            *self.energy_system_components.get("gas_demand", []),
+            *self.energy_system_components.get("electricity_demand", []),
+        ]:
+
+            carrier_name = None
+            for _id, attr in self.get_electricity_carriers().items():
+                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                    carrier_name = attr["name"]
+            for _id, attr in self.get_gas_carriers().items():
+                if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
+                    carrier_name = attr["name"]
+            if carrier_name is not None:
+                price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
+
+                if demand in self.energy_system_components.get("gas_demand", []):
+                    energy_flow = self.__state_vector_scaled(
+                        f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                    )
+
+                elif demand in self.energy_system_components.get("electricity_demand", []):
+                    energy_flow = self.__state_vector_scaled(
+                        f"{demand}.Electricity_demand", ensemble_member
+                    )
+
+                variable_revenue_var = self._asset_revenue_map[demand]
+                variable_revenue = self.extra_variable(variable_revenue_var, ensemble_member)
+                nominal = self.variable_nominal(variable_revenue_var)
+
+                sum = 0.0
+                timesteps = np.diff(self.times()) / 3600.0
+                for i in range(1, len(self.times())):
+                    sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
+
+                constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
+
+        return constraints
+
     def path_constraints(self, ensemble_member):
         """
         Here we add all the path constraints to the optimization problem. Please note that the
@@ -1184,6 +1285,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
         constraints.extend(self.__fixed_operational_cost_constraints(ensemble_member))
         constraints.extend(self.__investment_cost_constraints(ensemble_member))
         constraints.extend(self.__installation_cost_constraints(ensemble_member))
+        constraints.extend(self.__revenue_constraints(ensemble_member))
 
         if self.energy_system_options()["discounted_annualized_cost"]:
             constraints.extend(self.__annualized_capex_constraints(ensemble_member))

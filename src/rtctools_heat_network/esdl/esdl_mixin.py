@@ -339,7 +339,7 @@ class ESDLMixin(
         else:
             carriers = {}
             for id, attr in self._esdl_carriers.items():
-                if attr["type"] == type:
+                if attr["type"] in type:
                     carriers[id] = attr
         return carriers
 
