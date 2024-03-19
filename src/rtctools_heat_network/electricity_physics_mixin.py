@@ -537,7 +537,6 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
             )
 
-
         return constraints
 
     def path_constraints(self, ensemble_member):
