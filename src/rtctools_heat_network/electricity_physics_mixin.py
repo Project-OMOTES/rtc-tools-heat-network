@@ -180,7 +180,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             electricity_source = self.__state_vector_scaled(
                 f"{wp}.Electricity_source", ensemble_member
             )
-            #TODO: [: len(self.times())] should be removed once the emerge test is properly
+            # TODO: [: len(self.times())] should be removed once the emerge test is properly
             # time-sampled.
             max = self.bounds()[f"{wp}.Electricity_source"][1].values[: len(self.times())]
             nominal = (self.variable_nominal(f"{wp}.Electricity_source") * np.median(max)) ** 0.5
