@@ -1,25 +1,20 @@
 import casadi as ca
 
-import numpy as np
-
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
-from rtctools.optimization.goal_programming_mixin import GoalProgrammingMixin
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
 
+from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
@@ -60,6 +55,7 @@ class MaxHydrogenProduction(Goal):
         """
         return -optimization_problem.state(f"{self.source}.Gas_mass_flow_out")
 
+
 class MaxRevenue(Goal):
 
     priority = 1
@@ -95,8 +91,9 @@ class MaxRevenue(Goal):
         -------
         The negative hydrogen production state of the optimization problem.
         """
-        #TODO: not yet scaled
+        # TODO: not yet scaled
         return -optimization_problem.extra_variable(f"{self.asset_name}__revenue", ensemble_member)
+
 
 class MinCost(Goal):
 
@@ -111,10 +108,16 @@ class MinCost(Goal):
 
         self.asset_name = asset_name
 
-    def function(self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int) -> ca.MX:
+    def function(
+        self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
+    ) -> ca.MX:
 
-        return (optimization_problem.extra_variable(f"{self.asset_name}__fixed_operational_cost", ensemble_member)
-                + optimization_problem.extra_variable(f"{self.asset_name}__variable_operational_cost", ensemble_member))
+        return optimization_problem.extra_variable(
+            f"{self.asset_name}__fixed_operational_cost", ensemble_member
+        ) + optimization_problem.extra_variable(
+            f"{self.asset_name}__variable_operational_cost", ensemble_member
+        )
+
 
 class EmergeTest(
     ESDLAdditionalVarsMixin,
@@ -136,7 +139,6 @@ class EmergeTest(
 
         self.gas_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
 
-
     # def path_goals(self):
     #     """
     #     This function adds the minimization goal for minimizing the heat production.
@@ -147,7 +149,7 @@ class EmergeTest(
     #     """
     #     goals = super().path_goals().copy()
     #
-    #     for s in self.energy_system_components["electrolyzer"]: # ["name_electrolyzer_1", "name_electrolyzer_2", ...]
+    #     for s in self.energy_system_components["electrolyzer"]:
     #         goals.append(MaxHydrogenProduction(s))
     #
     #     return goals
@@ -170,8 +172,6 @@ class EmergeTest(
         #                    *self.energy_system_components.get("electrolyzer", []),
         #                    *self.energy_system_components.get("heat_pump_elec", [])]:
         #     goals.append(MinCost(asset_name))
-
-
 
         return goals
 

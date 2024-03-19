@@ -66,7 +66,10 @@ class BaseESDLParser:
                         number = number + str(nr)
                     id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name, voltage=x.voltage, id=x.id, type="electricity",
+                    name=x.name,
+                    voltage=x.voltage,
+                    id=x.id,
+                    type="electricity",
                     id_number_mapping=id_to_idnumber_map[x.id],
                 )
             elif isinstance(x, esdl.esdl.GasCommodity):
@@ -77,7 +80,10 @@ class BaseESDLParser:
                         number = number + str(nr)
                     id_to_idnumber_map[x.id] = int(number)
                 self._global_properties["carriers"][x.id] = dict(
-                    name=x.name, pressure=x.pressure, id=x.id, type="gas",
+                    name=x.name,
+                    pressure=x.pressure,
+                    id=x.id,
+                    type="gas",
                     id_number_mapping=id_to_idnumber_map[x.id],
                 )
 
