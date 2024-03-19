@@ -507,6 +507,12 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     ),
                 ]
             )
+            constraints.append(
+                ((gas_mass_flow_out + asset_is_switched_on * big_m) / big_m, 0.0, np.inf)
+            )
+            constraints.append(
+                ((gas_mass_flow_out - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
+            )
 
             # Add constraints to ensure the electrolyzer is switched off when it reaches a power
             # input below the minimum operating value
@@ -530,6 +536,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             constraints.append(
                 ((power_consumed - asset_is_switched_on * big_m) / big_m, -np.inf, 0.0)
             )
+
 
         return constraints
 
