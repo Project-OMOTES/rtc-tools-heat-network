@@ -375,15 +375,15 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
             curr_nom = self.variable_nominal(f"{elec_demand}.ElectricityIn.I")
             power_in = self.state(f"{elec_demand}.ElectricityIn.Power")
             current_in = self.state(f"{elec_demand}.ElectricityIn.I")
-            if self.energy_system_options()["include_electric_cable_power_loss"]:
-                constraints.append(
-                    (
-                        (power_in - min_voltage * current_in)
-                        / (power_nom * curr_nom * min_voltage) ** 0.5,
-                        0,
-                        0,
-                    )
+            # if self.energy_system_options()["include_electric_cable_power_loss"]:
+            constraints.append(
+                (
+                    (power_in - min_voltage * current_in)
+                    / (power_nom * curr_nom * min_voltage) ** 0.5,
+                    0,
+                    0,
                 )
+            )
 
         return constraints
 
@@ -472,7 +472,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                 parameters[f"{asset}.b_eff_coefficient"],
                 parameters[f"{asset}.c_eff_coefficient"],
                 n_lines=curve_fit_number_of_lines,
-                electrical_power_min=min(
+                electrical_power_min=max(
                     parameters[f"{asset}.minimum_load"],
                     0.01 * self.bounds()[f"{asset}.ElectricityIn.Power"][1],
                 ),

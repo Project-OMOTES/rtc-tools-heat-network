@@ -65,7 +65,7 @@ class ESDLAdditionalVarsMixin(CollocatedIntegratedOptimizationProblem):
         return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_ELECTRICITY).lower())
 
     def gas_carriers(self):
-        return self.esdl_carriers_typed(type="gas")
+        return self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_GAS).lower())#.update(self.esdl_carriers_typed(type=str(NetworkSettings.NETWORK_TYPE_HYDROGEN).lower()))
 
     def temperature_regimes(self, carrier):
         temperature_options = []

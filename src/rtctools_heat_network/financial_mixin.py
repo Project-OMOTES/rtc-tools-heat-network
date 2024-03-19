@@ -318,26 +318,25 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 for id, attr in self.get_gas_carriers().items():
                     if attr["id_number_mapping"]==parameters[f"{asset_name}.id_mapping_carrier"]:
                         carrier_name = attr["name"]
-                assert carrier_name is not None
-
-                asset_revenue_var = f"{asset_name}__revenue"
-                self._asset_revenue_map[asset_name] = asset_revenue_var
-                self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(
-                    asset_revenue_var
-                )
-                self.__asset_revenue_bounds[asset_revenue_var] = (
-                    0.0,
-                    np.inf,
-                )
-                self.__asset_revenue_nominals[asset_revenue_var] = (
-                    max(
-                        np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
-                        * nominal_fixed_operational,
-                        1.0e2,
+                if carrier_name is not None:
+                    asset_revenue_var = f"{asset_name}__revenue"
+                    self._asset_revenue_map[asset_name] = asset_revenue_var
+                    self.__asset_revenue_var[asset_revenue_var] = ca.MX.sym(
+                        asset_revenue_var
                     )
-                    if nominal_fixed_operational is not None
-                    else 1.0e2
-                )
+                    self.__asset_revenue_bounds[asset_revenue_var] = (
+                        0.0,
+                        np.inf,
+                    )
+                    self.__asset_revenue_nominals[asset_revenue_var] = (
+                        max(
+                            np.mean(self.get_timeseries(f"{carrier_name}.price_profile").values)
+                            * nominal_fixed_operational,
+                            1.0e2,
+                        )
+                        if nominal_fixed_operational is not None
+                        else 1.0e2
+                    )
 
         for asset in [
             *self.energy_system_components.get("heat_source", []),
@@ -1241,31 +1240,31 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             for id, attr in self.get_gas_carriers().items():
                 if attr["id_number_mapping"] == parameters[f"{demand}.id_mapping_carrier"]:
                     carrier_name = attr["name"]
-            assert carrier_name is not None
-            price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
+            if carrier_name is not None:
+                price_profile = self.get_timeseries(f"{carrier_name}.price_profile").values
 
-            if demand in self.energy_system_components.get("gas_demand", []):
-                energy_flow = self.__state_vector_scaled(
-                    f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                if demand in self.energy_system_components.get("gas_demand", []):
+                    energy_flow = self.__state_vector_scaled(
+                        f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                    )
+
+                elif demand in self.energy_system_components.get("electricity_demand", []):
+                    energy_flow = self.__state_vector_scaled(
+                        f"{demand}.Electricity_demand", ensemble_member
+                    )
+
+                variable_revenue_var = self._asset_revenue_map[demand]
+                variable_revenue = self.extra_variable(
+                    variable_revenue_var, ensemble_member
                 )
+                nominal = self.variable_nominal(variable_revenue_var)
 
-            elif demand in self.energy_system_components.get("electricity_demand", []):
-                energy_flow = self.__state_vector_scaled(
-                    f"{demand}.Electricity_demand", ensemble_member
-                )
+                sum = 0.0
+                timesteps = np.diff(self.times()) / 3600.0
+                for i in range(1, len(self.times())):
+                    sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
 
-            variable_revenue_var = self._asset_revenue_map[demand]
-            variable_revenue = self.extra_variable(
-                variable_revenue_var, ensemble_member
-            )
-            nominal = self.variable_nominal(variable_revenue_var)
-
-            sum = 0.0
-            timesteps = np.diff(self.times()) / 3600.0
-            for i in range(1, len(self.times())):
-                sum += price_profile[i] * energy_flow[i] * timesteps[i - 1]
-
-            constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
+                constraints.append(((variable_revenue - sum) / (nominal), 0.0, 0.0))
 
         return constraints
 

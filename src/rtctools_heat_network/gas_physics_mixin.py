@@ -132,6 +132,13 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
 
         self._gas_pipe_topo_pipe_class_map = {}
 
+    def gas_carriers(self):
+        """
+        This function should be overwritten by the problem and should give a dict with the
+        carriers as keys and a list of temperatures as values.
+        """
+        return {}
+
     def pre(self):
         """
         In this pre method we fill the dicts initiated in the __init__. This means that we create
