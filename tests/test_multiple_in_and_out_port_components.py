@@ -63,7 +63,6 @@ class TestHEX(TestCase):
         # checking the disabled boolean and the assert statement doesn't work for a difference of
         # zero
         np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
-        np.testing.assert_allclose(prim_heat[-1], 0.0, atol=1e-5)
         np.testing.assert_allclose(disabled[-1], 1.0)
         np.testing.assert_allclose(disabled[:-1], 0.0)
         # Check that milp is flowing through the hex
