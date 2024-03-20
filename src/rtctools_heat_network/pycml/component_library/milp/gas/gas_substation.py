@@ -19,8 +19,8 @@ class GasSubstation(GasTwoPort, BaseAsset):
         self.Q_nominal_in = nan
         self.Q_nominal_out = nan
 
-        self.density_in = 2.5  # H2 density [kg/m3] at 30bar
-        self.density_out = 2.5  # H2 density [kg/m3] at 30bar
+        self.density_in = 2.5e3  # H2 density [kg/m3] at 30bar
+        self.density_out = 2.5e3  # H2 density [kg/m3] at 30bar
 
         self.add_equation(
             (

@@ -1400,12 +1400,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"GasConversion"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
+        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
 
         modifiers = dict(
             Q_nominal_in=q_nom_in,
             Q_nominal_out=q_nom_out,
-            density_in=self.get_density(asset.name, asset.in_ports[0].carrier),
-            density_out=self.get_density(asset.name, asset.out_ports[0].carrier),
+            density_in=density_in,
+            density_out=density_out,
+            GasIn=dict(Q=dict(nominal=q_nom_in), mass_flow=dict(q_nom_in * density_in)),
+            GasOut=dict(Q=dict(nominal=q_nom_out), mass_flow=dict(q_nom_out * density_out)),
             **self._get_cost_figure_modifiers(asset),
         )
 
