@@ -1,3 +1,6 @@
+import os
+import time
+
 import casadi as ca
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -16,6 +19,7 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 
 
 class MaxHydrogenProduction(Goal):
@@ -120,6 +124,7 @@ class MinCost(Goal):
 
 
 class EmergeTest(
+    ScenarioOutput,
     ESDLAdditionalVarsMixin,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -178,18 +183,18 @@ class EmergeTest(
 
         return goals
 
-    def constraints(self, ensemble_member):
-        constraints = super().constraints(ensemble_member)
-
-        for gs in self.energy_system_components.get("gas_tank_storage", []):
-            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
-            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-            constraints.append((storage_t0, 0.0, 0.0))
-            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
-            gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-            constraints.append((gas_flow_t0, 0.0, 0.0))
-
-        return constraints
+    # def constraints(self, ensemble_member):
+    #     constraints = super().constraints(ensemble_member)
+    #
+    #     for gs in self.energy_system_components.get("gas_tank_storage", []):
+    #         canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
+    #         storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+    #         constraints.append((storage_t0, 0.0, 0.0))
+    #         canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
+    #         gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+    #         constraints.append((gas_flow_t0, 0.0, 0.0))
+    #
+    #     return constraints
 
     def solver_options(self):
         """
@@ -221,6 +226,33 @@ class EmergeTest(
         options["include_asset_is_switched_on"] = True
         options["include_electric_cable_power_loss"] = False
         return options
+
+    def post(self):
+        # In case the solver fails, we do not get in priority_completed(). We
+        # append this last priority's statistics here in post().
+        # TODO: check if we still need this small part of code below
+        success, _ = self.solver_success(self.solver_stats, False)
+        if not success:
+            time_taken = time.time() - self.__priority_timer
+            self._priorities_output.append(
+                (
+                    self.__priority,
+                    time_taken,
+                    False,
+                    self.objective_value,
+                    self.solver_stats,
+                )
+            )
+
+        super().post()
+
+        # Optimized ESDL
+        self._write_updated_esdl(self.get_energy_system_copy())
+
+        self._save_json = True
+
+        if os.path.exists(self.output_folder) and self._save_json:
+            self._write_json_output()
 
 
 if __name__ == "__main__":
