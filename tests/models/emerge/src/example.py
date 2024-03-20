@@ -18,6 +18,7 @@ from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.physics_mixin import PhysicsMixin
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 
@@ -107,9 +108,9 @@ class MinCost(Goal):
     order = 1
 
     def __init__(self, asset_name: str):
-        self.target_max = 0.0
-        self.function_range = (0.0, 1.0e9)
-        self.function_nominal = 1.0e7
+        # self.target_max = 0.0
+        # self.function_range = (0.0, 1.0e9)
+        # self.function_nominal = 1.0e7
 
         self.asset_name = asset_name
 
@@ -167,20 +168,17 @@ class EmergeTest(
 
         goals = super().goals().copy()
 
-        for asset_name in self.energy_system_components["electricity_demand"]:
+        for asset_name in [*self.energy_system_components.get("electricity_demand",[]),
+                           *self.energy_system_components.get("gas_demand",[])]:
             goals.append(MaxRevenue(asset_name))
-            # goals.append(MinCost(asset_name))
+            goals.append(MinCost(asset_name))
 
-        for asset_name in self.energy_system_components["gas_demand"]:
-            goals.append(MaxRevenue(asset_name))
-            # goals.append(MinCost(asset_name))
-
-        # for asset_name in [*self.energy_system_components.get("electricity_source", []),
-        #                    *self.energy_system_components.get("gas_tank_storage", []),
-        #                    #TODO: battery
-        #                    *self.energy_system_components.get("electrolyzer", []),
-        #                    *self.energy_system_components.get("heat_pump_elec", [])]:
-        #     goals.append(MinCost(asset_name))
+        for asset_name in [*self.energy_system_components.get("electricity_source", []),
+                           *self.energy_system_components.get("gas_tank_storage", []),
+                           #TODO: battery
+                           *self.energy_system_components.get("electrolyzer", []),
+                           *self.energy_system_components.get("heat_pump_elec", [])]:
+            goals.append(MinCost(asset_name))
 
         return goals
 
@@ -254,6 +252,24 @@ class EmergeTest(
 
         if os.path.exists(self.output_folder) and self._save_json:
             self._write_json_output()
+
+        results = self.extract_results()
+
+        for _type, assets in self.energy_system_components.items():
+            for asset in assets:
+                try:
+                    print(f'revenue of {asset} : ', results[f'{asset}__revenue'])
+                except:
+                    print(f'{asset} does not have a revenue')
+                    pass
+                try:
+                    print(f'fixed operational costs of {asset} : ', results[f'{asset}__fixed_operational_cost'])
+                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost'])
+                    print(f'max size of {asset} : ', results[f'{asset}__max_size'])
+                except:
+                    print(f'{asset} does not have a costs')
+                    pass
+
 
 
 if __name__ == "__main__":
