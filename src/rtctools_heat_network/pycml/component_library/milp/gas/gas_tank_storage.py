@@ -18,8 +18,8 @@ class GasTankStorage(GasComponent, BaseAsset):
         self.component_type = "gas_tank_storage"
 
         self.min_head = 30.0
-        self.density = 2.5  # H2 density [kg/m3] at 30bar
-        self.density_max_storage = 23.715  # H2 density [kg/m3] at 350bar
+        self.density = 2.5e3  # H2 density [g/m3] at 30bar
+        self.density_max_storage = 23.715e3  # H2 density [g/m3] at 350bar
         self.volume = nan
         self.Q_nominal = nan
 
@@ -44,8 +44,8 @@ class GasTankStorage(GasComponent, BaseAsset):
 
         self.add_equation(
             (
-                (self.der(self.Stored_gas_mass) - (self.Gas_tank_flow / 3600.0))
-                / (self._nominal_stored_gas * self.Q_nominal * self.density / 3600.0) ** 0.5
+                (self.der(self.Stored_gas_mass) - (self.Gas_tank_flow))
+                / (self._nominal_stored_gas * self.Q_nominal * self.density) ** 0.5
             )
         )
 

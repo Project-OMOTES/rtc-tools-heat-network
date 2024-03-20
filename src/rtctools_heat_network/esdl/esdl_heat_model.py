@@ -118,7 +118,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
             )
             density = 6.2  # natural gas at about 8 bar
-        return density
+        return density * 1.0e3  # to convert from kg/m3 to g/m3
 
     def get_asset_attribute_value(
         self,
@@ -438,18 +438,21 @@ class AssetToHeatComponent(_AssetToComponentBase):
             q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
+            density = self.get_density(asset.name, asset.in_ports[0].carrier)
+            bounds_nominals = dict(
+                Q=dict(min=-q_max, max=q_max, nominal=q_nominal),
+                mass_flow=dict(
+                    min=-q_max * density, max=q_max * density, nominal=q_nominal * density
+                ),
+            )
             modifiers = dict(
                 length=length,
-                density=self.get_density(asset.name, asset.in_ports[0].carrier),
+                density=density,
                 diameter=diameter,
                 pressure=pressure,
                 # disconnectable=self._is_disconnectable_pipe(asset),  # still to be added
-                GasIn=dict(
-                    Q=dict(min=-q_max, max=q_max),
-                ),
-                GasOut=dict(
-                    Q=dict(min=-q_max, max=q_max),
-                ),
+                GasIn=bounds_nominals,
+                GasOut=bounds_nominals,
                 state=self.get_state(asset),
                 **self._get_cost_figure_modifiers(asset),
             )
@@ -1215,19 +1218,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ]
         # DO not remove due usage in future
         # hydrogen_specfic_energy = 20.0 / 1.0e6
+        density = self.get_density(asset.name, asset.in_ports[0].carrier)
+        q_nominal = self._get_connected_q_nominal(asset)
 
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             id_mapping_carrier=id_mapping,
             # Gas_demand_mass_flow=dict(min=0., max=asset.attributes["power"]
             # *hydrogen_specfic_energy),
-            density=self.get_density(asset.name, asset.in_ports[0].carrier),
+            density=density,
             GasIn=dict(
                 Q=dict(
                     min=0.0,
                     max=self._get_connected_q_max(asset),
                     nominal=self._get_connected_q_nominal(asset),
                 ),
+                mass_flow=dict(nominal=density * q_nominal),
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -1251,14 +1257,22 @@ class AssetToHeatComponent(_AssetToComponentBase):
         """
         assert asset.asset_type in {"GasProducer"}
 
+        q_nominal = self._get_connected_q_nominal(asset)
         density_value = self.get_density(asset.name, asset.out_ports[0].carrier)
+
+        bounds_nominals_mass_flow = dict(
+            min=0.0,
+            max=self._get_connected_q_max(asset) * density_value,
+            nominal=q_nominal * density_value,
+        )
+
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
             density=density_value,
-            Gas_source_mass_flow=dict(
-                min=0.0,
-                max=self._get_connected_q_max(asset) * density_value,
-                nominal=self._get_connected_q_nominal(asset) * density_value,
+            Gas_source_mass_flow=bounds_nominals_mass_flow,
+            GasOut=dict(
+                Q=dict(nominal=q_nominal),
+                mass_flow=bounds_nominals_mass_flow,
             ),
             **self._get_cost_figure_modifiers(asset),
         )
@@ -1285,9 +1299,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         max_power = asset.attributes.get("power", math.inf)
         min_load = float(asset.attributes["minLoad"])
         max_load = float(asset.attributes["maxLoad"])
-        eff_min_load = asset.attributes["effMinLoad"] * 1.0e3
-        eff_max_load = asset.attributes["effMaxLoad"] * 1.0e3
-        eff_max = asset.attributes["efficiency"] * 1.0e3
+        eff_min_load = asset.attributes["effMinLoad"]  # Wh/g
+        eff_max_load = asset.attributes["effMaxLoad"]  # Wh/g
+        eff_max = asset.attributes["efficiency"]  # Wh/g
 
         def equations(x):
             a, b, c = x
@@ -1302,6 +1316,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # operational efficiency.
         a, b, c = fsolve(equations, (0, 0, 0))
 
+        q_nominal = self._get_connected_q_nominal(asset)
+        density = self.get_density(asset.name, asset.out_ports[0].carrier)
+
         modifiers = dict(
             min_voltage=v_min,
             a_eff_coefficient=a,
@@ -1309,13 +1326,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
             c_eff_coefficient=c,
             minimum_load=min_load,
             nominal_power_consumed=max_power / 2.0,
-            Q_nominal=self._get_connected_q_nominal(asset),
+            Q_nominal=q_nominal,
+            density=density,
             GasOut=dict(
                 Q=dict(
                     min=0.0,
                     max=self._get_connected_q_max(asset),
-                    nominal=self._get_connected_q_nominal(asset),
-                )
+                    nominal=q_nominal,
+                ),
+                mass_flow=dict(nominal=q_nominal * density),
             ),
             ElectricityIn=dict(
                 Power=dict(min=0.0, max=max_power, nominal=max_power / 2.0),
@@ -1344,10 +1363,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         # DO not remove due usage in future
         # hydrogen_specific_energy = 20.0 / 1.0e6  # kg/Wh
+        q_nominal = self._get_connected_q_nominal(asset)
+        density = self.get_density(asset.name, asset.in_ports[0].carrier)
 
         modifiers = dict(
-            Q_nominal=self._get_connected_q_nominal(asset),
-            density=self.get_density(asset.name, asset.in_ports[0].carrier),
+            Q_nominal=q_nominal,
+            density=density,
             volume=asset.attributes["workingVolume"],
             # Gas_tank_flow=dict(min=-hydrogen_specific_energy*asset.attributes["maxDischargeRate"],
             # max=hydrogen_specific_energy*asset.attributes["maxChargeRate"]),
@@ -1357,6 +1378,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             #     min=-self._get_connected_q_max(asset), max=self._get_connected_q_max(asset),
             #     nominal=self._get_connected_q_nominal(asset),
             # )
+            GasIn=dict(Q=dict(nominal=q_nominal), mass_flow=dict(nominal=q_nominal * density)),
             **self._get_cost_figure_modifiers(asset),
         )
 
@@ -1378,12 +1400,16 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {"GasConversion"}
 
         q_nom_in, q_nom_out = self._get_connected_q_nominal(asset)
+        density_in = self.get_density(asset.name, asset.in_ports[0].carrier)
+        density_out = self.get_density(asset.name, asset.out_ports[0].carrier)
 
         modifiers = dict(
             Q_nominal_in=q_nom_in,
             Q_nominal_out=q_nom_out,
-            density_in=self.get_density(asset.name, asset.in_ports[0].carrier),
-            density_out=self.get_density(asset.name, asset.out_ports[0].carrier),
+            density_in=density_in,
+            density_out=density_out,
+            GasIn=dict(Q=dict(nominal=q_nom_in), mass_flow=dict(nominal=q_nom_in * density_in)),
+            GasOut=dict(Q=dict(nominal=q_nom_out), mass_flow=dict(nominal=q_nom_out * density_out)),
             **self._get_cost_figure_modifiers(asset),
         )
 
