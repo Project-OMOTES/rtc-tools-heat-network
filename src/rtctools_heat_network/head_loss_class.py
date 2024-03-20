@@ -590,7 +590,8 @@ class HeadLossClass:
                     )
         except KeyError:
             # A default temperature of 20 degrees celcius is used for gas networks.
-            temperature = 20.0
+            # temperature = 20.0
+            temperature = 9
 
         try:
             has_control_valve = parameters[f"{pipe}.has_control_valve"]

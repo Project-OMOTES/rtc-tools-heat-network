@@ -19,7 +19,7 @@ class GasSource(GasComponent, BaseAsset):
 
         self.min_head = 30.0
 
-        self.density = 2.5e3
+        self.density = 2.5e3  # units?  # value is overwritten ?
 
         self.Q_nominal = nan
 

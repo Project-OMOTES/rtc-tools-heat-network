@@ -93,9 +93,10 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # TODO: gas carrier temperature still needs to be resolved.
         # The default of 20°C is also used in the head_loss_class. Thus, when updating ensure it
         # is also updated in the head_loss_class.
-        temperature = 20.0
+        # temperature = 20.0
+        temperature = 9.0
 
-        if NetworkSettings.NETWORK_TYPE_GAS in carrier.name:
+        if NetworkSettings.NETWORK_TYPE_GAS.lower() in carrier.name:  # is this maybe a bug below as well
             density = cP.CoolProp.PropsSI(
                 "D",
                 "T",
@@ -117,7 +118,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
             logger.warning(
                 f"Neither gas or hydrogen was used in the carrier " f"name of pipe {asset_name}"
             )
-            density = 6.2  # natural gas at about 8 bar
+            # density = 6.2  # natural gas at about 8 bar, temp ?
+            density = 6.4511  # natural gas at about 8 bar, 9 degrees celcius, force to be the same
+
         return density * 1.0e3  # to convert from kg/m3 to g/m3
 
     def get_asset_attribute_value(

@@ -20,7 +20,7 @@ class GasDemand(GasComponent, BaseAsset):
 
         self.Q_nominal = nan
 
-        self.density = 2.5e3  # H2 density [kg/m3] at 30bar
+        self.density = 2.5e3  # H2 density [kg/m3] at 30bar  # this value is overwritten ?
 
         self.id_mapping_carrier = -1
 

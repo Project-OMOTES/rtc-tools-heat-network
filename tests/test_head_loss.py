@@ -1,3 +1,5 @@
+import esdl
+
 from pathlib import Path
 from unittest import TestCase
 
@@ -696,6 +698,201 @@ class TestHeadLoss(TestCase):
                     1.0,
                 )
 
+    def test_gas_network_head_loss_vs_aurora(self):
+        """
+        Gas network: Test the head loss approximation by validating against AURORA
+
+        Checks:
+        -
+        """
+
+        import models.unit_cases_gas.source_sink.src.run_source_sink as example
+        from models.unit_cases_gas.source_sink.src.run_source_sink import GasProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        linear_head_loss_equality = 0.0
+
+        # Specify the head loss linearizations to be tested
+        for head_loss_option_setting in [
+            HeadLossOption.LINEARIZED_N_LINES_EQUALITY,
+        ]:
+
+            class TestSourceSink(GasProblem):
+                def energy_system_options(self):
+                    options = super().energy_system_options()
+
+                    nonlocal head_loss_option_setting
+                    head_loss_option_setting = head_loss_option_setting
+
+                    self.gas_network_settings["head_loss_option"] = head_loss_option_setting
+                    # self.gas_network_settings["n_linearization_lines"] = 5
+                    self.gas_network_settings["minimize_head_losses"] = True
+                    self.gas_network_settings["minimum_velocity"] = 0.0
+
+                    # self.gas_network_settings["maximum_velocity"] = 20.0  # dammit
+
+                    return options
+
+                @property
+                def esdl_assets(self):
+                    assets = super().esdl_assets
+                    for asset in assets:
+                        if assets[asset].asset_type in ["Pipe"]:
+                            assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN20
+                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN40
+                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN80
+                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN125
+                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN200
+
+                    return assets
+                
+                def pre(self):
+                    super().pre()
+                    for demand in self.energy_system_components["gas_demand"]:
+                        test = 102
+                        target = self.get_timeseries(f"{demand}.target_gas_demand")
+
+                        if self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN20:
+                            inner_pipe_diam_m = 0.0217
+                        elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN40:
+                            inner_pipe_diam_m = 0.0431
+                        elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN80:
+                            inner_pipe_diam_m = 0.0825
+                        elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN125: 
+                            inner_pipe_diam_m = 0.1325
+                        elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN200:  
+                            inner_pipe_diam_m = 0.2101
+
+                        # gas_velo_m_s = 2.5
+                        # gas_velo_m_s = 5.0
+                        gas_velo_m_s = 10.0
+                        # gas_velo_m_s = 15.0
+                        # gas_velo_m_s = 20.0
+
+                        target_gas_demand_g_s = (
+                            6455.94126829745 * gas_velo_m_s * np.pi * inner_pipe_diam_m**2 / 4.0
+                        )
+
+
+                        target = [target_gas_demand_g_s] * len(target.values)
+                        self.io.set_timeseries(
+                            f"{demand}.target_gas_demand",
+                            self.io._DataStore__timeseries_datetimes,
+                            target,
+                            0,
+                        )
+                        temppp = 123
+
+            solution = run_optimization_problem(
+                TestSourceSink,
+                base_folder=base_folder,
+                esdl_file_name="validation_AURORA.esdl",
+                esdl_parser=ESDLFileParser,
+                profile_reader=ProfileReaderFromFile,
+                input_timeseries_file="timeseries_validation_aurora.csv",
+            )
+            results = solution.extract_results()
+
+            # Check the head loss variable
+            # we need units at the end the variable name !
+            pressure_drop_bar = -(
+                solution.parameters(0)["Pipe_4abc.density"]/1000 * 9.81 * results["Pipe_4abc.dH"]/100e3
+            )
+            print(solution.parameters(0)["Pipe_4abc.diameter"])
+            print(results["Pipe_4abc.GasIn.Q"] / solution.parameters(0)["Pipe_4abc.area"])
+            print(pressure_drop_bar)
+            exit()
+            np.testing.assert_allclose(
+                results["Pipe_4abc.GasOut.H"] - results["Pipe_4abc.GasIn.H"],
+                results["Pipe_4abc.dH"],
+            )
+            
+
+            pipes = ["Pipe_4abc"]
+            v_max = solution.gas_network_settings["maximum_velocity"]
+            pipe_diameter = solution.parameters(0)[f"{pipes[0]}.diameter"]
+            pipe_wall_roughness = solution.energy_system_options()["wall_roughness"]
+            # TODO: resolve temperature - >solution.parameters(0)[f"{pipes[0]}.temperature"]
+            temperature = 20.0
+            pipe_length = solution.parameters(0)[f"{pipes[0]}.length"]
+            v_points = [0.0, v_max / solution.gas_network_settings["n_linearization_lines"]]
+            v_inspect = results[f"{pipes[0]}.GasOut.Q"] / solution.parameters(0)[f"{pipes[0]}.area"]
+
+            # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
+            # dH_manual_linear = a*Q + b
+            # Then use this linear function to calculate the head loss
+            delta_dh_theory = darcy_weisbach.head_loss(
+                v_points[1],
+                pipe_diameter,
+                pipe_length,
+                pipe_wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+            ) - darcy_weisbach.head_loss(
+                v_points[0],
+                pipe_diameter,
+                pipe_length,
+                pipe_wall_roughness,
+                temperature,
+                network_type=NetworkSettings.NETWORK_TYPE_GAS,
+                pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
+            )
+
+            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
+                v_points[0] * np.pi * pipe_diameter**2 / 4.0
+            )
+
+            a = delta_dh_theory / delta_volumetric_flow
+            b = delta_dh_theory - a * delta_volumetric_flow
+            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+
+            # Check that the head loss approximation with 2 linear lines (inequality constraints
+            # is < than the linear equality head loss constraint
+            if head_loss_option_setting == HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY:
+                # Check that the aproximated head loss matches the manually calculated value
+                np.testing.assert_allclose(dh_manual_linear, -results[f"{pipes[0]}.dH"])
+                linear_head_loss_equality = dh_manual_linear
+            elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
+                np.testing.assert_array_less(-results[f"{pipes[0]}.dH"], linear_head_loss_equality)
+            elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                # Check that the approximated head loss matches the manually calculated value
+                np.testing.assert_allclose(dh_manual_linear[1], -results[f"{pipes[0]}.dH"][1])
+
+            for pipe in pipes:
+                velocities = results[f"{pipe}.Q"] / solution.parameters(0)[f"{pipe}.area"]
+                # linearized dH satisfies the specified constraint
+                np.testing.assert_array_less(
+                    darcy_weisbach.head_loss(
+                        velocities[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
+                    ),
+                    -results[f"{pipe}.dH"][0],
+                )
+                if head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+                    # Check that only one linear line segment is active for the head loss
+                    # linearization
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_1_neg_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_neg_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                        0.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_1_pos_discharge"],
+                        1.0,
+                    )
+                    np.testing.assert_allclose(
+                        results[f"{pipe}__pipe_linear_line_segment_num_2_pos_discharge"],
+                        0.0,
+                    )
+
     def test_gas_substation(self):
         """
         Test to check if the gas substation reduces the pressure and the head loss computation
@@ -748,9 +945,10 @@ if __name__ == "__main__":
 
     start_time = time.time()
     a = TestHeadLoss()
-    a.test_heat_network_head_loss()
-    a.test_heat_network_pipe_split_head_loss()
-    a.test_gas_network_head_loss()
-    a.test_gas_network_pipe_split_head_loss()
-    a.test_gas_substation()
+    # a.test_heat_network_head_loss()
+    # a.test_heat_network_pipe_split_head_loss()
+    # a.test_gas_network_head_loss()
+    # a.test_gas_network_pipe_split_head_loss()
+    # a.test_gas_substation()
+    a.test_gas_network_head_loss_vs_aurora()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))

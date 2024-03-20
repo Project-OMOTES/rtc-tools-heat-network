@@ -19,11 +19,11 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.disconnectable = False
 
         self.v_max = 15.0
-        self.density = 2.5e3  # [g/m3]
+        self.density = 2.5e3  # [g/m3]  # this is vlaue is overwritten?
         self.diameter = nan
         self.area = 0.25 * pi * self.diameter**2
         self.Q_nominal = self.v_max / 2.0 * self.area
-        self.pressure = 16.0e5
+        self.pressure = 16.0e5  # this is vlaue is overwritten ?
 
         self.nominal_head = 30.0
         self.length = nan
