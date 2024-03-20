@@ -1,14 +1,22 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="Untitled EnergySystem" version="4" id="415d9426-dae2-4194-88ad-607793871425" description="">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" esdlVersion="v2401" name="Untitled EnergySystem" version="5" id="415d9426-dae2-4194-88ad-607793871425" description="">
   <energySystemInformation xsi:type="esdl:EnergySystemInformation" id="7997daa8-8ded-4f31-96b2-6842510f43f2">
     <carriers xsi:type="esdl:Carriers" id="6e119417-37a2-4dfd-a493-95f4b68d0235">
-      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" voltage="50000.0" name="Elec"/>
+      <carrier xsi:type="esdl:ElectricityCommodity" id="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Elec" voltage="50000.0"/>
       <carrier xsi:type="esdl:GasCommodity" id="14831e6c-c3bb-4763-8300-9658a365ee54" pressure="15.0" name="Hydrogen"/>
     </carriers>
   </energySystemInformation>
   <instance xsi:type="esdl:Instance" id="791c9938-3b6c-47b3-bcc5-0328ffd687bd" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="3f8efe6b-ccda-4054-85d0-38cbcd6977da" name="Untitled Area">
-      <asset xsi:type="esdl:WindPark" name="WindPark_9074" surfaceArea="1294320493" id="90740caf-4fbd-45ed-8ea3-6af19c76256c" technicalLifetime="20.0" power="2000000000.0">
+      <asset xsi:type="esdl:WindPark" name="WindPark_9074" surfaceArea="1294320493" id="90740caf-4fbd-45ed-8ea3-6af19c76256c" power="2000000000.0" technicalLifetime="20.0">
+        <costInformation xsi:type="esdl:CostInformation" id="cced62ec-db9f-476c-995b-9dae86ecc08f">
+          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="0c34c932-7857-4f8f-b1b3-d7fbe04d300c" value="10000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="9dc9c866-79ee-4a72-9982-8d3d7e04d3aa" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
+          </fixedMaintenanceCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="fa5ad5a6-4756-4966-a328-1658638a6375" value="10.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="4e760e1e-7172-4e02-ab0b-e7532ff9c60c" unit="EURO" description="Cost in EUR/MWh" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATTHOUR"/>
+          </variableOperationalCosts>
+        </costInformation>
         <port xsi:type="esdl:OutPort" id="fd1689e6-1339-4b77-8f8f-94acc57c752f" connectedTo="b0ed14ac-faa8-499f-aa98-53be98852d0f" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="Out"/>
         <geometry xsi:type="esdl:Polygon" CRS="WGS84">
           <exterior xsi:type="esdl:SubPolygon">
@@ -24,15 +32,36 @@
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.36553758871974" lon="4.872436523437501"/>
       </asset>
       <asset xsi:type="esdl:Electrolyzer" name="Electrolyzer_6327" effMaxLoad="69.0" maxLoad="200000000" efficiency="63.0" id="6327ee2b-9f17-432f-8d15-b034422eab79" power="200000000.0" technicalLifetime="20.0" effMinLoad="67.0" minLoad="20000000">
+        <costInformation xsi:type="esdl:CostInformation" id="995670aa-a117-4569-a89b-e3a63935c829">
+          <investmentCosts xsi:type="esdl:SingleValue" id="a2fee2a4-adf4-4bf9-adbf-31f35dd35ab8" value="20000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="492c0962-1bbf-411d-af36-65940d3da2a8" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
+          </investmentCosts>
+          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="63836d94-a84b-4137-8274-e926ace66a9f" value="1000.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" id="1b39bf48-df74-4fcf-b94b-a23593fa965b" unit="EURO" description="Cost in EUR/MW" perMultiplier="MEGA" physicalQuantity="COST" perUnit="WATT"/>
+          </fixedMaintenanceCosts>
+        </costInformation>
         <port xsi:type="esdl:InPort" id="d81bb99d-1508-4b13-bc13-1f1a149d481d" carrier="e1077d81-b32a-4004-9a33-db65c96b5f4c" name="In" connectedTo="1e76b7b0-9f17-4ccc-b4c3-0089b3ff6a45"/>
         <port xsi:type="esdl:OutPort" id="5e58c0e2-5db4-4f6a-8aab-2c880d499c14" connectedTo="5e660a4f-e8ca-4e9d-8568-6292d36b5994" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="Out"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.579688026538726" lon="3.6419677734375004"/>
       </asset>
       <asset xsi:type="esdl:GasDemand" name="GasDemand_4146" id="41466625-a14b-43a9-9a13-93d34a4ea6ff" power="500000000.0" technicalLifetime="20.0">
+        <costInformation xsi:type="esdl:CostInformation" id="14964bd8-8eb0-4525-bcb4-0d03c1252a2b">
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="5c63dce1-8a70-44f3-b6b9-476587ff73bb" value="0.0001">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="4a4516c3-372a-4a6c-b25a-dcc8dca30545" description="Cost in EUR/kg" physicalQuantity="COST" multiplier="KILO" perUnit="GRAM"/>
+          </variableOperationalCosts>
+        </costInformation>
         <port xsi:type="esdl:InPort" id="121a1b8d-758b-4b35-92fa-894435965e85" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="f0b7ab61-b983-45ed-9274-887ccaadfce0"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.633062890594374" lon="4.707641601562501"/>
       </asset>
       <asset xsi:type="esdl:GasStorage" name="GasStorage_9172" workingVolume="1000.0" id="9172f2eb-e1f4-4230-9495-396504f7c3c6" maxChargeRate="100000000.0" technicalLifetime="20.0" maxDischargeRate="100000000.0">
+        <costInformation xsi:type="esdl:CostInformation" id="6f57c644-a1de-4c79-a707-76a6741c02b9">
+          <fixedOperationalCosts xsi:type="esdl:SingleValue" id="ee900804-4f57-4488-a932-5c2a7102b4e8" value="0.01">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="6ae2e528-2275-47b0-81a9-97517e478150" description="Cost in EUR/kg/yr" physicalQuantity="COST" multiplier="KILO" perTimeUnit="YEAR" perUnit="GRAM"/>
+          </fixedOperationalCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="6d5fb87d-f399-4813-9d20-061ec28572d7" value="1e-05">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" unit="EURO" id="6f6578a3-6a81-41ea-9b71-3ad3db909f4a" description="Cost in EUR/kg" physicalQuantity="COST" multiplier="KILO" perUnit="GRAM"/>
+          </variableOperationalCosts>
+        </costInformation>
         <port xsi:type="esdl:InPort" id="b2bd6049-3e2e-443c-aa36-ba893135cf82" carrier="14831e6c-c3bb-4763-8300-9658a365ee54" name="In" connectedTo="0e6e6a7d-5b9a-42ff-8902-4e8db530b248"/>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="52.566334145326486" lon="3.8177490234375004"/>
       </asset>
