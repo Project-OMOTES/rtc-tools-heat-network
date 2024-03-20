@@ -248,7 +248,7 @@ class EmergeTest(
         # Optimized ESDL
         self._write_updated_esdl(self.get_energy_system_copy())
 
-        self._save_json = True
+        self._save_json = False
 
         if os.path.exists(self.output_folder) and self._save_json:
             self._write_json_output()
@@ -266,7 +266,7 @@ class EmergeTest(
                     pass
                 try:
                     print(f'fixed operational costs of {asset} in MEUR/yr : ', results[f'{asset}__fixed_operational_cost']/1e6)
-                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost']/1e6)
+                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost']/1e6) # not yet all included in financialmixin
                     print(f'max size of {asset} : ', results[f'{asset}__max_size'])
                 except:
                     print(f'{asset} does not have a costs')
