@@ -897,7 +897,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
         for demand in self.energy_system_components.get("gas_demand", []):
             gas_mass_flow = self.__state_vector_scaled(
-                f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                f"{demand}.Gas_demand_mass_flow", ensemble_member  # g/s
             )
 
             variable_operational_cost_var = self._asset_variable_operational_cost_map[demand]
@@ -960,7 +960,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
                 sum += (
                     variable_operational_cost_coefficient
                     * power_consumer[i]
-                    * timesteps[i - 1]  # gas_mass_flow unit is kg/hr
+                    * timesteps[i - 1]  # gas_mass_flow unit is g/s
                 )
 
             constraints.append(((variable_operational_cost - sum) / nominal, 0.0, 0.0))
@@ -1237,7 +1237,7 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
 
                 if demand in self.energy_system_components.get("gas_demand", []):
                     energy_flow = self.__state_vector_scaled(
-                        f"{demand}.Gas_demand_mass_flow", ensemble_member  # kg/hr
+                        f"{demand}.Gas_demand_mass_flow", ensemble_member  # g/s
                     )
 
                 elif demand in self.energy_system_components.get("electricity_demand", []):
