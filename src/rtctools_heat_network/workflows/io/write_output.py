@@ -296,7 +296,7 @@ class ScenarioOutput(TechnoEconomicMixin):
                 )
             )
 
-    def _write_updated_esdl(self, energy_system, optimizer_sim: bool = True):
+    def _write_updated_esdl(self, energy_system, optimizer_sim: bool = False):
         from esdl.esdl_handler import EnergySystemHandler
 
         results = self.extract_results()
@@ -305,9 +305,9 @@ class ScenarioOutput(TechnoEconomicMixin):
         input_energy_system_id = energy_system.id
         energy_system.id = str(uuid.uuid4())
         if optimizer_sim:
-            energy_system.name = energy_system.name + "_GrowOptimized"
-        else:
             energy_system.name = energy_system.name + "_Simulation"
+        else:
+            energy_system.name = energy_system.name + "_GrowOptimized"
 
         def _name_to_asset(name):
             return next(
