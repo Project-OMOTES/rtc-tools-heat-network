@@ -22,6 +22,7 @@ from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 from rtctools_heat_network.workflows.io.write_output import ScenarioOutput
 
 
+
 class MaxHydrogenProduction(Goal):
     """
     A maximization goal for the hydrogen production, note that we minimize the negative hydrogen
