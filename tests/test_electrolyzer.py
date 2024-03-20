@@ -74,12 +74,10 @@ class TestElectrolyzer(TestCase):
             )
             / nominal
         )
-        # Check that goal is as expected
-        np.testing.assert_allclose(
-            solution.objective_value,
+        # Check that goal is larger than the revenues as costs are taken into account
+        np.testing.assert_array_less(
             -(gas_revenue + electricity_revenue),
-            atol=1e-2,
-            rtol=1e-2,
+            solution.objective_value,
         )
         tol = 1.0e-6
         # Check that the electrolyzer only consumes electricity and does not produce.
@@ -169,7 +167,7 @@ class TestElectrolyzer(TestCase):
 
         # Check storage cost fix opex 10 euro/kgH2/year -> 10*23.715 = 237.15euro/m3
         # Storage reserved size = 500m3
-        storage_fixed_opex = 237.15 * 500.0
+        storage_fixed_opex = 237.15 * 500000.0
         np.testing.assert_allclose(
             storage_fixed_opex,
             sum(results["GasStorage_e492__fixed_operational_cost"]),

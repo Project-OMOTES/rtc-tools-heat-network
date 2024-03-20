@@ -135,6 +135,8 @@ class MILPProblem(
     def path_goals(self):
         goals = super().path_goals().copy()
 
+        # goals.append(MaxH2Goal())
+
         return goals
 
     def solver_options(self):

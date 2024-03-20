@@ -16,7 +16,7 @@ class GasPort(GasComponent, Connector):
         #  every port has a unique variable to make the correct port mapping
         self.add_variable(Variable, "Q")  # [m3/s]
         self.add_variable(Variable, "Q_shadow")
-        self.add_variable(Variable, "mass_flow")  # [kg/hr]
+        self.add_variable(Variable, "mass_flow")  # [g/s]
         self.add_variable(Variable, "H")  # [m]
 
 
