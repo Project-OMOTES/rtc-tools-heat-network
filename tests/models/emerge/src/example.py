@@ -182,18 +182,18 @@ class EmergeTest(
 
         return goals
 
-    # def constraints(self, ensemble_member):
-    #     constraints = super().constraints(ensemble_member)
-    #
-    #     for gs in self.energy_system_components.get("gas_tank_storage", []):
-    #         canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
-    #         storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-    #         constraints.append((storage_t0, 0.0, 0.0))
-    #         canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
-    #         gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
-    #         constraints.append((gas_flow_t0, 0.0, 0.0))
-    #
-    #     return constraints
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for gs in self.energy_system_components.get("gas_tank_storage", []):
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Stored_gas_mass")
+            storage_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((storage_t0, 0.0, 0.0))
+            canonical, sign = self.alias_relation.canonical_signed(f"{gs}.Gas_tank_flow")
+            gas_flow_t0 = sign * self.state_vector(canonical, ensemble_member)[0]
+            constraints.append((gas_flow_t0, 0.0, 0.0))
+
+        return constraints
 
     def solver_options(self):
         """
@@ -204,7 +204,7 @@ class EmergeTest(
         solver options dict
         """
         options = super().solver_options()
-        options["solver"] = "gurobi"
+        options["solver"] = "highs"
         return options
 
     def times(self, variable=None):
@@ -257,14 +257,16 @@ class EmergeTest(
 
         for _type, assets in self.energy_system_components.items():
             for asset in assets:
+                print("----------------------------------")
+                print(f"{asset} financials:")
                 try:
-                    print(f'revenue of {asset} : ', results[f'{asset}__revenue'])
+                    print(f'revenue of {asset} in MEUR/day: ', results[f'{asset}__revenue']/1e6)
                 except:
                     print(f'{asset} does not have a revenue')
                     pass
                 try:
-                    print(f'fixed operational costs of {asset} : ', results[f'{asset}__fixed_operational_cost'])
-                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost'])
+                    print(f'fixed operational costs of {asset} in MEUR/yr : ', results[f'{asset}__fixed_operational_cost']/1e6)
+                    print(f'variable operational costs of {asset} : ', results[f'{asset}__variable_operational_cost']/1e6)
                     print(f'max size of {asset} : ', results[f'{asset}__max_size'])
                 except:
                     print(f'{asset} does not have a costs')
