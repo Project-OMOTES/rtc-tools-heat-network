@@ -163,7 +163,11 @@ class _ESDLModelBase(_Model):
                                 f"{asset.name} has does not have 2 Heat in_ports and 2 Heat "
                                 f"out_ports "
                             )
-                elif len(asset.in_ports) == 3 and len(asset.out_ports) == 2 and asset.asset_type == "HeatPump":
+                elif (
+                    len(asset.in_ports) == 3
+                    and len(asset.out_ports) == 2
+                    and asset.asset_type == "HeatPump"
+                ):
                     p_heat = 0
                     p_elec = 0
                     for p in [*asset.in_ports, *asset.out_ports]:
@@ -187,7 +191,11 @@ class _ESDLModelBase(_Model):
                                 f"{asset.name} has total of 5 ports, but no proper split between "
                                 f"milp(4) and electricity (1) ports"
                             )
-                elif len(asset.in_ports) == 1 and len(asset.out_ports) == 1 and asset.asset_type == "HeatPump":
+                elif (
+                    len(asset.in_ports) == 1
+                    and len(asset.out_ports) == 1
+                    and asset.asset_type == "HeatPump"
+                ):
                     for p in [*asset.in_ports, *asset.out_ports]:
                         if isinstance(p.carrier, esdl.HeatCommodity):
                             if isinstance(p, InPort):

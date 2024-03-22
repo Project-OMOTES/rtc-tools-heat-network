@@ -16,9 +16,8 @@ from rtctools.util import run_optimization_problem
 from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
 from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-
 from rtctools_heat_network.head_loss_class import HeadLossOption
+from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -47,7 +46,9 @@ class TargetDemandGoal(Goal):
         self.target_min = target
         self.target_max = target
         self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
-        self.function_nominal = np.median(target.values) if np.median(target.values) else abs(max(target.values)) / 2.
+        self.function_nominal = (
+            np.median(target.values) if np.median(target.values) else abs(max(target.values)) / 2.0
+        )
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -86,7 +87,6 @@ class MinimizeSourcesHeatGoal(Goal):
         source : string of the source name that is going to be minimized
         """
         self.source = source
-
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -152,6 +152,11 @@ class HeatProblem(
     representative result.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        self.heat_network_settings["minimum_velocity"] = 0.0
+
     def path_goals(self):
         """
         This function adds the minimization goal for minimizing the milp production.
@@ -184,7 +189,7 @@ class HeatProblem(
 
         for a in self.energy_system_components.get("ates", []):
             stored_heat = self.state_vector(f"{a}.Stored_heat")
-            constraints.append((stored_heat[0], 0., 0.))
+            constraints.append((stored_heat[0], 0.0, 0.0))
 
         return constraints
 
@@ -197,10 +202,8 @@ class HeatProblem(
         Options dict for the physics modelling
         """
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.0
-        self.heat_network_settings["neglect_pipe_heat_losses"] = True
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        # self.heat_network_settings["heat_loss_disconnected_pipe"] = False
+        options["neglect_pipe_heat_losses"] = False
+        options["heat_loss_disconnected_pipe"] = False
 
         return options
 
@@ -218,5 +221,8 @@ if __name__ == "__main__":
     print(results["HeatingDemand_9b90.Heat_demand"])
     print(results["HeatPump_b97e.Heat_source"])
     print(results["ATES_226d.Heat_ates"])
+    for p in elect.energy_system_components.get("heat_pipe", []):
+        print(p, results[f"{p}__hn_heat_loss"])
+        print(p, elect.bounds()[f"{p}__hn_heat_loss"])
 
     a = 1

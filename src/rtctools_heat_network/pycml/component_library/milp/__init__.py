@@ -12,8 +12,8 @@ from .gas.gas_substation import GasSubstation
 from .gas.gas_tank_storage import GasTankStorage
 from .heat.ates import ATES
 from .heat.check_valve import CheckValve
-from .heat.control_valve import ControlValve
 from .heat.cold_demand import ColdDemand
+from .heat.control_valve import ControlValve
 from .heat.geothermal_source import GeothermalSource
 from .heat.heat_buffer import HeatBuffer
 from .heat.heat_demand import HeatDemand

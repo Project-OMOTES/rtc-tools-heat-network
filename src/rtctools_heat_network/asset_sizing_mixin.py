@@ -591,10 +591,10 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             if not pipe_classes or options["neglect_pipe_heat_losses"]:
                 # No pipe class decision to make for this pipe w.r.t. milp loss
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe)
-                if (parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]):
-                    lb = 0.
+                if parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]:
+                    lb = 0.0
                 else:
-                    lb = 2. * heat_loss
+                    lb = 2.0 * heat_loss
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     lb,
                     2.0 * abs(heat_loss),
@@ -603,7 +603,11 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = heat_loss
                 else:
                     self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                        abs(pipe_heat_loss(self, {"neglect_pipe_heat_losses": False}, parameters, pipe)),
+                        abs(
+                            pipe_heat_loss(
+                                self, {"neglect_pipe_heat_losses": False}, parameters, pipe
+                            )
+                        ),
                         1.0,
                     )
 

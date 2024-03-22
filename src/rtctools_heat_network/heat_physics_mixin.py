@@ -487,10 +487,10 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             else:
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe)
-                if (parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]):
-                    lb = 0.
+                if parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]:
+                    lb = 0.0
                 else:
-                    lb = 2. * heat_loss
+                    lb = 2.0 * heat_loss
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
                     lb,
                     2.0 * abs(heat_loss),
@@ -1695,7 +1695,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         for p in self.energy_system_components.get("heat_pipe", []):
             cp = parameters[f"{p}.cp"]
             rho = parameters[f"{p}.rho"]
-            temp = parameters[f"{p}.temperature"]
+            temp = max(parameters[f"{p}.temperature"], parameters[f"{p}.T_ground"])
 
             flow_dir_var = self._pipe_to_flow_direct_map[p]
             flow_dir = self.state(flow_dir_var)
@@ -1758,6 +1758,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     carrier = parameters[f"{p}.carrier_id"]
                     temperatures = self.temperature_regimes(carrier)
                     if len(temperatures) == 0:
+
                         constraints.append(
                             (
                                 (heat - pipe_q * (cp * rho * temp) - big_m * (1 - flow_dir))
@@ -3191,7 +3192,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 except KeyError:
                     heat_loss = pipe_heat_loss(
                         self,
-                        self.heat_network_settings,
+                        self.energy_system_options(),
                         self.parameters(ensemble_member),
                         p,
                     )
@@ -3209,7 +3210,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if len(pipe_classes) == 0:
                         heat_loss = pipe_heat_loss(
                             self,
-                            self.heat_network_settings,
+                            self.energy_system_options(),
                             self.parameters(ensemble_member),
                             p,
                             temp=temperature,
@@ -3243,7 +3244,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         heat_losses = [
                             pipe_heat_loss(
                                 self,
-                                self.heat_network_settings,
+                                self.energy_system_options(),
                                 self.parameters(ensemble_member),
                                 p,
                                 u_values=c.u_values,

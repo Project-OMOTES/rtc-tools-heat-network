@@ -372,8 +372,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=q_nominal,
-            Cold_demand=dict(min=0., max=max_demand, nominal=max_demand / 2.0),
-            Heat_flow=dict(min=0., max=max_demand, nominal=max_demand / 2.0),
+            Cold_demand=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
+            Heat_flow=dict(min=0.0, max=max_demand, nominal=max_demand / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             state=self.get_state(asset),
@@ -727,7 +727,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return HeatExchanger, modifiers
 
-    def convert_heat_pump(self, asset: Asset) -> Tuple[Union[Type[HeatPump], Type[HeatSource]], MODIFIERS]:
+    def convert_heat_pump(
+        self, asset: Asset
+    ) -> Tuple[Union[Type[HeatPump], Type[HeatSource]], MODIFIERS]:
         """
         This function converts the HeatPump object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
