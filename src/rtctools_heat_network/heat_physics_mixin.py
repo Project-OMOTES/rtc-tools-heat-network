@@ -487,12 +487,16 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
             else:
                 heat_loss = pipe_heat_loss(self, options, parameters, pipe)
+                if (parameters[f"{pipe}.temperature"] > parameters[f"{pipe}.T_ground"]):
+                    lb = 0.
+                else:
+                    lb = 2. * heat_loss
                 self._pipe_heat_loss_var_bounds[heat_loss_var_name] = (
-                    0.0,
-                    2.0 * heat_loss,
+                    lb,
+                    2.0 * abs(heat_loss),
                 )
                 self._pipe_heat_loss_nominals[heat_loss_var_name] = max(
-                    heat_loss,
+                    abs(heat_loss),
                     1.0,
                 )
 

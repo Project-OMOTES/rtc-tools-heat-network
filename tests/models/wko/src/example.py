@@ -183,6 +183,7 @@ class HeatProblem(
         """
         options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0
+        self.heat_network_settings["neglect_pipe_heat_losses"] = True
 
         return options
 

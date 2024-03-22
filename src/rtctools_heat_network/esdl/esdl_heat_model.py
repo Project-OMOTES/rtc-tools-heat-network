@@ -9,6 +9,7 @@ import esdl
 from rtctools_heat_network.pycml.component_library.milp import (
     ATES,
     CheckValve,
+    ColdDemand,
     ControlValve,
     ElectricityCable,
     ElectricityDemand,
@@ -325,7 +326,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         Demand class with modifiers
         """
-        assert asset.asset_type in {"GenericConsumer", "HeatingDemand"}
+        assert asset.asset_type in {"GenericConsumer", "HeatingDemand", "Losses"}
 
         max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
 
@@ -371,8 +372,8 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         modifiers = dict(
             Q_nominal=q_nominal,
-            Cold_demand=dict(min=-max_demand, nominal=max_demand / 2.0),
-            Heat_flow=dict(min=-max_demand, nominal=max_demand / 2.0),
+            Cold_demand=dict(min=0., max=max_demand, nominal=max_demand / 2.0),
+            Heat_flow=dict(min=0., max=max_demand, nominal=max_demand / 2.0),
             HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
             state=self.get_state(asset),
@@ -726,7 +727,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         )
         return HeatExchanger, modifiers
 
-    def convert_heat_pump(self, asset: Asset) -> Tuple[Type[HeatPump], MODIFIERS]:
+    def convert_heat_pump(self, asset: Asset) -> Tuple[Union[Type[HeatPump], Type[HeatSource]], MODIFIERS]:
         """
         This function converts the HeatPump object in esdl to a set of modifiers that can be used in
         a pycml object. Most important:
@@ -749,6 +750,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
         assert asset.asset_type in {
             "HeatPump",
         }
+
+        # In this case we only have the secondary side ports, here we assume a air-water HP
+        if len(asset.in_ports) == 1 and len(asset.out_ports) == 1:
+            _, modifiers = self.convert_heat_source(asset)
+            return HeatSource, modifiers
+
         if not asset.attributes["power"]:
             raise _ESDLInputException(f"{asset.name} has no power specified")
         else:
@@ -831,6 +838,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             "HeatProducer",
             "GeothermalSource",
             "ResidualHeatSource",
+            "HeatPump",
         }
 
         max_supply = asset.attributes["power"]

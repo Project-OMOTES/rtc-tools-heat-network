@@ -178,6 +178,17 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07846189149198" lon="4.417410734103896"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.078250890657976" lon="4.413397695431759"/>
         </geometry>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0056">
+            <matter xsi:type="esdl:Material" id="f4cee538-cc3b-4809-bd66-979f2ce9649b" thermalConductivity="52.15" name="steel"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.05785">
+            <matter xsi:type="esdl:Material" id="e4c0350c-cd79-45b4-a45c-6259c750b478" thermalConductivity="0.027" name="PUR"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0052">
+            <matter xsi:type="esdl:Material" id="9a97f588-10fe-4a34-b0f2-277862151763" thermalConductivity="0.4" name="HDPE"/>
+          </component>
+        </material>
       </asset>
       <asset xsi:type="esdl:Pipe" name="Pipe2_ret" length="144.6" related="Pipe2" outerDiameter="0.45" id="Pipe2_ret" diameter="DN300" innerDiameter="0.3127">
         <port xsi:type="esdl:InPort" id="28ea57f1-1acd-419c-9c3f-4cb24f58aa60" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret" name="In_ret" connectedTo="316be022-cc67-4336-9d1b-6898bda3cd96"/>
@@ -186,6 +197,17 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07716949572949" lon="4.417643975184299"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07846189149198" lon="4.417410734103896"/>
         </geometry>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0056">
+            <matter xsi:type="esdl:Material" id="f4cee538-cc3b-4809-bd66-979f2ce9649b" thermalConductivity="52.15" name="steel"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.05785">
+            <matter xsi:type="esdl:Material" id="e4c0350c-cd79-45b4-a45c-6259c750b478" thermalConductivity="0.027" name="PUR"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0052">
+            <matter xsi:type="esdl:Material" id="9a97f588-10fe-4a34-b0f2-277862151763" thermalConductivity="0.4" name="HDPE"/>
+          </component>
+        </material>
       </asset>
       <asset xsi:type="esdl:Pipe" name="Pipe3_ret" length="171.2" related="Pipe3" outerDiameter="0.45" id="Pipe3_ret" diameter="DN300" innerDiameter="0.3127">
         <port xsi:type="esdl:InPort" id="a93f7048-f55b-4046-bc21-74ee9f955b81" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret" name="In_ret" connectedTo="44332191-50e2-4e34-b318-2090863ae0d6"/>
@@ -194,6 +216,17 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07984655971592" lon="4.41631935232941"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07846189149198" lon="4.417410734103896"/>
         </geometry>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0056">
+            <matter xsi:type="esdl:Material" id="f4cee538-cc3b-4809-bd66-979f2ce9649b" thermalConductivity="52.15" name="steel"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.05785">
+            <matter xsi:type="esdl:Material" id="e4c0350c-cd79-45b4-a45c-6259c750b478" thermalConductivity="0.027" name="PUR"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0052">
+            <matter xsi:type="esdl:Material" id="9a97f588-10fe-4a34-b0f2-277862151763" thermalConductivity="0.4" name="HDPE"/>
+          </component>
+        </material>
       </asset>
       <asset xsi:type="esdl:Pipe" name="Pipe4_ret" length="158.5" related="Pipe4" outerDiameter="0.45" id="Pipe4_ret" diameter="DN300" innerDiameter="0.3127">
         <port xsi:type="esdl:InPort" id="5d7d8d7e-9009-404d-bdac-cbbc1c8fab40" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret" name="In_ret" connectedTo="8e360471-beba-4bcf-bbd3-466259c51b5b"/>
@@ -202,6 +235,17 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07988612103402" lon="4.417499608352213"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07846189149198" lon="4.417410734103896"/>
         </geometry>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0056">
+            <matter xsi:type="esdl:Material" id="f4cee538-cc3b-4809-bd66-979f2ce9649b" thermalConductivity="52.15" name="steel"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.05785">
+            <matter xsi:type="esdl:Material" id="e4c0350c-cd79-45b4-a45c-6259c750b478" thermalConductivity="0.027" name="PUR"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0052">
+            <matter xsi:type="esdl:Material" id="9a97f588-10fe-4a34-b0f2-277862151763" thermalConductivity="0.4" name="HDPE"/>
+          </component>
+        </material>
       </asset>
       <asset xsi:type="esdl:Pipe" name="Pipe5_ret" length="184.9" related="Pipe5" outerDiameter="0.45" id="Pipe5_ret" diameter="DN300" innerDiameter="0.3127">
         <port xsi:type="esdl:InPort" id="d49c2f1a-3aa5-4da9-9e09-557a19b250e7" carrier="13db0822-98da-4ca8-9d48-868653ae06af_ret" name="In_ret" connectedTo="b277a00f-e86a-4883-9144-5b1babedcbce"/>
@@ -210,6 +254,17 @@
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.07846189149198" lon="4.417410734103896"/>
           <point xsi:type="esdl:Point" CRS="WGS84" lat="52.079938869403605" lon="4.418658434678616"/>
         </geometry>
+        <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0056">
+            <matter xsi:type="esdl:Material" id="f4cee538-cc3b-4809-bd66-979f2ce9649b" thermalConductivity="52.15" name="steel"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.05785">
+            <matter xsi:type="esdl:Material" id="e4c0350c-cd79-45b4-a45c-6259c750b478" thermalConductivity="0.027" name="PUR"/>
+          </component>
+          <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.0052">
+            <matter xsi:type="esdl:Material" id="9a97f588-10fe-4a34-b0f2-277862151763" thermalConductivity="0.4" name="HDPE"/>
+          </component>
+        </material>
       </asset>
     </area>
   </instance>
