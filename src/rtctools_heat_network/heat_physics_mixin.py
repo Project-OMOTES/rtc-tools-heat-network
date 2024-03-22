@@ -1423,6 +1423,70 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
 
         return constraints
 
+    def __cold_demand_heat_to_discharge_path_constraints(self, ensemble_member):
+        """
+        This function adds constraints linking the flow to the thermal power at the demand assets.
+        We use an equality constraint on the outgoing flow for every non-pipe asset. Meaning that we
+        equate Q * rho * cp * T == Heat for outgoing flows, and inequalities for the milp carried
+        in the pipes. This means that the milp can decrease in the network to compensate losses,
+        but that the losses and thus flow will always be over-estimated with the temperature for
+        which no temperature drops are modelled.
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+
+        for d in self.energy_system_components.get("cold_demand", []):
+            heat_nominal = parameters[f"{d}.Heat_nominal"]
+            cp = parameters[f"{d}.cp"]
+            rho = parameters[f"{d}.rho"]
+            # TODO: future work - some sort of correction factor to account for temp drop n pipe:
+            # (maximum/average lenght fromm source to demand) * V_nominal * temperature_loss_factor
+            discharge = self.state(f"{d}.Q")
+            heat_out = self.state(f"{d}.HeatOut.Heat")
+
+            sup_carrier = parameters[f"{d}.T_supply_id"]
+            supply_temperatures = self.temperature_regimes(sup_carrier)
+            big_m = 2.0 * self.bounds()[f"{d}.HeatOut.Heat"][1]
+
+            if len(supply_temperatures) == 0:
+                constraints.append(
+                    (
+                        (heat_out - discharge * cp * rho * parameters[f"{d}.T_supply"])
+                        / heat_nominal,
+                        0.0,
+                        0.0,
+                    )
+                )
+            else:
+                for sup_temperature in supply_temperatures:
+                    sup_temperature_is_selected = self.state(f"{sup_carrier}_{sup_temperature}")
+                    constraints.append(
+                        (
+                            (
+                                heat_out
+                                - discharge * cp * rho * sup_temperature
+                                + (1.0 - sup_temperature_is_selected) * big_m
+                            )
+                            / heat_nominal,
+                            0.0,
+                            np.inf,
+                        )
+                    )
+                    constraints.append(
+                        (
+                            (
+                                heat_out
+                                - discharge * cp * rho * sup_temperature
+                                - (1.0 - sup_temperature_is_selected) * big_m
+                            )
+                            / heat_nominal,
+                            -np.inf,
+                            0.0,
+                        )
+                    )
+
+        return constraints
+
     def __source_heat_to_discharge_path_constraints(self, ensemble_member):
         """
         This function adds constraints linking the flow to the thermal power at the demand assets.
@@ -3127,7 +3191,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 except KeyError:
                     heat_loss = pipe_heat_loss(
                         self,
-                        self.energy_system_options(),
+                        self.heat_network_settings,
                         self.parameters(ensemble_member),
                         p,
                     )
@@ -3145,7 +3209,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     if len(pipe_classes) == 0:
                         heat_loss = pipe_heat_loss(
                             self,
-                            self.energy_system_options(),
+                            self.heat_network_settings,
                             self.parameters(ensemble_member),
                             p,
                             temp=temperature,
@@ -3179,7 +3243,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         heat_losses = [
                             pipe_heat_loss(
                                 self,
-                                self.energy_system_options(),
+                                self.heat_network_settings,
                                 self.parameters(ensemble_member),
                                 p,
                                 u_values=c.u_values,
@@ -3499,6 +3563,7 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         constraints.extend(self.__heat_loss_path_constraints(ensemble_member))
         constraints.extend(self.__node_discharge_mixing_path_constraints(ensemble_member))
         constraints.extend(self.__demand_heat_to_discharge_path_constraints(ensemble_member))
+        constraints.extend(self.__cold_demand_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__source_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__storage_heat_to_discharge_path_constraints(ensemble_member))

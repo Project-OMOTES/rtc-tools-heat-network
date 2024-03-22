@@ -18,6 +18,8 @@ from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
 from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
+from rtctools_heat_network.head_loss_class import HeadLossOption
+
 
 class TargetDemandGoal(Goal):
     """
@@ -44,8 +46,8 @@ class TargetDemandGoal(Goal):
 
         self.target_min = target
         self.target_max = target
-        self.function_range = (0.0, 2.0 * max(target.values))
-        self.function_nominal = np.median(target.values)
+        self.function_range = (-2.0 * max(target.values), 2.0 * max(target.values))
+        self.function_nominal = np.median(target.values) if np.median(target.values) else abs(max(target.values)) / 2.
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -83,10 +85,8 @@ class MinimizeSourcesHeatGoal(Goal):
         ----------
         source : string of the source name that is going to be minimized
         """
-        self.target_max = 0.0
-        self.function_range = (0.0, 10e6)
         self.source = source
-        self.function_nominal = 1e6
+
 
     def function(
         self, optimization_problem: CollocatedIntegratedOptimizationProblem, ensemble_member: int
@@ -125,6 +125,12 @@ class _GoalsAndOptions:
         for demand in self.energy_system_components.get("heat_demand", []):
             target = self.get_timeseries(f"{demand}.target_heat_demand")
             state = f"{demand}.Heat_demand"
+
+            goals.append(TargetDemandGoal(state, target))
+
+        for demand in self.energy_system_components.get("cold_demand", []):
+            target = self.get_timeseries(f"{demand}.target_cold_demand")
+            state = f"{demand}.Cold_demand"
 
             goals.append(TargetDemandGoal(state, target))
 
@@ -173,6 +179,15 @@ class HeatProblem(
         options["solver"] = "highs"
         return options
 
+    def constraints(self, ensemble_member):
+        constraints = super().constraints(ensemble_member)
+
+        for a in self.energy_system_components.get("ates", []):
+            stored_heat = self.state_vector(f"{a}.Stored_heat")
+            constraints.append((stored_heat[0], 0., 0.))
+
+        return constraints
+
     def energy_system_options(self):
         """
         This function does not add anything at the moment but during debugging we use this.
@@ -184,6 +199,8 @@ class HeatProblem(
         options = super().energy_system_options()
         self.heat_network_settings["minimum_velocity"] = 0.0
         self.heat_network_settings["neglect_pipe_heat_losses"] = True
+        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        # self.heat_network_settings["heat_loss_disconnected_pipe"] = False
 
         return options
 
@@ -197,4 +214,9 @@ if __name__ == "__main__":
         input_timeseries_file="timeseries.csv",
     )
     results = elect.extract_results()
+    print(results["CoolingDemand_15e8.Cold_demand"])
+    print(results["HeatingDemand_9b90.Heat_demand"])
+    print(results["HeatPump_b97e.Heat_source"])
+    print(results["ATES_226d.Heat_ates"])
+
     a = 1
