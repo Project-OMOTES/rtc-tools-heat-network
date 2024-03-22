@@ -345,6 +345,44 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         return HeatDemand, modifiers
 
+    def convert_cold_demand(self, asset: Asset) -> Tuple[Type[ColdDemand], MODIFIERS]:
+        """
+        This function converts the demand object in esdl to a set of modifiers that can be used in
+        a pycml object. Most important:
+
+        - Setting a cap on the thermal power.
+        - Setting the state (enabled, disabled, optional)
+        - Setting the relevant temperatures.
+        - Setting the relevant cost figures.
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        Demand class with modifiers
+        """
+        assert asset.asset_type in {"CoolingDemand"}
+
+        max_demand = asset.attributes["power"] if asset.attributes["power"] else math.inf
+
+        q_nominal = self._get_connected_q_nominal(asset)
+
+        modifiers = dict(
+            Q_nominal=q_nominal,
+            Cold_demand=dict(min=-max_demand, nominal=max_demand / 2.0),
+            Heat_flow=dict(min=-max_demand, nominal=max_demand / 2.0),
+            HeatIn=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            HeatOut=dict(Hydraulic_power=dict(nominal=q_nominal * 16.0e5)),
+            state=self.get_state(asset),
+            **self._supply_return_temperature_modifiers(asset),
+            **self._rho_cp_modifiers,
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return ColdDemand, modifiers
+
     def convert_node(self, asset: Asset) -> Tuple[Type[Node], MODIFIERS]:
         """
         This function converts the node object in esdl to a set of modifiers that can be used in
