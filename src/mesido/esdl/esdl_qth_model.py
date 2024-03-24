@@ -4,6 +4,9 @@ from typing import Dict, Tuple, Type
 
 import esdl
 
+from mesido.esdl.asset_to_component_base import MODIFIERS, _AssetToComponentBase
+from mesido.esdl.common import Asset
+from mesido.esdl.esdl_model_base import _ESDLModelBase
 from mesido.pycml import SymbolicParameter
 from mesido.pycml.component_library.qth import (
     Buffer,
@@ -16,10 +19,6 @@ from mesido.pycml.component_library.qth import (
     Pump,
     Source,
 )
-
-from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
-from .common import Asset
-from .esdl_model_base import _ESDLModelBase
 
 logger = logging.getLogger("mesido")
 
@@ -214,7 +213,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
-        area = math.pi * diameter ** 2 / 4.0
+        area = math.pi * diameter**2 / 4.0
         q_nominal = self.v_nominal * area
         q_max = self.v_max * area
 

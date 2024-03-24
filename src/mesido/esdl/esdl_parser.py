@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import esdl.esdl_handler
 
-from .common import Asset
+from mesido.esdl.common import Asset
 
 
 class _ESDLInputException(Exception):

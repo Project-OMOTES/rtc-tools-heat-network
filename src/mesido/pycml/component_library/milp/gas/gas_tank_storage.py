@@ -1,7 +1,7 @@
-from numpy import nan
-
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
+
+from numpy import nan
 
 from .gas_base import GasPort
 from .._internal.gas_component import GasComponent

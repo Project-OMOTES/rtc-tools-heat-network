@@ -4,13 +4,14 @@ from typing import Optional
 
 import esdl
 
-import numpy as np
-
-import pandas as pd
-
 from mesido.esdl.esdl_parser import ESDLFileParser
 from mesido.esdl.profile_parser import InfluxDBProfileReader, ProfileReaderFromFile
 from mesido.workflows import EndScenarioSizingStagedHIGHS
+
+
+import numpy as np
+
+import pandas as pd
 
 
 class MockInfluxDBProfileReader(InfluxDBProfileReader):

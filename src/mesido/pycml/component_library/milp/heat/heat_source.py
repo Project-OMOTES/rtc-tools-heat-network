@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import Variable
+
+from numpy import nan
 
 from ._non_storage_component import _NonStorageComponent
 

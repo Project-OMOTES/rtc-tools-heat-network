@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import SymbolicParameter, Variable
+
+from numpy import nan
 
 from ._fluid_properties_component import _FluidPropertiesComponent
 from ._non_storage_component import _NonStorageComponent

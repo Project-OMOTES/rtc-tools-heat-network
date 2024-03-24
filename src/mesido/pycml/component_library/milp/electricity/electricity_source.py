@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import Variable
+
+from numpy import nan
 
 from .electricity_base import ElectricityPort
 from .._internal import BaseAsset

@@ -26,7 +26,7 @@ class PipeClass:
 
     @property
     def area(self):
-        return 0.25 * math.pi * self.inner_diameter ** 2
+        return 0.25 * math.pi * self.inner_diameter**2
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ class GasPipeClass:
 
     @property
     def area(self):
-        return 0.25 * math.pi * self.inner_diameter ** 2
+        return 0.25 * math.pi * self.inner_diameter**2
 
 
 @dataclass(frozen=True)

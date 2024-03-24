@@ -5,16 +5,15 @@ from typing import List, Optional, Tuple, Type, Union
 
 import casadi as ca
 
+import mesido._darcy_weisbach as darcy_weisbach
+from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.network_common import NetworkSettings
+from mesido.pipe_class import PipeClass
+
 import numpy as np
 
 from rtctools.optimization.goal_programming_mixin_base import Goal
 from rtctools.optimization.optimization_problem import BT
-
-import mesido._darcy_weisbach as darcy_weisbach
-
-from .constants import GRAVITATIONAL_CONSTANT
-from .network_common import NetworkSettings
-from .pipe_class import PipeClass
 
 
 logger = logging.getLogger("mesido")
@@ -109,7 +108,7 @@ class HeadLossOption(IntEnum):
 class _MinimizeHeadLosses(Goal):
     order = 1
 
-    priority = 2 ** 31 - 2
+    priority = 2**31 - 2
 
     def __init__(self, optimization_problem, input_network_settings, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -159,7 +158,7 @@ class _MinimizeHeadLosses(Goal):
 class _MinimizeHydraulicPower(Goal):
     order = 1
 
-    priority = 2 ** 31 - 1
+    priority = 2**31 - 1
 
     def __init__(
         self,
@@ -613,13 +612,13 @@ class HeadLossClass:
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             linearization_velocity = maximum_velocity
-            linearization_head_loss = c_v * linearization_velocity ** 2
+            linearization_head_loss = c_v * linearization_velocity**2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
 
             if symbolic:
-                constraint_nominal = c_v * maximum_velocity ** 2
+                constraint_nominal = c_v * maximum_velocity**2
                 # Interior point solvers, like IPOPT, do not like linearly dependent
                 # tight inequality constraints. For this reason, we split the
                 # constraints depending whether the Big-M formulation is used or not.
@@ -660,7 +659,7 @@ class HeadLossClass:
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             v = discharge / area
-            expr = c_v * v ** 2
+            expr = c_v * v**2
 
             if symbolic:
                 q_nominal = self.variable_nominal(f"{pipe}.Q")
@@ -986,7 +985,7 @@ class HeadLossClass:
             # Compute c_k constant (where |hydraulic power| ~ c_k * v^3)
             c_k = rho * ff * length * area / 2.0 / diameter
             # Compute linearized value
-            max_hydraulic_power = c_k * maximum_velocity ** 3
+            max_hydraulic_power = c_k * maximum_velocity**3
             maximum_discharge = maximum_velocity * area
             hydraulic_power_linearized = max_hydraulic_power * discharge / maximum_discharge
 

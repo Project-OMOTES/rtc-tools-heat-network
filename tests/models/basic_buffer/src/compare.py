@@ -3,8 +3,6 @@ import time
 from abc import ABCMeta
 from pathlib import Path
 
-from rtctools.optimization.modelica_mixin import ModelicaMixin
-
 from mesido.pycml.pycml_mixin import PyCMLMixin
 from mesido.qth_not_maintained.qth_loop_mixin import (
     BufferTargetDischargeGoal,
@@ -12,6 +10,8 @@ from mesido.qth_not_maintained.qth_loop_mixin import (
 )
 from mesido.qth_not_maintained.qth_mixin import QTHMixin
 from mesido.qth_not_maintained.util import run_heat_network_optimization
+
+from rtctools.optimization.modelica_mixin import ModelicaMixin
 
 # We want to import the example we compare with as a module that is somewhat
 # uniquely identifiable. We therefore start from the root.

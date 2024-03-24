@@ -6,6 +6,10 @@ import CoolProp as cP
 
 import esdl
 
+from mesido.esdl.asset_to_component_base import MODIFIERS, _AssetToComponentBase
+from mesido.esdl.common import Asset
+from mesido.esdl.esdl_model_base import _ESDLModelBase
+from mesido.network_common import NetworkSettings
 from mesido.pycml.component_library.milp import (
     ATES,
     CheckValve,
@@ -35,11 +39,6 @@ from mesido.pycml.component_library.milp import (
 )
 
 from scipy.optimize import fsolve
-
-from .asset_to_component_base import MODIFIERS, _AssetToComponentBase
-from .common import Asset
-from .esdl_model_base import _ESDLModelBase
-from ..network_common import NetworkSettings
 
 logger = logging.getLogger("mesido")
 
@@ -433,9 +432,9 @@ class AssetToHeatComponent(_AssetToComponentBase):
         ) = self._pipe_get_diameter_and_insulation(asset)
 
         if isinstance(asset.in_ports[0].carrier, esdl.esdl.GasCommodity):
-            q_nominal = math.pi * diameter ** 2 / 4.0 * self.v_max_gas / 2.0
+            q_nominal = math.pi * diameter**2 / 4.0 * self.v_max_gas / 2.0
             self._set_q_nominal(asset, q_nominal)
-            q_max = math.pi * diameter ** 2 / 4.0 * self.v_max_gas
+            q_max = math.pi * diameter**2 / 4.0 * self.v_max_gas
             self._set_q_max(asset, q_max)
             pressure = asset.in_ports[0].carrier.pressure * 1.0e5
             density = self.get_density(asset.name, asset.in_ports[0].carrier)
@@ -464,7 +463,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         temperature = temperature_modifiers["temperature"]
 
         # Compute the maximum milp flow based on an assumed maximum velocity
-        area = math.pi * diameter ** 2 / 4.0
+        area = math.pi * diameter**2 / 4.0
         q_max = area * self.v_max
         q_nominal = area * self.v_nominal
 

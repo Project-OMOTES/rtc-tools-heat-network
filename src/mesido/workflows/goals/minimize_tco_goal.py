@@ -2,9 +2,9 @@ from typing import Any, Dict, Optional, Set
 
 from casadi import MX
 
-from rtctools.optimization.goal_programming_mixin_base import Goal
-
 from mesido.techno_economic_mixin import TechnoEconomicMixin
+
+from rtctools.optimization.goal_programming_mixin_base import Goal
 
 
 class MinimizeTCO(Goal):

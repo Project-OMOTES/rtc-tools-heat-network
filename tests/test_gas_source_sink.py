@@ -1,14 +1,14 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+
 import numpy as np
 
 
 from rtctools.util import run_optimization_problem
-
-from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 
 
 class TestMILPGasSourceSink(TestCase):
@@ -30,9 +30,9 @@ class TestMILPGasSourceSink(TestCase):
         class TestSourceSink(GasProblem):
             def energy_system_options(self):
                 options = super().energy_system_options()
-                self.heat_network_settings[
-                    "head_loss_option"
-                ] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                self.heat_network_settings["head_loss_option"] = (
+                    HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                )
                 self.heat_network_settings["n_linearization_lines"] = 5
                 self.heat_network_settings["minimize_head_losses"] = True
 

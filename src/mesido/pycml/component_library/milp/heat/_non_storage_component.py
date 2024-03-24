@@ -1,7 +1,7 @@
-from numpy import nan
-
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal.heat_component import BaseAsset
+
+from numpy import nan
 
 from .heat_two_port import HeatTwoPort
 

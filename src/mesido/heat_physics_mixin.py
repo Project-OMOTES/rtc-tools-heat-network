@@ -4,21 +4,19 @@ from typing import List
 
 import casadi as ca
 
+from mesido._heat_loss_u_values_pipe import pipe_heat_loss
+from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.demand_insulation_class import DemandInsulationClass
+from mesido.head_loss_class import HeadLossClass, HeadLossOption
+from mesido.network_common import NetworkSettings
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.timeseries import Timeseries
-
-from mesido._heat_loss_u_values_pipe import pipe_heat_loss
-
-
-from .base_component_type_mixin import BaseComponentTypeMixin
-from .constants import GRAVITATIONAL_CONSTANT
-from .demand_insulation_class import DemandInsulationClass
-from .head_loss_class import HeadLossClass, HeadLossOption
-from .network_common import NetworkSettings
 
 logger = logging.getLogger("mesido")
 
@@ -254,13 +252,13 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 self, NetworkSettings.NETWORK_TYPE_HEAT, pipe_name, self.heat_network_settings
             )
             if initialized_vars[0] != {}:
-                self.__pipe_head_bounds[
-                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"
-                ] = initialized_vars[0]
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}In.H"] = (
+                    initialized_vars[0]
+                )
             if initialized_vars[1] != {}:
-                self.__pipe_head_bounds[
-                    f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"
-                ] = initialized_vars[1]
+                self.__pipe_head_bounds[f"{pipe_name}.{NetworkSettings.NETWORK_TYPE_HEAT}Out.H"] = (
+                    initialized_vars[1]
+                )
             if initialized_vars[2] != {}:
                 self.__pipe_head_loss_zero_bounds[f"{pipe_name}.dH"] = initialized_vars[2]
             if initialized_vars[3] != {}:
@@ -285,9 +283,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self._pipe_linear_line_segment_map[pipe_name][
                         ii_line
                     ] = pipe_linear_line_segment_var_name
-                    self.__pipe_linear_line_segment_var[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[9][pipe_linear_line_segment_var_name]
+                    self.__pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    )
                     self.__pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
@@ -398,9 +396,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                 )
 
                 ates_temperature_ordering_var_name = f"{ates}__{temperature}_ordering"
-                self.__ates_temperature_ordering_var[
-                    ates_temperature_ordering_var_name
-                ] = ca.MX.sym(ates_temperature_ordering_var_name)
+                self.__ates_temperature_ordering_var[ates_temperature_ordering_var_name] = (
+                    ca.MX.sym(ates_temperature_ordering_var_name)
+                )
                 self.__ates_temperature_ordering_var_bounds[ates_temperature_ordering_var_name] = (
                     0.0,
                     1.0,
@@ -523,9 +521,9 @@ class HeatPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         self.__demand_insulation_class_map[dmnd][
                             insl
                         ] = demand_insulation_class_var_name
-                        self.__demand_insulation_class_var[
-                            demand_insulation_class_var_name
-                        ] = ca.MX.sym(demand_insulation_class_var_name)
+                        self.__demand_insulation_class_var[demand_insulation_class_var_name] = (
+                            ca.MX.sym(demand_insulation_class_var_name)
+                        )
                         self.__demand_insulation_class_var_bounds[
                             demand_insulation_class_var_name
                         ] = (0.0, 1.0)

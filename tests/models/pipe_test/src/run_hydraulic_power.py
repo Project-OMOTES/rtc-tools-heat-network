@@ -1,3 +1,7 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.head_loss_class import HeadLossOption
+from mesido.physics_mixin import PhysicsMixin
+
 import numpy as np
 
 import pandas as pd
@@ -9,10 +13,6 @@ from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMi
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-
-from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.head_loss_class import HeadLossOption
-from mesido.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -257,6 +257,6 @@ class HeatProblem(
         except Exception:  # Case when there is only one row value added
             m_rows_added = 1
 
-        df_MILP.loc[
-            (index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"
-        ] = manual_set_pipe_length
+        df_MILP.loc[(index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"] = (
+            manual_set_pipe_length
+        )

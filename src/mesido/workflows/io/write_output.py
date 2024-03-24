@@ -12,6 +12,12 @@ from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.profiles.profilemanager import ProfileManager
 
+import mesido.esdl.esdl_parser
+from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.esdl.edr_pipe_class import EDRPipeClass
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.utils.helpers import _sort_numbered
+
 import numpy as np
 
 import pandas as pd
@@ -19,12 +25,6 @@ import pandas as pd
 import pytz
 
 from rtctools.optimization.timeseries import Timeseries
-
-import mesido.esdl.esdl_parser
-from mesido.constants import GRAVITATIONAL_CONSTANT
-from mesido.esdl.edr_pipe_class import EDRPipeClass
-from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.utils.helpers import _sort_numbered
 
 
 logger = logging.getLogger("mesido")
@@ -196,7 +196,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         for source in _sort_numbered(self.energy_system_components["heat_source"]):
             if source in self._minimize_size_sources:
                 max_size_var = self._max_source_heat_map[source]
-                results_sources_size[source] = float(results[max_size_var][0]) / 10.0 ** 3
+                results_sources_size[source] = float(results[max_size_var][0]) / 10.0**3
             else:
                 results_sources_size[source] = "-"
 

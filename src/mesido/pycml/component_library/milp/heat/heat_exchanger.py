@@ -1,8 +1,8 @@
-from numpy import nan
-
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp.heat.heat_four_port import HeatFourPort
+
+from numpy import nan
 
 
 class HeatExchanger(HeatFourPort, BaseAsset):

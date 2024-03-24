@@ -1,5 +1,12 @@
 import casadi as ca
 
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -9,13 +16,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
-
-from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
-from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 
 class MaxHydrogenProduction(Goal):

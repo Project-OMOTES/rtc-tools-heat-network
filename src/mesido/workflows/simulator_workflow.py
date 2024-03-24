@@ -3,6 +3,15 @@ import logging
 
 import esdl
 
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
+from mesido.workflows.utils.helpers import main_decorator
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -17,16 +26,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-
-from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.head_loss_class import HeadLossOption
-from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
-from mesido.workflows.utils.helpers import main_decorator
 
 
 DB_HOST = "172.17.0.2"
@@ -226,9 +225,9 @@ class NetworkSimulator(
     def energy_system_options(self):
         options = super().energy_system_options()
 
-        self.heat_network_settings[
-            "head_loss_option"
-        ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        self.heat_network_settings["head_loss_option"] = (
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        )
         self.heat_network_settings["minimize_head_losses"] = True
 
         return options

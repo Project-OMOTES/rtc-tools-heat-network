@@ -3,6 +3,17 @@ import logging
 import os
 import time
 
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+from mesido.workflows.io.write_output import ScenarioOutput
+from mesido.workflows.utils.adapt_profiles import (
+    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
+)
+from mesido.workflows.utils.helpers import main_decorator
+
 import numpy as np
 
 from rtctools._internal.alias_tools import AliasDict
@@ -18,17 +29,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from mesido.esdl.esdl_mixin import ESDLMixin
-from mesido.head_loss_class import HeadLossOption
-from mesido.techno_economic_mixin import TechnoEconomicMixin
-from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
-from mesido.workflows.io.write_output import ScenarioOutput
-from mesido.workflows.utils.adapt_profiles import (
-    adapt_hourly_year_profile_to_day_averaged_with_hourly_peak_day,
-)
-from mesido.workflows.utils.helpers import main_decorator
 
 
 DB_HOST = "172.17.0.2"
@@ -406,9 +406,9 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings[
-            "head_loss_option"
-        ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        self.heat_network_settings["head_loss_option"] = (
+            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
+        )
         self.heat_network_settings["minimize_head_losses"] = True
 
 

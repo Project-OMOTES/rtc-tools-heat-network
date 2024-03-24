@@ -2,16 +2,16 @@ import logging
 
 import casadi as ca
 
+from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.head_loss_class import HeadLossClass, HeadLossOption
+from mesido.network_common import NetworkSettings
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
 from rtctools.optimization.timeseries import Timeseries
-
-from .base_component_type_mixin import BaseComponentTypeMixin
-from .head_loss_class import HeadLossClass, HeadLossOption
-from .network_common import NetworkSettings
 
 logger = logging.getLogger("mesido")
 
@@ -204,9 +204,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     self._gas_pipe_linear_line_segment_map[pipe_name][
                         ii_line
                     ] = pipe_linear_line_segment_var_name
-                    self.__gas_pipe_linear_line_segment_var[
-                        pipe_linear_line_segment_var_name
-                    ] = initialized_vars[9][pipe_linear_line_segment_var_name]
+                    self.__gas_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
+                        initialized_vars[9][pipe_linear_line_segment_var_name]
+                    )
                     self.__gas_pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]

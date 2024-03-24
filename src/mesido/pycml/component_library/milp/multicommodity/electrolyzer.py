@@ -1,5 +1,3 @@
-from numpy import nan
-
 from mesido.pycml import Variable
 from mesido.pycml.component_library.milp._internal import BaseAsset
 from mesido.pycml.component_library.milp._internal.electricity_component import (
@@ -11,6 +9,8 @@ from mesido.pycml.component_library.milp.electricity.electricity_base import (
 from mesido.pycml.component_library.milp.gas.gas_base import (
     GasPort,
 )
+
+from numpy import nan
 
 
 class Electrolyzer(ElectricityComponent, BaseAsset):

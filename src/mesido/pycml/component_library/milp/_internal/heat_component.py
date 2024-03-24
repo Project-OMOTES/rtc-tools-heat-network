@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import Component
+
+from numpy import nan
 
 
 class HeatComponent(Component):

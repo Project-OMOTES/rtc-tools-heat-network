@@ -5,14 +5,6 @@ from typing import Dict
 
 import casadi as ca
 
-import numpy as np
-
-from rtctools.optimization.collocated_integrated_optimization_problem import (
-    CollocatedIntegratedOptimizationProblem,
-)
-from rtctools.optimization.homotopy_mixin import HomotopyMixin
-from rtctools.optimization.timeseries import Timeseries
-
 from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 from mesido.base_component_type_mixin import BaseComponentTypeMixin
 from mesido.heat_network_common import (
@@ -27,6 +19,14 @@ from mesido.qth_not_maintained.head_loss_mixin import (
     _MinimizeHeadLosses as _MinimizeHeadLossesBase,
     _MinimizeHydraulicPower as _MinimizeHydraulicPowerBase,
 )
+
+import numpy as np
+
+from rtctools.optimization.collocated_integrated_optimization_problem import (
+    CollocatedIntegratedOptimizationProblem,
+)
+from rtctools.optimization.homotopy_mixin import HomotopyMixin
+from rtctools.optimization.timeseries import Timeseries
 
 logger = logging.getLogger("mesido")
 

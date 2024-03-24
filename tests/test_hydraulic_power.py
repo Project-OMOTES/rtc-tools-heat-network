@@ -1,15 +1,16 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+
+
 import numpy as np
 
 import pandas as pd
 
 from rtctools.util import run_optimization_problem
-
-from mesido.esdl.esdl_parser import ESDLFileParser
-from mesido.esdl.profile_parser import ProfileReaderFromFile
-from mesido.head_loss_class import HeadLossOption
 
 
 class TestHydraulicPower(TestCase):
@@ -57,7 +58,7 @@ class TestHydraulicPower(TestCase):
         }
         run_hydraulic_power.comp_vars_init = {
             "pipe_length": 0.0,  # [m]
-            "heat_demand": [3.95 * 10 ** 6, 3.95 * 10 ** 6],  # [W]
+            "heat_demand": [3.95 * 10**6, 3.95 * 10**6],  # [W]
             "pipe_DN_MILP": 300,  # [mm]
         }
         standard_columns_specified = [

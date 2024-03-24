@@ -1,6 +1,6 @@
-from numpy import nan
-
 from mesido.pycml import Variable
+
+from numpy import nan
 
 from .gas_base import GasPort
 from .._internal import BaseAsset

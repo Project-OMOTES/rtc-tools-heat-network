@@ -9,14 +9,14 @@ from esdl.profiles.influxdbprofilemanager import ConnectionSettings
 from esdl.profiles.influxdbprofilemanager import InfluxDBProfileManager
 from esdl.units.conversion import ENERGY_IN_J, POWER_IN_W, convert_to_unit
 
+from mesido.esdl.common import Asset
+
 import numpy as np
 
 import pandas as pd
 
 import rtctools.data.pi
 from rtctools.data.storage import DataStore
-
-from mesido.esdl.common import Asset
 
 
 logger = logging.getLogger()

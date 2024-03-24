@@ -1,11 +1,11 @@
 import logging
 from typing import Dict, Set
 
-from pymoca.backends.casadi.alias_relation import AliasRelation
+from mesido.base_component_type_mixin import BaseComponentTypeMixin
+from mesido.heat_network_common import NodeConnectionDirection
+from mesido.topology import Topology
 
-from .base_component_type_mixin import BaseComponentTypeMixin
-from .heat_network_common import NodeConnectionDirection
-from .topology import Topology
+from pymoca.backends.casadi.alias_relation import AliasRelation
 
 logger = logging.getLogger("mesido")
 

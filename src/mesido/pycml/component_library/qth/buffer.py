@@ -1,8 +1,8 @@
 import math
 
-from numpy import nan
-
 from mesido.pycml import Variable
+
+from numpy import nan
 
 from ._fluid_properties_component import _FluidPropertiesComponent
 
@@ -21,13 +21,13 @@ class Buffer(_FluidPropertiesComponent):
         self.heat_transfer_coeff = 1.0
         self.height = 5.0
         self.radius = 10.0
-        self.volume = math.pi * self.radius ** 2 * self.height
+        self.volume = math.pi * self.radius**2 * self.height
         # The hot/cold tank can have a lower bound on its volume.
         # Meaning that they might always be, for e.g., 5% full.
         self.min_fraction_tank_volume = 0.05
 
         # if the tank is plced on ground, ignore surface of bottom of tank
-        self.surface = 2 * math.pi * self.radius ** 2 + 2 * math.pi * self.radius * self.height
+        self.surface = 2 * math.pi * self.radius**2 + 2 * math.pi * self.radius * self.height
         self.T_outside = 10.0
 
         # Nominals
