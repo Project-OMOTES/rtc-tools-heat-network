@@ -86,8 +86,8 @@ def heat_loss_u_values_pipe(
     )
 
     if neighbour:
-        u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m**2)
-        u_2 = r_m / ((r_subsoil + r_ins) ** 2 - r_m**2)
+        u_1 = (r_subsoil + r_ins) / ((r_subsoil + r_ins) ** 2 - r_m ** 2)
+        u_2 = r_m / ((r_subsoil + r_ins) ** 2 - r_m ** 2)
     else:
         u_1 = 1 / (r_subsoil + r_ins)
         u_2 = 0

@@ -6,8 +6,8 @@ from iapws import IAPWS95
 
 import numpy as np
 
-from .constants import GRAVITATIONAL_CONSTANT
-from .network_common import NetworkSettings
+from mesido.constants import GRAVITATIONAL_CONSTANT
+from mesido.network_common import NetworkSettings
 
 
 def _kinematic_viscosity(temperature, network_type=NetworkSettings.NETWORK_TYPE_HEAT, pressure=0.0):
@@ -127,7 +127,7 @@ def head_loss(
         pressure=pressure,
     )
 
-    return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity**2 / diameter
+    return length * f / (2 * GRAVITATIONAL_CONSTANT) * velocity ** 2 / diameter
 
 
 def get_linear_pipe_dh_vs_q_fit(
@@ -144,7 +144,7 @@ def get_linear_pipe_dh_vs_q_fit(
     This function returns a set of coefficients to approximate a head loss curve with linear
     functions in the form of: head loss = b + (a * Q)
     """
-    area = math.pi * diameter**2 / 4
+    area = math.pi * diameter ** 2 / 4
 
     v_points = np.linspace(0.0, v_max, n_lines + 1)
     q_points = v_points * area
@@ -184,7 +184,7 @@ def get_linear_pipe_power_hydraulic_vs_q_fit(
     """
     power_hydraulic = b + (a * Q)
     """
-    area = math.pi * diameter**2 / 4.0
+    area = math.pi * diameter ** 2 / 4.0
 
     v_points = np.linspace(0.0, v_max, n_lines + 1)
     q_points = v_points * area

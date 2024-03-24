@@ -70,7 +70,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-
     def __init__(self, *args, **kwargs):
 
         global head_loss_setting, n_linearization_lines_setting
@@ -258,6 +257,6 @@ class HeatProblem(
         except Exception:  # Case when there is only one row value added
             m_rows_added = 1
 
-        df_MILP.loc[(index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"] = (
-            manual_set_pipe_length
-        )
+        df_MILP.loc[
+            (index_last_row + 1 - m_rows_added) : (index_last_row + 1), "pipe_length"
+        ] = manual_set_pipe_length

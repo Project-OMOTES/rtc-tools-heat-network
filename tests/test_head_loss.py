@@ -56,15 +56,15 @@ class TestHeadLoss(TestCase):
                         head_loss_option_setting
                         == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
                     ):
-                        self.gas_network_settings["head_loss_option"] = (
-                            HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-                        )
+                        self.gas_network_settings[
+                            "head_loss_option"
+                        ] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
                         self.gas_network_settings["n_linearization_lines"] = 5
                         self.heat_network_settings["minimize_head_losses"] = True
                     elif head_loss_option_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
-                        self.heat_network_settings["head_loss_option"] = (
-                            HeadLossOption.LINEARIZED_N_LINES_EQUALITY
-                        )
+                        self.heat_network_settings[
+                            "head_loss_option"
+                        ] = HeadLossOption.LINEARIZED_N_LINES_EQUALITY
                         self.heat_network_settings["minimize_head_losses"] = True
                         self.heat_network_settings["minimum_velocity"] = 1.0e-6
 
@@ -118,8 +118,8 @@ class TestHeadLoss(TestCase):
                     )
                     * 8.0
                     * pipe_length
-                    * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
-                    / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
+                    * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) ** 2
+                    / (pipe_diameter ** 5 * GRAVITATIONAL_CONSTANT * np.pi ** 2)
                 )
                 # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
                 # dH_manual_linear = a*Q + b
@@ -139,12 +139,12 @@ class TestHeadLoss(TestCase):
                 )
 
                 delta_volumetric_flow = (
-                    v_points[linearized_idx[1]] * np.pi * pipe_diameter**2 / 4.0
-                ) - (v_points[linearized_idx[0]] * np.pi * pipe_diameter**2 / 4.0)
+                    v_points[linearized_idx[1]] * np.pi * pipe_diameter ** 2 / 4.0
+                ) - (v_points[linearized_idx[0]] * np.pi * pipe_diameter ** 2 / 4.0)
 
                 a = delta_dh_theory / delta_volumetric_flow
                 b = delta_dh_theory - a * delta_volumetric_flow
-                dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+                dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) + b
 
                 dh_milp_head_loss_function = darcy_weisbach.head_loss(
                     v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
@@ -287,8 +287,8 @@ class TestHeadLoss(TestCase):
                 )
                 * 8.0
                 * pipe_length
-                * (v_inspect * np.pi * pipe_diameter**2 / 4.0) ** 2
-                / (pipe_diameter**5 * GRAVITATIONAL_CONSTANT * np.pi**2)
+                * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) ** 2
+                / (pipe_diameter ** 5 * GRAVITATIONAL_CONSTANT * np.pi ** 2)
             )
             # Approximate dH [m] vs Q [m3/s] with a linear line between between v_points
             # dH_manual_linear = a*Q + b
@@ -299,13 +299,13 @@ class TestHeadLoss(TestCase):
                 v_points[0], pipe_diameter, pipe_length, pipe_wall_roughness, temperature
             )
 
-            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
-                v_points[0] * np.pi * pipe_diameter**2 / 4.0
+            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter ** 2 / 4.0) - (
+                v_points[0] * np.pi * pipe_diameter ** 2 / 4.0
             )
 
             a = delta_dh_theory / delta_volumetric_flow
             b = delta_dh_theory - a * delta_volumetric_flow
-            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) + b
 
             dh_milp_head_loss_function = darcy_weisbach.head_loss(
                 v_inspect, pipe_diameter, pipe_length, pipe_wall_roughness, temperature
@@ -469,13 +469,13 @@ class TestHeadLoss(TestCase):
                 pressure=solution.parameters(0)[f"{pipes[0]}.pressure"],
             )
 
-            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter**2 / 4.0) - (
-                v_points[0] * np.pi * pipe_diameter**2 / 4.0
+            delta_volumetric_flow = (v_points[1] * np.pi * pipe_diameter ** 2 / 4.0) - (
+                v_points[0] * np.pi * pipe_diameter ** 2 / 4.0
             )
 
             a = delta_dh_theory / delta_volumetric_flow
             b = delta_dh_theory - a * delta_volumetric_flow
-            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter**2 / 4.0) + b
+            dh_manual_linear = a * (v_inspect * np.pi * pipe_diameter ** 2 / 4.0) + b
 
             # Check that the head loss approximation with 2 linear lines (inequality constraints
             # is < than the linear equality head loss constraint
@@ -635,19 +635,19 @@ class TestHeadLoss(TestCase):
                 )
 
                 delta_volumetric_flow.append(
-                    (v_points[ii + 1] * np.pi * pipe_diameter**2 / 4.0)
-                    - (v_points[ii] * np.pi * pipe_diameter**2 / 4.0)
+                    (v_points[ii + 1] * np.pi * pipe_diameter ** 2 / 4.0)
+                    - (v_points[ii] * np.pi * pipe_diameter ** 2 / 4.0)
                 )
 
                 a.append(delta_dh_theory[ii] / delta_volumetric_flow[ii])
                 b.append(sum(delta_dh_theory[0:ii]) - a[ii] * sum(delta_volumetric_flow[0:ii]))
 
             # dh for the 2 data point on the 1st linear line segment
-            dh_manual_linear.append(a[0] * (v_inspect[0] * np.pi * pipe_diameter**2 / 4.0) + b[0])
-            dh_manual_linear.append(a[0] * (v_inspect[1] * np.pi * pipe_diameter**2 / 4.0) + b[0])
+            dh_manual_linear.append(a[0] * (v_inspect[0] * np.pi * pipe_diameter ** 2 / 4.0) + b[0])
+            dh_manual_linear.append(a[0] * (v_inspect[1] * np.pi * pipe_diameter ** 2 / 4.0) + b[0])
             # dh for the 2 data point on the 2nd linear line segment
-            dh_manual_linear.append(a[1] * (v_inspect[2] * np.pi * pipe_diameter**2 / 4.0) + b[1])
-            dh_manual_linear.append(a[1] * (v_inspect[3] * np.pi * pipe_diameter**2 / 4.0) + b[1])
+            dh_manual_linear.append(a[1] * (v_inspect[2] * np.pi * pipe_diameter ** 2 / 4.0) + b[1])
+            dh_manual_linear.append(a[1] * (v_inspect[3] * np.pi * pipe_diameter ** 2 / 4.0) + b[1])
 
             # Gas flow balance
             np.testing.assert_allclose(

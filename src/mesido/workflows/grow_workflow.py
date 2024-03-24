@@ -406,9 +406,9 @@ class EndScenarioSizingHeadLoss(EndScenarioSizing):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        self.heat_network_settings[
+            "head_loss_option"
+        ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         self.heat_network_settings["minimize_head_losses"] = True
 
 

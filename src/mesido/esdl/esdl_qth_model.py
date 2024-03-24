@@ -214,7 +214,7 @@ class AssetToQTHComponent(_AssetToComponentBase):
             conductivies_insulation,
         ) = self._pipe_get_diameter_and_insulation(asset)
 
-        area = math.pi * diameter**2 / 4.0
+        area = math.pi * diameter ** 2 / 4.0
         q_nominal = self.v_nominal * area
         q_max = self.v_max * area
 

@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 
-from .heat_network_common import NodeConnectionDirection
+from mesido.heat_network_common import NodeConnectionDirection
 
 
 class Topology:

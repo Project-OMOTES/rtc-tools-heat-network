@@ -57,7 +57,7 @@ class TestHydraulicPower(TestCase):
         }
         run_hydraulic_power.comp_vars_init = {
             "pipe_length": 0.0,  # [m]
-            "heat_demand": [3.95 * 10**6, 3.95 * 10**6],  # [W]
+            "heat_demand": [3.95 * 10 ** 6, 3.95 * 10 ** 6],  # [W]
             "pipe_DN_MILP": 300,  # [mm]
         }
         standard_columns_specified = [

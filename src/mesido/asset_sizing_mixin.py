@@ -222,12 +222,12 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
         unique_cable_classes = self.get_unique_cable_classes()
         for cc in unique_cable_classes:
             cable_class_count = f"{cc.name}__global_cable_class_count"
-            self.__electricity_cable_topo_global_cable_class_count_var[cable_class_count] = (
-                ca.MX.sym(cable_class_count)
-            )
-            self.__electricity_cable_topo_global_cable_class_count_map[f"{cc.name}"] = (
+            self.__electricity_cable_topo_global_cable_class_count_var[
                 cable_class_count
-            )
+            ] = ca.MX.sym(cable_class_count)
+            self.__electricity_cable_topo_global_cable_class_count_map[
+                f"{cc.name}"
+            ] = cable_class_count
             self.__electricity_cable_topo_global_cable_class_count_var_bounds[cable_class_count] = (
                 0.0,
                 len(self.energy_system_components.get("electricity_cable", [])),
@@ -340,9 +340,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                         self._electricity_cable_topo_cable_class_map[cable][
                             c
                         ] = cable_class_var_name
-                        self.__electricity_cable_topo_cable_class_var[cable_class_var_name] = (
-                            ca.MX.sym(cable_class_var_name)
-                        )
+                        self.__electricity_cable_topo_cable_class_var[
+                            cable_class_var_name
+                        ] = ca.MX.sym(cable_class_var_name)
                         self.__electricity_cable_topo_cable_class_var_bounds[
                             cable_class_var_name
                         ] = (0.0, 1.0)
@@ -693,9 +693,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self.__pipe_topo_pipe_class_discharge_ordering_map[pipe][
                         c
                     ] = pipe_class_ordering_name
-                    self.__pipe_topo_pipe_class_discharge_ordering_var[pipe_class_ordering_name] = (
-                        ca.MX.sym(pipe_class_ordering_name)
-                    )
+                    self.__pipe_topo_pipe_class_discharge_ordering_var[
+                        pipe_class_ordering_name
+                    ] = ca.MX.sym(pipe_class_ordering_name)
                     self.__pipe_topo_pipe_class_discharge_ordering_var_bounds[
                         pipe_class_ordering_name
                     ] = (0.0, 1.0)
@@ -703,9 +703,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
                     self.__pipe_topo_pipe_class_cost_ordering_map[pipe][
                         c
                     ] = pipe_class_cost_ordering_name
-                    self.__pipe_topo_pipe_class_cost_ordering_var[pipe_class_cost_ordering_name] = (
-                        ca.MX.sym(pipe_class_cost_ordering_name)
-                    )
+                    self.__pipe_topo_pipe_class_cost_ordering_var[
+                        pipe_class_cost_ordering_name
+                    ] = ca.MX.sym(pipe_class_cost_ordering_name)
                     self.__pipe_topo_pipe_class_cost_ordering_var_bounds[
                         pipe_class_cost_ordering_name
                     ] = (0.0, 1.0)

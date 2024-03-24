@@ -30,7 +30,7 @@ class Pipe(_NonStorageComponent, _FluidPropertiesComponent):
         self.length = 1.0
         self.diameter = 1.0
         assert "area" not in modifiers, "modifying area directly is not allowed"
-        self.area = 0.25 * pi * self.diameter**2
+        self.area = 0.25 * pi * self.diameter ** 2
         self.temperature = nan
 
         # Parameters determining the milp loss

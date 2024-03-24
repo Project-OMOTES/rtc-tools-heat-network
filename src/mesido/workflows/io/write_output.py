@@ -196,7 +196,7 @@ class ScenarioOutput(TechnoEconomicMixin):
         for source in _sort_numbered(self.energy_system_components["heat_source"]):
             if source in self._minimize_size_sources:
                 max_size_var = self._max_source_heat_map[source]
-                results_sources_size[source] = float(results[max_size_var][0]) / 10.0**3
+                results_sources_size[source] = float(results[max_size_var][0]) / 10.0 ** 3
             else:
                 results_sources_size[source] = "-"
 

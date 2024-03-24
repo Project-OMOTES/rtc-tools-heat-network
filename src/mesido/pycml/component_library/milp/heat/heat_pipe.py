@@ -31,7 +31,7 @@ class HeatPipe(_NonStorageComponent):
         self.length = 1.0
         self.diameter = 1.0
         assert "area" not in modifiers, "modifying area directly is not allowed"
-        self.area = 0.25 * pi * self.diameter**2
+        self.area = 0.25 * pi * self.diameter ** 2
         self.temperature = nan
         self.carrier_id = -1
         self.pressure = 16.0e5
@@ -55,7 +55,7 @@ class HeatPipe(_NonStorageComponent):
         ff = 0.02  # Order of magnitude expected with 0.05-2.5m/s in 20mm-1200mm diameter pipe
         velo = self.Q_nominal / self.area
         self.Hydraulic_power_nominal = (
-            self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo**3
+            self.rho * ff * max(self.length, 1.0) * pi * self.area / self.diameter / 2.0 * velo ** 3
         )
         self.add_variable(
             Variable, "Hydraulic_power", min=0.0, nominal=self.Hydraulic_power_nominal

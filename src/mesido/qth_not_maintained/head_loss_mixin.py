@@ -109,7 +109,7 @@ class HeadLossOption(IntEnum):
 class _MinimizeHeadLosses(Goal):
     order = 1
 
-    priority = 2**31 - 1
+    priority = 2 ** 31 - 1
 
     def __init__(self, optimization_problem: "_HeadLossMixin", *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -150,7 +150,7 @@ class _MinimizeHeadLosses(Goal):
 class _MinimizeHydraulicPower(Goal):
     order = 1
 
-    priority = 2**31 - 1
+    priority = 2 ** 31 - 1
 
     def __init__(
         self,
@@ -526,7 +526,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             linearization_velocity = heat_network_options["maximum_velocity"]
-            linearization_head_loss = c_v * linearization_velocity**2
+            linearization_head_loss = c_v * linearization_velocity ** 2
             linearization_discharge = linearization_velocity * area
 
             expr = linearization_head_loss * discharge / linearization_discharge
@@ -568,7 +568,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             c_v = length * ff / (2 * GRAVITATIONAL_CONSTANT) / diameter
 
             v = discharge / area
-            expr = c_v * v**2
+            expr = c_v * v ** 2
 
             if symbolic:
                 q_nominal = self.variable_nominal(f"{pipe}.Q")
@@ -775,7 +775,7 @@ class _HeadLossMixin(BaseComponentTypeMixin, _GoalProgrammingMixinBase, Optimiza
             # Compute c_k constant (where |hydraulic power| ~ c_k * v^3)
             c_k = rho * ff * length * area / 2.0 / diameter
             # Compute linearized value
-            max_hydraulic_power = c_k * maximum_velocity**3
+            max_hydraulic_power = c_k * maximum_velocity ** 3
             maximum_discharge = maximum_velocity * area
             hydraulic_power_linearized = max_hydraulic_power * discharge / maximum_discharge
 

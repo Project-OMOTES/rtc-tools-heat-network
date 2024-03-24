@@ -256,7 +256,7 @@ class ElectricityPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimi
                     cable_classes = self._electricity_cable_topo_cable_class_map[cable]
                     max_res = max([cc.resistance for cc in cable_classes])
                     max_i_max = max([cc.maximum_current for cc in cable_classes])
-                    big_m = max_i_max**2 * max_res * length
+                    big_m = max_i_max ** 2 * max_res * length
                     constraint_nominal = max_i_max * v_nom * max_res * length
                     for cc_data, cc_name in cable_classes.items():
                         if cc_name != "None":

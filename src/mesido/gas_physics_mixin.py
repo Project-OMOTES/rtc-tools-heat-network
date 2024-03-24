@@ -204,9 +204,9 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
                     self._gas_pipe_linear_line_segment_map[pipe_name][
                         ii_line
                     ] = pipe_linear_line_segment_var_name
-                    self.__gas_pipe_linear_line_segment_var[pipe_linear_line_segment_var_name] = (
-                        initialized_vars[9][pipe_linear_line_segment_var_name]
-                    )
+                    self.__gas_pipe_linear_line_segment_var[
+                        pipe_linear_line_segment_var_name
+                    ] = initialized_vars[9][pipe_linear_line_segment_var_name]
                     self.__gas_pipe_linear_line_segment_var_bounds[
                         pipe_linear_line_segment_var_name
                     ] = initialized_vars[10][pipe_linear_line_segment_var_name]
