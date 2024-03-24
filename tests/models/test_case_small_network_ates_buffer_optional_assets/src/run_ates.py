@@ -9,10 +9,10 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -153,7 +153,7 @@ class HeatProblem(
 
 if __name__ == "__main__":
     import time
-    from rtctools_heat_network.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
+    from mesido.workflows import EndScenarioSizingStaged, run_end_scenario_sizing
 
     start_time = time.time()
 

@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from rtctools_heat_network._heat_loss_u_values_pipe import heat_loss_u_values_pipe
+from mesido._heat_loss_u_values_pipe import heat_loss_u_values_pipe
 
 
 class TestHeatLossUValues(TestCase):

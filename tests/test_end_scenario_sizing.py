@@ -5,16 +5,16 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-import rtctools_heat_network._darcy_weisbach as darcy_weisbach
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.workflows import (
+import mesido._darcy_weisbach as darcy_weisbach
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.workflows import (
     EndScenarioSizingDiscountedHIGHS,
     EndScenarioSizingHIGHS,
     EndScenarioSizingStagedHIGHS,
     run_end_scenario_sizing,
 )
-from rtctools_heat_network.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
+from mesido.workflows.grow_workflow import EndScenarioSizingHeadLossStaged
 
 from utils_tests import demand_matching_test
 

@@ -1,6 +1,6 @@
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.qth_not_maintained.qth_mixin import HeadLossOption
+from mesido.qth_not_maintained.qth_mixin import HeadLossOption
 
 if __name__ == "__main__":
     from double_pipe_qth import SinglePipeQTH

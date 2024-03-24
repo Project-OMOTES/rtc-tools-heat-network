@@ -9,11 +9,11 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.physics_mixin import PhysicsMixin
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):

@@ -8,8 +8,8 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
