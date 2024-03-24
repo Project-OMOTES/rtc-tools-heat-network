@@ -50,7 +50,7 @@ setup(
     "Femke Janssen, Jesús Andrés Rodríguez Sarasty, "
     "Thijs van der Klauw",
     license="LGPLv3",
-    keywords="Multi-Energy-Systems",
+    keywords="Multi-Energy-Systems, optimization",
     platforms=["Windows", "Linux", "Mac OS-X", "Unix"],
     packages=find_packages("src"),
     package_dir={"": "src"},
@@ -70,7 +70,5 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.11",
     cmdclass=versioneer.get_cmdclass(),
-    entry_points={
-        "rtctools.libraries.modelica": ["library_folder = mesido:modelica"]
-    },
+    entry_points={"rtctools.libraries.modelica": ["library_folder = mesido:modelica"]},
 )
