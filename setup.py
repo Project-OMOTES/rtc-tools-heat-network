@@ -1,6 +1,6 @@
-"""Heat network models for RTC-Tools 2.
+"""Multi Energy System Optimization
 
-Includes Modelica models and their accompanying Mixins for milp networks.
+MILP optimization for design and operational optimization
 """
 
 import sys
