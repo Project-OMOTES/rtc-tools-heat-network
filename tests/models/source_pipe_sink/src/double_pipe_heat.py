@@ -8,12 +8,12 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -64,12 +64,11 @@ class SourcePipeSink(
 
 
 class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.heat_network_settings["head_loss_option"] = (
-            HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-        )
+        self.heat_network_settings[
+            "head_loss_option"
+        ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
         self.heat_network_settings["n_linearization_lines"] = 5
         self.heat_network_settings["minimize_head_losses"] = True
 

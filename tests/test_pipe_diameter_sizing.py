@@ -6,9 +6,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network._darcy_weisbach import friction_factor
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from mesido._darcy_weisbach import friction_factor
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -116,7 +116,7 @@ class TestPipeDiameterSizingExample(TestCase):
                     parameters[f"{pipe}.temperature"],
                 )
                 c_v = parameters[f"{pipe}.length"] * ff / (2 * 9.81) / pc.inner_diameter
-                dh_max = c_v * pc.maximum_velocity**2
+                dh_max = c_v * pc.maximum_velocity ** 2
                 dh_manual = dh_max * results[f"{pipe}.Q"][1:] / pc.area / pc.maximum_velocity
                 np.testing.assert_allclose(-dh_manual, results[f"{pipe}.dH"][1:], atol=1.0e-12)
 

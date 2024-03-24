@@ -5,9 +5,9 @@ import numpy as np
 
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -125,9 +125,9 @@ class TestMinMaxPressureOptions(TestCase):
         def energy_system_options(self):
             options = super().energy_system_options()
             assert "pipe_minimum_pressure" in self.heat_network_settings
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
+            self.heat_network_settings[
+                "pipe_minimum_pressure"
+            ] = TestMinMaxPressureOptions.min_pressure
             return options
 
     class MaxPressure(SmallerPipes):
@@ -140,12 +140,12 @@ class TestMinMaxPressureOptions(TestCase):
     class MinMaxPressure(SmallerPipes):
         def energy_system_options(self):
             options = super().energy_system_options()
-            self.heat_network_settings["pipe_minimum_pressure"] = (
-                TestMinMaxPressureOptions.min_pressure
-            )
-            self.heat_network_settings["pipe_maximum_pressure"] = (
-                TestMinMaxPressureOptions.max_pressure
-            )
+            self.heat_network_settings[
+                "pipe_minimum_pressure"
+            ] = TestMinMaxPressureOptions.min_pressure
+            self.heat_network_settings[
+                "pipe_maximum_pressure"
+            ] = TestMinMaxPressureOptions.max_pressure
             return options
 
     def test_min_max_pressure_options(self):
@@ -330,9 +330,9 @@ class TestDisconnectablePipe(TestCase):
     class ModelDisconnectedDarcyWeisbach(ModelDisconnected):
         def energy_system_options(self):
             options = super().energy_system_options()
-            self.heat_network_settings["head_loss_option"] = (
-                HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
-            )
+            self.heat_network_settings[
+                "head_loss_option"
+            ] = HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY
             return options
 
     def test_disconnected_pipe_darcy_weisbach(self):

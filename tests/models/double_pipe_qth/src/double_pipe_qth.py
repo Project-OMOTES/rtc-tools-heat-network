@@ -7,11 +7,11 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
     BoundsToPipeFlowDirectionsMixin,
 )
-from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
 
 
 class TargetDemandGoal(Goal):
