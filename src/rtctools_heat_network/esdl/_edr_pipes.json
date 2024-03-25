@@ -1,6 +1,6 @@
 {
     "Steel-S1-DN-20": {
-        "inner_diameter": 0.0217,
+        "inner_diameter": 0.02,
         "u_1": 0.14264250396258266,
         "u_2": 0.0036419580112703703,
         "insulation_thicknesses": [
@@ -51,7 +51,7 @@
         "xml_string": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<esdl:Pipe xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:esdl=\"http://www.tno.nl/esdl\" id=\"2af46d1f-397b-4b11-9861-30e70f13ecb4\" name=\"Steel-S1-DN-32\" innerDiameter=\"0.0372\" outerDiameter=\"0.11\" diameter=\"DN32\">\n  <dataSource xsi:type=\"esdl:DataSource\" name=\"Logstor Product Catalogue Version 2020.03\" attribution=\"https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf\"/>\n  <costInformation id=\"4507bdd8-812d-4292-b0ca-2608f542ef72\">\n    <investmentCosts xsi:type=\"esdl:SingleValue\" name=\"Combined investment and installation costs\" id=\"c81be3eb-d148-44ed-9a3f-b6e0ac268cf0\" value=\"727.9\">\n      <profileQuantityAndUnit xsi:type=\"esdl:QuantityAndUnitType\" physicalQuantity=\"COST\" unit=\"EURO\" perUnit=\"METRE\" description=\"Costs in EUR/m\" id=\"fa866980-3b99-4b2f-9752-dc0654f76955\"/>\n    </investmentCosts>\n  </costInformation>\n  <material xsi:type=\"esdl:CompoundMatter\" compoundType=\"LAYERED\">\n    <component layerWidth=\"0.0026\">\n      <matter xsi:type=\"esdl:Material\" id=\"f8ebe3fa-1e4d-42fa-ab2d-52ec87c2ab12\" name=\"steel\" thermalConductivity=\"52.15\"/>\n    </component>\n    <component layerWidth=\"0.0308\">\n      <matter xsi:type=\"esdl:Material\" id=\"9fa543c0-8262-4283-a52e-bce3641f61d9\" name=\"PUR\" thermalConductivity=\"0.027\"/>\n    </component>\n    <component layerWidth=\"0.003\">\n      <matter xsi:type=\"esdl:Material\" id=\"160b719b-f550-4267-a502-e8afe8cb3945\" name=\"HDPE\" thermalConductivity=\"0.4\"/>\n    </component>\n  </material>\n</esdl:Pipe>\n"
     },
     "Steel-S1-DN-40": {
-        "inner_diameter": 0.0431,
+        "inner_diameter": 0.04,
         "u_1": 0.2083588991429329,
         "u_2": 0.007193386331494938,
         "insulation_thicknesses": [
@@ -102,7 +102,7 @@
         "xml_string": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<esdl:Pipe xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:esdl=\"http://www.tno.nl/esdl\" id=\"411eaef8-ca85-4f4e-80c5-d12a89734038\" name=\"Steel-S1-DN-65\" innerDiameter=\"0.0703\" outerDiameter=\"0.14\" diameter=\"DN65\">\n  <dataSource xsi:type=\"esdl:DataSource\" name=\"Logstor Product Catalogue Version 2020.03\" attribution=\"https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf\"/>\n  <costInformation id=\"e3965f42-5f59-4fa5-aa64-d81fee53aa6b\">\n    <investmentCosts xsi:type=\"esdl:SingleValue\" name=\"Combined investment and installation costs\" id=\"a567e44e-8f05-4671-b9e2-c7643dc10359\" value=\"822.4\">\n      <profileQuantityAndUnit xsi:type=\"esdl:QuantityAndUnitType\" physicalQuantity=\"COST\" unit=\"EURO\" perUnit=\"METRE\" description=\"Costs in EUR/m\" id=\"6103c985-1c99-450c-83e2-2972a1c6b557\"/>\n    </investmentCosts>\n  </costInformation>\n  <material xsi:type=\"esdl:CompoundMatter\" compoundType=\"LAYERED\">\n    <component layerWidth=\"0.0029\">\n      <matter xsi:type=\"esdl:Material\" id=\"42c2fc73-edc6-4633-afd0-5f67a90d8ac2\" name=\"steel\" thermalConductivity=\"52.15\"/>\n    </component>\n    <component layerWidth=\"0.02895\">\n      <matter xsi:type=\"esdl:Material\" id=\"931996ac-2d20-4dfb-a62f-e3197a9108b9\" name=\"PUR\" thermalConductivity=\"0.027\"/>\n    </component>\n    <component layerWidth=\"0.003\">\n      <matter xsi:type=\"esdl:Material\" id=\"0ad69796-eb80-45ad-a9d7-c1997964ce08\" name=\"HDPE\" thermalConductivity=\"0.4\"/>\n    </component>\n  </material>\n</esdl:Pipe>\n"
     },
     "Steel-S1-DN-80": {
-        "inner_diameter": 0.0825,
+        "inner_diameter": 0.08,
         "u_1": 0.2869061375581693,
         "u_2": 0.011643213891622031,
         "insulation_thicknesses": [
@@ -136,7 +136,7 @@
         "xml_string": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<esdl:Pipe xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:esdl=\"http://www.tno.nl/esdl\" id=\"92e3e2b1-d1a2-4671-a113-799d5e12530c\" name=\"Steel-S1-DN-100\" innerDiameter=\"0.1071\" outerDiameter=\"0.2\" diameter=\"DN100\">\n  <dataSource xsi:type=\"esdl:DataSource\" name=\"Logstor Product Catalogue Version 2020.03\" attribution=\"https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf\"/>\n  <costInformation id=\"38256cab-e204-48da-9528-dab55059ec2f\">\n    <investmentCosts xsi:type=\"esdl:SingleValue\" name=\"Combined investment and installation costs\" id=\"9e13d1dd-9b73-4724-ac78-5742aee68618\" value=\"936.1\">\n      <profileQuantityAndUnit xsi:type=\"esdl:QuantityAndUnitType\" physicalQuantity=\"COST\" unit=\"EURO\" perUnit=\"METRE\" description=\"Costs in EUR/m\" id=\"283e5ece-fb95-4dd9-997d-dbb0eadd2d7b\"/>\n    </investmentCosts>\n  </costInformation>\n  <material xsi:type=\"esdl:CompoundMatter\" compoundType=\"LAYERED\">\n    <component layerWidth=\"0.0036\">\n      <matter xsi:type=\"esdl:Material\" id=\"c041d04e-23f0-455a-b0f1-2a6415fabe8d\" name=\"steel\" thermalConductivity=\"52.15\"/>\n    </component>\n    <component layerWidth=\"0.03965\">\n      <matter xsi:type=\"esdl:Material\" id=\"84dc8019-fa49-4110-b4bf-9aac6d5b7777\" name=\"PUR\" thermalConductivity=\"0.027\"/>\n    </component>\n    <component layerWidth=\"0.0032\">\n      <matter xsi:type=\"esdl:Material\" id=\"2d8e6bb6-e361-40a4-873e-212a69080dc7\" name=\"HDPE\" thermalConductivity=\"0.4\"/>\n    </component>\n  </material>\n</esdl:Pipe>\n"
     },
     "Steel-S1-DN-125": {
-        "inner_diameter": 0.1325,
+        "inner_diameter": 0.125,
         "u_1": 0.3507491672336199,
         "u_2": 0.014785413358434316,
         "insulation_thicknesses": [
@@ -170,7 +170,7 @@
         "xml_string": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<esdl:Pipe xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:esdl=\"http://www.tno.nl/esdl\" id=\"9f5b887b-4171-48fe-bdad-58d9638df253\" name=\"Steel-S1-DN-150\" innerDiameter=\"0.1603\" outerDiameter=\"0.25\" diameter=\"DN150\">\n  <dataSource xsi:type=\"esdl:DataSource\" name=\"Logstor Product Catalogue Version 2020.03\" attribution=\"https://www.logstor.com/media/6506/product-catalogue-uk-202003.pdf\"/>\n  <costInformation id=\"5443badc-812d-4cf2-b6a5-b70e643365f0\">\n    <investmentCosts xsi:type=\"esdl:SingleValue\" name=\"Combined investment and installation costs\" id=\"234f7d03-69a7-429a-b44f-f57c522345f1\" value=\"1126.4\">\n      <profileQuantityAndUnit xsi:type=\"esdl:QuantityAndUnitType\" physicalQuantity=\"COST\" unit=\"EURO\" perUnit=\"METRE\" description=\"Costs in EUR/m\" id=\"a5eefd42-c8e8-4dd6-b0dc-53ed92ead8a5\"/>\n    </investmentCosts>\n  </costInformation>\n  <material xsi:type=\"esdl:CompoundMatter\" compoundType=\"LAYERED\">\n    <component layerWidth=\"0.004\">\n      <matter xsi:type=\"esdl:Material\" id=\"fa85538e-ebfa-4bce-8386-04980e793e18\" name=\"steel\" thermalConductivity=\"52.15\"/>\n    </component>\n    <component layerWidth=\"0.03725\">\n      <matter xsi:type=\"esdl:Material\" id=\"3bafa031-f40f-42fc-b409-e35fffe5f457\" name=\"PUR\" thermalConductivity=\"0.027\"/>\n    </component>\n    <component layerWidth=\"0.0036\">\n      <matter xsi:type=\"esdl:Material\" id=\"893337e3-58f1-4fb4-8c25-68d71b11fb71\" name=\"HDPE\" thermalConductivity=\"0.4\"/>\n    </component>\n  </material>\n</esdl:Pipe>\n"
     },
     "Steel-S1-DN-200": {
-        "inner_diameter": 0.2101,
+        "inner_diameter": 0.2,
         "u_1": 0.4576799199049079,
         "u_2": 0.02098848308481162,
         "insulation_thicknesses": [

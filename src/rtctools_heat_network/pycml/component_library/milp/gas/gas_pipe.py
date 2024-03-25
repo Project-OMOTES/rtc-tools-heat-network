@@ -19,6 +19,7 @@ class GasPipe(GasTwoPort, BaseAsset):
         self.disconnectable = False
 
         self.v_max = 15.0
+        # self.v_max = 20.0
         self.density = 2.5e3  # [g/m3]  # this is vlaue is overwritten?
         self.diameter = nan
         self.area = 0.25 * pi * self.diameter**2

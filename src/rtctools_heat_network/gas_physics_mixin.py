@@ -95,7 +95,8 @@ class GasPhysicsMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPr
         """
         self.gas_network_settings = {
             "network_type": NetworkSettings.NETWORK_TYPE_GAS,
-            "maximum_velocity": 15.0,
+            "maximum_velocity": 15.0,  # check if this was the issue for not reaching v > 15 
+            # "maximum_velocity": 20.0, 
             "minimum_velocity": 0.005,
             "head_loss_option": HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY,
             "minimize_head_losses": False,

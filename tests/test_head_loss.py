@@ -726,7 +726,7 @@ class TestHeadLoss(TestCase):
                     head_loss_option_setting = head_loss_option_setting
 
                     self.gas_network_settings["head_loss_option"] = head_loss_option_setting
-                    # self.gas_network_settings["n_linearization_lines"] = 5
+                    self.gas_network_settings["n_linearization_lines"] = 5
                     self.gas_network_settings["minimize_head_losses"] = True
                     self.gas_network_settings["minimum_velocity"] = 0.0
 
@@ -739,9 +739,9 @@ class TestHeadLoss(TestCase):
                     assets = super().esdl_assets
                     for asset in assets:
                         if assets[asset].asset_type in ["Pipe"]:
-                            assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN20
+                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN20
                             # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN40
-                            # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN80
+                            assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN80
                             # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN125
                             # assets[asset].attributes["diameter"] = esdl.PipeDiameterEnum.DN200
 
@@ -754,20 +754,26 @@ class TestHeadLoss(TestCase):
                         target = self.get_timeseries(f"{demand}.target_gas_demand")
 
                         if self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN20:
-                            inner_pipe_diam_m = 0.0217
+                            # inner_pipe_diam_m = 0.0217
+                            inner_pipe_diam_m = 0.02
                         elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN40:
-                            inner_pipe_diam_m = 0.0431
+                            # inner_pipe_diam_m = 0.0431
+                            inner_pipe_diam_m = 0.04
                         elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN80:
-                            inner_pipe_diam_m = 0.0825
+                            # inner_pipe_diam_m = 0.0825
+                            inner_pipe_diam_m = 0.08
                         elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN125: 
-                            inner_pipe_diam_m = 0.1325
+                            # inner_pipe_diam_m = 0.1325
+                            inner_pipe_diam_m = 0.125
                         elif self.esdl_assets["4abcb49f-2dac-4e00-9c93-9dbab4510a31"].attributes["diameter"] == esdl.PipeDiameterEnum.DN200:  
-                            inner_pipe_diam_m = 0.2101
+                            # inner_pipe_diam_m = 0.2101
+                            inner_pipe_diam_m = 0.2
+
 
                         # gas_velo_m_s = 2.5
                         # gas_velo_m_s = 5.0
-                        gas_velo_m_s = 10.0
-                        # gas_velo_m_s = 15.0
+                        # gas_velo_m_s = 10.0
+                        gas_velo_m_s = 15.0
                         # gas_velo_m_s = 20.0
 
                         target_gas_demand_g_s = (

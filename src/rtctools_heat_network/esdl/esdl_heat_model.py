@@ -96,7 +96,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         # temperature = 20.0
         temperature = 9.0
 
-        if NetworkSettings.NETWORK_TYPE_GAS.lower() in carrier.name:  # is this maybe a bug below as well
+        if NetworkSettings.NETWORK_TYPE_GAS.lower() in carrier.name.lower():  # is this maybe a bug below as well
             density = cP.CoolProp.PropsSI(
                 "D",
                 "T",
@@ -105,7 +105,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 carrier.pressure * 1.0e5,
                 NetworkSettings.NETWORK_COMPOSITION_GAS,
             )
-        elif NetworkSettings.NETWORK_TYPE_HYDROGEN in carrier.name:
+        elif NetworkSettings.NETWORK_TYPE_HYDROGEN.lower() in carrier.name.lower():
             density = cP.CoolProp.PropsSI(
                 "D",
                 "T",
