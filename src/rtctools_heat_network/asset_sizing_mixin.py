@@ -252,15 +252,17 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self._electricity_cable_topo_max_current_map[cable] = max_current_var_name
 
             if len(cable_classes) > 0:
-                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = np.median(max_currents)
+                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = (
+                    np.median(max_currents)
+                )
                 self.__electricity_cable_topo_max_current_var_bounds[max_current_var_name] = (
                     -max(max_currents),
                     max(max_currents),
                 )
             else:
-                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = parameters[
-                    f"{cable}.max_current"
-                ]
+                self.__electricity_cable_topo_max_current_nominals[max_current_var_name] = (
+                    parameters[f"{cable}.max_current"]
+                )
                 self.__electricity_cable_topo_max_current_var_bounds[max_current_var_name] = (
                     -parameters[f"{cable}.max_current"],
                     parameters[f"{cable}.max_current"],
@@ -386,7 +388,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self._gas_pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
 
             if len(pipe_classes) > 0:
-                self.__gas_pipe_topo_max_discharge_nominals[max_discharge_var_name] = np.median(max_discharges)
+                self.__gas_pipe_topo_max_discharge_nominals[max_discharge_var_name] = np.median(
+                    max_discharges
+                )
                 self.__gas_pipe_topo_max_discharge_var_bounds[max_discharge_var_name] = (
                     -max(max_discharges),
                     max(max_discharges),
@@ -518,7 +522,9 @@ class AssetSizingMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationP
             self._pipe_topo_max_discharge_map[pipe] = max_discharge_var_name
 
             if len(pipe_classes) > 0:
-                self.__pipe_topo_max_discharge_nominals[max_discharge_var_name] = np.median(max_discharges)
+                self.__pipe_topo_max_discharge_nominals[max_discharge_var_name] = np.median(
+                    max_discharges
+                )
                 self.__pipe_topo_max_discharge_var_bounds[max_discharge_var_name] = (
                     -max(max_discharges),
                     max(max_discharges),
