@@ -187,3 +187,9 @@ class TestWarmingUpUnitCases(TestCase):
                 atol=1.0e-3,
             )
             np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
+
+            np.testing.assert_allclose(
+                results[f"{buffer}.dH"][inds],
+                results[f"{buffer}.HeatOut.H"][inds] - results[f"{buffer}.HeatIn.H"][inds],
+                atol=1.0e-6,
+            )

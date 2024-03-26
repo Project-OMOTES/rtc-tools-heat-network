@@ -90,6 +90,9 @@ class ATES(HeatTwoPort, BaseAsset):
             Variable, "Pump_power", min=0.0, nominal=self.Q_nominal * self.nominal_pressure
         )
 
+        self.add_variable(Variable, "dH")
+        self.add_equation(self.dH - (self.HeatOut.H - self.HeatIn.H))
+
         self._heat_loss_error_to_state_factor = 1
         self._nominal_heat_loss = (
             self.Stored_heat.nominal * self.heat_loss_coeff * self._heat_loss_error_to_state_factor
