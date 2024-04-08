@@ -172,10 +172,14 @@ class FinancialMixin(BaseComponentTypeMixin, CollocatedIntegratedOptimizationPro
             elif asset_name in [*self.energy_system_components.get("electricity_source", [])]:
                 max_power = (
                     bounds[f"{asset_name}.ElectricityOut.Power"][1]
-                    if isinstance(bounds[f"{asset_name}.ElectricityOut.Power"][1], float)
+                    if (isinstance(bounds[f"{asset_name}.ElectricityOut.Power"][1], float))
                     else max(bounds[f"{asset_name}.ElectricityOut.Power"][1].values)
                 )
                 nominal_fixed_operational = max_power
+                nominal_variable_operational = nominal_fixed_operational
+                nominal_investment = nominal_fixed_operational
+            elif asset_name in [*self.energy_system_components.get("electricity_storage", [])]:
+                nominal_fixed_operational = bounds[f"{asset_name}.Stored_electricity"][1]
                 nominal_variable_operational = nominal_fixed_operational
                 nominal_investment = nominal_fixed_operational
             else:

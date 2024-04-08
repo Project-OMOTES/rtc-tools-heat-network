@@ -20,6 +20,7 @@ from mesido.pycml.component_library.milp import (
     ElectricityDemand,
     ElectricityNode,
     ElectricitySource,
+    ElectricityStorage,
     Electrolyzer,
     GasDemand,
     GasNode,
@@ -38,6 +39,7 @@ from mesido.pycml.component_library.milp import (
     LowTemperatureATES,
     Node,
     Pump,
+    SolarPV,
     WindPark,
 )
 
@@ -1151,7 +1153,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         -------
         ElectricitySource class with modifiers
         """
-        assert asset.asset_type in {"ElectricityProducer", "WindPark"}
+        assert asset.asset_type in {"ElectricityProducer", "WindPark", "PVInstallation"}
 
         max_supply = asset.attributes.get(
             "power", math.inf
@@ -1174,6 +1176,51 @@ class AssetToHeatComponent(_AssetToComponentBase):
             return ElectricitySource, modifiers
         if asset.asset_type == "WindPark":
             return WindPark, modifiers
+        if asset.asset_type == "PVInstallation":
+            return SolarPV, modifiers
+
+    def convert_electricity_storage(
+        self, asset: Asset
+    ) -> Tuple[Type[ElectricityStorage], MODIFIERS]:
+        """
+        This function converts the ElectricityStorage object in esdl to a set of modifiers that can
+        be used in a pycml object. Most important:
+
+        - Setting the electrical power caps
+
+        Parameters
+        ----------
+        asset : The asset object with its properties.
+
+        Returns
+        -------
+        ElectricityStorage class with modifiers
+        """
+        assert asset.asset_type in {"Battery"}
+
+        max_capacity = asset.attributes.get("capacity")
+        i_max, i_nom = self._get_connected_i_nominal_and_max(asset)
+        v_min = asset.in_ports[0].carrier.voltage
+        max_charge = asset.attributes.get("maxChargeRate", max_capacity / 3600)
+        max_discharge = asset.attributes.get("maxDischargeRate", max_capacity / 3600)
+        discharge_efficiency = asset.attributes.get("dischargeEfficiency", 1)
+        charge_efficiency = asset.attributes.get("chargeEfficiency", 1)
+
+        modifiers = dict(
+            charge_efficiency=charge_efficiency,
+            discharge_efficiency=discharge_efficiency,
+            min_voltage=v_min,
+            max_capacity=max_capacity,
+            Stored_electricity=dict(min=0.0, max=max_capacity),
+            ElectricityIn=dict(
+                V=dict(min=v_min, nominal=v_min),
+                I=dict(min=-i_max, max=i_max, nominal=i_nom),
+                Power=dict(min=-max_discharge, max=max_charge, nominal=max_charge / 2.0),
+            ),
+            **self._get_cost_figure_modifiers(asset),
+        )
+
+        return ElectricityStorage, modifiers
 
     def convert_electricity_node(self, asset: Asset) -> Tuple[Type[ElectricityNode], MODIFIERS]:
         """
