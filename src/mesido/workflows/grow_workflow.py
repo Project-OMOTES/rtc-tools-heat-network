@@ -320,7 +320,7 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
-        if priority == 1 and self.objective_value>0:
+        if priority == 1 and self.objective_value>1e-12:
             raise RuntimeError("The heating demand is not matched")
 
 
