@@ -75,6 +75,7 @@ class SolverHIGHS:
         options["casadi_solver"] = self._qpsol
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
+        # highs_options["time_limit"] = 100
         if hasattr(self, "_stage"):
             if self._stage == 1:
                 highs_options["mip_rel_gap"] = 0.005
@@ -294,6 +295,7 @@ class EndScenarioSizing(
 
         super().priority_started(priority)
 
+
     def priority_completed(self, priority):
         super().priority_completed(priority)
 
@@ -309,6 +311,9 @@ class EndScenarioSizing(
                 self.solver_stats,
             )
         )
+        if priority == 1 and self.objective_value>1e-12:
+            raise RuntimeError("The heating demand is not matched")
+
 
     def post(self):
         # In case the solver fails, we do not get in priority_completed(). We
