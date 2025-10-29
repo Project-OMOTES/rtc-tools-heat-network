@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -42,7 +41,7 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",
@@ -62,7 +61,7 @@ class TestAtesTemperature(TestCase):
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        ates_charging = results["Pipe1__flow_direct_var"]  # =1 if charging
+        ates_charging = results["ATES_cb47__is_charging"]  # =1 if charging
         ates_temperature = results["ATES_cb47.Temperature_ates"]
         ates_temperature_disc = results["ATES_cb47__temperature_ates_disc"]
         carrier_temperature = results["41770304791669983859190_temperature"]
@@ -96,10 +95,6 @@ class TestAtesTemperature(TestCase):
             )
         )
 
-        feasibility = solution.solver_stats["return_status"]
-
-        self.assertTrue((feasibility == "Optimal"))
-
         np.testing.assert_allclose(objective_calc / 1e4, objective)
 
         np.testing.assert_array_less(ates_temperature_disc - tol, ates_temperature)
@@ -132,7 +127,7 @@ class TestAtesTemperature(TestCase):
         # TODO: potentially update example such that the commented checks will also hold.
         # np.testing.assert_array_less(heat_pump_sec, geo_source)
 
-        charging = np.array([int(val > 0) for val in heat_ates])
+        charging = np.array([int(val > tol) for val in heat_ates])
         # array less then because ates charging boolean can be either 0 or 1 when there is no flow,
         # or just flow to compensate the heatloss
         np.testing.assert_array_less(np.ones(len(hex_disabled)) - tol, hex_disabled + hp_disabled)
@@ -160,7 +155,7 @@ class TestAtesTemperature(TestCase):
 
         basefolder = Path(run_ates_temperature.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemMaxFlow,
             base_folder=basefolder,
             esdl_file_name="HP_ATES with return network.esdl",

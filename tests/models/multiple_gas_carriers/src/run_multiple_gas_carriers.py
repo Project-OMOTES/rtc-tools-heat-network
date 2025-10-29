@@ -1,3 +1,8 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -10,11 +15,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -86,7 +86,7 @@ class GasProblem(
 if __name__ == "__main__":
     elect = run_optimization_problem(
         GasProblem,
-        esdl_file_name="multiple_carriers.esdl",
+        esdl_file_name="compressor.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries.csv",

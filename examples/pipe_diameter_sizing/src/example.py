@@ -1,3 +1,9 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import PipeClass
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -14,12 +20,6 @@ from rtctools.optimization.single_pass_goal_programming_mixin import (
     SinglePassGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.pipe_class import PipeClass
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -53,7 +53,7 @@ class MinimizeLDGoal(Goal):
             length = parameters[f"{p}.length"]
             var_name = optimization_problem.pipe_diameter_symbol_name(p)
 
-            nominal += length * optimization_problem.variable_nominal(var_name)
+            nominal += length * optimization_problem.variable_nominal(var_name) * 2.0
 
             obj += optimization_problem.extra_variable(var_name, ensemble_member) * length
 
@@ -76,9 +76,12 @@ class PipeDiameterSizingProblem(
         return options
 
     def pipe_classes(self, pipe):
+        # Do not delete pipeclass DN40, locally it runs with DN40, but in pipeline it seems
+        # that scaling is a bit too much off resulting in infeasibility probably because of
+        # machine accuracy. If scaling can be improved DN40 can be included again.
         return [
             PipeClass("None", 0.0, 0.0, (0.0, 0.0), 0.0),
-            PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
+            # PipeClass("DN40", 0.0431, 1.5, (0.179091, 0.005049), 1.0),
             PipeClass("DN50", 0.0545, 1.7, (0.201377, 0.006086), 2.0),
             PipeClass("DN65", 0.0703, 1.9, (0.227114, 0.007300), 3.0),
             PipeClass("DN80", 0.0825, 2.2, (0.238244, 0.007611), 4.0),

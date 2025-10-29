@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestInsulation(TestCase):
@@ -33,10 +32,10 @@ class TestInsulation(TestCase):
     4. Test in which not all LT sources are selected as Tmin of demands is not low enough
      --> maybe 3 and 4 can be combined --> so forinstance only LT source behind HEX is selected due
      to insulation of that Heating demand, but other HD can not be insulated far enough for LT
-     source on the primary network.(e.g. goal, minimise milp loss, does not solve the provided
+     source on the primary network.(e.g. goal, minimise heat loss, does not solve the provided
      cases)
     5. Test where TCO minimised, combination of investment cost of insulation vs lower Temperature
-     network, thus lower milp loss (and allowing cheaper LT producers).
+     network, thus lower heat loss (and allowing cheaper LT producers).
     #TODO: add test cases 2, 2b, 3, 4 and 5 as detailed above
     #TODO: maybe we can make COP heatpump dependent on the chosen network temperatures
     """
@@ -45,23 +44,23 @@ class TestInsulation(TestCase):
     def test_insulation_heatdemand(self):
         """
         Check that the best insulation class is selected when we optimize for minimal
-        milp production.
+        heat production.
 
         Checks:
         - That the correct insulation class is selected
         - Check that the other insulation classes are not selected
-        - Check that there is sufficient milp.
+        - Check that there is sufficient heat.
         - Check that the profile that is matched is as expected
 
         Missing:
-        - Energy conservation and milp to discharge (replace current check of sufficient milp)
+        - Energy conservation and heat to discharge (replace current check of sufficient heat)
 
         """
         import models.insulation.src.run_insulation as run_insulation
         from models.insulation.src.run_insulation import HeatProblem
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",
@@ -98,7 +97,7 @@ class TestInsulation(TestCase):
             other_demand_insulation_class,
             err_msg="Insulation B or C should not be selected for any demand",
         )
-        # Check that the milp sources (not connected to HP) + HP secondary > demand
+        # Check that the heat sources (not connected to HP) + HP secondary > demand
         tot_src = (
             results["ResidualHeatSource_6783.Heat_source"]
             + results["ResidualHeatSource_4539.Heat_source"]
@@ -109,7 +108,7 @@ class TestInsulation(TestCase):
             results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
-            (tot_dmnd - tot_src), 0.0, err_msg="The milp source is not sufficient"
+            (tot_dmnd - tot_src), 0.0, err_msg="The heat source is not sufficient"
         )
         # Check that the demand load achieved == (base demand load * insulation level scaling
         # factor. Insulation level "A" should be active, which is index=0 in the insulation_levels
@@ -141,7 +140,7 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblemB
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemB,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",

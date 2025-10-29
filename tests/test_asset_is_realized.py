@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestAssetIsRealized(TestCase):
@@ -16,7 +15,7 @@ class TestAssetIsRealized(TestCase):
         asset is realized variable. We want the asset only to become available once sufficient
         investments are made.
 
-        In this specific test we optimize to match the milp demand. However, the sources are not
+        In this specific test we optimize to match the heat demand. However, the sources are not
         available from the start as the cumulative invesments made at timestep 0 is 0. Furthermore,
         there is a cap on the investments that can be done per timestep. We expect the optimizer
         to find a solution that releases the sources as soon as possible in order to match demand
@@ -36,7 +35,7 @@ class TestAssetIsRealized(TestCase):
 
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemPlacingOverTime,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",

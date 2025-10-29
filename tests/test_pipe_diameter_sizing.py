@@ -2,13 +2,12 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+from mesido._darcy_weisbach import friction_factor
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network._darcy_weisbach import friction_factor
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -22,7 +21,7 @@ class TestPipeDiameterSizingExample(TestCase):
         the left source and the associated left pipes.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - That expected pipes are removed
         - Check that the Q is under the max for the selected pipe class.
         - Check that head losses are as expected for the selected diameter
@@ -49,7 +48,7 @@ class TestPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        problem = run_optimization_problem(
+        problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
@@ -57,6 +56,9 @@ class TestPipeDiameterSizingExample(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="timeseries_import.xml",
         )
+
+        feasibility = problem.solver_stats["return_status"]
+        self.assertTrue((feasibility == "Optimal"))
 
         parameters = problem.parameters(0)
         diameters = {p: parameters[f"{p}.diameter"] for p in problem.hot_pipes}
@@ -99,7 +101,7 @@ class TestPipeDiameterSizingExample(TestCase):
             )
 
         for pipe in problem.energy_system_components.get("heat_pipe", []):
-            if results[f"{pipe}__hn_diameter"] == 0.0:
+            if results[f"{pipe}__hn_diameter"] <= 1e-14:
                 # TODO: At the moment it is so that a pipe which is not placed (diameter == 0.) can
                 # have head loss since there is an equivalent solution where simultaniously the
                 # is_disconnected variable is also true disabling the head_loss constraints.

@@ -1,14 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
 class TestMILPGasSourceSink(TestCase):
@@ -40,7 +38,7 @@ class TestMILPGasSourceSink(TestCase):
                 self.heat_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
-        soltion = run_optimization_problem(
+        soltion = run_esdl_mesido_optimization(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="source_sink.esdl",

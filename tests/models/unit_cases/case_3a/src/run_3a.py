@@ -1,3 +1,11 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.physics_mixin import PhysicsMixin
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.goals.minimize_tco_goal import MinimizeTCO
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -9,13 +17,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.physics_mixin import PhysicsMixin
-from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -285,7 +286,7 @@ class HeatProblemTvarret(
         return constraints
 
 
-class HeatProblemProdProfile(
+class HeatProblemESDLProdProfile(
     _GoalsAndOptions,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -293,15 +294,13 @@ class HeatProblemProdProfile(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-    def read(self):
-        super().read()
 
-        for s in self.energy_system_components["heat_source"]:
-            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
-            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
-            ind_hlf = int(len(demand_timeseries.values) / 2)
-            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
-            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
+    def solver_options(self):
+        options = super().solver_options()
+        options["solver"] = "highs"
+        options_highs = options["highs"] = {}
+        options_highs["mip_rel_gap"] = 1e-6
+        return options
 
     def energy_system_options(self):
         options = super().energy_system_options()
@@ -322,6 +321,26 @@ class HeatProblemProdProfile(
             goals.append(MinimizeSourcesHeatGoal(s))
 
         return goals
+
+
+class HeatProblemESDLProdProfileTCO(HeatProblemESDLProdProfile):
+    def goals(self):
+        goals = super().goals().copy()
+        goals.append(MinimizeTCO(priority=20, number_of_years=1))
+
+        return goals
+
+
+class HeatProblemProdProfile(HeatProblemESDLProdProfile):
+    def read(self):
+        super().read()
+
+        for s in self.energy_system_components["heat_source"]:
+            demand_timeseries = self.get_timeseries("HeatingDemand_a3b8.target_heat_demand")
+            new_timeseries = np.ones(len(demand_timeseries.values)) * 1
+            ind_hlf = int(len(demand_timeseries.values) / 2)
+            new_timeseries[ind_hlf : ind_hlf + 4] = np.ones(4) * 0.10
+            self.set_timeseries(f"{s}.maximum_heat_source", new_timeseries)
 
 
 class QTHProblem(
@@ -347,7 +366,7 @@ class QTHProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        from rtctools_heat_network.head_loss_class import HeadLossOption
+        from mesido.head_loss_class import HeadLossOption
 
         self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
         return options

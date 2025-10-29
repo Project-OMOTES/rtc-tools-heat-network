@@ -1,3 +1,7 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.head_loss_class import HeadLossOption
+from mesido.physics_mixin import PhysicsMixin
+
 import numpy as np
 
 import pandas as pd
@@ -9,10 +13,6 @@ from rtctools.optimization.goal_programming_mixin import Goal, GoalProgrammingMi
 from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -70,7 +70,6 @@ class HeatProblem(
     ESDLMixin,
     CollocatedIntegratedOptimizationProblem,
 ):
-
     def __init__(self, *args, **kwargs):
 
         global head_loss_setting, n_linearization_lines_setting
@@ -78,7 +77,10 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        self.heat_network_settings["minimize_head_losses"] = True
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+            self.heat_network_settings["minimize_head_losses"] = False
+        else:
+            self.heat_network_settings["minimize_head_losses"] = True
 
     def pre(self):
         super().pre()
@@ -105,7 +107,10 @@ class HeatProblem(
         self.heat_network_settings["head_loss_option"] = head_loss_setting
         if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_WEAK_INEQUALITY:
             self.heat_network_settings["n_linearization_lines"] = n_linearization_lines_setting
-        self.heat_network_settings["minimize_head_losses"] = True
+        if head_loss_setting == HeadLossOption.LINEARIZED_N_LINES_EQUALITY:
+            self.heat_network_settings["minimize_head_losses"] = False
+        else:
+            self.heat_network_settings["minimize_head_losses"] = True
 
         return options
 

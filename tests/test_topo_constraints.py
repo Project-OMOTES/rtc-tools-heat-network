@@ -3,17 +3,15 @@ from pathlib import Path
 from typing import Dict
 from unittest import TestCase
 
+from mesido._heat_loss_u_values_pipe import pipe_heat_loss
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.pipe_class import PipeClass
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
 import numpy.testing
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.pipe_class import PipeClass
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-
 
 MIP_TOLERANCE = 1e-8
 
@@ -43,7 +41,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
         del root_folder
         sys.path.pop(1)
 
-        cls.problem = run_optimization_problem(
+        cls.problem = run_esdl_mesido_optimization(
             PipeDiameterSizingProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
@@ -175,15 +173,15 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
                     np.testing.assert_almost_equal(
                         heat_loss_ordering_var,
                         0.0,
-                        err_msg=f"expected the milp loss order var for {p} and {pc=} to be 0.0, "
-                        f"since {chosen_pc=} with higher milp losses",
+                        err_msg=f"expected the heat loss order var for {p} and {pc=} to be 0.0, "
+                        f"since {chosen_pc=} with higher heat losses",
                     )
                 elif pc_heat_loss > chosen_pc_heat_loss:
                     np.testing.assert_almost_equal(
                         discharge_ordering_var,
                         1.0,
-                        err_msg=f"Expected the milp loss order var for {p} and {pc=} to be 1.0, "
-                        f"since {chosen_pc=} with lower milp losses",
+                        err_msg=f"Expected the heat loss order var for {p} and {pc=} to be 1.0, "
+                        f"since {chosen_pc=} with lower heat losses",
                     )
 
         for pc_name, total_count in pc_sums.items():
@@ -254,7 +252,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
     def get_heat_losses(self, pipe: str, pipe_class: PipeClass):
         """
-        This function computes the expected milp loss for a pipe class.
+        This function computes the expected heat loss for a pipe class.
 
         Parameters
         ----------
@@ -263,7 +261,7 @@ class TestTopoConstraintsOnPipeDiameterSizingExample(TestCase):
 
         Returns
         -------
-        Pipe milp loss value.
+        Pipe heat loss value.
         """
         return pipe_heat_loss(
             self.problem,

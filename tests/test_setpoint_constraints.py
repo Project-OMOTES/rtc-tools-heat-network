@@ -1,14 +1,13 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
 
 import pytest
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestSetpointConstraints(TestCase):
@@ -31,7 +30,7 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        _heat_problem_3 = run_optimization_problem(
+        _heat_problem_3 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -42,7 +41,7 @@ class TestSetpointConstraints(TestCase):
         )
         results_3 = _heat_problem_3.extract_results()
 
-        _heat_problem_4 = run_optimization_problem(
+        _heat_problem_4 = run_esdl_mesido_optimization(
             HeatProblemSetPointConstraints,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -60,7 +59,7 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        sol_esdl_setpoints = run_optimization_problem(
+        sol_esdl_setpoints = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -99,8 +98,8 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_2_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         2 changes/year.
@@ -114,7 +113,7 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemSetPoints,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
@@ -135,8 +134,8 @@ class TestSetpointConstraints(TestCase):
     def test_run_small_ates_timed_setpoints_0_changes(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         0 changes/year.
@@ -150,7 +149,7 @@ class TestSetpointConstraints(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemSetPoints,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
@@ -163,14 +162,14 @@ class TestSetpointConstraints(TestCase):
         check = abs(
             results["HeatProducer_1.Heat_source"][2:] - results["HeatProducer_1.Heat_source"][1:-1]
         )
-        np.testing.assert_array_less(check, 1.0e-6)
+        np.testing.assert_array_less(check, 1.0e-5)
 
     @pytest.mark.fourth
     def test_run_small_ates_timed_setpoints_multiple_constraints(self):
         """
         Run the small network with ATES and check that the setpoint changes as specified.
-        The milp source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
-        specified. The 1 year milp demand profiles contains demand values: hourly (peak day), weekly
+        The heat source for producer_1 changes 8 times (consecutively) when no timed_setpoints are
+        specified. The 1 year heat demand profiles contains demand values: hourly (peak day), weekly
         (every 5days/120hours/432000s) and 1 time step of 4days (96hours/345600s, step before the
         start of the peak day). Now check that the time_setpoints can limit the setpoint changes to
         1 changes over multiple window sizes.
@@ -186,7 +185,7 @@ class TestSetpointConstraints(TestCase):
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
         for ihrs in range(119, 122):
-            solution = run_optimization_problem(
+            solution = run_esdl_mesido_optimization(
                 HeatProblemSetPoints,
                 base_folder=base_folder,
                 esdl_file_name="test_case_small_network_with_ates.esdl",

@@ -1,13 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido._heat_loss_u_values_pipe import pipe_heat_loss
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network._heat_loss_u_values_pipe import pipe_heat_loss
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -17,15 +16,15 @@ class TestVaryingTemperature(TestCase):
         """
         This test is to check if the varying network temperature works as expected on a simple
         network. We give it temperature options such that it should select a minimum delta T to be
-        able to meet the milp demands. It is known which network temperatures should be selected
+        able to meet the heat demands. It is known which network temperatures should be selected
         based on the specified input values.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Check expected supply temperature
         - Check expected return temperature
         - Check on integer variable for selected temperature.
-        - Check if the milp losses are correct for the selected temperature
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_1a.src.run_1a as run_1a
@@ -33,7 +32,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
@@ -83,13 +82,13 @@ class TestVaryingTemperature(TestCase):
     def test_3a_temperature_variation_supply(self):
         """
         Check varying temperature behoviour for network with storage (tank). In this case we
-        Minimise the produced milp and thus we expect the lowest temperature to be selected.
+        Minimise the produced heat and thus we expect the lowest temperature to be selected.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation.
+        - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
-        - Check if the milp losses are correct for the selected temperature
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -97,7 +96,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarsup,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -110,11 +109,11 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in supply temp 80 and 120 deg
-        # lowest temperature should be selected because of lower milp losses and
-        # milp production minimization goal
+        # lowest temperature should be selected because of lower heat losses and
+        # heat production minimization goal
         results = heat_problem.extract_results()
 
-        # Check whehter the milp demand is matched
+        # Check whehter the heat demand is matched
         for d in heat_problem.energy_system_components.get("heat_demand", []):
             target = heat_problem.get_timeseries(f"{d}.target_heat_demand").values[
                 : len(heat_problem.times())
@@ -158,10 +157,10 @@ class TestVaryingTemperature(TestCase):
         to maximise the detla T.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation.
+        - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check if the expected temperature is selected and if temperature variable is set
         correctly.
-        - Check if the milp losses are correct for the selected temperature
+        - Check if the heat losses are correct for the selected temperature
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -169,7 +168,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarret,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -218,13 +217,13 @@ class TestVaryingTemperature(TestCase):
 
     def test_hex_temperature_variation(self):
         """
-        This test is to check whether the milp exchanger behaves as expected when optimized under
+        This test is to check whether the heat exchanger behaves as expected when optimized under
         varying network temperature. This is of special interest as we want to ensure the
         temperatures stay physically feasible, therefore we create a problem where the lowest
         available supply T is infeasible.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation.
+        - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check that the infeasible temperature is not selected.
 
         """
@@ -233,7 +232,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -285,12 +284,12 @@ class TestVaryingTemperature(TestCase):
 
     def test_hex_temperature_variation_disablehex(self):
         """
-        This test is to check if the optimizer disables the milp exchanger when only infeasible
+        This test is to check if the optimizer disables the heat exchanger when only infeasible
         temperature option are provided to it.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation.
-        - Infeasible T for milp exchanger is selected.
+        - Standard checks for demand matching, heat to discharge and energy conservation.
+        - Infeasible T for heat exchanger is selected.
         - Heat exchanger is disabled.
 
         """
@@ -299,7 +298,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarDisableHEX,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -312,7 +311,7 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with only one option in temperature which is infeasible for the hex.
-        # therefore optimization should disable the milp exchanger
+        # therefore optimization should disable the heat exchanger
         results = heat_problem.extract_results()
 
         # Check that the problem has an infeasible temperature for the hex
@@ -327,12 +326,12 @@ class TestVaryingTemperature(TestCase):
 
     def test_hex_temperature_variation_secondary(self):
         """
-        Check to see the functioning of the varying network temperature with a milp exchanger where
+        Check to see the functioning of the varying network temperature with a heat exchanger where
         all options are feasible and we expect it to take the most advantageous one, which in this
         case is the lowest one.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation.
+        - Standard checks for demand matching, heat to discharge and energy conservation.
         - Check that lowest temperature is selected and set correctly.
 
         """
@@ -341,7 +340,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvarSecondary,
             base_folder=base_folder,
             esdl_file_name="heat_exchanger.esdl",
@@ -354,8 +353,8 @@ class TestVaryingTemperature(TestCase):
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
 
         # optimization with two choices in secondary supply temp 70 and 90 deg
-        # lowest temperature should be selected because of milp minimization and lower T has
-        # lower milp loss.
+        # lowest temperature should be selected because of heat minimization and lower T has
+        # lower heat loss.
         results = heat_problem.extract_results()
 
         # Check that the lowest temperature (70.0) is the outputted temperature
@@ -379,7 +378,7 @@ class TestVaryingTemperature(TestCase):
 
         base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemTvar,
             base_folder=base_folder,
             esdl_file_name="heat_pump.esdl",

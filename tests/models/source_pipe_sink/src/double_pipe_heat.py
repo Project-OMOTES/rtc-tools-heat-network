@@ -1,3 +1,12 @@
+from mesido.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+from mesido.workflows.io.write_output import ScenarioOutput
+
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -7,13 +16,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 )
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_additional_vars_mixin import ESDLAdditionalVarsMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
 
 
 class TargetDemandGoal(Goal):
@@ -40,10 +42,14 @@ class MinimizeProduction(Goal):
         self.function_nominal = 1e6
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("source.Heat_source")
+        sum = 0
+        for source in optimization_problem.energy_system_components.get("heat_source", []):
+            sum = optimization_problem.state(f"{source}.Heat_source")
+        return sum
 
 
 class SourcePipeSink(
+    ScenarioOutput,
     TechnoEconomicMixin,
     LinearizedOrderGoalProgrammingMixin,
     SinglePassGoalProgrammingMixin,
@@ -52,6 +58,11 @@ class SourcePipeSink(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def energy_system_options(self):
+        options = super().energy_system_options()
+        self.gas_network_settings["maximum_velocity"] = 20.0
+        return options
 
     def path_goals(self):
         g = super().path_goals().copy()
@@ -64,7 +75,6 @@ class SourcePipeSink(
 
 
 class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.heat_network_settings["head_loss_option"] = (
@@ -87,8 +97,8 @@ class HeatProblemHydraulic(ESDLAdditionalVarsMixin, SourcePipeSink):
 
 if __name__ == "__main__":
     sol = run_optimization_problem(
-        HeatProblemHydraulic,
-        esdl_file_name="sourcesink.esdl",
+        SourcePipeSink,
+        esdl_file_name="sourcesink_witheboiler.esdl",
         esdl_parser=ESDLFileParser,
         profile_reader=ProfileReaderFromFile,
         input_timeseries_file="timeseries_import.csv",

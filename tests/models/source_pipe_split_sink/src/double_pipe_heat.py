@@ -1,3 +1,6 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.techno_economic_mixin import TechnoEconomicMixin
+
 from rtctools.optimization.collocated_integrated_optimization_problem import (
     CollocatedIntegratedOptimizationProblem,
 )
@@ -8,9 +11,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
 from rtctools.optimization.single_pass_goal_programming_mixin import SinglePassGoalProgrammingMixin
 from rtctools.util import run_optimization_problem
 
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.techno_economic_mixin import TechnoEconomicMixin
-
 
 class TargetDemandGoal(Goal):
     priority = 1
@@ -20,7 +20,7 @@ class TargetDemandGoal(Goal):
     def __init__(self, optimization_problem):
         self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
         self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.function_range = (0.0, 2e5)
+        self.function_range = (0.0, 2e6)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):

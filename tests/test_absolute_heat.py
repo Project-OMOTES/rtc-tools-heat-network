@@ -1,10 +1,9 @@
 from pathlib import Path
 from unittest import TestCase
 
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -19,7 +18,7 @@ class TestAbsoluteHeat(TestCase):
         Checks:
         1. demand is matched
         2. energy conservation in the network
-        3. milp to discharge
+        3. heat to discharge
 
         """
         import models.absolute_heat.src.example as example
@@ -27,7 +26,7 @@ class TestAbsoluteHeat(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="absolute_heat.esdl",

@@ -1,13 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -18,7 +17,7 @@ class TestHeat(TestCase):
         This is a test to check whether the network (pipes) are dissipating milp as we expect.
 
         Checks:
-        - Check that the produced milp is strictly higher than the consumed milp
+        - Check that the produced heat is strictly higher than the consumed heat
         - Check for energy conservation in the network
 
         """
@@ -27,7 +26,7 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(
+        case = run_esdl_mesido_optimization(
             SourcePipeSink,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -48,13 +47,17 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
 
+        # Check emission information is passed to parameters
+        parameters = case.parameters(0)
+        np.testing.assert_allclose(parameters["source.emission_coeff"], 20 * 1e-6 * 3600)
+
     def test_zero_heat_loss(self):
         """
-        Check the optimiziation function when the zero milp loss is used.
+        Check the optimiziation function when the zero heat loss is used.
 
         Checks:
         - Should check that produced equals consumed.
-        - Should check the milp loss variable being zero
+        - Should check the heat loss variable being zero
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -69,7 +72,7 @@ class TestHeat(TestCase):
 
         base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
 
-        case = run_optimization_problem(
+        case = run_esdl_mesido_optimization(
             Model,
             base_folder=base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -95,7 +98,7 @@ class TestMinMaxPressureOptions(TestCase):
     from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
     base_folder = Path(double_pipe_heat.__file__).resolve().parent.parent
-    min_pressure = 4.0
+    min_pressure = 5.0
     max_pressure = 12.0
     esdl_file = "sourcesink.esdl"
     input_time_series_file = "timeseries_import.csv"
@@ -160,7 +163,7 @@ class TestMinMaxPressureOptions(TestCase):
         - max pressure
 
         """
-        case_default = run_optimization_problem(
+        case_default = run_esdl_mesido_optimization(
             self.SmallerPipes,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -168,7 +171,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_min_pressure = run_optimization_problem(
+        case_min_pressure = run_esdl_mesido_optimization(
             self.MinPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -176,7 +179,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_max_pressure = run_optimization_problem(
+        case_max_pressure = run_esdl_mesido_optimization(
             self.MaxPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -184,7 +187,7 @@ class TestMinMaxPressureOptions(TestCase):
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file=self.input_time_series_file,
         )
-        case_min_max_pressure = run_optimization_problem(
+        case_min_max_pressure = run_esdl_mesido_optimization(
             self.MinMaxPressure,
             base_folder=self.base_folder,
             esdl_file_name=self.esdl_file,
@@ -241,7 +244,7 @@ class TestDisconnectablePipe(TestCase):
 
     class ModelConnected(SourcePipeSink):
         # We allow the pipe to be disconnectable. We need to be sure that
-        # the solution is still feasible (source delivering no milp), so we
+        # the solution is still feasible (source delivering no heat), so we
         # lower the lower bound.
 
         def parameters(self, ensemble_member):
@@ -293,7 +296,7 @@ class TestDisconnectablePipe(TestCase):
         - Check that pipe becomes disconnected when flow is forced to zero
 
         """
-        case_connected = run_optimization_problem(
+        case_connected = run_esdl_mesido_optimization(
             self.ModelConnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -304,7 +307,7 @@ class TestDisconnectablePipe(TestCase):
         results_connected = case_connected.extract_results()
         q_connected = results_connected["Pipe1.Q"]
 
-        case_disconnected = run_optimization_problem(
+        case_disconnected = run_esdl_mesido_optimization(
             self.ModelDisconnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -346,7 +349,7 @@ class TestDisconnectablePipe(TestCase):
 
         """
 
-        case_linear = run_optimization_problem(
+        case_linear = run_esdl_mesido_optimization(
             self.ModelDisconnected,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -357,7 +360,7 @@ class TestDisconnectablePipe(TestCase):
         results_linear = case_linear.extract_results()
         q_linear = results_linear["Pipe1.Q"]
 
-        case_dw = run_optimization_problem(
+        case_dw = run_esdl_mesido_optimization(
             self.ModelDisconnectedDarcyWeisbach,
             base_folder=self.base_folder,
             esdl_file_name="sourcesink.esdl",
@@ -372,3 +375,9 @@ class TestDisconnectablePipe(TestCase):
         # (loss) in the system, we expect equal results.
         np.testing.assert_allclose(q_linear, q_dw)
         np.testing.assert_allclose(results_dw["Pipe1__is_disconnected"][1], 1.0)
+
+
+if __name__ == "__main__":
+
+    a = TestHeat()
+    a.test_heat_loss()
