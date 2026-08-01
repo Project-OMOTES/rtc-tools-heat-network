@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestElectricityTopo(TestCase):
@@ -25,7 +24,7 @@ class TestElectricityTopo(TestCase):
 
         base_folder = Path(example.__file__).resolve().parent.parent
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="enettopology.esdl",
@@ -35,6 +34,7 @@ class TestElectricityTopo(TestCase):
         )
 
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
         for demand in heat_problem.energy_system_components.get("electricity_demand", []):
             target = heat_problem.get_timeseries(f"{demand}.target_electricity_demand").values
@@ -48,5 +48,6 @@ class TestElectricityTopo(TestCase):
         ]
 
         for cable in removed_cables:
-            np.testing.assert_allclose(results[f"{cable}__investment_cost"], 0.0)
-            np.testing.assert_allclose(results[f"{cable}__en_max_current"], 0.0)
+            cable_id = name_to_id_map[cable]
+            np.testing.assert_allclose(results[f"{cable_id}__investment_cost"], 0.0)
+            np.testing.assert_allclose(results[f"{cable_id}__en_max_current"], 0.0)

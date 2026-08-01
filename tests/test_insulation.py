@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestInsulation(TestCase):
@@ -33,10 +32,10 @@ class TestInsulation(TestCase):
     4. Test in which not all LT sources are selected as Tmin of demands is not low enough
      --> maybe 3 and 4 can be combined --> so forinstance only LT source behind HEX is selected due
      to insulation of that Heating demand, but other HD can not be insulated far enough for LT
-     source on the primary network.(e.g. goal, minimise milp loss, does not solve the provided
+     source on the primary network.(e.g. goal, minimise heat loss, does not solve the provided
      cases)
     5. Test where TCO minimised, combination of investment cost of insulation vs lower Temperature
-     network, thus lower milp loss (and allowing cheaper LT producers).
+     network, thus lower heat loss (and allowing cheaper LT producers).
     #TODO: add test cases 2, 2b, 3, 4 and 5 as detailed above
     #TODO: maybe we can make COP heatpump dependent on the chosen network temperatures
     """
@@ -45,23 +44,23 @@ class TestInsulation(TestCase):
     def test_insulation_heatdemand(self):
         """
         Check that the best insulation class is selected when we optimize for minimal
-        milp production.
+        heat production.
 
         Checks:
         - That the correct insulation class is selected
         - Check that the other insulation classes are not selected
-        - Check that there is sufficient milp.
+        - Check that there is sufficient heat.
         - Check that the profile that is matched is as expected
 
         Missing:
-        - Energy conservation and milp to discharge (replace current check of sufficient milp)
+        - Energy conservation and heat to discharge (replace current check of sufficient heat)
 
         """
         import models.insulation.src.run_insulation as run_insulation
         from models.insulation.src.run_insulation import HeatProblem
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",
@@ -70,6 +69,14 @@ class TestInsulation(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        demand_f15e_id = name_to_id_map["HeatingDemand_f15e"]
+        demand_e6b3_id = name_to_id_map["HeatingDemand_e6b3"]
+        source_6783_id = name_to_id_map["ResidualHeatSource_6783"]
+        source_4539_id = name_to_id_map["ResidualHeatSource_4539"]
+        hp_cd41_id = name_to_id_map["HeatPump_cd41"]
+        storage_bce7_id = name_to_id_map["HeatStorage_bce7"]
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -77,53 +84,53 @@ class TestInsulation(TestCase):
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_A"],
+            results[f"{demand_f15e_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{demand_e6b3_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            results["HeatingDemand_f15e__demand_insulation_class_B"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_B"]
-            + results["HeatingDemand_f15e__demand_insulation_class_C"]
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            results[f"{demand_f15e_id}__demand_insulation_class_B"]
+            + results[f"{demand_e6b3_id}__demand_insulation_class_B"]
+            + results[f"{demand_f15e_id}__demand_insulation_class_C"]
+            + results[f"{demand_e6b3_id}__demand_insulation_class_C"]
         )
         np.testing.assert_allclose(
             0.0,
             other_demand_insulation_class,
             err_msg="Insulation B or C should not be selected for any demand",
         )
-        # Check that the milp sources (not connected to HP) + HP secondary > demand
+        # Check that the heat sources (not connected to HP) + HP secondary > demand
         tot_src = (
-            results["ResidualHeatSource_6783.Heat_source"]
-            + results["ResidualHeatSource_4539.Heat_source"]
-            + results["HeatPump_cd41.Secondary_heat"]
-            - results["HeatStorage_bce7.Heat_buffer"]
+            results[f"{source_6783_id}.Heat_source"]
+            + results[f"{source_4539_id}.Heat_source"]
+            + results[f"{hp_cd41_id}.Secondary_heat"]
+            - results[f"{storage_bce7_id}.Heat_buffer"]
         ) / 1.0e6
         tot_dmnd = (
-            results["HeatingDemand_f15e.Heat_demand"] + results["HeatingDemand_e6b3.Heat_demand"]
+            results[f"{demand_f15e_id}.Heat_demand"] + results[f"{demand_e6b3_id}.Heat_demand"]
         ) / 1.0e6
         np.testing.assert_array_less(
-            (tot_dmnd - tot_src), 0.0, err_msg="The milp source is not sufficient"
+            (tot_dmnd - tot_src), 0.0, err_msg="The heat source is not sufficient"
         )
         # Check that the demand load achieved == (base demand load * insulation level scaling
         # factor. Insulation level "A" should be active, which is index=0 in the insulation_levels
         # attributes index
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_f15e")[0:5]
+            heat_problem.base_demand_load(f"{demand_f15e_id}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_f15e.Heat_demand"],
+            results[f"{demand_f15e_id}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_f15e.Heat_demand",
         )
         np.testing.assert_allclose(
-            heat_problem.base_demand_load("HeatingDemand_e6b3")[0:5]
+            heat_problem.base_demand_load(f"{demand_e6b3_id}")[0:5]
             * heat_problem.insulation_levels()["scaling_factor"][0],
-            results["HeatingDemand_e6b3.Heat_demand"],
+            results[f"{demand_e6b3_id}.Heat_demand"],
             err_msg="The scaled demand value is incorrect: HeatingDemand_e6b3.Heat_demand",
         )
 
@@ -141,7 +148,7 @@ class TestInsulation(TestCase):
         from models.insulation.src.run_insulation import HeatProblemB
 
         base_folder = Path(run_insulation.__file__).resolve().parent.parent
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblemB,
             base_folder=base_folder,
             esdl_file_name="Insulation.esdl",
@@ -150,6 +157,10 @@ class TestInsulation(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        heating_demand_f15e_id = name_to_id_map["HeatingDemand_f15e"]
+        heating_demand_e6b3_id = name_to_id_map["HeatingDemand_e6b3"]
 
         test = TestCase()
         test.assertTrue(heat_problem.solver_stats["success"], msg="Optimisation did not succeed")
@@ -157,13 +168,13 @@ class TestInsulation(TestCase):
         # Check that only the demand for insulation A has been selected for every time step
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_e6b3__demand_insulation_class_A"],
+            results[f"{heating_demand_e6b3_id}__demand_insulation_class_A"],
             err_msg="The lowest demand (insulation level A) has not been selected for every time"
             " step",
         )
         other_demand_insulation_class = (
-            abs(results["HeatingDemand_e6b3__demand_insulation_class_B"])
-            + results["HeatingDemand_e6b3__demand_insulation_class_C"]
+            abs(results[f"{heating_demand_e6b3_id}__demand_insulation_class_B"])
+            + results[f"{heating_demand_e6b3_id}__demand_insulation_class_C"]
         )
 
         np.testing.assert_allclose(
@@ -175,7 +186,7 @@ class TestInsulation(TestCase):
         # Check that insulation level C is active for HeatingDemand_f15e
         np.testing.assert_allclose(
             1.0,
-            results["HeatingDemand_f15e__demand_insulation_class_C"],
+            results[f"{heating_demand_f15e_id}__demand_insulation_class_C"],
             err_msg="The lowest demand (insulation level C) has not been selected for every time"
             " step",
         )

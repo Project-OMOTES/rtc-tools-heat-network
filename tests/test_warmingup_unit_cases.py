@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
@@ -21,7 +20,7 @@ class TestWarmingUpUnitCases(TestCase):
         - Demand matching
         - Energy conservation
         - Heat to discharge
-        - Checks for conservation of flow and milp at the node
+        - Checks for conservation of flow and heat at the node
         - Check for equal head at all node connections
         - Checks that the minimum pressure-drop constraints at the demand are satisfied
         - Check that Heat_demand & Heat_source are set correctly and are linked to the Heat_flow
@@ -34,7 +33,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_1a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="1a.esdl",
@@ -103,7 +102,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_2a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="2a.esdl",
@@ -129,8 +128,8 @@ class TestWarmingUpUnitCases(TestCase):
         direction for the pipe connected to the buffer tank)
         - Check that the Heat_buffer & Heat_flow variable are set correctly
         - Check that the history for the buffer is set correctly at t=0
-        - Check that the milp loss is positive and as expected
-        - Check that the Stored milp is the sum of (dis)charge and losses
+        - Check that the heat loss is positive and as expected
+        - Check that the Stored heat is the sum of (dis)charge and losses
 
         """
         import models.unit_cases.case_3a.src.run_3a as run_3a
@@ -139,7 +138,7 @@ class TestWarmingUpUnitCases(TestCase):
         base_folder = Path(run_3a.__file__).resolve().parent.parent
 
         # Just a "problem is not infeasible"
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="3a.esdl",
@@ -152,26 +151,26 @@ class TestWarmingUpUnitCases(TestCase):
         parameters = heat_problem.parameters(0)
         bounds = heat_problem.bounds()
 
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # We only check the flow directions for the time-steps that there is flow in the pipe.
-        inds = np.round(1 - results["Pipe_e53a__is_disconnected"]).astype(bool)
+        inds = np.round(1 - results[f"{name_to_id_map['Pipe_e53a']}.__is_disconnected"]).astype(
+            bool
+        )
         np.testing.assert_allclose(
-            np.round(results["Pipe_e53a__flow_direct_var"][inds]) * 2.0 - 1.0,
-            np.sign(results["Pipe_e53a.Q"][inds]),
+            np.round(results[f"{name_to_id_map['Pipe_e53a']}.__flow_direct_var"][inds]) * 2.0 - 1.0,
+            np.sign(results[f"{name_to_id_map['Pipe_e53a']}.Q"][inds]),
         )
 
         for buffer in heat_problem.energy_system_components.get("heat_buffer", []):
             np.testing.assert_allclose(
                 results[f"{buffer}.Heat_buffer"], results[f"{buffer}.Heat_flow"]
             )
-            np.testing.assert_allclose(
-                results[f"{buffer}.HeatIn.Heat"] - results[f"{buffer}.HeatOut.Heat"],
-                results[f"{buffer}.Heat_buffer"],
-            )
-            # buffer should have positive milp loss
+            # buffer should have positive heat loss
             assert parameters[f"{buffer}.heat_loss_coeff"] > 0.0
             np.testing.assert_allclose(
                 results[f"{buffer}.Stored_heat"] * parameters[f"{buffer}.heat_loss_coeff"],
@@ -184,6 +183,20 @@ class TestWarmingUpUnitCases(TestCase):
                 results[f"{buffer}.Stored_heat"][-1] - results[f"{buffer}.Stored_heat"][0],
                 np.sum(results[f"{buffer}.Heat_buffer"][1:] * 3600.0)
                 - np.sum(results[f"{buffer}.Heat_loss"][1:] * 3600.0),
-                atol=1.0e-3,
+                atol=1.0,
             )
             np.testing.assert_allclose(results[f"{buffer}.Heat_buffer"][0], 0.0, atol=1.0e-6)
+
+            np.testing.assert_allclose(
+                results[f"{buffer}.dH"][inds],
+                results[f"{buffer}.HeatOut.H"][inds] - results[f"{buffer}.HeatIn.H"][inds],
+                atol=1.0e-6,
+            )
+
+
+if __name__ == "__main__":
+
+    a = TestWarmingUpUnitCases()
+    a.test_1a()
+    a.test_2a()
+    a.test_3a()

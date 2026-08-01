@@ -1,0 +1,149 @@
+from pathlib import Path
+from unittest import TestCase
+
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
+import numpy as np
+
+from utils_tests import demand_matching_test, electric_power_conservation_test, feasibility_test
+
+
+class TestMILPElectricSourceSinkStorage(TestCase):
+    def test_source_sink_storage(self):
+        """
+        Tests for an electricity network that consist out of a source, a sink and storage,
+        connected with electricity cables.
+
+        Checks:
+        - Check that the efficiency for charging and discharging is used proper to determine the
+        consumed and stored power
+        - Check that the battery is used to match demand
+        - Check that charging and discharging properly connected to the network (direction)
+        - Check that the is_charging variable is set correctly
+        - Checks that the use of is_charging variable gives the same results as without the use
+        of the binary is_charging variable.
+
+        """
+
+        import models.unit_cases_electricity.battery.src.example as example
+        from models.unit_cases_electricity.battery.src.example import ElectricityProblem
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+        tol = 1e-10
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="source_sink_storage.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        results = solution.extract_results()
+        parameters = solution.parameters(0)
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        feasibility_test(solution)
+
+        demand_matching_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        class ElectricityProblemDisc(ElectricityProblem):
+            def energy_system_options(self):
+                options = super().energy_system_options().copy()
+                options["electricity_storage_discrete_charge_variables"] = True
+                return options
+
+        solution_disc = run_esdl_mesido_optimization(
+            ElectricityProblemDisc,
+            base_folder=base_folder,
+            esdl_file_name="source_sink_storage.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries.csv",
+        )
+
+        results_disc = solution_disc.extract_results()
+
+        storage_name = solution.energy_system_components.get("electricity_storage")[0]
+        charge_eff = parameters[f"{storage_name}.charge_efficiency"]
+        discharge_eff = parameters[f"{storage_name}.discharge_efficiency"]
+
+        eff_power_change_bat = results[f"{storage_name}.Effective_power_charging"]
+
+        power_bat_network = results[f"{storage_name}.ElectricityIn.Power"]
+        power_discharging = results[f"{storage_name}.Power_discharging"]
+        power_charging = results[f"{storage_name}.Power_charging"]
+        stored_el = results[f"{storage_name}.Stored_electricity"]
+
+        cable_id = name_to_id_map["ElectricityCable_91c1"]
+        power_cable_bat = results[f"{cable_id}.ElectricityOut.Power"]
+        np.testing.assert_allclose(power_cable_bat, power_bat_network, atol=tol)
+        np.testing.assert_allclose(power_bat_network, power_charging - power_discharging, atol=tol)
+
+        power_discharging_disc = results_disc[f"{storage_name}.Power_discharging"]
+        power_charging_disc = results_disc[f"{storage_name}.Power_charging"]
+        np.testing.assert_allclose(power_discharging[1:], power_discharging_disc[1:], atol=tol)
+        np.testing.assert_allclose(power_charging[1:], power_charging_disc[1:], atol=tol)
+
+        for sol in [solution, solution_disc]:
+            count_discrete_path, count_discrete_var, count_discrete_state = 0.0, 0.0, 0.0
+            for var in sol.path_variables:
+                if sol.variable_is_discrete(var.name()):
+                    count_discrete_path += 1
+            for var in sol.extra_variables:
+                if sol.variable_is_discrete(var.name()):
+                    count_discrete_var += 1
+            for var in sol.algebraic_states:
+                if sol.variable_is_discrete(var):
+                    count_discrete_state += 1
+            np.testing.assert_allclose(count_discrete_var, 7.0)
+            if sol == solution:
+                np.testing.assert_allclose(0.0, count_discrete_state, atol=tol)
+            else:
+                np.testing.assert_allclose(1.0, count_discrete_state, atol=tol)
+
+        is_charging = np.asarray([float(i > 0) for i in power_charging])
+        # if battery is charging (1), ElectricityIn.Power and effective_power charging should be
+        # positive, else negative
+        bigger_then = all(is_charging * eff_power_change_bat >= 0)
+        smaller_then = all((1 - is_charging) * eff_power_change_bat <= 0)
+        self.assertTrue(bigger_then)
+        self.assertTrue(smaller_then)
+
+        bigger_then = all(is_charging * power_bat_network >= 0)
+        smaller_then = all((1 - is_charging) * power_bat_network <= 0)
+        self.assertTrue(bigger_then)
+        self.assertTrue(smaller_then)
+
+        # battery should be charging at atleast one timestep to overcome the difference between max
+        # production and demand
+        self.assertTrue(sum(is_charging) >= 1)
+
+        # stored electricity starts at 0
+        np.testing.assert_allclose(
+            stored_el[0],
+            0.0,
+            err_msg="The battery should be empty at the start to check if it operates and "
+            "predicted",
+        )
+
+        # stored electricity change should be equal to the effective power change
+        stored_change = stored_el[1:] - stored_el[:-1]
+        np.testing.assert_allclose(eff_power_change_bat[1:] * 3600, stored_change, atol=tol)
+
+        # effective power change while charging should be equal to efficiency * powerIn
+        np.testing.assert_allclose(
+            eff_power_change_bat * is_charging,
+            power_bat_network * is_charging * charge_eff,
+            atol=tol,
+        )
+        # effective power change while discharging should be equal to powerOut/efficiency
+        np.testing.assert_allclose(
+            eff_power_change_bat * (1 - is_charging),
+            power_bat_network * (1 - is_charging) / discharge_eff,
+            atol=tol,
+        )

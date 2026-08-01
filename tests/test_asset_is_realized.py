@@ -1,12 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestAssetIsRealized(TestCase):
@@ -16,7 +15,7 @@ class TestAssetIsRealized(TestCase):
         asset is realized variable. We want the asset only to become available once sufficient
         investments are made.
 
-        In this specific test we optimize to match the milp demand. However, the sources are not
+        In this specific test we optimize to match the heat demand. However, the sources are not
         available from the start as the cumulative invesments made at timestep 0 is 0. Furthermore,
         there is a cap on the investments that can be done per timestep. We expect the optimizer
         to find a solution that releases the sources as soon as possible in order to match demand
@@ -36,7 +35,7 @@ class TestAssetIsRealized(TestCase):
 
         # This is an optimization done over 25 timesteps with a cap on how quickly the cost
         # for the 2 producers can be realized
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblemPlacingOverTime,
             base_folder=base_folder,
             esdl_file_name="test_case_small_network_with_ates.esdl",
@@ -46,52 +45,52 @@ class TestAssetIsRealized(TestCase):
         )
 
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        prod_1_id = name_to_id_map["HeatProducer_1"]
+        prod_2_id = name_to_id_map["HeatProducer_2"]
 
         # First we test whether the investments made are below cap
         cap = 2.5e5 + 1.0e-3  # some small tolerance, CBC...
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_1__cumulative_investments_made_in_eur"]) <= cap
+            True, np.diff(results[f"{prod_1_id}__cumulative_investments_made_in_eur"]) <= cap
         )
         np.testing.assert_allclose(
-            True, np.diff(results["HeatProducer_2__cumulative_investments_made_in_eur"]) <= cap
+            True, np.diff(results[f"{prod_2_id}__cumulative_investments_made_in_eur"]) <= cap
         )
 
         # Now we test if the investments made are greater then the needed investments once the
         # asset is realized
-        inds_1 = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 1)
+        inds_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 1)
         np.testing.assert_allclose(
             True,
             (
-                results["HeatProducer_1__cumulative_investments_made_in_eur"][inds_1]
-                >= results["HeatProducer_1__investment_cost"]
-                + results["HeatProducer_1__installation_cost"]
+                results[f"{prod_1_id}__cumulative_investments_made_in_eur"][inds_1]
+                >= results[f"{prod_1_id}__investment_cost"]
+                + results[f"{prod_1_id}__installation_cost"]
                 - 1.0e-3
             ),
         )
-        inds_2 = np.where(np.round(results["HeatProducer_2__asset_is_realized"]) == 1)
+        inds_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 1)
         np.testing.assert_allclose(
             True,
             (
-                results["HeatProducer_2__cumulative_investments_made_in_eur"][inds_2]
-                >= results["HeatProducer_2__investment_cost"]
-                + results["HeatProducer_2__installation_cost"]
+                results[f"{prod_2_id}__cumulative_investments_made_in_eur"][inds_2]
+                >= results[f"{prod_2_id}__investment_cost"]
+                + results[f"{prod_2_id}__installation_cost"]
                 - 1.0e-3
             ),
         )
 
         # Here we test that the asset is not used until it is actually realized
-        inds_not_1 = np.where(np.round(results["HeatProducer_1__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"][inds_not_1], 0.0, atol=1e-6
-        )
-        inds_not_2 = np.where(np.round(results["HeatProducer_2__asset_is_realized"]) == 0)
-        np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"][inds_not_2], 0.0, atol=1e-6
-        )
+        inds_not_1 = np.where(np.round(results[f"{prod_1_id}__asset_is_realized"]) == 0)
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_1], 0.0, atol=1e-6)
+        inds_not_2 = np.where(np.round(results[f"{prod_2_id}__asset_is_realized"]) == 0)
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_not_2], 0.0, atol=1e-6)
 
         # Here we test that the asset is actually used once it is realized
-        np.testing.assert_allclose(results["HeatProducer_1.Heat_source"][inds_1] > 0.0, True)
-        np.testing.assert_allclose(results["HeatProducer_2.Heat_source"][inds_2] > 0.0, True)
+        np.testing.assert_allclose(results[f"{prod_1_id}.Heat_source"][inds_1] > 0.0, True)
+        np.testing.assert_allclose(results[f"{prod_2_id}.Heat_source"][inds_2] > 0.0, True)
 
 
 if __name__ == "__main__":

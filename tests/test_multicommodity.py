@@ -1,31 +1,34 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
 
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-
-from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
+from utils_tests import (
+    demand_matching_test,
+    electric_power_conservation_test,
+    energy_conservation_test,
+    heat_to_discharge_test,
+)
 
 
 class TestMultiCommodityHeatPump(TestCase):
     """Test to verify that the optimisation problem can handle multicommodity problems, relating
-    electricity and milp"""
+    electricity and heat"""
 
     def test_heat_pump_elec_min_heat(self):
         """
         Verify that the minimisation of the heat_source used, and thus the optimization should
-        exploit the heatpump as much as possible, and minimum use of milp source at secondary
+        exploit the heatpump as much as possible, and minimum use of heat source at secondary
         side.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
-        - Checks for milp pump energy conservation and COP modelling
+        - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
 
         """
@@ -34,7 +37,7 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblem2,
             base_folder=base_folder,
             esdl_file_name="heat_pump_elec.esdl",
@@ -43,30 +46,35 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         demand_matching_test(solution, results)
-        energy_conservation_test(solution, results)
+        energy_conservation_test(solution, results, atol_total=11)
         heat_to_discharge_test(solution, results)
 
-        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
-        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
-        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
+        gc_id = name_to_id_map["GenericConversion_3d3f"]
+        cable_id = name_to_id_map["ElectricityCable_9d3b"]
+        heatsource_prim_id = name_to_id_map["ResidualHeatSource_61b8"]
+        heatsource_sec_id = name_to_id_map["ResidualHeatSource_aec9"]
+        heatdemand_sec_id = name_to_id_map["HeatingDemand_18aa"]
+        heatdemand_prim_id = name_to_id_map["HeatingDemand_3322"]
+        elec_prod_id = name_to_id_map["ElectricityProducer_ac2e"]
 
-        demand_matching_test(solution, results)
-        heat_to_discharge_test(solution, results)
-        energy_conservation_test(solution, results)
+        v_min_hp = solution.parameters(0)[f"{gc_id}.min_voltage"]
+        i_max = solution.parameters(0)[f"{cable_id}.max_current"]
+        cop = solution.parameters(0)[f"{gc_id}.COP"]
 
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
+        heatsource_prim = results[f"{heatsource_prim_id}.Heat_source"]
+        heatsource_sec = results[f"{heatsource_sec_id}.Heat_source"]
+        heatpump_power = results[f"{gc_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{gc_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
+        heatdemand_sec = results[f"{heatdemand_sec_id}.Heat_demand"]
+        heatdemand_prim = results[f"{heatdemand_prim_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
 
-        heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
-        heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
+        heatpump_voltage = results[f"{gc_id}.ElectricityIn.V"]
+        heatpump_current = results[f"{gc_id}.ElectricityIn.I"]
 
         np.testing.assert_allclose(heatsource_sec, 0.0, atol=1.0e-3)
 
@@ -88,14 +96,14 @@ class TestMultiCommodityHeatPump(TestCase):
         """
         Verify the minimization of the heat_source used. However, due to limitations in the
         electricity transport through the cables, the power to the heatpump is limited. This in
-        turn limits the milp produced by the heatpump which is then not sufficient for the total
-        heating demand, resulting in milp production by the secondary heatsource (milp produced by
+        turn limits the heat produced by the heatpump which is then not sufficient for the total
+        heating demand, resulting in heat production by the secondary heatsource (heat produced by
         this asset is not 0).
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
-        - Checks for milp pump energy conservation and COP modelling
+        - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
 
         """
@@ -104,7 +112,7 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             HeatProblem,
             base_folder=base_folder,
             esdl_file_name="heat_pump_elec.esdl",
@@ -113,26 +121,35 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
 
-        v_min_hp = solution.parameters(0)["GenericConversion_3d3f.min_voltage"]
-        i_max = solution.parameters(0)["ElectricityCable_9d3b.max_current"]
-        cop = solution.parameters(0)["GenericConversion_3d3f.COP"]
+        gc_id = name_to_id_map["GenericConversion_3d3f"]
+        cable_id = name_to_id_map["ElectricityCable_9d3b"]
+        heatsource_prim_id = name_to_id_map["ResidualHeatSource_61b8"]
+        heatsource_sec_id = name_to_id_map["ResidualHeatSource_aec9"]
+        heatdemand_sec_id = name_to_id_map["HeatingDemand_18aa"]
+        heatdemand_prim_id = name_to_id_map["HeatingDemand_3322"]
+        elec_prod_id = name_to_id_map["ElectricityProducer_ac2e"]
 
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
+        v_min_hp = solution.parameters(0)[f"{gc_id}.min_voltage"]
+        i_max = solution.parameters(0)[f"{cable_id}.max_current"]
+        cop = solution.parameters(0)[f"{gc_id}.COP"]
 
-        heatpump_voltage = results["GenericConversion_3d3f.ElectricityIn.V"]
-        heatpump_current = results["GenericConversion_3d3f.ElectricityIn.I"]
+        heatsource_prim = results[f"{heatsource_prim_id}.Heat_source"]
+        heatsource_sec = results[f"{heatsource_sec_id}.Heat_source"]
+        heatpump_power = results[f"{gc_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{gc_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
+        heatdemand_sec = results[f"{heatdemand_sec_id}.Heat_demand"]
+        heatdemand_prim = results[f"{heatdemand_prim_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
+
+        heatpump_voltage = results[f"{gc_id}.ElectricityIn.V"]
+        heatpump_current = results[f"{gc_id}.ElectricityIn.I"]
 
         # check that heatpump isnot providing enough energy to secondary side for demanded
         np.testing.assert_array_less(
@@ -160,12 +177,12 @@ class TestMultiCommodityHeatPump(TestCase):
     def test_heat_pump_elec_min_elec(self):
         """
         Verify that minimisation of the electricity power used, and thus
-        exploiting the heatpump only for milp that cannot directly be covered by other sources.
+        exploiting the heatpump only for heat that cannot directly be covered by other sources.
 
         Checks:
-        - Standard checks for demand matching, milp to discharge and energy conservation
+        - Standard checks for demand matching, heat to discharge and energy conservation
         - Checks for sufficient production
-        - Checks for milp pump energy conservation and COP modelling
+        - Checks for heat pump energy conservation and COP modelling
         - Checks for Power = I * V at the heatpump
 
         """
@@ -176,7 +193,7 @@ class TestMultiCommodityHeatPump(TestCase):
 
         base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
 
-        solution = run_optimization_problem(
+        solution = run_esdl_mesido_optimization(
             ElectricityProblem,
             base_folder=base_folder,
             esdl_file_name="heat_pump_elec.esdl",
@@ -185,22 +202,30 @@ class TestMultiCommodityHeatPump(TestCase):
             input_timeseries_file="timeseries_import.xml",
         )
         results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
 
         demand_matching_test(solution, results)
         energy_conservation_test(solution, results)
         heat_to_discharge_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        gc_id = name_to_id_map["GenericConversion_3d3f"]
+        heatsource_prim_id = name_to_id_map["ResidualHeatSource_61b8"]
+        heatdemand_prim_id = name_to_id_map["HeatingDemand_3322"]
+        elec_prod_id = name_to_id_map["ElectricityProducer_ac2e"]
 
         tol = 1e-6
-        heatsource_prim = results["ResidualHeatSource_61b8.Heat_source"]
-        # heatsource_sec = results["ResidualHeatSource_aec9.Heat_source"]
-        heatpump_power = results["GenericConversion_3d3f.Power_elec"]
-        heatpump_heat_prim = results["GenericConversion_3d3f.Primary_heat"]
-        heatpump_heat_sec = results["GenericConversion_3d3f.Secondary_heat"]
-        heatpump_disabled = results["GenericConversion_3d3f__disabled"]
-        # heatdemand_sec = results["HeatingDemand_18aa.Heat_demand"]
-        heatdemand_prim = results["HeatingDemand_3322.Heat_demand"]
-        elec_prod_power = results["ElectricityProducer_ac2e.ElectricityOut.Power"]
-        # pipe_sec_out_hp_disconnected = results["Pipe_408e__is_disconnected"]
+
+        heatsource_prim = results[f"{heatsource_prim_id}.Heat_source"]
+        # heatsource_sec = results[f"{name_to_id_map['ResidualHeatSource_aec9']}.Heat_source"]
+        heatpump_power = results[f"{gc_id}.Power_elec"]
+        heatpump_heat_prim = results[f"{gc_id}.Primary_heat"]
+        heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
+        heatpump_disabled = results[f"{gc_id}.__disabled"]
+        # heatdemand_sec = results[f"{name_to_id_map['HeatingDemand_18aa']}.Heat_demand"]
+        heatdemand_prim = results[f"{heatdemand_prim_id}.Heat_demand"]
+        elec_prod_power = results[f"{elec_prod_id}.ElectricityOut.Power"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
 
         # check that heatpump is not used:
         np.testing.assert_allclose(heatpump_power, np.zeros(len(heatpump_power)), atol=tol)
@@ -212,3 +237,274 @@ class TestMultiCommodityHeatPump(TestCase):
 
         # check that prim producer is providing more energy to heatpump and primary demand
         np.testing.assert_array_less(heatdemand_prim - (heatsource_prim - heatpump_heat_prim), 0)
+
+    def test_air_to_water_heat_pump_elec_min_elec(self):
+        """
+        Verify that minimisation of the electricity power used, and thus exploiting the heatpump
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation and elect
+        power conervation
+        - Checks for Power = I * V at the heatpump
+
+        """
+        import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            ElectricityProblem,
+        )
+
+        base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
+
+        solution = run_esdl_mesido_optimization(
+            ElectricityProblem,
+            base_folder=base_folder,
+            esdl_file_name="air_to_water_heat_pump_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+        electric_power_conservation_test(solution, results)
+
+        tol = 1e-6
+        hp_id = name_to_id_map["HeatPump_0ce6"]
+
+        # TODO add addtional checks for air to water heat pump like COP etc, and maybe add other
+        # heat sources
+
+        # check that electricity contraint for power is working
+        np.testing.assert_allclose(
+            results[f"{hp_id}.Power_elec"],
+            results[f"{hp_id}.ElectricityIn.I"] * results[f"{hp_id}.ElectricityIn.V"],
+            atol=tol,
+        )
+
+    def test_heat_pump_elec_price_profile(self):
+        """
+        Verify that minimisation of the electricity power used when price of electricity is high.
+
+        Checks:
+        - Standard checks for demand matching, heat to discharge and energy conservation
+        - Check that the producer not connected to the heat pump is only used when electricity
+        prices of HP are high
+        - Check calculation of variable operational costs which include the electricity prices
+
+        """
+        import models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec as run_hp_elec
+        from models.unit_cases_electricity.heat_pump_elec.src.run_hp_elec import (
+            ElectricityProblemPriceProfile,
+        )
+
+        base_folder = Path(run_hp_elec.__file__).resolve().parent.parent
+
+        class TestProblem(ElectricityProblemPriceProfile):
+            def solver_options(self):
+                options = super().solver_options()
+                # For some reason the test requires cbc, highs fails for strange reasons
+                options["solver"] = "cbc"
+                return options
+
+        solution = run_esdl_mesido_optimization(
+            TestProblem,
+            base_folder=base_folder,
+            esdl_file_name="heat_pump_elec_priceprofile.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_elec.csv",
+        )
+
+        results = solution.extract_results()
+        name_to_id_map = solution.esdl_asset_name_to_id_map
+
+        demand_matching_test(solution, results)
+        energy_conservation_test(solution, results)
+        heat_to_discharge_test(solution, results)
+
+        gc_id = name_to_id_map["GenericConversion_3d3f"]
+        heatdemand_sec_id = name_to_id_map["HeatingDemand_18aa"]
+
+        heatpump_power = results[f"{gc_id}.Power_elec"]
+        heatpump_heat_sec = results[f"{gc_id}.Secondary_heat"]
+        heatpump_disabled = results[f"{gc_id}.__disabled"]
+        heatdemand_sec = results[f"{heatdemand_sec_id}.Heat_demand"]
+        var_opex_hp = results[f"{gc_id}__variable_operational_cost"]
+        # pipe_sec_out_hp_disconnected = results["Pipe_408e.__is_disconnected"]
+
+        # check that heatpump is not used when electricity price is high:
+        price_profile = solution.get_timeseries("Electr.price_profile").values
+        price_profile_max = price_profile == max(price_profile)
+        self.assertTrue(all(price_profile_max >= heatpump_disabled))
+        self.assertTrue(all(price_profile_max[1:] * heatpump_power[1:] == 0))
+
+        # check that heatpump is producing all heat for the heatdemand on the secondary side when
+        # electricity price is low
+        ind_hp = np.asarray(1 - price_profile_max).nonzero()
+        np.testing.assert_allclose(heatpump_heat_sec[ind_hp], heatdemand_sec[ind_hp])
+
+        # check variable_operational_cost for heat pump including the price_profile of electricity
+        var_opex_hp_non_el = 1e-6  # var_opex in ESDL for HP
+        timestep = 1.0  # hr
+        var_opex_hp_calc = sum(
+            (price_profile[1:] + var_opex_hp_non_el) * heatpump_power[1:] * timestep
+        )
+        np.testing.assert_allclose(var_opex_hp_calc, var_opex_hp)
+
+
+class TestGeothermalSourceElec(TestCase):
+
+    def test_geothermal_source(self):
+        """
+        This tests the electric behavior of the regular geothermal source asset.
+
+        It first does the standard checks, and then the equations that are added to the geothermal
+        asset, including the electricity power consumption.
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        parameters = heat_problem.parameters(0)
+
+        geothermal_id = name_to_id_map["GeothermalSource_a77b"]
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            parameters[f"{geothermal_id}.cop"] * results[f"{geothermal_id}.Power_elec"],
+            results[f"{geothermal_id}.Heat_source"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(
+            parameters[f"{geothermal_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{geothermal_id}.Heat_source"][1:])
+            / parameters[f"{geothermal_id}.cop"],
+            results[f"{geothermal_id}__variable_operational_cost"],
+        )
+
+    def test_geothermal_source_elec(self):
+        """
+        This tests checks the electric geothermal producer asset with an electricity port.
+
+        It does all the same checks as with the regular geothermal asset, plus tests on the
+        electricity in port.
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo_elec.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+        parameters = heat_problem.parameters(0)
+
+        geothermal_id = name_to_id_map["GeothermalSource_a77b"]
+        e_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            results[f"{e_producer_id}.ElectricityOut.Power"],
+            results[f"{geothermal_id}.ElectricityIn.Power"],
+        )
+        np.testing.assert_allclose(
+            parameters[f"{geothermal_id}.cop"] * results[f"{geothermal_id}.Power_elec"],
+            results[f"{geothermal_id}.Heat_source"],
+        )
+
+        # Test electricity port
+        np.testing.assert_allclose(
+            results[f"{geothermal_id}.ElectricityIn.Power"],
+            results[f"{geothermal_id}.Power_elec"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(
+            parameters[f"{geothermal_id}.variable_operational_cost_coefficient"]
+            * sum(results[f"{geothermal_id}.Heat_source"][1:])
+            / parameters[f"{geothermal_id}.cop"],
+            results[f"{geothermal_id}__variable_operational_cost"],
+        )
+
+    def test_geothermal_source_elec_no_cop(self):
+        """
+        This tests checks the electric geothermal producer asset when no cop is provided.
+
+        It is the same test case as with the regular one, but in this case, the cop is not
+        provided and it assigned a value of 0.0, resulting in no power related costs.
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as example
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        base_folder = Path(example.__file__).resolve().parent.parent
+
+        heat_problem = run_esdl_mesido_optimization(
+            SourcePipeSink,
+            base_folder=base_folder,
+            esdl_file_name="sourcesink_with_geo_elec_no_cop.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        geothermal_id = name_to_id_map["GeothermalSource_a77b"]
+        e_producer_id = name_to_id_map["ElectricityProducer_4dde"]
+
+        # Standard checks.
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+        electric_power_conservation_test(heat_problem, results)
+
+        # Equations check
+        np.testing.assert_allclose(
+            results[f"{e_producer_id}.ElectricityOut.Power"],
+            results[f"{geothermal_id}.ElectricityIn.Power"],
+        )
+        np.testing.assert_allclose(results[f"{e_producer_id}.ElectricityOut.Power"], 0.0)
+
+        # Test electricity port
+        np.testing.assert_allclose(
+            results[f"{geothermal_id}.ElectricityIn.Power"],
+            results[f"{geothermal_id}.Power_elec"],
+        )
+
+        # Variable operational cost check.
+        np.testing.assert_allclose(0.0, results[f"{geothermal_id}__variable_operational_cost"])

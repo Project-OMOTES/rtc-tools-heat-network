@@ -1,13 +1,11 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestMILPGasMultiDemandSourceNode(TestCase):
@@ -35,7 +33,7 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
                 self.gas_network_settings["pipe_minimum_pressure"] = 0.0
                 return options
 
-        heat_problem = run_optimization_problem(
+        heat_problem = run_esdl_mesido_optimization(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="test.esdl",
@@ -44,6 +42,12 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = heat_problem.extract_results()
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        gas_demand_47d0_id = name_to_id_map["GasDemand_47d0"]
+        gas_demand_7978_id = name_to_id_map["GasDemand_7978"]
+        gas_producer_3573_id = name_to_id_map["GasProducer_3573"]
+        gas_producer_a977_id = name_to_id_map["GasProducer_a977"]
 
         # Test head at node
         for node, connected_pipes in heat_problem.energy_system_topology.gas_nodes.items():
@@ -58,8 +62,8 @@ class TestMILPGasMultiDemandSourceNode(TestCase):
 
         # Test if head is going down
         np.testing.assert_allclose(
-            results["GasDemand_47d0.Gas_demand_mass_flow"]
-            + results["GasDemand_7978.Gas_demand_mass_flow"],
-            results["GasProducer_3573.Gas_source_mass_flow"]
-            + results["GasProducer_a977.Gas_source_mass_flow"],
+            results[f"{gas_demand_47d0_id}.Gas_demand_mass_flow"]
+            + results[f"{gas_demand_7978_id}.Gas_demand_mass_flow"],
+            results[f"{gas_producer_3573_id}.Gas_source_mass_flow"]
+            + results[f"{gas_producer_a977_id}.Gas_source_mass_flow"],
         )

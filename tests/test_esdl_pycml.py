@@ -1,12 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestESDL(TestCase):
@@ -56,3 +56,12 @@ class TestESDL(TestCase):
     #     np.testing.assert_allclose(
     #         case_python._objective_values[0], case_esdl._objective_values, rtol=1e-5, atol=1e-5
     #     )
+
+
+if __name__ == "__main__":
+    import time
+
+    start_time = time.time()
+    a = TestESDL()
+    a.test_basic_source_and_demand_heat()
+    temp = 0

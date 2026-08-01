@@ -1,15 +1,16 @@
 
-Design Toolkit's optimizer documentation
-========================================
+Multi-Energy-Systems Integrated Design and Operations Documentation
+===================================================================
 
-This is the documentation for optimizer routine, to optimize the conceptional design of heating networks.
+This is the documentation for MESIDO.
 
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Optimizer routine
+   :maxdepth: 4
+   :caption: MESIDO
 
    theory/index
+   dev_docs/index
    support
    bibliography
 

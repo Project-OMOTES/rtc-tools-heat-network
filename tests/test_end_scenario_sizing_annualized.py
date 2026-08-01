@@ -1,19 +1,19 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
 
 
 class TestEndScenarioSizingAnnualized(TestCase):
     """
     Tests for end scenario sizing with annualized costs in a small network with optional assets.
 
-    This class tests two models for a milp network: with
+    This class tests two models for a heat network: with
     and without annualized costs. It asserts the following:
     1. Under some conditions, the objective value of the annualized model is equal to the solution
     from the non annualized one.
@@ -35,7 +35,7 @@ class TestEndScenarioSizingAnnualized(TestCase):
         from models.test_case_small_network_optional_assets_annualized.src import (
             run_annualized,
         )
-        from rtctools_heat_network.financial_mixin import calculate_annuity_factor
+        from mesido.financial_mixin import calculate_annuity_factor
 
         base_folder = Path(run_annualized.__file__).resolve().parent.parent
 
@@ -96,27 +96,23 @@ class TestEndScenarioSizingAnnualized(TestCase):
         )
 
         results = solution_annualized_cost.extract_results()
+        name_to_id_map = solution_annualized_cost.esdl_asset_name_to_id_map
         heat_producers = [1, 2]
         # Number of decimal positions for test accuracy
         decimal = 4
         for i in heat_producers:
+            producer_id = name_to_id_map[f"HeatProducer_{i}"]
             investment_and_installation_cost = (
-                results[f"HeatProducer_{i}__investment_cost"]
-                + results[f"HeatProducer_{i}__installation_cost"]
+                results[f"{producer_id}__investment_cost"]
+                + results[f"{producer_id}__installation_cost"]
             )
+            esdl_asset = solution_annualized_cost.esdl_assets[producer_id]
             # These are the same parameters used by the model from the ESDL file:
-            asset_id = solution_annualized_cost.esdl_asset_name_to_id_map[f"HeatProducer_{i}"]
-            years_asset_life = solution_annualized_cost.esdl_assets[asset_id].attributes[
-                "technicalLifetime"
-            ]
-            discount_rate = (
-                solution_annualized_cost.esdl_assets[asset_id]
-                .attributes["costInformation"]
-                .discountRate.value
-            ) / 100
+            years_asset_life = esdl_asset.attributes["technicalLifetime"]
+            discount_rate = (esdl_asset.attributes["costInformation"].discountRate.value) / 100
             # TODO: Handle if NoneType
             discount_factor = calculate_annuity_factor(discount_rate, years_asset_life)
-            annualized_capex = results[f"HeatProducer_{i}__annualized_capex"]
+            annualized_capex = results[f"{producer_id}__annualized_capex"]
             # # Assertion 3: annualized capex matches the discounted investment
             # # and installation cost
             np.testing.assert_almost_equal(

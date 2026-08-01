@@ -1,6 +1,6 @@
-from rtctools.util import run_optimization_problem
+from mesido.qth_not_maintained.qth_mixin import HeadLossOption
 
-from rtctools_heat_network.qth_not_maintained.qth_mixin import HeadLossOption
+from rtctools.util import run_optimization_problem
 
 if __name__ == "__main__":
     from double_pipe_qth import SinglePipeQTH
@@ -11,10 +11,10 @@ else:
 class SinglePipeQTHNoHeadLoss(SinglePipeQTH):
     model_name = "SinglePipeQTH"
 
-    def heat_network_options(self):
-        options = super().heat_network_options()
-        self.heat_network_settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
-        return options
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+        return settings
 
 
 if __name__ == "__main__":

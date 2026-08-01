@@ -1,3 +1,9 @@
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.physics_mixin import PhysicsMixin
+from mesido.workflows.io.write_output import ScenarioOutput
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -8,11 +14,6 @@ from rtctools.optimization.linearized_order_goal_programming_mixin import (
     LinearizedOrderGoalProgrammingMixin,
 )
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.physics_mixin import PhysicsMixin
 
 
 class TargetDemandGoal(Goal):
@@ -91,6 +92,7 @@ class MinimizeElectricityGoal(Goal):
 
 
 class HeatProblem(
+    ScenarioOutput,
     _GoalsAndOptions,
     PhysicsMixin,
     LinearizedOrderGoalProgrammingMixin,
@@ -111,10 +113,14 @@ class HeatProblem(
 
     def energy_system_options(self):
         options = super().energy_system_options()
-        self.heat_network_settings["minimum_velocity"] = 0.001
         options["heat_loss_disconnected_pipe"] = True
 
         return options
+
+    def update_heat_network_settings(self):
+        settings = super().update_heat_network_settings()
+        settings["minimum_velocity"] = 0.001
+        return settings
 
 
 class HeatProblemTvar(HeatProblem):
@@ -122,7 +128,9 @@ class HeatProblemTvar(HeatProblem):
         options = super().solver_options()
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
-        highs_options["mip_rel_gap"] = 0.01
+        highs_options["mip_rel_gap"] = 0.0001
+        highs_options["presolve"] = "off"
+
         return options
 
     def temperature_carriers(self):
@@ -130,11 +138,17 @@ class HeatProblemTvar(HeatProblem):
 
     def temperature_regimes(self, carrier):
         temperatures = []
-        if carrier == 7212673879469902607010:
+        if carrier == "72126c73-87e9-4bf6-99cf-d02a6c07010c":
             # supply
             temperatures = [85.0, 90.0]
 
         return temperatures
+
+    def times(self, variable=None) -> np.ndarray:
+        """
+        Shorten the timeseries to speed up the test, when highs is used as a solver.
+        """
+        return super().times(variable)[:10]
 
 
 if __name__ == "__main__":

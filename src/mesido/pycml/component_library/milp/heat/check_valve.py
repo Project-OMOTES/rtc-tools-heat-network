@@ -1,0 +1,37 @@
+from mesido.pycml import DiscreteVariable
+from mesido.pycml.pycml_mixin import add_variables_documentation_automatically
+
+from ._non_storage_component_source_type import _NonStorageComponentSourceType
+
+
+@add_variables_documentation_automatically
+class CheckValve(_NonStorageComponentSourceType):
+    """
+    The check valve allows the fluid to flow in only one direction. This is done with constraints
+    in the HeatMixin.
+
+    Variables created:
+        {add_variable_names_for_documentation_here}
+
+    Parameters:
+        name : The name of the asset. \n
+        modifiers : Dictionary with asset information.
+
+    """
+
+    def __init__(self, name, **modifiers):
+        super().__init__(
+            name,
+            **self.merge_modifiers(
+                dict(
+                    Q=dict(min=0.0),
+                ),
+                modifiers,
+            ),
+        )
+
+        self.component_type = "check_valve"
+
+        self.add_variable(DiscreteVariable, "__status_var", min=0.0, max=1.0)
+
+        self.add_equation((self.HeatIn.Heat - self.HeatOut.Heat) / self.Heat_nominal)

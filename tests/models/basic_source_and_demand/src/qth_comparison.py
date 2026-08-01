@@ -1,3 +1,11 @@
+from mesido.component_type_mixin import ModelicaComponentTypeMixin
+from mesido.esdl.esdl_mixin import ESDLMixin
+from mesido.pycml.pycml_mixin import PyCMLMixin
+from mesido.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
+    BoundsToPipeFlowDirectionsMixin,
+)
+from mesido.qth_not_maintained.qth_mixin import QTHMixin
+
 import numpy as np
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -9,14 +17,6 @@ from rtctools.optimization.homotopy_mixin import HomotopyMixin
 from rtctools.optimization.modelica_mixin import ModelicaMixin
 from rtctools.optimization.timeseries import Timeseries
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.component_type_mixin import ModelicaComponentTypeMixin
-from rtctools_heat_network.esdl.esdl_mixin import ESDLMixin
-from rtctools_heat_network.pycml.pycml_mixin import PyCMLMixin
-from rtctools_heat_network.qth_not_maintained.bounds_to_pipe_flow_directions_mixin import (
-    BoundsToPipeFlowDirectionsMixin,
-)
-from rtctools_heat_network.qth_not_maintained.qth_mixin import QTHMixin
 
 if __name__ == "__main__":
     from model_qth import Model
@@ -30,13 +30,15 @@ class TargetDemandGoal(Goal):
     order = 1
 
     def __init__(self, optimization_problem):
-        self.target_min = optimization_problem.get_timeseries("demand.target_heat_demand")
-        self.target_max = optimization_problem.get_timeseries("demand.target_heat_demand")
+        demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
+        self.target_min = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
+        self.target_max = optimization_problem.get_timeseries(f"{demand_id}.target_heat_demand")
         self.function_range = (0.0, 2e5)
         self.function_nominal = 1e5
 
     def function(self, optimization_problem, ensemble_member):
-        return optimization_problem.state("demand.Heat_demand")
+        demand_id = optimization_problem.esdl_asset_name_to_id_map["demand"]
+        return optimization_problem.state(f"{demand_id}.Heat_demand")
 
 
 class _GoalsAndOptions:
@@ -97,7 +99,7 @@ class QTHESDL(
     @property
     def heat_network_flow_directions(self):
         pipes = self.energy_system_components["heat_pipe"]
-        return {p: "__fixed_positive_flow" for p in pipes}
+        return dict.fromkeys(pipes, "__fixed_positive_flow")
 
     def constant_inputs(self, ensemble_member):
         inputs = super().constant_inputs(ensemble_member)

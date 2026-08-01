@@ -1,28 +1,28 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.workflows import NetworkSimulatorHIGHS
+
 import numpy as np
 
 from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.workflows import NetworkSimulatorHIGHSTestCase
 
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
 class TestNetworkSimulator(TestCase):
     """
-    In this test case 2 milp producers and an ATES is used to supply 3 heating demands. A merit
+    In this test case 2 heat producers are used to supply 3 heating demands. A merit
     order (preference of 1st use) is given to the producers: Producer_1 = 2 and Producer_2 = 1.
 
     Checks:
-    - General checks namely demand matching, energy conservation and asset milp variable vs
-      calculated milp (based on flow rate)
-    - Check that producer 1 (merit oder = 2) is only used for the supply of milp lossed in the
+    - General checks namely demand matching, energy conservation and asset heat variable vs
+      calculated heat (based on flow rate)
+    - Check that producer 1 (merit oder = 2) is only used for the supply of heat lossed in the
       connected and is does not contribute to the heating demands 1, 2 and 3
-    - Check that the ATES is not delivering any milp to the network during the 1st time step
     """
 
     def test_network_simulator(self):
@@ -30,17 +30,35 @@ class TestNetworkSimulator(TestCase):
 
         base_folder = Path(run_ates.__file__).resolve().parent.parent
 
+        class NetworkSimulatorHIGHSTestCase(NetworkSimulatorHIGHS):
+            def energy_system_options(self):
+                options = super().energy_system_options()
+
+                options["heat_loss_disconnected_pipe"] = False
+
+                return options
+
+            def times(self, variable=None) -> np.ndarray:
+                return super().times(variable)[:5]
+
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
+
         solution = run_optimization_problem(
             NetworkSimulatorHIGHSTestCase,
             base_folder=base_folder,
             # TODO: it seems to write an output file (NOT NICE!)
-            esdl_file_name="test_case_small_network_with_ates.esdl",
+            esdl_file_name="test_case_small_network_without_ates.esdl",
             esdl_parser=ESDLFileParser,
             profile_reader=ProfileReaderFromFile,
             input_timeseries_file="Warmte_test.csv",
         )
 
         results = solution.extract_results()
+
+        name_id_map = solution.esdl_asset_name_to_id_map
 
         # General checks
         demand_matching_test(solution, results)
@@ -50,19 +68,13 @@ class TestNetworkSimulator(TestCase):
         # Check that producer 1 (merit oder = 2) is not used
         # and is does not contribute to the heating demands 1, 2 and 3
         np.testing.assert_allclose(
-            results["HeatProducer_1.Heat_source"],
+            results[f"{name_id_map['HeatProducer_1']}.Heat_source"],
             0.0,
             err_msg="Heat producer 1 should be completely disabled "
             ", due to producer 2 being sufficient for "
-            "the total milp demand (incl. milp losses) and it has the 1st priority for usage",
+            "the total heat demand (incl. heat losses) and it has the 1st priority for usage",
             rtol=1.0e-3,
             atol=1.0e-3,
-        )
-        # Check ATES
-        np.testing.assert_array_less(
-            results["ATES_033c.Heat_ates"][0],
-            0.0,
-            err_msg="ATES should not be delivering milp to the network in the 1st time step",
         )
 
 

@@ -1,14 +1,12 @@
 from pathlib import Path
 from unittest import TestCase
 
+from mesido.esdl.esdl_parser import ESDLFileParser
+from mesido.esdl.profile_parser import ProfileReaderFromFile
+from mesido.head_loss_class import HeadLossOption
+from mesido.util import run_esdl_mesido_optimization
+
 import numpy as np
-
-
-from rtctools.util import run_optimization_problem
-
-from rtctools_heat_network.esdl.esdl_parser import ESDLFileParser
-from rtctools_heat_network.esdl.profile_parser import ProfileReaderFromFile
-from rtctools_heat_network.head_loss_class import HeadLossOption
 
 
 class TestMILPGasSourceSink(TestCase):
@@ -28,19 +26,16 @@ class TestMILPGasSourceSink(TestCase):
 
         # Added for case where head loss is modelled via DW
         class TestSourceSink(GasProblem):
-            def energy_system_options(self):
-                options = super().energy_system_options()
-                self.heat_network_settings["head_loss_option"] = (
-                    HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
-                )
-                self.heat_network_settings["n_linearization_lines"] = 5
-                self.heat_network_settings["minimize_head_losses"] = True
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                settings["n_linearization_lines"] = 5
+                settings["minimize_head_losses"] = True
+                settings["pipe_maximum_pressure"] = 100.0  # [bar]
+                settings["pipe_minimum_pressure"] = 0.0
+                return settings
 
-                self.heat_network_settings["pipe_maximum_pressure"] = 100.0  # [bar]
-                self.heat_network_settings["pipe_minimum_pressure"] = 0.0
-                return options
-
-        soltion = run_optimization_problem(
+        soltion = run_esdl_mesido_optimization(
             GasProblem,
             base_folder=base_folder,
             esdl_file_name="source_sink.esdl",
@@ -49,14 +44,19 @@ class TestMILPGasSourceSink(TestCase):
             input_timeseries_file="timeseries.csv",
         )
         results = soltion.extract_results()
+        name_to_id_map = soltion.esdl_asset_name_to_id_map
+
+        gas_producer_id = name_to_id_map["GasProducer_0876"]
+        gas_demand_id = name_to_id_map["GasDemand_a2d8"]
+        pipe_id = name_to_id_map["Pipe_4abc"]
 
         # Test if mass conserved
         np.testing.assert_allclose(
-            results["GasProducer_0876.GasOut.Q"], results["GasDemand_a2d8.GasIn.Q"]
+            results[f"{gas_producer_id}.GasOut.Q"], results[f"{gas_demand_id}.GasIn.Q"]
         )
 
         # Test if head is going down
-        np.testing.assert_array_less(results["Pipe_4abc.GasOut.H"], results["Pipe_4abc.GasIn.H"])
+        np.testing.assert_array_less(results[f"{pipe_id}.GasOut.H"], results[f"{pipe_id}.GasIn.H"])
 
 
 if __name__ == "__main__":
